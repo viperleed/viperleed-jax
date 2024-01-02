@@ -1,6 +1,6 @@
 from functools import lru_cache
 import numpy as np
-import scipy
+from scipy.special import sph_harm, spherical_jn
 
 @lru_cache(maxsize=None)
 def fac(n):
@@ -172,7 +172,7 @@ def bessel(z, n1):
     bj = np.empty(shape=(n1,), dtype=np.complex128)
 
     for i in range(n1):
-        bj[i] = scipy.special.spherical_jn(i, z)
+        bj[i] = spherical_jn(i, z)
     return bj
 
 def HARMONY(C, LMAX, LMMAX):
@@ -184,7 +184,7 @@ def HARMONY(C, LMAX, LMMAX):
     i = 0
     for l in range(0, LMAX + 1):
         for m in range(-l, l + 1):
-            YLM[i] = scipy.special.sph_harm(m, l, theta, phi)
+            YLM[i] = sph_harm(m, l, theta, phi)
             i += 1
     return YLM
 
