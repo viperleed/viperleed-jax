@@ -218,21 +218,6 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,AFLAG,LMAX21,LMMAX2):
         return 0
     CL = np.sqrt(C[0]*C[0] + C[1]*C[1] + C[2]*C[2])
 
-    if AFLAG:
-        CAPPA = 2*E - 2j*VPI
-        Z = np.sqrt(CAPPA)*CL
-        BJ = bessel(Z,LMAX21)
-        YLM = HARMONY(C, LMAX2, LMMAX2)
-        K = 0
-        GTWOC = np.full((LMMAX, LMMAX), dtype=np.complex128, fill_value=np.nan)
-        GTEMP = np.full((LMMAX, LMMAX), dtype=np.complex128, fill_value=np.nan)
-        for L in range(LMAX+1):
-            IS = (L+1)*(L+1)-L
-            for LP in range(LMAX+1):
-                ISP = (LP+1)*(LP+1)-LP
-                LL2 = LP + L
-                LL1S = abs(L-LP)
-                PRE = pow(1.0j, L+LP)
     #TODO: I disabled this for now, because I believe the conditional is going 
     #      to be slower than just computing the DELTAT matrix.
     """
@@ -241,34 +226,50 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,AFLAG,LMAX21,LMMAX2):
     #       Calcualte DELTAT
             for L in range(LSMAX+1):
                 for M in range(-L,L+1):
-                    for MP in range(-LP,LP+1):
-                        I = IS+M
-                        IP = ISP+MP
-                        GTWOC[I-1][IP-1] = 0
-                        MPP = MP-M
-                        IMPOS = abs(MPP)
-                        LL1 = max(LL1S, IMPOS)
-                        for LPP in range(LL2, LL1 - 1, -2):
-                            K += 1
-                            IPPM = LPP*LPP+LPP+1-MPP
-                            CSUM = BJ[LPP]*YLM[IPPM-1]*stored_gaunt(LP, L, LPP,-MP, M, MPP)*4*np.pi*(-1)**M*1.0j**(-LPP)
-                            GTWOC[I-1][IP-1] += PRE*CSUM
                     I = L+1
                     I = I*I-L+M
                     DELTAT[I-1][I-1] = 1.0j*(NewAF[L]-AF[L])
             return DELTAT
     """
 
-        for I in range(1,LMMAX+1):
-            I1 = 0
-            for L in range(LMAX+1):
-                for M in range(-L,L+1):
-                    I1 += 1
-                    GTEMP[I-1][I1-1] = GTWOC[I-1][I1-1]*1.0j*NewAF[L]
-        for I in range(1,LSMMAX+1):
-            for L in range(1,LSMMAX+1):
-                for J in range(1,LSMMAX+1):
-                    DELTAT[I-1][J-1] += GTEMP[I-1][L-1]*GTWOC[L-1][J-1]
+    CAPPA = 2*E - 2j*VPI
+    Z = np.sqrt(CAPPA)*CL
+    BJ = bessel(Z,LMAX21)
+    YLM = HARMONY(C, LMAX2, LMMAX2)
+    K = 0
+    GTWOC = jnp.full((LMMAX, LMMAX), dtype=np.complex128, fill_value=np.nan)
+    GTEMP = jnp.full((LMMAX, LMMAX), dtype=np.complex128, fill_value=np.nan)
+    for L in range(LMAX+1):
+        IS = (L+1)*(L+1)-L
+        for LP in range(LMAX+1):
+            ISP = (LP+1)*(LP+1)-LP
+            LL2 = LP + L
+            LL1S = abs(L-LP)
+            PRE = pow(1.0j, L+LP)
+            for M in range(-L,L+1):
+                for MP in range(-LP,LP+1):
+                    I = IS+M
+                    IP = ISP+MP
+                    GTWOC[I-1][IP-1] = 0
+                    MPP = MP-M
+                    IMPOS = abs(MPP)
+                    LL1 = max(LL1S, IMPOS)
+                    for LPP in range(LL2, LL1 - 1, -2):
+                        K += 1
+                        IPPM = LPP*LPP+LPP+1-MPP
+                        CSUM = BJ[LPP]*YLM[IPPM-1]*stored_gaunt(LP, L, LPP,-MP, M, MPP)*4*np.pi*(-1)**M*1.0j**(-LPP)
+                        GTWOC[I-1][IP-1] += PRE*CSUM
+
+    for I in range(1,LMMAX+1):
+        I1 = 0
+        for L in range(LMAX+1):
+            for M in range(-L,L+1):
+                I1 += 1
+                GTEMP[I-1][I1-1] = GTWOC[I-1][I1-1]*1.0j*NewAF[L]
+    for I in range(1,LSMMAX+1):
+        for L in range(1,LSMMAX+1):
+            for J in range(1,LSMMAX+1):
+                DELTAT[I-1][J-1] += GTEMP[I-1][L-1]*GTWOC[L-1][J-1]
     for L in range(LSMAX+1):
         for M in range(-L,L+1):
             I = L+1
