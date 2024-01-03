@@ -129,7 +129,7 @@ def blm2(l1, m1, l2, m2, l3, m3, lmax):
 
 
 def cppp(n1, n2, n3):
-    """tapulates the function PPP(I1,I2,I3), each element containing the integral of the product of threee legendre
+    """Tabulates the function PPP(I1,I2,I3), each element containing the integral of the product of three Legendre
     functions P(I1),P(I2),P(I3). The integrals are calculated following Gaunt's summation scheme set out by Slater
     atomic structure.
     PPP is used by function PSTEMP in computing temperature-depending phase shifts.
@@ -176,7 +176,11 @@ def bessel(z, n1):
     return bj
 
 def HARMONY(C, LMAX, LMMAX):
-    """generates the spherical harmonics for the vector C"""
+    """Generates the spherical harmonics for the vector C
+
+    This is a python implementation of the fortran subroutine HARMONY from 
+    TensErLEED. It uses the scipy.special.sph_harm function to produce
+    equivalent results."""
     YLM = np.full((LMMAX,), dtype=np.complex128, fill_value=np.nan)
     r = np.sqrt(C[0] ** 2 + C[1] ** 2 + C[2] ** 2)
     theta = np.arccos(C[0] / r)
