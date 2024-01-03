@@ -76,7 +76,6 @@ NRATIO = 1  # originally, ratio between substrate and overlayer unit cell area. 
 #             thus NRATIO = 1 and TV = TVB are the only safe choice
 
 
-BELM = get_clebsh_gordon(LMAX)  # Clebsh-Gordon coefficients for tmatrix()
 firstline, phaseshifts, newpsGen, newpsWrite = readPHASESHIFTS(None, None, readfile='PHASESHIFTS', check=False, ignoreEnRange=False)
 
 n_energies = 0
@@ -112,7 +111,7 @@ for i in range(1):
         NewCAF = np.full((LMAX+1,), dtype=np.complex128, fill_value=0.0)
 
     # DELWV : working space for computation and storage of amplitude differences
-    DELWV = MATEL_DWG(NCSTEP, CAF, NewCAF, BELM, E, VV, VPIS, LMAX, LMMAX, NT0, EXLM, ALM, AK2M, AK3M,
+    DELWV = MATEL_DWG(NCSTEP, CAF, NewCAF, E, VV, VPIS, LMAX, LMMAX, NT0, EXLM, ALM, AK2M, AK3M,
                       NRATIO, TV, LMAX, LMMAX, NATOMS, CDISP, CUNDISP, PSQ, LMAX21, LMMAX2)
 
     all_delwv[i, :, :] = DELWV

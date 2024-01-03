@@ -7,127 +7,6 @@ def fac(n):
     return n * fac(n-1) if n else 1
 
 
-# dimension of array belm as function of lmax
-nlmbs = (19, 126, 498, 1463, 3549, 7534, 14484, 25821, 43351, 69322,
-         106470, 158067, 227969, 320664, 441320, 595833, 790876, 1033942)
-
-# this function should not be JIT
-
-#  BELMG computes Clebsh-Gordon coefficients to be used in tmatrix subroutine
-def get_clebsh_gordon(lmax):
-    nlmbs = (19, 126, 498, 1463, 3549, 7534, 14484, 25821, 43351, 69322,
-             106470, 158067, 227969, 320664, 441320, 595833, 790876, 1033942)
-    nf = 4*lmax+2
-    belm = np.full(shape=(nlmbs[lmax-1]), fill_value=np.nan, dtype=np.float64)
-
-    k = 0
-    for l in range(lmax+1):
-        for lp in range(lmax+1):
-            ll2 = l+lp
-            for m in range(-l, l+1):
-                pre = 4*np.pi*(-1)**m
-                for mp in range(-lp, lp+1):
-                    mpp = mp-m
-                    impp = abs(mpp)
-                    ll1 = abs(l-lp)
-
-                    ll1 = max(impp, ll1)
-
-                    for lpp in range(ll2, ll1-1, -2):  # not sure about this...
-                        belm[k] = pre*blm2(l, m, lpp, mpp, lp, -mp, ll2)
-                        k += 1
-    return belm
-
-# this function should not be jited
-
-def blm2(l1, m1, l2, m2, l3, m3, lmax):
-    """provides the integral of the product of three spherical harmonics, each of which can be expressed as a prefactor
-    times a legendre function. The three prefactors are lumped togetheras a factor C and the integral of the three
-    legendre functions follow gaunts summation scheme set out by Slater.
-    Author Pendry"""
-    # easy checks first
-    if (m1 + m2 + m3 != 0):
-        return 0
-    if (l1 - 2*lmax > 0) or (l2 - lmax > 0) or (l3 - lmax > 0):
-        raise RuntimeError  # invalid l > lmax
-    if (l1 - abs(m1) < 0) or (l2 - abs(m2) < 0) or (l3 - abs(m3) < 0):
-        raise RuntimeError  # invalid quantum number m
-    if ((l1+l2+l3) % 2 != 0):
-        return 0
-
-    nl = np.array((l1, l2, l3))
-    nm = np.array((abs(m1), abs(m2), abs(m3)))
-    ic = (np.sum(nm))/2
-
-    #sort by size
-    maxnm_id = np.argmax(nm)
-    nl[0], nl[maxnm_id] = nl[maxnm_id], nl[0]
-    nm[0], nm[maxnm_id] = nm[maxnm_id], nm[0]
-    if (nl[2] > nl[1]):
-        nl[1], nl[2] = nl[2], nl[1]
-        nm[1], nm[2] = nm[2], nm[1]
-    if nl[2] - abs(nl[1]-nl[0]) < 0:
-        return 0
-
-    nl1, nl2, nl3 = nl[0], nl[1], nl[2]
-    nm1, nm2, nm3 = nm[0], nm[1], nm[2]
-    # Faktor A
-
-    iss = int(np.sum(nl)/2)
-    ia1 = iss - nl2 - nm3
-    ia2 = nl2 + nm2
-    ia3 = nl2 - nm2
-    ia4 = nl3 + nm3
-    ia5 = nl1 + nl2 - nl3
-    ia6 = iss - nl1
-    ia7 = iss - nl2
-    ia8 = iss - nl3
-    ia9 = nl1 + nl2 + nl3 + 1
-
-    A = ((-1.0)**ia1)/np.math.factorial(ia3)*np.math.factorial(ia2)/np.math.factorial(ia6)*np.math.factorial(ia4)
-    A = A/np.math.factorial(ia7)*np.math.factorial(ia5)/np.math.factorial(ia8)*np.math.factorial(iss)/np.math.factorial(ia9)
-
-    # Faktor B
-
-    ib1 = nl1 + nm1
-    ib2 = nl2 + nl3 - nm1
-    ib3 = nl1 - nm1
-    ib4 = nl2 - nl3 + nm1
-    ib5 = nl3 - nm3
-    it1 = max(0, - ib4) + 1
-    it2 = min(ib2, ib3, ib5) + 1
-    B = 0.
-    sign = (- 1.0)**(it1)
-    ib1 = ib1 + it1 - 2
-    ib2 = ib2 - it1 + 2
-    ib3 = ib3 - it1 + 2
-    ib4 = ib4 + it1 - 2
-    ib5 = ib5 - it1 + 2
-    for it in range(it1, it2+1):
-        sign = - sign
-        ib1 = ib1 + 1
-        ib2 = ib2 - 1
-        ib3 = ib3 - 1
-        ib4 = ib4 + 1
-        ib5 = ib5 - 1
-        bn = sign/np.math.factorial(it-1)*np.math.factorial(ib1)/np.math.factorial(ib3) * \
-            np.math.factorial(ib2)/np.math.factorial(ib4)/np.math.factorial(ib5)
-        B += bn
-
-    # Faktor C
-    ic1 = nl1 - nm1
-    ic2 = nl1 + nm1
-    ic3 = nl2 - nm2
-    ic4 = nl2 + nm2
-    ic5 = nl3 - nm3
-    ic6 = nl3 + nm3
-    cn = float((2 * nl1 + 1) * (2 * nl2 + 1) * (2 * nl3 + 1))/np.pi
-    C = cn/np.math.factorial(ic2)*np.math.factorial(ic1)/np.math.factorial(ic4)*np.math.factorial(ic3)/np.math.factorial(ic6)*np.math.factorial(ic5)
-
-    C = (np.sqrt(C))/2
-    return float((-1)**ic)*A*B*C
-
-
 def cppp(n1, n2, n3):
     """Tabulates the function PPP(I1,I2,I3), each element containing the integral of the product of three Legendre
     functions P(I1),P(I2),P(I3). The integrals are calculated following Gaunt's summation scheme set out by Slater
@@ -174,6 +53,7 @@ def bessel(z, n1):
     for i in range(n1):
         bj[i] = spherical_jn(i, z)
     return bj
+
 
 def HARMONY(C, LMAX, LMMAX):
     """Generates the spherical harmonics for the vector C

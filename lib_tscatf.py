@@ -2,8 +2,10 @@ import numpy as np
 import fortranformat as ff
 import scipy
 
+from sympy.physics.wigner import gaunt
 from lib_math import *
 
+from gaunt_coefficients import fetch_stored as stored_gaunt
 
 MEMACH = 1.0E-6
 HARTREE = 27.211396
@@ -123,7 +125,7 @@ def PSTEMP(PPP, N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
     return DEL
 
 
-def MATEL_DWG(NCSTEP,AF,NewAF,BELM,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
+def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
       AK3M,NRATIO,TV,LPMAX,LPMMAX,NATOMS,CDISP,CUNDISP,PSQ,LMAX21,LMMAX2):
     """The function MATEL_DWG evaluates the change in amplitude delwv for each of the exit beams for each of the
     displacements given the sph wave amplitudes corresponding to the incident wave ALM & for each of the time reversed
@@ -152,7 +154,7 @@ def MATEL_DWG(NCSTEP,AF,NewAF,BELM,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
 #           a left handed set of axes
             C[2] = -C[2]
 #           Evaluate DELTAT matrix for current displacement.
-            DELTAT = TMATRIX_DWG(AF,NewAF,C,BELM,E,VPI,LPMAX,LPMMAX,LMAX,LMMAX,True,LMAX21,LMMAX2)
+            DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LPMAX,LPMMAX,LMAX,LMMAX,True,LMAX21,LMMAX2)
             for NEXIT in range(1,NT0): #Loop over exit beams
 #               Evaluate matrix element
                 EMERGE = 2*(E-VV)-AK2M[NEXIT-1]**2-AK3M[NEXIT-1]**2
@@ -189,7 +191,7 @@ def MATEL_DWG(NCSTEP,AF,NewAF,BELM,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
                     DELWV[NC-1][NEXIT-1] += AMAT
     return DELWV
 
-def TMATRIX_DWG(AF,NewAF,C,BELM,E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,AFLAG,LMAX21,LMMAX2):
+def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,AFLAG,LMAX21,LMMAX2):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
     C(3): Displacement vector;
@@ -251,7 +253,7 @@ def TMATRIX_DWG(AF,NewAF,C,BELM,E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,AFLAG,LMAX21,LMMAX
                         for LPP in range(LL2, LL1 - 1, -2):
                             K += 1
                             IPPM = LPP*LPP+LPP+1-MPP
-                            CSUM = BJ[LPP]*YLM[IPPM-1]*BELM[K-1]*1.0j**(-LPP)
+                            CSUM = BJ[LPP]*YLM[IPPM-1]*stored_gaunt(LP, L, LPP,-MP, M, MPP)*4*np.pi*(-1)**M*1.0j**(-LPP)
                             GTWOC[I-1][IP-1] += PRE*CSUM
 
         for I in range(1,LMMAX+1):
