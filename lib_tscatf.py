@@ -1,6 +1,7 @@
 import numpy as np
 from jax import config
 config.update("jax_enable_x64", True)
+import jax
 import jax.numpy as jnp
 from jax import jit
 import fortranformat as ff
@@ -11,7 +12,10 @@ import time
 
 from lib_math import *
 
-from gaunt_coefficients import fetch_stored as stored_gaunt
+from gaunt_coefficients import fetch_stored as fetch_gaunt
+
+fetch_gaunt = jax.vmap(fetch_gaunt, in_axes=(None, None, 0, None, None, None))
+
 
 MEMACH = 1.0E-6
 HARTREE = 27.211396
@@ -267,26 +271,28 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,LMAX21,LMMAX2):
 
 # TODO: better name
 @partial(jit, static_argnames=('LMAX',))
+#@profile
 def sum_quantum_numbers(LMAX, BJ, YLM):
     LMMAX = (LMAX+1)*(LMAX+1)
-    GTWOC = jnp.full((LMMAX, LMMAX), dtype=np.complex128, fill_value=np.nan)
+    GTWOC = jnp.full((LMMAX, LMMAX), dtype=np.complex128, fill_value=0)
     for L in range(LMAX+1):
-        IS = (L+1)*(L+1)-L
         for LP in range(LMAX+1):
-            ISP = (LP+1)*(LP+1)-LP
-            LL2 = LP + L
-            LL1S = abs(L-LP)
             PRE = pow(1.0j, L+LP)
             for M in range(-L,L+1):
                 for MP in range(-LP,LP+1):
-                    I = IS+M
-                    IP = ISP+MP
-                    GTWOC = GTWOC.at[I-1, IP-1].set(0)
-                    MPP = MP-M
-                    IMPOS = abs(MPP)
-                    LL1 = max(LL1S, IMPOS)
-                    for LPP in range(LL2, LL1 - 1, -2):
-                        IPPM = LPP*LPP+LPP+1-MPP
-                        CSUM = BJ[LPP]*YLM[IPPM-1]*stored_gaunt(LP, L, LPP,-MP, M, MPP)*4*np.pi*(-1)**M*1.0j**(-LPP)
-                        GTWOC = GTWOC.at[I-1, IP-1].add(PRE*CSUM)
+                    csum = get_csum(BJ, YLM, L, LP, LMAX, PRE, M, MP)
+                    GTWOC = GTWOC.at[(L+1)*(L+1)-L+M-1, (LP+1)*(LP+1)-LP+MP-1].add(csum) #TODO: this is slow; can we speed it up?
     return GTWOC
+
+@partial(jit, static_argnames=('LMAX',))
+def get_csum(BJ, YLM, L, LP, LMAX, PRE, M, MP):
+    MPP = MP-M
+    all_lpp = jnp.arange(0, LMAX*2+1)
+    # we could skip some computations with non_zero_lpp = jnp.where((all_lpp >= abs(L-LP)) & (all_lpp <= L+LP))
+    # but I'm not sure the conditional is worth it in terms of performance
+    gaunt_coeffs = fetch_gaunt(jnp.array(LP), jnp.array(L), all_lpp,jnp.array(-MP), jnp.array(M), jnp.array(MPP))
+    bessel_values = BJ[all_lpp]
+    ylm_values = YLM[all_lpp*all_lpp+all_lpp+1-MPP-1]
+    csum = jnp.sum(bessel_values*ylm_values*gaunt_coeffs*1.0j**(-all_lpp))
+    csum = csum*4*np.pi*(-1)**M*PRE
+    return csum
