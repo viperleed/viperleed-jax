@@ -5,7 +5,7 @@ from jax import jit
 import jax
 from pathlib import Path
 
-_REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__) / "gaunt_coefficients.npy",
+_REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__).parent / "gaunt_coefficients.npy",
                                        allow_pickle=False)
 
 @jit
