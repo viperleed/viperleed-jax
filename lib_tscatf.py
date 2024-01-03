@@ -1,8 +1,14 @@
 import numpy as np
+from jax import config
+config.update("jax_enable_x64", True)
+import jax.numpy as jnp
+from jax import jit
 import fortranformat as ff
-import scipy
+from functools import partial
 
-from sympy.physics.wigner import gaunt
+# for timing
+import time
+
 from lib_math import *
 
 from gaunt_coefficients import fetch_stored as stored_gaunt
@@ -236,9 +242,34 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,AFLAG,LMAX21,LMMAX2):
     Z = np.sqrt(CAPPA)*CL
     BJ = bessel(Z,LMAX21)
     YLM = HARMONY(C, LMAX2, LMMAX2)
-    K = 0
-    GTWOC = jnp.full((LMMAX, LMMAX), dtype=np.complex128, fill_value=np.nan)
     GTEMP = jnp.full((LMMAX, LMMAX), dtype=np.complex128, fill_value=np.nan)
+    start_t = time.time()
+    GTWOC = sum_quantum_numbers(LMAX, BJ, YLM)
+    print(f'sum_quantum_numbers took {time.time() - start_t} seconds')
+
+    for I in range(1,LMMAX+1):
+        I1 = 0
+        for L in range(LMAX+1):
+            for M in range(-L,L+1):
+                I1 += 1
+                GTEMP = GTEMP.at[I-1, I1-1].set(GTWOC[I-1][I1-1]*1.0j*NewAF[L])
+    for I in range(1,LSMMAX+1):
+        for L in range(1,LSMMAX+1):
+            for J in range(1,LSMMAX+1):
+                DELTAT = DELTAT.at[I-1, J-1].add(GTEMP[I-1][L-1]*GTWOC[L-1][J-1])
+    for L in range(LSMAX+1):
+        for M in range(-L,L+1):
+            I = L+1
+            I = I*I-L+M
+            DELTAT = DELTAT.at[I-1, I-1].add(-1.0j*AF[L])
+    return DELTAT
+
+
+# TODO: better name
+@partial(jit, static_argnames=('LMAX',))
+def sum_quantum_numbers(LMAX, BJ, YLM):
+    LMMAX = (LMAX+1)*(LMAX+1)
+    GTWOC = jnp.full((LMMAX, LMMAX), dtype=np.complex128, fill_value=np.nan)
     for L in range(LMAX+1):
         IS = (L+1)*(L+1)-L
         for LP in range(LMAX+1):
@@ -250,30 +281,12 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,AFLAG,LMAX21,LMMAX2):
                 for MP in range(-LP,LP+1):
                     I = IS+M
                     IP = ISP+MP
-                    GTWOC[I-1][IP-1] = 0
+                    GTWOC = GTWOC.at[I-1, IP-1].set(0)
                     MPP = MP-M
                     IMPOS = abs(MPP)
                     LL1 = max(LL1S, IMPOS)
                     for LPP in range(LL2, LL1 - 1, -2):
-                        K += 1
                         IPPM = LPP*LPP+LPP+1-MPP
                         CSUM = BJ[LPP]*YLM[IPPM-1]*stored_gaunt(LP, L, LPP,-MP, M, MPP)*4*np.pi*(-1)**M*1.0j**(-LPP)
-                        GTWOC[I-1][IP-1] += PRE*CSUM
-
-    for I in range(1,LMMAX+1):
-        I1 = 0
-        for L in range(LMAX+1):
-            for M in range(-L,L+1):
-                I1 += 1
-                GTEMP[I-1][I1-1] = GTWOC[I-1][I1-1]*1.0j*NewAF[L]
-    for I in range(1,LSMMAX+1):
-        for L in range(1,LSMMAX+1):
-            for J in range(1,LSMMAX+1):
-                DELTAT[I-1][J-1] += GTEMP[I-1][L-1]*GTWOC[L-1][J-1]
-    for L in range(LSMAX+1):
-        for M in range(-L,L+1):
-            I = L+1
-            I = I*I-L+M
-            DELTAT[I-1][I-1] -= 1.0j*AF[L]
-    return DELTAT
-
+                        GTWOC = GTWOC.at[I-1, IP-1].add(PRE*CSUM)
+    return GTWOC

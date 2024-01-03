@@ -1,12 +1,13 @@
 from jax import config
 config.update("jax_enable_x64", True)
 import jax.numpy as jnp
+from jax import jit
 import jax
 
 _REDUCED_GAUNT_COEFFICIENTS = jnp.load("gaunt_coefficients.npy",
                                        allow_pickle=False)
 
-
+@jit
 def fetch_stored(l1, l2, l3, m1, m2, m3):
     selection_rule_m = m1 + m2 + m3 == 0
     return jax.lax.cond(
