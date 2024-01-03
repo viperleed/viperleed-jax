@@ -3,8 +3,9 @@ config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 from jax import jit
 import jax
+from pathlib import Path
 
-_REDUCED_GAUNT_COEFFICIENTS = jnp.load("gaunt_coefficients.npy",
+_REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__) / "gaunt_coefficients.npy",
                                        allow_pickle=False)
 
 @jit
