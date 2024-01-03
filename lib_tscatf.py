@@ -217,16 +217,7 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,AFLAG,LMAX21,LMMAX2):
         print("LMAX21*LMAX21: ", LMAX21*LMAX21)
         return 0
     CL = np.sqrt(C[0]*C[0] + C[1]*C[1] + C[2]*C[2])
-#   If displacement = 0, calculate DELTAT and jump to end
-    if CL <= 1.0e-7:
-#       Calcualte DELTAT
-        for L in range(LSMAX+1):
-            for M in range(-L,L+1):
-                I = L+1
-                I = I*I-L+M
-                DELTAT[I-1][I-1] = 1.0j*(NewAF[L]-AF[L])
 
-        return DELTAT
     if AFLAG:
         CAPPA = 2*E - 2j*VPI
         Z = np.sqrt(CAPPA)*CL
@@ -242,6 +233,13 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,AFLAG,LMAX21,LMMAX2):
                 LL2 = LP + L
                 LL1S = abs(L-LP)
                 PRE = pow(1.0j, L+LP)
+    #TODO: I disabled this for now, because I believe the conditional is going 
+    #      to be slower than just computing the DELTAT matrix.
+    """
+    #   If displacement = 0, calculate DELTAT and jump to end
+        if CL <= 1.0e-7:
+    #       Calcualte DELTAT
+            for L in range(LSMAX+1):
                 for M in range(-L,L+1):
                     for MP in range(-LP,LP+1):
                         I = IS+M
@@ -255,6 +253,11 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,AFLAG,LMAX21,LMMAX2):
                             IPPM = LPP*LPP+LPP+1-MPP
                             CSUM = BJ[LPP]*YLM[IPPM-1]*stored_gaunt(LP, L, LPP,-MP, M, MPP)*4*np.pi*(-1)**M*1.0j**(-LPP)
                             GTWOC[I-1][IP-1] += PRE*CSUM
+                    I = L+1
+                    I = I*I-L+M
+                    DELTAT[I-1][I-1] = 1.0j*(NewAF[L]-AF[L])
+            return DELTAT
+    """
 
         for I in range(1,LMMAX+1):
             I1 = 0
