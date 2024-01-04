@@ -12,6 +12,7 @@ from lib_math import *
 
 from gaunt_coefficients import fetch_stored as fetch_gaunt
 
+# vmap fetch_gaunt to make it work with arrays
 fetch_gaunt = jax.vmap(fetch_gaunt, in_axes=(None, None, 0, None, None, None))
 
 
@@ -97,7 +98,7 @@ def PSTEMP(PPP, N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
     FL = 1
     CS = 1
     for i in range(N1):
-        BJ[i] = np.exp(FALFE)*FL*CS*BJ[i]
+        BJ = BJ.at[i].set(np.exp(FALFE)*FL*CS*BJ[i])
         FL += 2
         CS *= 1.0j
     FL = 1

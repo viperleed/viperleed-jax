@@ -1,6 +1,29 @@
 from functools import lru_cache
 import numpy as np
 from scipy.special import sph_harm, spherical_jn
+import jax
+import jax.numpy as jnp
+from functools import partial
+
+# Spherical Bessel functions from NeuralIL
+from spherical_bessel import functions
+
+def _generate_bessel_functions(l_max):
+    """Generate a list of spherical Bessel functions up to order l_max"""
+    bessel_functions = []
+    for order in range(l_max+1):
+        bessel_functions.append(functions.create_j_l(order))
+    return bessel_functions
+
+# LMAX here for testing; TODO: remove
+LMAX = 14
+
+# generate a list of spherical Bessel functions up to order l_max
+BESSEL_FUNCTIONS = _generate_bessel_functions(LMAX)
+
+@partial(jax.jit, static_argnames=('BESSEL_FUNCTIONS',))
+def custom_spherical_jn(n, z):
+    return jax.lax.switch(n, BESSEL_FUNCTIONS, z)
 
 @lru_cache(maxsize=None)
 def fac(n):
@@ -46,13 +69,12 @@ def cppp(n1, n2, n3):
 
 
 # need to find a better way to do this; not available in JAX yet
-def bessel(z, n1):
-    """spherical besser functions. evaluated at z, up to degree n1"""
-    bj = np.empty(shape=(n1,), dtype=np.complex128)
-
-    for i in range(n1):
-        bj[i] = spherical_jn(i, z)
-    return bj
+@partial(jax.jit, static_argnames=('n1',))
+def bessel_jax(z, n1):
+    """Spherical Bessel functions. Evaluated at z, up to degree n1."""
+    bj = jnp.empty(shape=(n1,), dtype=jnp.complex128)
+    vmapped_custom_bessel = jax.vmap(custom_spherical_jn, (0, None))
+    return vmapped_custom_bessel(jnp.arange(n1), z)
 
 
 # TODO: jit once fixed for neg values by Paul
