@@ -29,7 +29,7 @@ def custom_spherical_jn(n, z):
 def fac(n):
     return n * fac(n-1) if n else 1
 
-
+# TODO: figure out which CG coefficients this actually computes and pre-calculate them
 def cppp(n1, n2, n3):
     """Tabulates the function PPP(I1,I2,I3), each element containing the integral of the product of three Legendre
     functions P(I1),P(I2),P(I3). The integrals are calculated following Gaunt's summation scheme set out by Slater

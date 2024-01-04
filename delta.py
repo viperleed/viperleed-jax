@@ -23,6 +23,7 @@ NT0 = 9  # no. of TLEED output beams
 NATOMS = 1  # currently 1 is the only possible choice
 NCSTEP = 201  # number of geometric variations ('displacements') to be considered
 
+#TODO: @Paul: let's double check if we actually need these anymore
 LMMAX = (LMAX + 1)*(LMAX + 1)
 L1 = LMAX + 1
 LMAX21 = 2*LMAX + 1
@@ -34,6 +35,8 @@ LMMAX2 = LMAX21*LMAX21
 DR0 = 0
 DRPER = 0.1908624
 DRPAR = DRPER
+
+# TODO: @Paul: I'm pretty sure CUNDISP is unsused (and not supported by TensErLEED). IF so, we can just remove it everywhere.
 CUNDISP = np.full((NATOMS, 3),dtype=np.float64,fill_value=0.0)  # position of current atomic site in reference calculation
 CUNDISP[0][0] = 0
 CUNDISP[0][1] = 0
