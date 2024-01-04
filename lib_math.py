@@ -1,6 +1,6 @@
 from functools import lru_cache
 import numpy as np
-from scipy.special import sph_harm, spherical_jn
+from jax.scipy.special import sph_harm
 import jax
 import jax.numpy as jnp
 from functools import partial
@@ -70,7 +70,7 @@ def cppp(n1, n2, n3):
 
 # need to find a better way to do this; not available in JAX yet
 @partial(jax.jit, static_argnames=('n1',))
-def bessel_jax(z, n1):
+def bessel(z, n1):
     """Spherical Bessel functions. Evaluated at z, up to degree n1."""
     bj = jnp.empty(shape=(n1,), dtype=jnp.complex128)
     vmapped_custom_bessel = jax.vmap(custom_spherical_jn, (0, None))
@@ -78,19 +78,14 @@ def bessel_jax(z, n1):
 
 
 # TODO: jit once fixed for neg values by Paul
-def HARMONY(C, LMAX, LMMAX):
-    """Generates the spherical harmonics for the vector C
+@partial(jax.jit, static_argnames=('LMAX',))
+def HARMONY(C, LMAX, dense_l, dense_m):
+    """Generates the spherical harmonics for the vector C.
 
-    This is a python implementation of the fortran subroutine HARMONY from 
-    TensErLEED. It uses the scipy.special.sph_harm function to produce
+    This is a python implementation of the fortran subroutine HARMONY from
+    TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
     equivalent results."""
-    YLM = np.full((LMMAX,), dtype=np.complex128, fill_value=np.nan)
-    r = np.sqrt(C[0] ** 2 + C[1] ** 2 + C[2] ** 2)
-    theta = np.arccos(C[0] / r)
-    phi = np.arctan2(C[2], C[1])
-    i = 0
-    for l in range(0, LMAX + 1):
-        for m in range(-l, l + 1):
-            YLM[i] = sph_harm(m, l, theta, phi)
-            i += 1
-    return YLM
+    r = jnp.sqrt(C[0] ** 2 + C[1] ** 2 + C[2] ** 2)
+    theta = jnp.arccos(C[0] / r)
+    phi = jnp.arctan2(C[2], C[1])
+    return sph_harm(dense_m, dense_l, jnp.array([theta]), jnp.array([phi]), n_max=LMAX)
