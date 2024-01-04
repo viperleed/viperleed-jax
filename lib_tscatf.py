@@ -97,7 +97,7 @@ def PSTEMP(PPP, N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
     BJ = bessel(Z, N1)
     FL = 1
     CS = 1
-    for i in range(N1):
+    for i in range(N1):                                                         # TODO: contract loop to vectorized form
         BJ = BJ.at[i].set(np.exp(FALFE)*FL*CS*BJ[i])
         FL += 2
         CS *= 1.0j
@@ -134,7 +134,7 @@ def PSTEMP(PPP, N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
     return DEL
 
 
-@profile
+#@profile
 def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
       AK3M,NRATIO,TV,LPMAX,LPMMAX,NATOMS,CDISP,CUNDISP,PSQ,LMAX21,LMMAX2):
     """The function MATEL_DWG evaluates the change in amplitude delwv for each of the exit beams for each of the
@@ -209,8 +209,8 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
                     DELWV[NC-1][NEXIT-1] += AMAT
     return DELWV
 
-@profile
-def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l):
+#@profile
+def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l):  #TODO: @Paul: let's remove all the unnecessary LM... variables
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
     C(3): Displacement vector;
