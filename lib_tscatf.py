@@ -155,6 +155,7 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
     dense_quantum_numbers = get_valid_quantum_numbers(LMAX)
     dense_m = dense_quantum_numbers[:,0,2]
     dense_l = dense_quantum_numbers[:,0,0]
+    minus_1_pow_m = jnp.power(-1, dense_m)  # (-1)**M
 
 #   Loop over model structure
     for NC in range(1, NCSTEP+1):
@@ -170,14 +171,13 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
             C[2] = -C[2]
 #           Evaluate DELTAT matrix for current displacement.
             DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LPMAX,LPMMAX,LMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l)
-            minus_1_pow_m = jnp.power(-1, dense_m)  # (-1)**M
+            
             for NEXIT in range(1,NT0): #Loop over exit beams
 #               Evaluate matrix element
                 EMERGE = 2*(E-VV)-AK2M[NEXIT-1]**2-AK3M[NEXIT-1]**2
                 # TODO: should we get rid of this conditional?
                 # If the beam does not emerge, AMAT is going to be 0 anyway
                 if EMERGE >= 0:
-
                     _EXLM = EXLM[:(LMAX+1)**2,NEXIT-1]                           # TODO: crop EXLM, ALM earlier
                     _ALM = ALM[:(LMAX+1)**2]
 
