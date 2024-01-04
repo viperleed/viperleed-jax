@@ -134,7 +134,7 @@ def PSTEMP(PPP, N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
     return DEL
 
 
-#@profile
+@profile
 def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
       AK3M,NRATIO,TV,LPMAX,LPMMAX,NATOMS,CDISP,CUNDISP,PSQ,LMAX21,LMMAX2):
     """The function MATEL_DWG evaluates the change in amplitude delwv for each of the exit beams for each of the
@@ -210,7 +210,7 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
     return DELWV
 
 #@profile
-def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l):  #TODO: @Paul: let's remove all the unnecessary LM... variables
+@partial(jit, static_argnames=('LMAX', 'LMMAX', 'LSMMAX', 'LMAX21', 'LMMAX2'))
 def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l, dense_m):  #TODO: @Paul: let's remove all the unnecessary LM... variables
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
@@ -226,17 +226,18 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum
     LMAX1=LMAX+1"""
     LMAX2 = 2*LMAX
     DELTAT = jnp.full((LSMMAX, LSMMAX), dtype=np.complex128, fill_value=0)
-    if LMAX21 != LMAX2+1:
-        print("Dimension error in LMAX21:")
-        print("LMAX21 = MN : ", LMAX21)
-        print("LMAX2 + 1   : ", LMAX2+1)
-        return 0
-    elif LMMAX2 != LMAX21*LMAX21:
-        print("Dimension error in LMMAX2: ")
-        print("LMMAX2 = MNN : ", LMMAX2)
-        print("LMAX21*LMAX21: ", LMAX21*LMAX21)
-        return 0
-    CL = np.sqrt(C[0]*C[0] + C[1]*C[1] + C[2]*C[2])
+    # TODO: @Paul – we should remove these checks from here
+    # if LMAX21 != LMAX2+1:
+    #     print("Dimension error in LMAX21:")
+    #     print("LMAX21 = MN : ", LMAX21)
+    #     print("LMAX2 + 1   : ", LMAX2+1)
+    #     return 0
+    # elif LMMAX2 != LMAX21*LMAX21:
+    #     print("Dimension error in LMMAX2: ")
+    #     print("LMMAX2 = MNN : ", LMMAX2)
+    #     print("LMAX21*LMAX21: ", LMAX21*LMAX21)
+    #     return 0
+    CL = jnp.sqrt(C[0]*C[0] + C[1]*C[1] + C[2]*C[2])
 
     #TODO: I disabled this for now, because I believe the conditional is going 
     #      to be slower than just computing the DELTAT matrix.
@@ -253,10 +254,9 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum
     """
 
     CAPPA = 2*E - 2j*VPI
-    Z = np.sqrt(CAPPA)*CL
+    Z = jnp.sqrt(CAPPA)*CL
     BJ = bessel(Z,LMAX21)
-    YLM = HARMONY(C, LMAX2, LMMAX2)
-    GTEMP = jnp.full((LMMAX, LMMAX), dtype=np.complex128, fill_value=np.nan)
+    YLM = HARMONY(C, LMAX, dense_l, dense_m)
     GTWOC = sum_quantum_numbers(LMAX, BJ, YLM, dense_quantum_numbers)
 
     broadcast_New_AF = map_l_array_to_compressed_quantum_index(NewAF, LMAX, dense_l)
