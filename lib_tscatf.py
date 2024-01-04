@@ -3,12 +3,10 @@ from jax import config
 config.update("jax_enable_x64", True)
 import jax
 import jax.numpy as jnp
-from jax import jit
+from jax import jit, vmap
 import fortranformat as ff
 from functools import partial
 
-# for timing
-import time
 
 from lib_math import *
 
@@ -135,6 +133,7 @@ def PSTEMP(PPP, N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
     return DEL
 
 
+@profile
 def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
       AK3M,NRATIO,TV,LPMAX,LPMMAX,NATOMS,CDISP,CUNDISP,PSQ,LMAX21,LMMAX2):
     """The function MATEL_DWG evaluates the change in amplitude delwv for each of the exit beams for each of the
@@ -151,6 +150,12 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
     surface. E.G. for P(2x2) NRATIO=4, for C(2x2) NRATIO=2."""
 #   Set teh change in amplitudes to zero for each exit beam.
     DELWV = np.full((NCSTEP, NT0), dtype=np.complex128, fill_value=0)
+
+    # Dense quantum number indexing
+    dense_quantum_numbers = get_valid_quantum_numbers(LMAX)
+    dense_m = dense_quantum_numbers[:,0,2]
+    dense_l = dense_quantum_numbers[:,0,0]
+
 #   Loop over model structure
     for NC in range(1, NCSTEP+1):
 #       Loop over the atoms of the reconstructed unit cell
@@ -164,24 +169,26 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
 #           a left handed set of axes
             C[2] = -C[2]
 #           Evaluate DELTAT matrix for current displacement.
-            DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LPMAX,LPMMAX,LMAX,LMMAX,LMAX21,LMMAX2)
+            DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LPMAX,LPMMAX,LMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l)
+            minus_1_pow_m = jnp.power(-1, dense_m)  # (-1)**M
             for NEXIT in range(1,NT0): #Loop over exit beams
 #               Evaluate matrix element
                 EMERGE = 2*(E-VV)-AK2M[NEXIT-1]**2-AK3M[NEXIT-1]**2
+                # TODO: should we get rid of this conditional?
+                # If the beam does not emerge, AMAT is going to be 0 anyway
                 if EMERGE >= 0:
-                    AMAT = 0
-                    for L in range(LMAX+1):
-                        for M in range(-L,L+1):
-                            AM = (-1)**M
-                            I = L + 1
-                            I = I * I - L + M
-                            IM = I - 2 * M
-                            for LP in range(LMAX+1):
-                                for MP in range(-LP,LP+1):
-                                    IP = LP + 1
-                                    IP = IP * IP - LP + MP
-                                    AMAT += AM*EXLM[IM-1][NEXIT-1]*DELTAT[I-1][IP-1]*ALM[IP-1]
-#                   Evaluate prefactor
+
+                    _EXLM = EXLM[:(LMAX+1)**2,NEXIT-1]                           # TODO: crop EXLM, ALM earlier
+                    _ALM = ALM[:(LMAX+1)**2]
+
+                    # EXLM is for outgoing beams, so we need to swap indices m -> -m
+                    # to do this in the dense representation, we do the following:
+                    _EXLM = _EXLM[(dense_l+1)**2 - dense_l - dense_m -1]
+
+                    # Equation (41) from Rous, Pendry 1989
+                    AMAT = jnp.einsum('k,k,km,m->', minus_1_pow_m, _EXLM, DELTAT, _ALM)
+
+#                   Evaluate prefactor                                          # TODO: @Paul: check with Tobis thesis and adjust variable names, and comments
                     D2 = AK2M[NEXIT-1]
                     D3 = AK3M[NEXIT-1]
                     D = D2*D2 + D3*D3
@@ -201,7 +208,8 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
                     DELWV[NC-1][NEXIT-1] += AMAT
     return DELWV
 
-def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,LMAX21,LMMAX2):
+@profile
+def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
     C(3): Displacement vector;
@@ -215,7 +223,7 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,LMAX21,LMMAX2):
     GTWOC(LMMAX,LMMAX): Propagator from origin to C.
     LMAX1=LMAX+1"""
     LMAX2 = 2*LMAX
-    DELTAT = np.full((LSMMAX, LSMMAX), dtype=np.complex128, fill_value=0)
+    DELTAT = jnp.full((LSMMAX, LSMMAX), dtype=np.complex128, fill_value=0)
     if LMAX21 != LMAX2+1:
         print("Dimension error in LMAX21:")
         print("LMAX21 = MN : ", LMAX21)
@@ -247,52 +255,64 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMAX,LSMMAX,LMAX21,LMMAX2):
     BJ = bessel(Z,LMAX21)
     YLM = HARMONY(C, LMAX2, LMMAX2)
     GTEMP = jnp.full((LMMAX, LMMAX), dtype=np.complex128, fill_value=np.nan)
-    start_t = time.time()
-    GTWOC = sum_quantum_numbers(LMAX, BJ, YLM)
-    print(f'sum_quantum_numbers took {time.time() - start_t} seconds')
+    GTWOC = sum_quantum_numbers(LMAX, BJ, YLM, dense_quantum_numbers)
 
-    for I in range(1,LMMAX+1):
-        I1 = 0
-        for L in range(LMAX+1):
-            for M in range(-L,L+1):
-                I1 += 1
-                GTEMP = GTEMP.at[I-1, I1-1].set(GTWOC[I-1][I1-1]*1.0j*NewAF[L])
-    for I in range(1,LSMMAX+1):
-        for L in range(1,LSMMAX+1):
-            for J in range(1,LSMMAX+1):
-                DELTAT = DELTAT.at[I-1, J-1].add(GTEMP[I-1][L-1]*GTWOC[L-1][J-1])
-    for L in range(LSMAX+1):
-        for M in range(-L,L+1):
-            I = L+1
-            I = I*I-L+M
-            DELTAT = DELTAT.at[I-1, I-1].add(-1.0j*AF[L])
+    broadcast_New_AF = map_l_array_to_compressed_quantum_index(NewAF, LMAX, dense_l)
+    GTEMP = GTWOC.T*1.0j*broadcast_New_AF
+
+    DELTAT = jax.numpy.einsum('il,lj->ij', GTEMP, GTWOC)
+
+    diagonal_indices = jnp.diag_indices_from(DELTAT)
+    mapped_AF = map_l_array_to_compressed_quantum_index(AF, LMAX, dense_l)
+    DELTAT = DELTAT.at[diagonal_indices].add(-1.0j*mapped_AF)
+
     return DELTAT
 
 
 # TODO: better name
 @partial(jit, static_argnames=('LMAX',))
-#@profile
-def sum_quantum_numbers(LMAX, BJ, YLM):
-    LMMAX = (LMAX+1)*(LMAX+1)
-    GTWOC = jnp.full((LMMAX, LMMAX), dtype=np.complex128, fill_value=0)
-    for L in range(LMAX+1):
-        for LP in range(LMAX+1):
-            PRE = pow(1.0j, L+LP)
-            for M in range(-L,L+1):
-                for MP in range(-LP,LP+1):
-                    csum = get_csum(BJ, YLM, L, LP, LMAX, PRE, M, MP)
-                    GTWOC = GTWOC.at[(L+1)*(L+1)-L+M-1, (LP+1)*(LP+1)-LP+MP-1].add(csum) #TODO: this is slow; can we speed it up?
-    return GTWOC
+def sum_quantum_numbers(LMAX, BJ, YLM, dense_quantum_numbers):
+    propagator_origin_to_c = jax.vmap(jax.vmap(
+        get_csum,
+        in_axes=(None, None, None, 0),
+    ), in_axes=(None, None, None, 0),
+    )(BJ, YLM, LMAX, dense_quantum_numbers)
+    return propagator_origin_to_c  # named GTWOC in fortran code
+
 
 @partial(jit, static_argnames=('LMAX',))
-def get_csum(BJ, YLM, L, LP, LMAX, PRE, M, MP):
+def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
+    L, LP, M, MP = l_lp_m_mp
     MPP = MP-M
     all_lpp = jnp.arange(0, LMAX*2+1)
     # we could skip some computations with non_zero_lpp = jnp.where((all_lpp >= abs(L-LP)) & (all_lpp <= L+LP))
     # but I'm not sure the conditional is worth it in terms of performance
     gaunt_coeffs = fetch_gaunt(jnp.array(LP), jnp.array(L), all_lpp,jnp.array(-MP), jnp.array(M), jnp.array(MPP))
     bessel_values = BJ[all_lpp]
-    ylm_values = YLM[all_lpp*all_lpp+all_lpp+1-MPP-1]
+    ylm_values = YLM[all_lpp*all_lpp+all_lpp+1-MPP-1]                           # TODO: refactor into 2D array
+    # Equation (34) from Rous, Pendry 1989
     csum = jnp.sum(bessel_values*ylm_values*gaunt_coeffs*1.0j**(-all_lpp))
-    csum = csum*4*np.pi*(-1)**M*PRE
+    csum = csum*4*np.pi*(-1)**M
     return csum
+
+
+# TODO: come up with a jittable version of this
+def get_valid_quantum_numbers(LMAX):
+    valid_quantum_numbers = np.empty(((LMAX+1)*(LMAX+1), (LMAX+1)*(LMAX+1), 4), dtype=int)
+    for L in range(LMAX+1):
+        for LP in range(LMAX+1):
+            for M in range(-L, L+1):
+                for MP in range(-LP, LP+1):
+                    valid_quantum_numbers[(L+1)*(L+1)-L+M-1][(LP+1)*(LP+1)-LP+MP-1] = [L, LP, M, MP]
+    return jnp.array(valid_quantum_numbers)
+
+
+def map_l_array_to_compressed_quantum_index(array, LMAX, broadcast_l_index):
+    """Takes an array of shape (LMAX+1) with values for each L and maps it to a
+    dense form of shape (LMAX+1)*(LMAX+1) with the values for each L replicated
+    (2L+1) times. I.e. an array
+    [val(l=0), val(l=1), val(l=2), ...] is mapped to
+    [val(l=0), val(l=1), val(l=1), val(l=1), val(l=2), ...].
+    """
+    mapped_array = jnp.array(array)[broadcast_l_index]
+    return mapped_array
