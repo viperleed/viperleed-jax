@@ -55,6 +55,7 @@ def bessel(z, n1):
     return bj
 
 
+# TODO: jit once fixed for neg values by Paul
 def HARMONY(C, LMAX, LMMAX):
     """Generates the spherical harmonics for the vector C
 
