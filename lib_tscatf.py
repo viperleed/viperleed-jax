@@ -316,5 +316,5 @@ def map_l_array_to_compressed_quantum_index(array, LMAX, broadcast_l_index):
     [val(l=0), val(l=1), val(l=2), ...] is mapped to
     [val(l=0), val(l=1), val(l=1), val(l=1), val(l=2), ...].
     """
-    mapped_array = jnp.array(array)[broadcast_l_index]
+    mapped_array = jnp.asarray(array)[broadcast_l_index]
     return mapped_array
