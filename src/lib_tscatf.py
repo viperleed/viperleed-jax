@@ -6,6 +6,7 @@ import jax.numpy as jnp
 from jax import jit, vmap
 import fortranformat as ff
 from functools import partial
+from line_profiler import profile
 
 
 from lib_math import *
@@ -20,6 +21,7 @@ MEMACH = 1.0E-6
 HARTREE = 27.211396
 BOHR = 0.529177
 
+@profile
 def tscatf(IEL,L1,phaseshifts,EB,V,PPP,NN1,NN2,NN3,DR0,DRPER,DRPAR,T0,T):
     """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
     These are also corrected for thermal vibrations (output in CAF). AF and CAF are meant to be stored in array TMAT for
@@ -224,8 +226,6 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum
     YLM(LMMAX): Spherical harmonics of vector C.
     GTWOC(LMMAX,LMMAX): Propagator from origin to C.
     LMAX1=LMAX+1"""
-    LMAX2 = 2*LMAX
-    DELTAT = jnp.full((LSMMAX, LSMMAX), dtype=np.complex128, fill_value=0)
     # TODO: @Paul – we should remove these checks from here
     # if LMAX21 != LMAX2+1:
     #     print("Dimension error in LMAX21:")
