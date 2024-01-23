@@ -22,14 +22,13 @@ HARTREE = 27.211396
 BOHR = 0.529177
 
 @profile
-def tscatf(IEL,L1,phaseshifts,EB,V,PPP,NN1,NN2,NN3,DR0,DRPER,DRPAR,T0,T):
+def tscatf(IEL,LMAX,phaseshifts,EB,V,PPP,NN1,NN2,NN3,DR0,DRPER,DRPAR,T0,T):
     """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
     These are also corrected for thermal vibrations (output in CAF). AF and CAF are meant to be stored in array TMAT for
     later use in RSMF, RTINV.
 
     IEL= chemical element to be treated now, identified by the input
     sequence order of the phase shifts (iel=1,2 or 3).
-    L1= lmax+1.
     ES= list of energies at which phase shifts are tabulated.
     PHSS= tabulated phase shifts.
     NPSI= no. of energies at which phase shifts are given.
@@ -54,11 +53,11 @@ def tscatf(IEL,L1,phaseshifts,EB,V,PPP,NN1,NN2,NN3,DR0,DRPER,DRPAR,T0,T):
     for i in range(len(phaseshifts)-1):
         if (E - phaseshifts[i][0]) * (E - phaseshifts[i+1][0]) <= 0:
             break
-    PHS = np.full((L1,), dtype=np.float64, fill_value=np.nan)
-    AF = np.full((L1,), dtype=np.complex128, fill_value=np.nan)
-    CAF = np.full((L1,), dtype=np.complex128, fill_value=np.nan)
+    PHS = np.full((LMAX + 1,), dtype=np.float64, fill_value=np.nan)
+    AF = np.full((LMAX + 1,), dtype=np.complex128, fill_value=np.nan)
+    CAF = np.full((LMAX + 1,), dtype=np.complex128, fill_value=np.nan)
     FAC = (E - phaseshifts[i][0]) / (phaseshifts[i+1][0] - phaseshifts[i][0])
-    for l in range(L1):
+    for l in range(LMAX + 1):
         PHS[l] = phaseshifts[i][1][IEL-1][l] + FAC * (phaseshifts[i+1][1][IEL-1][l] - phaseshifts[i][1][IEL-1][l])
 #       Compute temperature-independent t-matrix elements
         AF[l] = np.sin(PHS[l])*np.exp(PHS[l]*1.0j)
@@ -67,7 +66,7 @@ def tscatf(IEL,L1,phaseshifts,EB,V,PPP,NN1,NN2,NN3,DR0,DRPER,DRPAR,T0,T):
 #   Compute temperature-dependent phase shifts (DEL)
     DEL = PSTEMP(PPP, NN1, NN2, NN3, DR0, DR, T0, T, E, PHS)
 #   Produce temperature-dependent t-matrix elements
-    for l in range(L1):
+    for l in range(LMAX + 1):
         CAF[l]=np.sin(DEL[l])*np.exp(DEL[l]*1.0j)
     return CAF
 
@@ -137,8 +136,8 @@ def PSTEMP(PPP, N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
 
 
 @profile
-def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
-      AK3M,NRATIO,TV,LPMAX,LPMMAX,NATOMS,CDISP,CUNDISP,PSQ,LMAX21,LMMAX2):
+def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
+      AK3M,NRATIO,TV,n_atoms,CDISP,PSQ):
     """The function MATEL_DWG evaluates the change in amplitude delwv for each of the exit beams for each of the
     displacements given the sph wave amplitudes corresponding to the incident wave ALM & for each of the time reversed
     exit beams EXLM.
@@ -152,7 +151,7 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
     NRATIO: Ration of area of surface unit cell of reconstructed surface to unit cell area of the unreconstructed
     surface. E.G. for P(2x2) NRATIO=4, for C(2x2) NRATIO=2."""
 #   Set teh change in amplitudes to zero for each exit beam.
-    DELWV = np.full((NCSTEP, NT0), dtype=np.complex128, fill_value=0)
+    DELWV = np.full((NCSTEP, n_beams), dtype=np.complex128, fill_value=0)
 
     # Dense quantum number indexing
     dense_quantum_numbers = get_valid_quantum_numbers(LMAX)
@@ -163,7 +162,7 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
 #   Loop over model structure
     for NC in range(1, NCSTEP+1):
 #       Loop over the atoms of the reconstructed unit cell
-        for NR in range(1, NATOMS+1):
+        for NR in range(1, n_atoms+1):
             CTEMP = 0
             C = np.full((3,), dtype=np.float64, fill_value=np.nan)
             for j in range(3):
@@ -173,9 +172,9 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
 #           a left handed set of axes
             C[2] = -C[2]
 #           Evaluate DELTAT matrix for current displacement.
-            DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LPMAX,LPMMAX,LMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l, dense_m)
+            DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX, dense_quantum_numbers, dense_l, dense_m)
 
-            for NEXIT in range(1,NT0): #Loop over exit beams
+            for NEXIT in range(1,n_beams): #Loop over exit beams
 #               Evaluate matrix element
                 EMERGE = 2*(E-VV)-AK2M[NEXIT-1]**2-AK3M[NEXIT-1]**2
                 # TODO: should we get rid of this conditional?
@@ -204,16 +203,13 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
 #                   inner potential
                     XA = 2*E-D-2j*VPI+0.0000001j
                     XA = np.sqrt(XA)
-                    DELTK = PSQ[0][NEXIT-1]*CUNDISP[NR-1][1]+PSQ[1][NEXIT-1]*CUNDISP[NR-1][2]
-                    DELTK = DELTK/BOHR
-                    PK = np.exp(DELTK*1.0j)
-                    AMAT *= PK/(2*CAK*TV*XA*NRATIO)
+                    AMAT *= 1/(2*CAK*TV*XA*NRATIO)
                     DELWV[NC-1][NEXIT-1] += AMAT
     return DELWV
 
 #@profile
-@partial(jit, static_argnames=('LMAX', 'LMMAX', 'LSMMAX', 'LMAX21', 'LMMAX2'))
-def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l, dense_m):  #TODO: @Paul: let's remove all the unnecessary LM... variables
+#@partial(jit, static_argnames=('LMAX', 'LMMAX', 'LSMMAX', 'LMAX21', 'LMMAX2'))
+def TMATRIX_DWG(AF, NewAF, C, E, VPI, LMAX, dense_quantum_numbers, dense_l, dense_m):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
     C(3): Displacement vector;
@@ -224,19 +220,7 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum
     AF(LMAX1): exp(i*PHS(L))*sin(PHS(L)). Note that atomic t matrix is i*AF.
     BJ(LMAX1): Bessel functions for each L.
     YLM(LMMAX): Spherical harmonics of vector C.
-    GTWOC(LMMAX,LMMAX): Propagator from origin to C.
-    LMAX1=LMAX+1"""
-    # TODO: @Paul – we should remove these checks from here
-    # if LMAX21 != LMAX2+1:
-    #     print("Dimension error in LMAX21:")
-    #     print("LMAX21 = MN : ", LMAX21)
-    #     print("LMAX2 + 1   : ", LMAX2+1)
-    #     return 0
-    # elif LMMAX2 != LMAX21*LMAX21:
-    #     print("Dimension error in LMMAX2: ")
-    #     print("LMMAX2 = MNN : ", LMMAX2)
-    #     print("LMAX21*LMAX21: ", LMAX21*LMAX21)
-    #     return 0
+    GTWOC(LMMAX,LMMAX): Propagator from origin to C."""
     CL = jnp.sqrt(C[0]*C[0] + C[1]*C[1] + C[2]*C[2])
 
     #TODO: I disabled this for now, because I believe the conditional is going 
@@ -255,7 +239,7 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum
 
     CAPPA = 2*E - 2j*VPI
     Z = jnp.sqrt(CAPPA)*CL
-    BJ = bessel(Z,LMAX21)
+    BJ = bessel(Z,2*LMAX + 1)
     YLM = HARMONY(C, LMAX, dense_l, dense_m)
     GTWOC = sum_quantum_numbers(LMAX, BJ, YLM, dense_quantum_numbers)
 
