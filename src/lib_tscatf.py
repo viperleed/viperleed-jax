@@ -155,6 +155,10 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
     DELWV = np.full((NCSTEP, NT0), dtype=np.complex128, fill_value=0)
 
     # Dense quantum number indexing
+    dense_quantum_numbers_2lmax = get_valid_quantum_numbers(2*LMAX)
+    dense_m_2lmax = dense_quantum_numbers_2lmax[:,0,2]
+    dense_l_2lmax = dense_quantum_numbers_2lmax[:,0,0]
+
     dense_quantum_numbers = get_valid_quantum_numbers(LMAX)
     dense_m = dense_quantum_numbers[:,0,2]
     dense_l = dense_quantum_numbers[:,0,0]
@@ -173,7 +177,7 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
 #           a left handed set of axes
             C[2] = -C[2]
 #           Evaluate DELTAT matrix for current displacement.
-            DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LPMAX,LPMMAX,LMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l, dense_m)
+            DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LPMAX,LPMMAX,LMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l, dense_m, dense_l_2lmax, dense_m_2lmax)
 
             for NEXIT in range(1,NT0): #Loop over exit beams
 #               Evaluate matrix element
@@ -213,7 +217,7 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,LMMAX,NT0,EXLM,ALM,AK2M,
 
 #@profile
 @partial(jit, static_argnames=('LMAX', 'LMMAX', 'LSMMAX', 'LMAX21', 'LMMAX2'))
-def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l, dense_m):  #TODO: @Paul: let's remove all the unnecessary LM... variables
+def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum_numbers, dense_l, dense_m, dense_l_l2max, dense_m_l2max):  #TODO: @Paul: let's remove all the unnecessary LM... variables
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
     C(3): Displacement vector;
@@ -255,8 +259,8 @@ def TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX,LMMAX,LSMMAX,LMAX21,LMMAX2, dense_quantum
 
     CAPPA = 2*E - 2j*VPI
     Z = jnp.sqrt(CAPPA)*CL
-    BJ = bessel(Z,LMAX21)
-    YLM = HARMONY(C, LMAX, dense_l, dense_m)
+    BJ = jnp.nan_to_num(bessel(Z,2*LMAX+1))
+    YLM = HARMONY(C, LMAX, dense_l_l2max, dense_m_l2max)
     GTWOC = sum_quantum_numbers(LMAX, BJ, YLM, dense_quantum_numbers)
 
     broadcast_New_AF = map_l_array_to_compressed_quantum_index(NewAF, LMAX, dense_l)
@@ -289,9 +293,9 @@ def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
     all_lpp = jnp.arange(0, LMAX*2+1)
     # we could skip some computations with non_zero_lpp = jnp.where((all_lpp >= abs(L-LP)) & (all_lpp <= L+LP))
     # but I'm not sure the conditional is worth it in terms of performance
-    gaunt_coeffs = fetch_gaunt(jnp.array(LP), jnp.array(L), all_lpp,jnp.array(-MP), jnp.array(M), jnp.array(MPP))
+    gaunt_coeffs = fetch_gaunt(jnp.asarray(LP), jnp.asarray(L), all_lpp,jnp.asarray(-MP), jnp.asarray(M), jnp.asarray(MPP))
     bessel_values = BJ[all_lpp]
-    ylm_values = YLM[all_lpp*all_lpp+all_lpp+1-MPP-1]                           # TODO: refactor into 2D array
+    ylm_values = YLM[all_lpp*all_lpp+all_lpp+1-MPP-1]
     # Equation (34) from Rous, Pendry 1989
     csum = jnp.sum(bessel_values*ylm_values*gaunt_coeffs*1.0j**(-all_lpp))
     csum = csum*4*np.pi*(-1)**M
