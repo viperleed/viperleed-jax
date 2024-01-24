@@ -213,7 +213,7 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
     return DELWV
 
 #@profile
-#@partial(jit, static_argnames=('LMAX', 'LMMAX', 'LSMMAX', 'LMAX21', 'LMMAX2'))
+#@partial(jit, static_argnames=('LMAX',))
 def TMATRIX_DWG(AF, NewAF, C, E, VPI, LMAX, dense_quantum_numbers, dense_l, dense_m, dense_l_2lmax, dense_m_2lmax):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
