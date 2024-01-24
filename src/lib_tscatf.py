@@ -16,6 +16,7 @@ from gaunt_coefficients import fetch_stored as fetch_gaunt
 # vmap fetch_gaunt to make it work with arrays
 fetch_gaunt = jax.vmap(fetch_gaunt, in_axes=(None, None, 0, None, None, None))
 
+from gaunt_coefficients import _REDUCED_GAUNT_COEFFICIENTS
 
 MEMACH = 1.0E-6
 HARTREE = 27.211396
@@ -289,16 +290,17 @@ def sum_quantum_numbers(LMAX, BJ, YLM, dense_quantum_numbers):
 @partial(jit, static_argnames=('LMAX',))
 def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
     L, LP, M, MP = l_lp_m_mp
-    MPP = MP-M
+    MPP = MP-M  # I don't fully understand this, technically it should be MPP = -M - MP
     all_lpp = jnp.arange(0, LMAX*2+1)
     # we could skip some computations with non_zero_lpp = jnp.where((all_lpp >= abs(L-LP)) & (all_lpp <= L+LP))
     # but I'm not sure the conditional is worth it in terms of performance
-    gaunt_coeffs = fetch_gaunt(jnp.asarray(LP), jnp.asarray(L), all_lpp,jnp.asarray(-MP), jnp.asarray(M), jnp.asarray(MPP))
+    gaunt_coeffs = _REDUCED_GAUNT_COEFFICIENTS[L, LP, all_lpp, M, -MP]
+    gaunt_coeffs = gaunt_coeffs*(-1)**(LP+MP)  #TODO: @Paul: I found we need this factor, but I still don't understand why
     bessel_values = BJ[all_lpp]
     ylm_values = YLM[all_lpp*all_lpp+all_lpp+1-MPP-1]
     # Equation (34) from Rous, Pendry 1989
-    csum = jnp.sum(bessel_values*ylm_values*gaunt_coeffs*1.0j**(-all_lpp))
-    csum = csum*4*np.pi*(-1)**M
+    csum = jnp.sum(bessel_values*ylm_values*gaunt_coeffs*1.0j**(L-LP-all_lpp))
+    csum = csum*4*np.pi
     return csum
 
 
