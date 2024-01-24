@@ -19,15 +19,9 @@ BOHR = 0.529177
 
 #From "PARAM"
 LMAX = 14  # maximum angular momentum to be used in calculation
-NT0 = 9  # no. of TLEED output beams
-NATOMS = 1  # currently 1 is the only possible choice
-NCSTEP = 201  # number of geometric variations ('displacements') to be considered
-
-#TODO: @Paul: let's double check if we actually need these anymore
-LMMAX = (LMAX + 1)*(LMAX + 1)
-L1 = LMAX + 1
-LMAX21 = 2*LMAX + 1
-LMMAX2 = LMAX21*LMAX21
+n_beams = 9  # no. of TLEED output beams
+n_atoms = 1  # currently 1 is the only possible choice
+NCSTEP = 1  # number of geometric variations ('displacements') to be considered
 
 # From Stdin
 # DR0,DRPER,DRPAR: thermal vibration amplitude steps to be included in
@@ -36,16 +30,12 @@ DR0 = 0
 DRPER = 0.1908624
 DRPAR = DRPER
 
-# TODO: @Paul: I'm pretty sure CUNDISP is unsused (and not supported by TensErLEED). IF so, we can just remove it everywhere.
-CUNDISP = np.full((NATOMS, 3),dtype=np.float64,fill_value=0.0)  # position of current atomic site in reference calculation
-CUNDISP[0][0] = 0
-CUNDISP[0][1] = 0
-CUNDISP[0][2] = 0
-CDISP = np.full((NCSTEP, NATOMS, 3),dtype=np.float64,fill_value=np.nan)  # displaced positions of current atomic site for variation
+CDISP = np.full((NCSTEP, n_atoms, 3),dtype=np.float64,fill_value=np.nan)  # displaced positions of current atomic site for variation
 for i in range(NCSTEP):
-    CDISP[i][0][0] = -0.0005*i + 0.05
+    CDISP[i][0][0] = -0.01*i + 0.05
     CDISP[i][0][1] = 0
     CDISP[i][0][2] = 0
+print(CDISP)
 ARB1 = [1.2722, -2.2036]  # einheits vektoren
 ARB2 = [1.2722, 2.2036]
 for i in range(2):
@@ -91,7 +81,7 @@ def main():
 
     my_dict = read_tensor('T_1', n_beams=9, n_energies= n_energies, l_max=LMAX+1)
 
-    all_delwv = np.full((1, NCSTEP, NT0), dtype=np.complex128, fill_value=np.nan)
+    all_delwv = np.full((1, NCSTEP, n_beams), dtype=np.complex128, fill_value=np.nan)
     for i in range(1):
         E = my_dict['e_kin'][i]  # computational energy inside crystal
         CAF = my_dict['t_matrix'][i]  # atomic t-matrix of current site as used in reference calculation
@@ -111,13 +101,13 @@ def main():
 
         # NewCAF: working array in which current (displaced) atomic t-matrix is stored
         if (IEL != 0):
-            NewCAF = tscatf(IEL, L1, phaseshifts, E, VSITE, PPP, NN1, NN2, NN3, DR0, DRPER, DRPAR, T0, T)
+            NewCAF = tscatf(IEL, LMAX, phaseshifts, E, VSITE, PPP, NN1, NN2, NN3, DR0, DRPER, DRPAR, T0, T)
         else:
             NewCAF = np.full((LMAX+1,), dtype=np.complex128, fill_value=0.0)
 
         # DELWV : working space for computation and storage of amplitude differences
-        DELWV = MATEL_DWG(NCSTEP, CAF, NewCAF, E, VV, VPIS, LMAX, LMMAX, NT0, EXLM, ALM, AK2M, AK3M,
-                        NRATIO, TV, LMAX, LMMAX, NATOMS, CDISP, CUNDISP, PSQ, LMAX21, LMMAX2)
+        DELWV = MATEL_DWG(NCSTEP, CAF, NewCAF, E, VV, VPIS, LMAX, n_beams, EXLM, ALM, AK2M, AK3M,
+                        NRATIO, TV, n_atoms, CDISP, PSQ)
 
         all_delwv[i, :, :] = DELWV
         print(DELWV)
