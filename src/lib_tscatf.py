@@ -23,7 +23,7 @@ HARTREE = 27.211396
 BOHR = 0.529177
 
 @profile
-def tscatf(IEL,LMAX,phaseshifts,EB,V,NN1,NN2,NN3,DR0,DRPER,DRPAR,T0,T):
+def tscatf(IEL,LMAX,phaseshifts,EB,V,DR0,DRPER,DRPAR,T0,T):
     """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
     These are also corrected for thermal vibrations (output in CAF). AF and CAF are meant to be stored in array TMAT for
     later use in RSMF, RTINV.
@@ -35,9 +35,7 @@ def tscatf(IEL,LMAX,phaseshifts,EB,V,NN1,NN2,NN3,DR0,DRPER,DRPAR,T0,T):
     NPSI= no. of energies at which phase shifts are given.
     EB-V= current energy (V can be used to describe local variations
     of the muffin-tin constant).
-    NN1= nn2+nn3-1.
-    NN2= no. of output temperature-corrected phase shifts desired.
-    NN3= no. of input phase shifts.
+
     DR0= fourth power of RMS zero-temperature vibration amplitude.
     DRPER= RMS vibration amplitude perpendicular to surface.
     DRPAR= RMS vibration amplitude parallel to surface.
@@ -64,19 +62,17 @@ def tscatf(IEL,LMAX,phaseshifts,EB,V,NN1,NN2,NN3,DR0,DRPER,DRPAR,T0,T):
 #   Average any anisotropy of RMS vibration amplitudes
     DR = np.sqrt((DRPER*DRPER+2*DRPAR*DRPAR)/3)
 #   Compute temperature-dependent phase shifts (DEL)
-    DEL = PSTEMP(NN1, NN2, NN3, DR0, DR, T0, T, E, PHS)
+    DEL = PSTEMP(DR0, DR, T0, T, E, PHS)
 #   Produce temperature-dependent t-matrix elements
     for l in range(LMAX + 1):
         CAF[l]=np.sin(DEL[l])*np.exp(DEL[l]*1.0j)
     return CAF
 
 
-def PSTEMP(N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
+def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
     """PSTEMP incorporates the thermal vibration effects in the phase shifts, through a Debye-Waller factor. Isotropic
     vibration amplitudes are assumed.
-    N3= No. of input phase shifts.
-    N2= Desired no. of output temperature-dependent phase shifts.
-    N1= N2+N3-1
+
     DR0= 4th power of RMS zero-temperature vibration amplitudes.
     DR= Isotropic RMS vibration amplitude at reference temperature T0.
     T0= Arbitrary reference temperature from DR
@@ -84,32 +80,31 @@ def PSTEMP(N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
     E= Current Energy (real number).
     PHS= Input phase shifts.
     DEL= Output (complex) phase shifts."""
-    DEL = np.full((N2,),dtype=np.complex128, fill_value = 0.)
-    CTAB = np.full((N3,), dtype=np.complex128, fill_value=np.nan)
+    DEL = np.full((LMAX+1,),dtype=np.complex128, fill_value = 0.)
+    CTAB = np.full((LMAX+1,), dtype=np.complex128, fill_value=np.nan)
     ALFA = DR*DR*TEMP/T0
     ALFA = 0.166667*np.sqrt(ALFA*ALFA+DR0)
     FALFE = -4.0*ALFA*E
     if abs(FALFE) < 0.001:
-        for i in range(N3):
+        for i in range(LMAX+1):
             DEL[i] = PHS[i]
         return DEL
     Z = FALFE*1.0j
-    BJ = bessel(Z, N1)
+    BJ = bessel(Z, 2*LMAX+1)
     FL = 1
     CS = 1
-    for i in range(N1):                                                         # TODO: contract loop to vectorized form
+    for i in range(2*LMAX+1):                                                         # TODO: contract loop to vectorized form
         BJ = BJ.at[i].set(np.exp(FALFE)*FL*CS*BJ[i])
         FL += 2
         CS *= 1.0j
 
-    CTAB = (np.exp(2.0j*PHS)-1)*(2*np.arange(N3) + 1)
+    CTAB = (np.exp(2.0j*PHS)-1)*(2*np.arange(LMAX+1) + 1)
 
-    SUM = np.full((N2,),dtype=np.complex128,fill_value=0)
+    SUM = np.full((LMAX+1,),dtype=np.complex128,fill_value=0)
     ITEST = 1
-    LLLMAX = N2
     FL = 1
-    for LLL in range(1,N2+1):
-        for L in range(1,N3+1):
+    for LLL in range(1,LMAX+1+1):
+        for L in range(1,LMAX+1+1):
             LLMIN = abs(L - LLL) + 1
             LLMAX = L + LLL - 1
             for LL in range(LLMIN,LLMAX+1):
