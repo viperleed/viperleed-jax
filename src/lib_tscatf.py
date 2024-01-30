@@ -11,12 +11,12 @@ from line_profiler import profile
 
 from lib_math import *
 
-from gaunt_coefficients import fetch_stored as fetch_gaunt
+from gaunt_coefficients import fetch_stored_gaunt_coeffs as fetch_gaunt
+from gaunt_coefficients import cppp
 
-# vmap fetch_gaunt to make it work with arrays
-fetch_gaunt = jax.vmap(fetch_gaunt, in_axes=(None, None, 0, None, None, None))
-
-from gaunt_coefficients import _REDUCED_GAUNT_COEFFICIENTS
+fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
+                            in_axes=(None, None, 0, None, None, None),
+                            out_axes=0)
 
 MEMACH = 1.0E-6
 HARTREE = 27.211396
@@ -278,7 +278,15 @@ def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
     all_lpp = jnp.arange(0, LMAX*2+1)
     # we could skip some computations with non_zero_lpp = jnp.where((all_lpp >= abs(L-LP)) & (all_lpp <= L+LP))
     # but I'm not sure the conditional is worth it in terms of performance
-    gaunt_coeffs = _REDUCED_GAUNT_COEFFICIENTS[L, LP, all_lpp, M, -MP]
+    # Convert scalar values to arrays
+    L_array = jnp.array(L)
+    LP_array = jnp.array(LP)
+    M_array = jnp.array(M)
+    MP_array = jnp.array(MP)
+    MPP_array = jnp.array(MPP)
+
+    # Use the array versions in the vmap call
+    gaunt_coeffs = fetch_lpp_gaunt(L_array, LP_array, all_lpp, M_array, -MP_array, -M_array+MP_array)
     gaunt_coeffs = gaunt_coeffs*(-1)**(LP+MP)  #TODO: @Paul: I found we need this factor, but I still don't understand why
     bessel_values = BJ[all_lpp]
     ylm_values = YLM[all_lpp*all_lpp+all_lpp+1-MPP-1]
