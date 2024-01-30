@@ -21,3 +21,37 @@ def fetch_stored_gaunt_coeffs(l1, l2, l3, m1, m2, m3):
         lambda l1, l2, l3, m1, m2: 0.0,
         l1, l2, l3, m1, m2,
     )
+
+# Clebsh-Gordon coefficients for computation of temperature-dependent phase shifts
+# used in tscatf; can be jitted
+# TODO: @ Paul: chose a better name for this function
+def cppp(l1: int, l2: int , l3: int) -> float:
+    """Calculates integral over three associated Legendre polynomials.
+
+    Parameters
+    ----------
+    l1, l2, l3 : int
+
+    Returns
+    -------
+    float
+        Value of the integral.
+
+    Notes
+    -----
+    This function returns the value of the integral of three associated
+    Legendre polynomials :math:`\int{P_{l1}^{0}P_{l1}^{0}P_{l1}^{0}}`.
+    It performs the function of TensErLEED's CPPP subroutine by Pendry.
+    Instead of calculating the integral from scratch, we calculate it from
+    the stored precomputed Gaunt coefficients using the following relation: 
+    (see also https://en.wikipedia.org/wiki/3-j_symbol and
+    https://docs.sympy.org/latest/modules/physics/wigner.html):
+
+    .. math::
+
+        \mathrm{Gaunt}(l_1, l_2, l_3, m_1, m_2, m_3) = \int{Y_{l_1, m_1} Y_{l_2, m_2} Y_{l_3, m_3}}
+        Y_{l, 0} = \sqrt{\frac{2l+1}{4\pi}} P_l^0
+    """
+    pre_factor = 1/jnp.sqrt((2*l1+1)*(2*l2+1)*(2*l3+1))
+    pre_factor *= jnp.sqrt(4*jnp.pi)
+    return pre_factor * _REDUCED_GAUNT_COEFFICIENTS[l1, l2, l3, 0, 0]

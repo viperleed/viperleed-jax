@@ -23,7 +23,7 @@ HARTREE = 27.211396
 BOHR = 0.529177
 
 @profile
-def tscatf(IEL,LMAX,phaseshifts,EB,V,PPP,NN1,NN2,NN3,DR0,DRPER,DRPAR,T0,T):
+def tscatf(IEL,LMAX,phaseshifts,EB,V,NN1,NN2,NN3,DR0,DRPER,DRPAR,T0,T):
     """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
     These are also corrected for thermal vibrations (output in CAF). AF and CAF are meant to be stored in array TMAT for
     later use in RSMF, RTINV.
@@ -35,7 +35,6 @@ def tscatf(IEL,LMAX,phaseshifts,EB,V,PPP,NN1,NN2,NN3,DR0,DRPER,DRPAR,T0,T):
     NPSI= no. of energies at which phase shifts are given.
     EB-V= current energy (V can be used to describe local variations
     of the muffin-tin constant).
-    PPP= Clebsch-Gordon coefficients from subroutine CPPP.
     NN1= nn2+nn3-1.
     NN2= no. of output temperature-corrected phase shifts desired.
     NN3= no. of input phase shifts.
@@ -65,17 +64,16 @@ def tscatf(IEL,LMAX,phaseshifts,EB,V,PPP,NN1,NN2,NN3,DR0,DRPER,DRPAR,T0,T):
 #   Average any anisotropy of RMS vibration amplitudes
     DR = np.sqrt((DRPER*DRPER+2*DRPAR*DRPAR)/3)
 #   Compute temperature-dependent phase shifts (DEL)
-    DEL = PSTEMP(PPP, NN1, NN2, NN3, DR0, DR, T0, T, E, PHS)
+    DEL = PSTEMP(NN1, NN2, NN3, DR0, DR, T0, T, E, PHS)
 #   Produce temperature-dependent t-matrix elements
     for l in range(LMAX + 1):
         CAF[l]=np.sin(DEL[l])*np.exp(DEL[l]*1.0j)
     return CAF
 
 
-def PSTEMP(PPP, N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
+def PSTEMP(N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
     """PSTEMP incorporates the thermal vibration effects in the phase shifts, through a Debye-Waller factor. Isotropic
     vibration amplitudes are assumed.
-    PPP= Clebsch-Gordon coefficients from function CPPP.
     N3= No. of input phase shifts.
     N2= Desired no. of output temperature-dependent phase shifts.
     N1= N2+N3-1
@@ -118,7 +116,7 @@ def PSTEMP(PPP, N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
             LLMIN = abs(L - LLL) + 1
             LLMAX = L + LLL - 1
             for LL in range(LLMIN,LLMAX+1):
-                SUM[LLL-1] += PPP[LL-1][LLL-1][L-1]*CTAB[L-1]*BJ[LL-1]
+                SUM[LLL-1] += cppp(LL-1, LLL-1, L-1)*CTAB[L-1]*BJ[LL-1]
 #       now, sum is already the temperature-dependent t-matrix we were looking for. It is next converted to a
 #       temp-dependent phase shift, only to be converted back right after the PSTEMP call in tscatf. Kept for the sake
 #       of compatibility with van Hove / Tong book only.
