@@ -101,11 +101,8 @@ def PSTEMP(N1, N2, N3, DR0, DR, T0, TEMP, E, PHS):
         BJ = BJ.at[i].set(np.exp(FALFE)*FL*CS*BJ[i])
         FL += 2
         CS *= 1.0j
-    FL = 1
 
-    for i in range(N3):
-        CTAB[i] = (np.exp(2.0j*PHS[i])-1)*FL
-        FL += 2
+    CTAB = (np.exp(2.0j*PHS)-1)*(2*np.arange(N3) + 1)
 
     SUM = np.full((N2,),dtype=np.complex128,fill_value=0)
     ITEST = 1
