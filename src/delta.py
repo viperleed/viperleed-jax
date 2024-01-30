@@ -58,7 +58,6 @@ def main():
     NN3 = LMAX+1
     NN2 = LMAX+1
     NN1 = NN2+NN3-1
-    PPP = cppp(NN1, NN2, NN3)  # Clebsh-Gordon coefficients for computation of temperature-dependent phase shifts
 
     T0 = 100  # must equal T if input vib. amplitudes are to be used properly - not 0. !!
     T = 100  # must equal T0 if input vib. amplitudes are to be used properly - not 0. !!
@@ -101,7 +100,7 @@ def main():
 
         # NewCAF: working array in which current (displaced) atomic t-matrix is stored
         if (IEL != 0):
-            NewCAF = tscatf(IEL, LMAX, phaseshifts, E, VSITE, PPP, NN1, NN2, NN3, DR0, DRPER, DRPAR, T0, T)
+            NewCAF = tscatf(IEL, LMAX, phaseshifts, E, VSITE, NN1, NN2, NN3, DR0, DRPER, DRPAR, T0, T)
         else:
             NewCAF = np.full((LMAX+1,), dtype=np.complex128, fill_value=0.0)
 
