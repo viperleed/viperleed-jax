@@ -12,7 +12,36 @@ _REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__).parent / "gaunt_coefficien
 def fetch_stored_gaunt_coeffs(l1, l2, l3, m1, m2, m3):
     """Returns stored Gaunt coefficients.
 
-    Enforces the selection rule m1 + m2 + m3 == 0."""
+    Enforces the selection rule m1 + m2 + m3 == 0.
+
+    Parameters
+    ----------
+    l1, l2, l3 : int
+        Angular momentum quantum numbers.
+    m1, m2, m3 : int
+        Magnetic quantum numbers.
+
+    Returns
+    -------
+    float
+        Value of the Gaunt coefficient.
+
+    Notes
+    _____
+    The Gaunt coefficients are directly related to the Clebsch-Gordan
+    coefficients and the Wigner 3-j symbols. The Gaunt coefficients are
+    defined as
+
+    .. math::
+
+        \mathrm{Gaunt}(l_1, l_2, l_3, m_1, m_2, m_3) = \int{Y_{l_1, m_1} Y_{l_2, m_2} Y_{l_3, m_3}}
+        = \sqrt{\frac{2l_1+1}{4\pi}} \sqrt{\frac{2l_2+1}{4\pi}} \sqrt{\frac{2l_3+1}{4\pi}} \mathrm{Wigner-3j}(l_1, l_2, l_3, m_1, m_2, m_3) \mathrm{Wigner-3j}(l_1, l_2, l_3, 0, 0, 0)
+    
+    where :math:`Y_{l, m}` are the spherical harmonics.
+
+    They satisfy the selection rule :math:`m_1 + m_2 + m_3 = 0` and
+    :math:`|l_1-l_2| \le l_3 \le l_1+l_2`.
+    """
     selection_rule_m = m1 + m2 + m3 == 0
     return jax.lax.cond(
         selection_rule_m,
