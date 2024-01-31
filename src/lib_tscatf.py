@@ -52,22 +52,15 @@ def tscatf(IEL,LMAX,phaseshifts,EB,V,DR0,DRPER,DRPAR,T0,T):
     # Phaseshift interpolation – TODO: move into separate function and pre-compute
 #   Find set of phase shifts appropriate to desired chemical element and interpolate linearly to current energy
 #   (or extrapolate to energies above the range given for the phase shifts)
-
-    for i in range(len(phaseshifts)-1):
-        if (E - phaseshifts[i][0]) * (E - phaseshifts[i+1][0]) <= 0:
-            break
-    PHS = np.full((LMAX + 1,), dtype=np.float64, fill_value=np.nan)
     AF = np.full((LMAX + 1,), dtype=np.complex128, fill_value=np.nan)
     CAF = np.full((LMAX + 1,), dtype=np.complex128, fill_value=np.nan)
-    FAC = (E - phaseshifts[i][0]) / (phaseshifts[i+1][0] - phaseshifts[i][0])
     for l in range(LMAX + 1):
-        PHS[l] = phaseshifts[i][1][IEL-1][l] + FAC * (phaseshifts[i+1][1][IEL-1][l] - phaseshifts[i][1][IEL-1][l])
 #       Compute temperature-independent t-matrix elements
         AF[l] = np.sin(PHS[l])*np.exp(PHS[l]*1.0j)
 #   Average any anisotropy of RMS vibration amplitudes
     DR = np.sqrt((DRPER*DRPER+2*DRPAR*DRPAR)/3)
 #   Compute temperature-dependent t-matrix elements
-    t_matrix = PSTEMP(DR0, DR, T0, T, E, PHS)
+    t_matrix = PSTEMP(DR0, DR, T0, T, E, phaseshifts)
     return t_matrix
 
 #@jit

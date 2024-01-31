@@ -83,6 +83,10 @@ def main():
     #TODO: raise Error if requested energies are out of range respective to
     # phaseshift energies (can't interpolate if out of range)
 
+    n_energies = 2
+    energies = np.array([my_dict['e_kin'][i] for i in range(n_energies)])
+    interpolated_phaseshifts = interpolate_phaseshifts(phaseshifts, LMAX, energies)
+    
         E = my_dict['e_kin'][i]  # computational energy inside crystal
         CAF = my_dict['t_matrix'][i]  # atomic t-matrix of current site as used in reference calculation
         VV = my_dict['v0r'][i]  # real part of the inner potential
@@ -101,18 +105,49 @@ def main():
 
         # NewCAF: working array in which current (displaced) atomic t-matrix is stored
         if (IEL != 0):
-            NewCAF = tscatf(IEL, LMAX, phaseshifts, E, VSITE, DR0, DRPER, DRPAR, T0, T)
+            # TODO: when treating multiple atoms, choose the correct site for phaseshifts (IEL)
+            NewCAF = tscatf(IEL, LMAX, interpolated_phaseshifts[i, IEL-1, :],
+                            E, VSITE, DR0, DRPER, DRPAR, T0, T)
         else:
             NewCAF = np.full((LMAX+1,), dtype=np.complex128, fill_value=0.0)
 
         # DELWV : working space for computation and storage of amplitude differences
-        DELWV = MATEL_DWG(NCSTEP, CAF, NewCAF, E, VV, VPIS, LMAX, n_beams, EXLM, ALM, AK2M, AK3M,
-                        NRATIO, TV, n_atoms, CDISP, PSQ)
+        DELWV = MATEL_DWG(NCSTEP, CAF, NewCAF, E, VV, VPIS,
+                          LMAX, n_beams, EXLM, ALM, AK2M, AK3M,
+                          NRATIO, TV, n_atoms, CDISP, PSQ)
 
         all_delwv[i, :, :] = DELWV
         print(DELWV)
     with open('test.npy','wb') as f:
         np.save(f, all_delwv[:, :, 0])
+
+# TODO: We should consider a spline interpolation instead of a linear
+def interpolate_phaseshifts(phaseshifts, l_max, energies):
+    """Interpolate phaseshifts for a given site and energy.
+    """
+    stored_phaseshift_energies = [phaseshifts[i][0] for i in range(l_max + 1)]
+    stored_phaseshift_energies = np.array(stored_phaseshift_energies)
+
+    stored_phaseshifts = [phaseshifts[i][1] for i in range(l_max + 1)]
+    # covert to numpy array, indexed as [energy][site][l]
+    stored_phaseshifts = np.array([phaseshifts[i][1] for i in range(l_max + 1)])
+
+    if (min(energies) < min(stored_phaseshift_energies)
+        or max(energies) > max(stored_phaseshift_energies)):
+        raise ValueError("Requested energies are out of range the range for the"
+                         "loaded phaseshifts.")
+
+    n_sites = stored_phaseshifts.shape[1]
+    # interpolate over energies for each l and site
+    interpolated = np.empty(shape=(len(energies), n_sites, l_max + 1),
+                            dtype=np.float64)
+
+    for l in range(l_max + 1):
+        for site in range(n_sites):
+            interpolated[:, site, l] = np.interp(energies,
+                                                stored_phaseshift_energies,
+                                                stored_phaseshifts[:, site, l])
+    return interpolated
 
 
 if __name__ == '__main__':
