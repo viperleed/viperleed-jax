@@ -9,7 +9,8 @@ _REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__).parent / "gaunt_coefficien
                                        allow_pickle=False)
 
 @jit
-def fetch_stored_gaunt_coeffs(l1, l2, l3, m1, m2, m3):
+def fetch_stored_gaunt_coeffs(l1: int, l2: int, l3: int,
+                              m1: int, m2: int, m3: int) -> float:
     """Returns stored Gaunt coefficients.
 
     Enforces the selection rule m1 + m2 + m3 == 0.
