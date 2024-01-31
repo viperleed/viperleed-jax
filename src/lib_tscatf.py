@@ -129,11 +129,11 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
     DELWV = np.full((NCSTEP, n_beams), dtype=np.complex128, fill_value=0)
 
     # Dense quantum number indexing
-    dense_quantum_numbers_2lmax = get_valid_quantum_numbers(2*LMAX)
+    dense_quantum_numbers_2lmax = DENSE_QUANTUM_NUMBERS_2LMAX
     dense_m_2lmax = dense_quantum_numbers_2lmax[:,0,2]
     dense_l_2lmax = dense_quantum_numbers_2lmax[:,0,0]
 
-    dense_quantum_numbers = get_valid_quantum_numbers(LMAX)
+    dense_quantum_numbers = DENSE_QUANTUM_NUMBERS
     dense_m = dense_quantum_numbers[:,0,2]
     dense_l = dense_quantum_numbers[:,0,0]
     minus_1_pow_m = jnp.power(-1, dense_m)  # (-1)**M
@@ -290,3 +290,7 @@ def map_l_array_to_compressed_quantum_index(array, LMAX, broadcast_l_index):
     """
     mapped_array = jnp.asarray(array)[broadcast_l_index]
     return mapped_array
+
+LMAX = 14
+DENSE_QUANTUM_NUMBERS = get_valid_quantum_numbers(LMAX)
+DENSE_QUANTUM_NUMBERS_2LMAX = get_valid_quantum_numbers(2*LMAX)
