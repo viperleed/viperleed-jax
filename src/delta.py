@@ -127,12 +127,12 @@ def main():
 def interpolate_phaseshifts(phaseshifts, l_max, energies):
     """Interpolate phaseshifts for a given site and energy.
     """
-    stored_phaseshift_energies = [phaseshifts[i][0] for i in range(l_max + 1)]
+    stored_phaseshift_energies = [entry[0] for entry in phaseshifts]
     stored_phaseshift_energies = np.array(stored_phaseshift_energies)
 
-    stored_phaseshifts = [phaseshifts[i][1] for i in range(l_max + 1)]
+    stored_phaseshifts = [entry[1] for entry in phaseshifts]
     # covert to numpy array, indexed as [energy][site][l]
-    stored_phaseshifts = np.array([phaseshifts[i][1] for i in range(l_max + 1)])
+    stored_phaseshifts = np.array(stored_phaseshifts)
 
     if (min(energies) < min(stored_phaseshift_energies)
         or max(energies) > max(stored_phaseshift_energies)):
