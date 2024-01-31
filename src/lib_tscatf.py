@@ -135,32 +135,30 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
 
             for NEXIT in range(1,n_beams): #Loop over exit beams
 #               Evaluate matrix element
-                EMERGE = 2*(E-VV)-AK2M[NEXIT-1]**2-AK3M[NEXIT-1]**2
-                # TODO: should we get rid of this conditional?
-                # If the beam does not emerge, AMAT is going to be 0 anyway
-                if EMERGE >= 0:
-                    _EXLM = EXLM[:(LMAX+1)**2,NEXIT-1]                           # TODO: crop EXLM, ALM earlier
-                    _ALM = ALM[:(LMAX+1)**2]
 
-                    # EXLM is for outgoing beams, so we need to swap indices m -> -m
-                    # to do this in the dense representation, we do the following:
-                    _EXLM = _EXLM[(dense_l+1)**2 - dense_l - dense_m -1]
+                _EXLM = EXLM[:(LMAX+1)**2,NEXIT-1]                           # TODO: crop EXLM, ALM earlier
+                _ALM = ALM[:(LMAX+1)**2]
 
-                    # Equation (41) from Rous, Pendry 1989
-                    AMAT = jnp.einsum('k,k,km,m->', minus_1_pow_m, _EXLM, DELTAT, _ALM)
+                # EXLM is for outgoing beams, so we need to swap indices m -> -m
+                # to do this in the dense representation, we do the following:
+                _EXLM = _EXLM[(dense_l+1)**2 - dense_l - dense_m -1]
+
+                # Equation (41) from Rous, Pendry 1989
+                AMAT = jnp.einsum('k,k,km,m->', minus_1_pow_m, _EXLM, DELTAT, _ALM)
 
 #                   Evaluate prefactor                                          # TODO: @Paul: check with Tobis thesis and adjust variable names, and comments
-                    D2 = AK2M[NEXIT-1]
-                    D3 = AK3M[NEXIT-1]
-                    D = D2*D2 + D3*D3
-                    CAK = 2*E-2j*VPI+0.0000001j
-                    CAK = np.sqrt(CAK)
+                D2 = AK2M[NEXIT-1]
+                D3 = AK3M[NEXIT-1]
+                D = D2*D2 + D3*D3
+                CAK = 2*E-2j*VPI+0.0000001j
+                CAK = np.sqrt(CAK)
+
 #                   XA is evaluated relative to the muffin tin zero i.e. it uses energy= incident electron energy +
 #                   inner potential
-                    XA = 2*E-D-2j*VPI+0.0000001j
-                    XA = np.sqrt(XA)
-                    AMAT *= 1/(2*CAK*TV*XA*NRATIO)
-                    DELWV[NC-1][NEXIT-1] += AMAT
+                XA = 2*E-D-2j*VPI+0.0000001j
+                XA = np.sqrt(XA)
+                AMAT *= 1/(2*CAK*TV*XA*NRATIO)
+                DELWV[NC-1][NEXIT-1] += AMAT
     return DELWV
 
 #@profile
