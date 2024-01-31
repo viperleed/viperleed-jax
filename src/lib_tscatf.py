@@ -155,9 +155,6 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
                     D = D2*D2 + D3*D3
                     CAK = 2*E-2j*VPI+0.0000001j
                     CAK = np.sqrt(CAK)
-                    if D >= 2*E:
-                        print('Something went wrong in MATEL_DWG') # @Paul: can we remove this?
-                        return 0
 #                   XA is evaluated relative to the muffin tin zero i.e. it uses energy= incident electron energy +
 #                   inner potential
                     XA = 2*E-D-2j*VPI+0.0000001j
