@@ -144,7 +144,7 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
             C = CDISP[NC-1, NR-1, :]/BOHR
 #           The vector C must be expressed W.R.T. a right handed set of axes. CDISP() & CUNDISP() are input W.R.T.
 #           a left handed set of axes
-            C[2] = -C[2]
+            C = C * (1, 1, -1)
 #           Evaluate DELTAT matrix for current displacement.
             DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX, dense_quantum_numbers, dense_l, dense_m, dense_l_2lmax, dense_m_2lmax)
 
