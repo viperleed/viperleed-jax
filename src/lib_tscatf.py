@@ -48,8 +48,8 @@ def tscatf(IEL,LMAX,phaseshifts,EB,V,DR0,DRPER,DRPAR,T0,T):
     T= current temperature.
     TSF0, TSF, AF, CAF  see above."""
     E = EB - V
-    if E < phaseshifts[0][0]:
-        print('TOO LOW ENERGY FOR AVAILABLE PHASE SHIFTS')
+
+    # Phaseshift interpolation – TODO: move into separate function and pre-compute
 #   Find set of phase shifts appropriate to desired chemical element and interpolate linearly to current energy
 #   (or extrapolate to energies above the range given for the phase shifts)
 
