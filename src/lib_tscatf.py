@@ -90,13 +90,12 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
             DEL[i] = PHS[i]
         return DEL
     Z = FALFE*1.0j
+
+    # TODO: @Paul choose better variable names
     BJ = bessel(Z, 2*LMAX+1)
-    FL = 1
-    CS = 1
-    for i in range(2*LMAX+1):                                                         # TODO: contract loop to vectorized form
-        BJ = BJ.at[i].set(np.exp(FALFE)*FL*CS*BJ[i])
-        FL += 2
-        CS *= 1.0j
+    FL = (2*np.arange(2*LMAX+1) + 1)
+    CS = 1.0j ** np.arange(2*LMAX+1)
+    BJ = np.exp(FALFE) * FL * CS * BJ
 
     CTAB = (np.exp(2.0j*PHS)-1)*(2*np.arange(LMAX+1) + 1)
 
