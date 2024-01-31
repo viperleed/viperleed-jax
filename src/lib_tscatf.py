@@ -256,7 +256,6 @@ def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
     LP_array = jnp.array(LP)
     M_array = jnp.array(M)
     MP_array = jnp.array(MP)
-    MPP_array = jnp.array(MPP)
 
     # Use the array versions in the vmap call
     gaunt_coeffs = fetch_lpp_gaunt(L_array, LP_array, all_lpp, M_array, -MP_array, -M_array+MP_array)
