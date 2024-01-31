@@ -141,11 +141,7 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
     for NC in range(1, NCSTEP+1):
 #       Loop over the atoms of the reconstructed unit cell
         for NR in range(1, n_atoms+1):
-            CTEMP = 0
-            C = np.full((3,), dtype=np.float64, fill_value=np.nan)
-            for j in range(3):
-                CTEMP += abs(CDISP[NC-1][NR-1][j])
-                C[j] = CDISP[NC-1][NR-1][j]/BOHR
+            C = CDISP[NC-1, NR-1, :]/BOHR
 #           The vector C must be expressed W.R.T. a right handed set of axes. CDISP() & CUNDISP() are input W.R.T.
 #           a left handed set of axes
             C[2] = -C[2]
