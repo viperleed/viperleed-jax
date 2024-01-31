@@ -78,15 +78,17 @@ def main():
 
     my_dict = read_tensor('T_1', n_beams=9, n_energies= n_energies, l_max=LMAX+1)
 
-    all_delwv = np.full((1, NCSTEP, n_beams), dtype=np.complex128, fill_value=np.nan)
-    for i in range(1):
     #TODO: raise Error if requested energies are out of range respective to
     # phaseshift energies (can't interpolate if out of range)
+    
 
     n_energies = 2
     energies = np.array([my_dict['e_kin'][i] for i in range(n_energies)])
     interpolated_phaseshifts = interpolate_phaseshifts(phaseshifts, LMAX, energies)
     
+    
+    all_delwv = np.full((n_energies, NCSTEP, n_beams), dtype=np.complex128, fill_value=np.nan)
+    for i in range(n_energies):
         E = my_dict['e_kin'][i]  # computational energy inside crystal
         CAF = my_dict['t_matrix'][i]  # atomic t-matrix of current site as used in reference calculation
         VV = my_dict['v0r'][i]  # real part of the inner potential
