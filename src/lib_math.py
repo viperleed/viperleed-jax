@@ -51,4 +51,6 @@ def HARMONY(C, LMAX, dense_l, dense_m):
     r = jnp.sqrt(C[0] ** 2 + C[1] ** 2 + C[2] ** 2)
     theta = jnp.arccos(C[0] / r)
     phi = jnp.arctan2(C[2], C[1])
-    return sph_harm(dense_m, dense_l, jnp.array([theta]), jnp.array([phi]), n_max=LMAX)
+    if r == 0:
+        theta,phi = 0,0
+    return sph_harm(dense_m, dense_l, jnp.array([phi]), jnp.array([theta]), n_max=LMAX)
