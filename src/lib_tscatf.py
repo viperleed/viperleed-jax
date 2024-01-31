@@ -22,6 +22,11 @@ MEMACH = 1.0E-6
 HARTREE = 27.211396
 BOHR = 0.529177
 
+# vectorize cppp in all arguments
+vectorized_cppp = jax.vmap(jax.vmap(jax.vmap(cppp, (None, None, 0)), (None, 0, None)), (0, None, None))
+
+PRE_CALCULATED_CPPP = vectorized_cppp(jnp.arange(0, 2*LMAX+1), jnp.arange(0, LMAX+1), jnp.arange(0, LMAX+1))
+
 @profile
 def tscatf(IEL,LMAX,phaseshifts,EB,V,DR0,DRPER,DRPAR,T0,T):
     """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
@@ -68,7 +73,6 @@ def tscatf(IEL,LMAX,phaseshifts,EB,V,DR0,DRPER,DRPAR,T0,T):
         CAF[l]=np.sin(DEL[l])*np.exp(DEL[l]*1.0j)
     return CAF
 
-
 def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
     """PSTEMP incorporates the thermal vibration effects in the phase shifts, through a Debye-Waller factor. Isotropic
     vibration amplitudes are assumed.
@@ -80,11 +84,10 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
     E= Current Energy (real number).
     PHS= Input phase shifts.
     DEL= Output (complex) phase shifts."""
-    DEL = np.full((LMAX+1,),dtype=np.complex128, fill_value = 0.)
-    CTAB = np.full((LMAX+1,), dtype=np.complex128, fill_value=np.nan)
     ALFA = DR*DR*TEMP/T0
     ALFA = 0.166667*np.sqrt(ALFA*ALFA+DR0)
     FALFE = -4.0*ALFA*E
+    # TODO: probably we can just skip this conditional
     if abs(FALFE) < 0.001:
         for i in range(LMAX+1):
             DEL[i] = PHS[i]
@@ -99,29 +102,11 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
 
     CTAB = (np.exp(2.0j*PHS)-1)*(2*np.arange(LMAX+1) + 1)
 
-    SUM = np.full((LMAX+1,),dtype=np.complex128,fill_value=0)
-    ITEST = 1
-    FL = 1
-    for LLL in range(1,LMAX+1+1):
-        for L in range(1,LMAX+1+1):
-            LLMIN = abs(L - LLL) + 1
-            LLMAX = L + LLL - 1
-            for LL in range(LLMIN,LLMAX+1):
-                SUM[LLL-1] += cppp(LL-1, LLL-1, L-1)*CTAB[L-1]*BJ[LL-1]
+    SUM = np.einsum('jki,i,j->k', PRE_CALCULATED_CPPP, CTAB, BJ)
 #       now, sum is already the temperature-dependent t-matrix we were looking for. It is next converted to a
 #       temp-dependent phase shift, only to be converted back right after the PSTEMP call in tscatf. Kept for the sake
 #       of compatibility with van Hove / Tong book only.
-        DEL[LLL-1] = -1j*np.log(SUM[LLL-1]+1)/2
-        IL = LLL - 1
-        if abs(DEL[LLL-1]) > 1.0e-2:
-            ITEST = 0
-            FL += 2
-        else:
-            if ITEST == 0:
-                ITEST = 1
-            else:
-                LLLMAX = LLL
-                return DEL
+    DEL = -1j*np.log(SUM+1)/2
     return DEL
 
 
