@@ -66,13 +66,11 @@ def tscatf(IEL,LMAX,phaseshifts,EB,V,DR0,DRPER,DRPAR,T0,T):
         AF[l] = np.sin(PHS[l])*np.exp(PHS[l]*1.0j)
 #   Average any anisotropy of RMS vibration amplitudes
     DR = np.sqrt((DRPER*DRPER+2*DRPAR*DRPAR)/3)
-#   Compute temperature-dependent phase shifts (DEL)
-    DEL = PSTEMP(DR0, DR, T0, T, E, PHS)
-#   Produce temperature-dependent t-matrix elements
-    for l in range(LMAX + 1):
-        CAF[l]=np.sin(DEL[l])*np.exp(DEL[l]*1.0j)
-    return CAF
+#   Compute temperature-dependent t-matrix elements
+    t_matrix = PSTEMP(DR0, DR, T0, T, E, PHS)
+    return t_matrix
 
+#@jit
 def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
     """PSTEMP incorporates the thermal vibration effects in the phase shifts, through a Debye-Waller factor. Isotropic
     vibration amplitudes are assumed.
@@ -85,7 +83,7 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
     PHS= Input phase shifts.
     DEL= Output (complex) phase shifts."""
     ALFA = DR*DR*TEMP/T0
-    ALFA = 0.166667*np.sqrt(ALFA*ALFA+DR0)
+    ALFA = 0.166667*jnp.sqrt(ALFA*ALFA+DR0)
     FALFE = -4.0*ALFA*E
     # TODO: probably we can just skip this conditional
     if abs(FALFE) < 0.001:
@@ -96,18 +94,19 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
 
     # TODO: @Paul choose better variable names
     BJ = bessel(Z, 2*LMAX+1)
-    FL = (2*np.arange(2*LMAX+1) + 1)
-    CS = 1.0j ** np.arange(2*LMAX+1)
-    BJ = np.exp(FALFE) * FL * CS * BJ
+    FL = (2*jnp.arange(2*LMAX+1) + 1)
+    CS = 1.0j ** jnp.arange(2*LMAX+1)
+    BJ = jnp.exp(FALFE) * FL * CS * BJ
 
-    CTAB = (np.exp(2.0j*PHS)-1)*(2*np.arange(LMAX+1) + 1)
+    CTAB = (jnp.exp(2.0j*PHS)-1)*(2*jnp.arange(LMAX+1) + 1)
 
-    SUM = np.einsum('jki,i,j->k', PRE_CALCULATED_CPPP, CTAB, BJ)
-#       now, sum is already the temperature-dependent t-matrix we were looking for. It is next converted to a
-#       temp-dependent phase shift, only to be converted back right after the PSTEMP call in tscatf. Kept for the sake
-#       of compatibility with van Hove / Tong book only.
-    DEL = -1j*np.log(SUM+1)/2
-    return DEL
+    SUM = jnp.einsum('jki,i,j->k', PRE_CALCULATED_CPPP, CTAB, BJ)
+    t_matrix = (SUM)/(2j)
+    # SUM is the factor exp(2*i*delta) -1, t_matrix is temperature-dependent t-matrix.
+    # Equation (22), page 29 in Van Hove, Tong book
+    # Unlike TensErLEED, we do not convert it to a phase shift, but keep it as a t-matrix.
+    # which we use going forward.
+    return t_matrix
 
 
 @profile
