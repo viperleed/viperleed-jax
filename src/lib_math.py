@@ -48,7 +48,8 @@ def HARMONY(C, LMAX, dense_l, dense_m):
     This is a python implementation of the fortran subroutine HARMONY from
     TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
     equivalent results."""
-    r = jnp.sqrt(C[0] ** 2 + C[1] ** 2 + C[2] ** 2)
+    EPS = 1.0e-8  # avoid division by zero
+    r = jnp.linalg.norm(C) + EPS
     theta = jnp.arccos(C[0] / r)
     phi = jnp.arctan2(C[2], C[1])
     return sph_harm(dense_m, dense_l, jnp.array([theta]), jnp.array([phi]), n_max=LMAX)
