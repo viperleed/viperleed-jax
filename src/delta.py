@@ -108,7 +108,7 @@ def main():
 
         all_delwv[i, :, :] = DELWV
         print(DELWV)
-    with open('test.npy','wb') as f:
+    with open('delta.npy','wb') as f:
         np.save(f, all_delwv[:, :, 0])
 
 
