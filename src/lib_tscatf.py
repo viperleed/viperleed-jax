@@ -48,31 +48,14 @@ def tscatf(IEL,LMAX,phaseshifts,EB,V,DR0,DRPER,DRPAR,T0,T):
     T= current temperature.
     TSF0, TSF, AF, CAF  see above."""
     E = EB - V
-    if E < phaseshifts[0][0]:
-        print('TOO LOW ENERGY FOR AVAILABLE PHASE SHIFTS')
-#   Find set of phase shifts appropriate to desired chemical element and interpolate linearly to current energy
-#   (or extrapolate to energies above the range given for the phase shifts)
 
-    for i in range(len(phaseshifts)-1):
-        if (E - phaseshifts[i][0]) * (E - phaseshifts[i+1][0]) <= 0:
-            break
-    PHS = np.full((LMAX + 1,), dtype=np.float64, fill_value=np.nan)
-    AF = np.full((LMAX + 1,), dtype=np.complex128, fill_value=np.nan)
-    CAF = np.full((LMAX + 1,), dtype=np.complex128, fill_value=np.nan)
-    FAC = (E - phaseshifts[i][0]) / (phaseshifts[i+1][0] - phaseshifts[i][0])
-    for l in range(LMAX + 1):
-        PHS[l] = phaseshifts[i][1][IEL-1][l] + FAC * (phaseshifts[i+1][1][IEL-1][l] - phaseshifts[i][1][IEL-1][l])
-#       Compute temperature-independent t-matrix elements
-        AF[l] = np.sin(PHS[l])*np.exp(PHS[l]*1.0j)
 #   Average any anisotropy of RMS vibration amplitudes
     DR = np.sqrt((DRPER*DRPER+2*DRPAR*DRPAR)/3)
-#   Compute temperature-dependent phase shifts (DEL)
-    DEL = PSTEMP(DR0, DR, T0, T, E, PHS)
-#   Produce temperature-dependent t-matrix elements
-    for l in range(LMAX + 1):
-        CAF[l]=np.sin(DEL[l])*np.exp(DEL[l]*1.0j)
-    return CAF
+#   Compute temperature-dependent t-matrix elements
+    t_matrix = PSTEMP(DR0, DR, T0, T, E, phaseshifts)
+    return t_matrix
 
+#@jit
 def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
     """PSTEMP incorporates the thermal vibration effects in the phase shifts, through a Debye-Waller factor. Isotropic
     vibration amplitudes are assumed.
@@ -85,7 +68,7 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
     PHS= Input phase shifts.
     DEL= Output (complex) phase shifts."""
     ALFA = DR*DR*TEMP/T0
-    ALFA = 0.166667*np.sqrt(ALFA*ALFA+DR0)
+    ALFA = 0.166667*jnp.sqrt(ALFA*ALFA+DR0)
     FALFE = -4.0*ALFA*E
     # TODO: probably we can just skip this conditional
     if abs(FALFE) < 0.001:
@@ -96,18 +79,19 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
 
     # TODO: @Paul choose better variable names
     BJ = bessel(Z, 2*LMAX+1)
-    FL = (2*np.arange(2*LMAX+1) + 1)
-    CS = 1.0j ** np.arange(2*LMAX+1)
-    BJ = np.exp(FALFE) * FL * CS * BJ
+    FL = (2*jnp.arange(2*LMAX+1) + 1)
+    CS = 1.0j ** jnp.arange(2*LMAX+1)
+    BJ = jnp.exp(FALFE) * FL * CS * BJ
 
-    CTAB = (np.exp(2.0j*PHS)-1)*(2*np.arange(LMAX+1) + 1)
+    CTAB = (jnp.exp(2.0j*PHS)-1)*(2*jnp.arange(LMAX+1) + 1)
 
-    SUM = np.einsum('jki,i,j->k', PRE_CALCULATED_CPPP, CTAB, BJ)
-#       now, sum is already the temperature-dependent t-matrix we were looking for. It is next converted to a
-#       temp-dependent phase shift, only to be converted back right after the PSTEMP call in tscatf. Kept for the sake
-#       of compatibility with van Hove / Tong book only.
-    DEL = -1j*np.log(SUM+1)/2
-    return DEL
+    SUM = jnp.einsum('jki,i,j->k', PRE_CALCULATED_CPPP, CTAB, BJ)
+    t_matrix = (SUM)/(2j)
+    # SUM is the factor exp(2*i*delta) -1, t_matrix is temperature-dependent t-matrix.
+    # Equation (22), page 29 in Van Hove, Tong book
+    # Unlike TensErLEED, we do not convert it to a phase shift, but keep it as a t-matrix.
+    # which we use going forward.
+    return t_matrix
 
 
 @profile
@@ -142,48 +126,39 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
     for NC in range(1, NCSTEP+1):
 #       Loop over the atoms of the reconstructed unit cell
         for NR in range(1, n_atoms+1):
-            CTEMP = 0
-            C = np.full((3,), dtype=np.float64, fill_value=np.nan)
-            for j in range(3):
-                CTEMP += abs(CDISP[NC-1][NR-1][j])
-                C[j] = CDISP[NC-1][NR-1][j]/BOHR
+            C = CDISP[NC-1, NR-1, :]/BOHR
 #           The vector C must be expressed W.R.T. a right handed set of axes. CDISP() & CUNDISP() are input W.R.T.
 #           a left handed set of axes
-            C[2] = -C[2]
+            C = C * (1, 1, -1)
 #           Evaluate DELTAT matrix for current displacement.
             DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX, dense_quantum_numbers, dense_l, dense_m, dense_l_2lmax, dense_m_2lmax)
 
             for NEXIT in range(1,n_beams): #Loop over exit beams
 #               Evaluate matrix element
-                EMERGE = 2*(E-VV)-AK2M[NEXIT-1]**2-AK3M[NEXIT-1]**2
-                # TODO: should we get rid of this conditional?
-                # If the beam does not emerge, AMAT is going to be 0 anyway
-                if EMERGE >= 0:
-                    _EXLM = EXLM[:(LMAX+1)**2,NEXIT-1]                           # TODO: crop EXLM, ALM earlier
-                    _ALM = ALM[:(LMAX+1)**2]
 
-                    # EXLM is for outgoing beams, so we need to swap indices m -> -m
-                    # to do this in the dense representation, we do the following:
-                    _EXLM = _EXLM[(dense_l+1)**2 - dense_l - dense_m -1]
+                _EXLM = EXLM[:(LMAX+1)**2,NEXIT-1]                           # TODO: crop EXLM, ALM earlier
+                _ALM = ALM[:(LMAX+1)**2]
 
-                    # Equation (41) from Rous, Pendry 1989
-                    AMAT = jnp.einsum('k,k,km,m->', minus_1_pow_m, _EXLM, DELTAT, _ALM)
+                # EXLM is for outgoing beams, so we need to swap indices m -> -m
+                # to do this in the dense representation, we do the following:
+                _EXLM = _EXLM[(dense_l+1)**2 - dense_l - dense_m -1]
+
+                # Equation (41) from Rous, Pendry 1989
+                AMAT = jnp.einsum('k,k,km,m->', minus_1_pow_m, _EXLM, DELTAT, _ALM)
 
 #                   Evaluate prefactor                                          # TODO: @Paul: check with Tobis thesis and adjust variable names, and comments
-                    D2 = AK2M[NEXIT-1]
-                    D3 = AK3M[NEXIT-1]
-                    D = D2*D2 + D3*D3
-                    CAK = 2*E-2j*VPI+0.0000001j
-                    CAK = np.sqrt(CAK)
-                    if D >= 2*E:
-                        print('Something went wrong in MATEL_DWG') # @Paul: can we remove this?
-                        return 0
+                D2 = AK2M[NEXIT-1]
+                D3 = AK3M[NEXIT-1]
+                D = D2*D2 + D3*D3
+                CAK = 2*E-2j*VPI+0.0000001j
+                CAK = np.sqrt(CAK)
+
 #                   XA is evaluated relative to the muffin tin zero i.e. it uses energy= incident electron energy +
 #                   inner potential
-                    XA = 2*E-D-2j*VPI+0.0000001j
-                    XA = np.sqrt(XA)
-                    AMAT *= 1/(2*CAK*TV*XA*NRATIO)
-                    DELWV[NC-1][NEXIT-1] += AMAT
+                XA = 2*E-D-2j*VPI+0.0000001j
+                XA = np.sqrt(XA)
+                AMAT *= 1/(2*CAK*TV*XA*NRATIO)
+                DELWV[NC-1][NEXIT-1] += AMAT
     return DELWV
 
 #@profile
@@ -257,7 +232,6 @@ def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
     LP_array = jnp.array(LP)
     M_array = jnp.array(M)
     MP_array = jnp.array(MP)
-    MPP_array = jnp.array(MPP)
 
     # Use the array versions in the vmap call
     gaunt_coeffs = fetch_lpp_gaunt(L_array, LP_array, all_lpp, M_array, -MP_array, -M_array+MP_array)
