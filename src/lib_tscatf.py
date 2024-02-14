@@ -71,10 +71,10 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
     ALFA = 0.166667*jnp.sqrt(ALFA*ALFA+DR0)
     FALFE = -4.0*ALFA*E
     # TODO: probably we can just skip this conditional
-    if abs(FALFE) < 0.001:
-        for i in range(LMAX+1):
-            DEL[i] = PHS[i]
-        return DEL
+    # if abs(FALFE) < 0.001:
+    #     for i in range(LMAX+1):
+    #         DEL[i] = PHS[i]
+    #     return DEL
     Z = FALFE*1.0j
 
     # TODO: @Paul choose better variable names
@@ -95,7 +95,7 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
 
 
 @profile
-def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
+def MATEL_DWG(AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
       AK3M,NRATIO,TV,n_atoms,CDISP,PSQ):
     """The function MATEL_DWG evaluates the change in amplitude delwv for each of the exit beams for each of the
     displacements given the sph wave amplitudes corresponding to the incident wave ALM & for each of the time reversed
@@ -105,12 +105,11 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
     EXLM(NT0,LMMAX): As ALM but for each time reversed exit beam.
     C(3): Current displacement, C(1)= component along x into the surface. C(2),C(3) along ARB1/ARB2.
     CSTEP(3): Increment in displacement.
-    NCSTEP: Number of displacements. (all displacements in Angstroms)
     NT0: Number of exit beams.
     NRATIO: Ration of area of surface unit cell of reconstructed surface to unit cell area of the unreconstructed
     surface. E.G. for P(2x2) NRATIO=4, for C(2x2) NRATIO=2."""
 #   Set teh change in amplitudes to zero for each exit beam.
-    DELWV = np.full((NCSTEP, n_beams), dtype=np.complex128, fill_value=0)
+    DELWV = np.full((n_beams,), dtype=np.complex128, fill_value=0)
 
     # Dense quantum number indexing
     dense_quantum_numbers_2lmax = DENSE_QUANTUM_NUMBERS_2LMAX
@@ -121,45 +120,60 @@ def MATEL_DWG(NCSTEP,AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
     dense_m = dense_quantum_numbers[:,0,2]
     dense_l = dense_quantum_numbers[:,0,0]
     minus_1_pow_m = jnp.power(-1, dense_m)  # (-1)**M
+    CAK = 2*E-2j*VPI+0.0000001j
+    CAK = np.sqrt(CAK)
 
-#   Loop over model structure
-    for NC in range(1, NCSTEP+1):
-#       Loop over the atoms of the reconstructed unit cell
-        for NR in range(1, n_atoms+1):
-            C = CDISP[NC-1, NR-1, :]/BOHR
-#           The vector C must be expressed W.R.T. a right handed set of axes. CDISP() & CUNDISP() are input W.R.T.
-#           a left handed set of axes
-            C = C * (1, 1, -1)
-#           Evaluate DELTAT matrix for current displacement.
-            DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX, dense_quantum_numbers, dense_l, dense_m, dense_l_2lmax, dense_m_2lmax)
+    # EXLM is for outgoing beams, so we need to swap indices m -> -m
+    # to do this in the dense representation, we do the following:
+    _ALM = ALM[:(LMAX+1)**2]
 
-            for NEXIT in range(1,n_beams): #Loop over exit beams
-#               Evaluate matrix element
+#   The vector C must be expressed W.R.T. a right handed set of axes.
+#   CDISP() is input W.R.T. a left handed set of axes.
+    C = CDISP[:, :]/BOHR
+    C[:, -1] *= -1
 
-                _EXLM = EXLM[:(LMAX+1)**2,NEXIT-1]                           # TODO: crop EXLM, ALM earlier
-                _ALM = ALM[:(LMAX+1)**2]
+#   Evaluate DELTAT matrix for current displacement vector
+    DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX, dense_quantum_numbers,
+                            dense_l, dense_m, dense_l_2lmax, dense_m_2lmax)
+    _EXLM = EXLM[:(LMAX+1)**2, :]  # TODO: crop EXLM, ALM earlier
+    _EXLM = _EXLM[(dense_l+1)**2 - dense_l - dense_m -1]
+    
+    delwv_per_atom = calcuclate_exit_beam_delta(
+            _EXLM, _ALM, DELTAT, CAK, AK2M, AK3M, TV, NRATIO,
+            minus_1_pow_m, E, VPI
+        )
+    # sum over atom contributions
+    delwv = delwv_per_atom.sum(axis=0)
 
-                # EXLM is for outgoing beams, so we need to swap indices m -> -m
-                # to do this in the dense representation, we do the following:
-                _EXLM = _EXLM[(dense_l+1)**2 - dense_l - dense_m -1]
+    return delwv
 
-                # Equation (41) from Rous, Pendry 1989
-                AMAT = jnp.einsum('k,k,km,m->', minus_1_pow_m, _EXLM, DELTAT, _ALM)
 
-#                   Evaluate prefactor                                          # TODO: @Paul: check with Tobis thesis and adjust variable names, and comments
-                D2 = AK2M[NEXIT-1]
-                D3 = AK3M[NEXIT-1]
-                D = D2*D2 + D3*D3
-                CAK = 2*E-2j*VPI+0.0000001j
-                CAK = np.sqrt(CAK)
+def calcuclate_exit_beam_delta(EXLM, ALM, DELTAT, CAK, D2, D3, TV, NRATIO,
+                               minus_1_pow_m, E, VPI):
+    # Equation (41) from Rous, Pendry 1989
+    AMAT = jnp.einsum('k,k,km,m->', minus_1_pow_m, EXLM, DELTAT, ALM)
+    D = D2*D2 + D3*D3
 
-#                   XA is evaluated relative to the muffin tin zero i.e. it uses energy= incident electron energy +
-#                   inner potential
-                XA = 2*E-D-2j*VPI+0.0000001j
-                XA = np.sqrt(XA)
-                AMAT *= 1/(2*CAK*TV*XA*NRATIO)
-                DELWV[NC-1][NEXIT-1] += AMAT
-    return DELWV
+    # XA is evaluated relative to the muffin tin zero i.e. it uses energy= incident electron energy + inner potential
+    XA = 2*E-D-2j*VPI+0.0000001j
+    XA = jnp.sqrt(XA)
+    AMAT *= 1/(2*CAK*TV*XA*NRATIO)
+    return AMAT
+
+# vmap over exit beams
+calcuclate_exit_beam_delta = jax.vmap(
+    calcuclate_exit_beam_delta,
+    in_axes=(1, None, None, None, 0, 0, None, None,
+             None, None, None),
+    out_axes=0
+)
+
+# vamp over atoms
+calcuclate_exit_beam_delta = jax.vmap(
+    calcuclate_exit_beam_delta,
+    in_axes=(None, None, 0, None, None, None, None, None, None, None, None)
+)
+
 
 #@profile
 #@partial(jit, static_argnames=('LMAX',))
@@ -208,6 +222,10 @@ def TMATRIX_DWG(AF, NewAF, C, E, VPI, LMAX, dense_quantum_numbers, dense_l, dens
 
     return DELTAT
 
+TMATRIX_DWG = jax.vmap(TMATRIX_DWG,
+                       in_axes=(None, None, 0, None, None, None,
+                                None, None, None, None, None)
+)
 
 # TODO: better name
 @partial(jit, static_argnames=('LMAX',))
