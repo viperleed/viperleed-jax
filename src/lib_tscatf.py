@@ -132,7 +132,7 @@ def MATEL_DWG(AF,NewAF,E,VPI,LMAX,EXLM,ALM,AK2M,
 
 #   Evaluate DELTAT matrix for current displacement vector
     DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX, dense_quantum_numbers,
-                            dense_l, dense_m, dense_l_2lmax, dense_m_2lmax)
+                            dense_l, dense_l_2lmax, dense_m_2lmax)
     _EXLM = EXLM[:(LMAX+1)**2, :]  # TODO: crop EXLM, ALM earlier
     _EXLM = _EXLM[(dense_l+1)**2 - dense_l - dense_m -1]
     
@@ -175,7 +175,7 @@ calcuclate_exit_beam_delta = jax.vmap(
 
 #@profile
 #@partial(jit, static_argnames=('LMAX',))
-def TMATRIX_DWG(AF, NewAF, C, E, VPI, LMAX, dense_quantum_numbers, dense_l, dense_m, dense_l_2lmax, dense_m_2lmax):
+def TMATRIX_DWG(AF, NewAF, C, E, VPI, LMAX, dense_quantum_numbers, dense_l, dense_l_2lmax, dense_m_2lmax):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
     C(3): Displacement vector;
@@ -221,7 +221,7 @@ def TMATRIX_DWG(AF, NewAF, C, E, VPI, LMAX, dense_quantum_numbers, dense_l, dens
     return DELTAT
 
 TMATRIX_DWG = jax.vmap(TMATRIX_DWG,
-                       in_axes=(None, None, 0, None, None, None,
+                       in_axes=(None, None, 0, None, None,
                                 None, None, None, None, None)
 )
 
