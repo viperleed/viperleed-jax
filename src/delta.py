@@ -116,9 +116,9 @@ def main():
         # DELWV : working space for computation and storage of amplitude differences
         for nc in range(NCSTEP):
             C = CDISP[nc,...]
-            DELWV = MATEL_DWG(CAF, NewCAF, E, VV, VPIS,
-                            LMAX, n_beams, EXLM, ALM, AK2M, AK3M,
-                            NRATIO, TV, n_atoms, C, PSQ)
+            DELWV = MATEL_DWG(CAF, NewCAF, E, VPIS,
+                            LMAX, EXLM, ALM, AK2M, AK3M,
+                            NRATIO, TV, C)
 
             all_delwv[i, nc, :] = DELWV
         print(DELWV)

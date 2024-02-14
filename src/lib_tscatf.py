@@ -95,8 +95,8 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
 
 
 @profile
-def MATEL_DWG(AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
-      AK3M,NRATIO,TV,n_atoms,CDISP,PSQ):
+def MATEL_DWG(AF,NewAF,E,VPI,LMAX,EXLM,ALM,AK2M,
+      AK3M,NRATIO,TV,CDISP):
     """The function MATEL_DWG evaluates the change in amplitude delwv for each of the exit beams for each of the
     displacements given the sph wave amplitudes corresponding to the incident wave ALM & for each of the time reversed
     exit beams EXLM.
@@ -108,8 +108,6 @@ def MATEL_DWG(AF,NewAF,E,VV,VPI,LMAX,n_beams,EXLM,ALM,AK2M,
     NT0: Number of exit beams.
     NRATIO: Ration of area of surface unit cell of reconstructed surface to unit cell area of the unreconstructed
     surface. E.G. for P(2x2) NRATIO=4, for C(2x2) NRATIO=2."""
-#   Set teh change in amplitudes to zero for each exit beam.
-    DELWV = np.full((n_beams,), dtype=np.complex128, fill_value=0)
 
     # Dense quantum number indexing
     dense_quantum_numbers_2lmax = DENSE_QUANTUM_NUMBERS_2LMAX
