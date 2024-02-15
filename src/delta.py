@@ -82,7 +82,7 @@ def main():
     # phaseshift energies (can't interpolate if out of range)
     
 
-    n_energies = 2
+    n_energies = 50
     energies = np.array([my_dict['e_kin'][i] for i in range(n_energies)])
     interpolated_phaseshifts = interpolate_phaseshifts(phaseshifts, LMAX, energies)
     
@@ -114,11 +114,13 @@ def main():
             NewCAF = np.full((LMAX+1,), dtype=np.complex128, fill_value=0.0)
 
         # DELWV : working space for computation and storage of amplitude differences
-        DELWV = MATEL_DWG(NCSTEP, CAF, NewCAF, E, VV, VPIS,
-                          LMAX, n_beams, EXLM, ALM, AK2M, AK3M,
-                          NRATIO, TV, n_atoms, CDISP, PSQ)
+        for nc in range(NCSTEP):
+            C = CDISP[nc,...]
+            DELWV = MATEL_DWG(CAF, NewCAF, E, VPIS,
+                            LMAX, EXLM, ALM, AK2M, AK3M,
+                            NRATIO, TV, C)
 
-        all_delwv[i, :, :] = DELWV
+            all_delwv[i, nc, :] = DELWV
         print(DELWV)
     with open('delta.npy','wb') as f:
         np.save(f, all_delwv[:, :, 0])
