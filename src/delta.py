@@ -90,7 +90,7 @@ def main():
     all_delwv = np.full((n_energies, n_geo, n_beams), dtype=np.complex128, fill_value=np.nan)
     for i in range(n_energies):
         e_inside = my_dict['e_kin'][i]  # computational energy inside crystal
-        CAF = my_dict['t_matrix'][i]  # atomic t-matrix of current site as used in reference calculation
+        t_matrix_ref = my_dict['t_matrix'][i]  # atomic t-matrix of current site as used in reference calculation
         VV = my_dict['v0r'][i]  # real part of the inner potential
         v_imag = my_dict['v0i_substrate'][i]  # imaginary part of the inner potential, substrate, resp.
         EXLM = my_dict['tensor_amps_out'][i]  # spherical wave amplitudes incident from exit beam NEXIT in "time-reversed"
@@ -98,7 +98,7 @@ def main():
         #                                       scattering on current atom)
         ALM = my_dict['tensor_amps_in'][i]  # spherical wave amplitudes incident on current atomic site in reference calculation
         #                                     (i.e., scattering path ends before scattering on that atom)
-        AK2M, AK3M = my_dict['kx_in'][i], my_dict['ky_in'][i]  # (negative) absolute lateral momentum of Tensor LEED beams
+        out_k_par2, out_k_par3 = my_dict['kx_in'][i], my_dict['ky_in'][i]  # (negative) absolute lateral momentum of Tensor LEED beams
         #                                                        (for use as incident beams in time-reversed LEED calculation)
         PSQ = my_dict['k_delta'][i]  # lateral momentum of Tensor LEED beams relative to incident beam (0,0)
 
@@ -108,16 +108,16 @@ def main():
         # NewCAF: working array in which current (displaced) atomic t-matrix is stored
         if (IEL != 0):
             # TODO: when treating multiple atoms, choose the correct site for phaseshifts (IEL)
-            NewCAF = tscatf(IEL, LMAX, interpolated_phaseshifts[i, IEL-1, :],
+            t_matrix_new = tscatf(IEL, LMAX, interpolated_phaseshifts[i, IEL-1, :],
                             e_inside, VSITE, DR0, DRPER, DRPAR, T0, T)
         else:
-            NewCAF = np.full((LMAX+1,), dtype=np.complex128, fill_value=0.0)
+            t_matrix_new = np.full((LMAX+1,), dtype=np.complex128, fill_value=0.0)
 
         # DELWV : working space for computation and storage of amplitude differences
         for nc in range(n_geo):
             C = CDISP[nc,...]
-            DELWV = MATEL_DWG(CAF, NewCAF, e_inside, v_imag,
-                            LMAX, EXLM, ALM, AK2M, AK3M,
+            DELWV = MATEL_DWG(t_matrix_ref, t_matrix_new, e_inside, v_imag,
+                            LMAX, EXLM, ALM, out_k_par2, out_k_par3,
                             NRATIO, TV, C)
 
             all_delwv[i, nc, :] = DELWV
