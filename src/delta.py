@@ -21,7 +21,7 @@ BOHR = 0.529177
 LMAX = 14  # maximum angular momentum to be used in calculation
 n_beams = 9  # no. of TLEED output beams
 n_atoms = 1  # currently 1 is the only possible choice
-NCSTEP = 1  # number of geometric variations ('displacements') to be considered
+n_geo = 1  # number of geometric variations ('displacements') to be considered
 
 # From Stdin
 # DR0,DRPER,DRPAR: thermal vibration amplitude steps to be included in
@@ -30,8 +30,8 @@ DR0 = 0
 DRPER = 0.1908624
 DRPAR = DRPER
 
-CDISP = np.full((NCSTEP, n_atoms, 3),dtype=np.float64,fill_value=np.nan)  # displaced positions of current atomic site for variation
-for i in range(NCSTEP):
+CDISP = np.full((n_geo, n_atoms, 3),dtype=np.float64,fill_value=np.nan)  # displaced positions of current atomic site for variation
+for i in range(n_geo):
     CDISP[i][0][0] = -0.01*i + 0.05
     CDISP[i][0][1] = 0
     CDISP[i][0][2] = 0
@@ -87,12 +87,12 @@ def main():
     interpolated_phaseshifts = interpolate_phaseshifts(phaseshifts, LMAX, energies)
     
     
-    all_delwv = np.full((n_energies, NCSTEP, n_beams), dtype=np.complex128, fill_value=np.nan)
+    all_delwv = np.full((n_energies, n_geo, n_beams), dtype=np.complex128, fill_value=np.nan)
     for i in range(n_energies):
-        E = my_dict['e_kin'][i]  # computational energy inside crystal
+        e_inside = my_dict['e_kin'][i]  # computational energy inside crystal
         CAF = my_dict['t_matrix'][i]  # atomic t-matrix of current site as used in reference calculation
         VV = my_dict['v0r'][i]  # real part of the inner potential
-        VPIS = my_dict['v0i_substrate'][i]  # imaginary part of the inner potential, substrate, resp.
+        v_imag = my_dict['v0i_substrate'][i]  # imaginary part of the inner potential, substrate, resp.
         EXLM = my_dict['tensor_amps_out'][i]  # spherical wave amplitudes incident from exit beam NEXIT in "time-reversed"
         #                                       LEED experiment (or rather, all terms of Born series immediately after
         #                                       scattering on current atom)
@@ -102,21 +102,21 @@ def main():
         #                                                        (for use as incident beams in time-reversed LEED calculation)
         PSQ = my_dict['k_delta'][i]  # lateral momentum of Tensor LEED beams relative to incident beam (0,0)
 
-        EEV = (E-VV)*HARTREE  # current energy in eV
+        EEV = (e_inside-VV)*HARTREE  # current energy in eV
         print("Current energy", EEV, "eV")
 
         # NewCAF: working array in which current (displaced) atomic t-matrix is stored
         if (IEL != 0):
             # TODO: when treating multiple atoms, choose the correct site for phaseshifts (IEL)
             NewCAF = tscatf(IEL, LMAX, interpolated_phaseshifts[i, IEL-1, :],
-                            E, VSITE, DR0, DRPER, DRPAR, T0, T)
+                            e_inside, VSITE, DR0, DRPER, DRPAR, T0, T)
         else:
             NewCAF = np.full((LMAX+1,), dtype=np.complex128, fill_value=0.0)
 
         # DELWV : working space for computation and storage of amplitude differences
-        for nc in range(NCSTEP):
+        for nc in range(n_geo):
             C = CDISP[nc,...]
-            DELWV = MATEL_DWG(CAF, NewCAF, E, VPIS,
+            DELWV = MATEL_DWG(CAF, NewCAF, e_inside, v_imag,
                             LMAX, EXLM, ALM, AK2M, AK3M,
                             NRATIO, TV, C)
 

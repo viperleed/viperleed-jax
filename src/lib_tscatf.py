@@ -28,7 +28,7 @@ vectorized_cppp = jax.vmap(jax.vmap(jax.vmap(cppp, (None, None, 0)), (None, 0, N
 PRE_CALCULATED_CPPP = vectorized_cppp(jnp.arange(0, 2*LMAX+1), jnp.arange(0, LMAX+1), jnp.arange(0, LMAX+1))
 
 @profile
-def tscatf(IEL,LMAX,phaseshifts,EB,V,DR0,DRPER,DRPAR,T0,T):
+def tscatf(IEL,LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR,T0,T):
     """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
     These are also corrected for thermal vibrations (output in CAF). AF and CAF are meant to be stored in array TMAT for
     later use in RSMF, RTINV.
@@ -38,7 +38,7 @@ def tscatf(IEL,LMAX,phaseshifts,EB,V,DR0,DRPER,DRPAR,T0,T):
     ES= list of energies at which phase shifts are tabulated.
     PHSS= tabulated phase shifts.
     NPSI= no. of energies at which phase shifts are given.
-    EB-V= current energy (V can be used to describe local variations
+    e_inside-V= current energy (V can be used to describe local variations
     of the muffin-tin constant).
 
     DR0= fourth power of RMS zero-temperature vibration amplitude.
@@ -47,7 +47,7 @@ def tscatf(IEL,LMAX,phaseshifts,EB,V,DR0,DRPER,DRPAR,T0,T):
     T0= temperature at which drper and drpar have been computed.
     T= current temperature.
     TSF0, TSF, AF, CAF  see above."""
-    E = EB - V
+    E = e_inside - V
 
 #   Average any anisotropy of RMS vibration amplitudes
     DR = np.sqrt((DRPER*DRPER+2*DRPAR*DRPAR)/3)
@@ -95,7 +95,7 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
 
 
 @profile
-def MATEL_DWG(AF,NewAF,E,VPI,LMAX,EXLM,ALM,AK2M,
+def MATEL_DWG(AF,NewAF,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
       AK3M,NRATIO,TV,CDISP):
     """The function MATEL_DWG evaluates the change in amplitude delwv for each of the exit beams for each of the
     displacements given the sph wave amplitudes corresponding to the incident wave ALM & for each of the time reversed
@@ -118,7 +118,7 @@ def MATEL_DWG(AF,NewAF,E,VPI,LMAX,EXLM,ALM,AK2M,
     dense_m = dense_quantum_numbers[:,0,2]
     dense_l = dense_quantum_numbers[:,0,0]
     minus_1_pow_m = jnp.power(-1, dense_m)  # (-1)**M
-    CAK = 2*E-2j*VPI+0.0000001j
+    CAK = 2*e_inside-2j*v_imag+0.0000001j
     CAK = np.sqrt(CAK)
 
     # EXLM is for outgoing beams, so we need to swap indices m -> -m
@@ -131,14 +131,14 @@ def MATEL_DWG(AF,NewAF,E,VPI,LMAX,EXLM,ALM,AK2M,
     C[:, -1] *= -1
 
 #   Evaluate DELTAT matrix for current displacement vector
-    DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX, dense_quantum_numbers,
+    DELTAT = TMATRIX_DWG(AF,NewAF,C, e_inside,v_imag,LMAX, dense_quantum_numbers,
                             dense_l, dense_l_2lmax, dense_m_2lmax)
     _EXLM = EXLM[:(LMAX+1)**2, :]  # TODO: crop EXLM, ALM earlier
     _EXLM = _EXLM[(dense_l+1)**2 - dense_l - dense_m -1]
     
     delwv_per_atom = calcuclate_exit_beam_delta(
             _EXLM, _ALM, DELTAT, CAK, AK2M, AK3M, TV, NRATIO,
-            minus_1_pow_m, E, VPI
+            minus_1_pow_m, e_inside, v_imag
         )
     # sum over atom contributions
     delwv = delwv_per_atom.sum(axis=0)
@@ -147,13 +147,13 @@ def MATEL_DWG(AF,NewAF,E,VPI,LMAX,EXLM,ALM,AK2M,
 
 
 def calcuclate_exit_beam_delta(EXLM, ALM, DELTAT, CAK, D2, D3, TV, NRATIO,
-                               minus_1_pow_m, E, VPI):
+                               minus_1_pow_m, E, v_imag):
     # Equation (41) from Rous, Pendry 1989
     AMAT = jnp.einsum('k,k,km,m->', minus_1_pow_m, EXLM, DELTAT, ALM)
     D = D2*D2 + D3*D3
 
     # XA is evaluated relative to the muffin tin zero i.e. it uses energy= incident electron energy + inner potential
-    XA = 2*E-D-2j*VPI+0.0000001j
+    XA = 2*E-D-2j*v_imag+0.0000001j
     XA = jnp.sqrt(XA)
     AMAT *= 1/(2*CAK*TV*XA*NRATIO)
     return AMAT
@@ -175,7 +175,7 @@ calcuclate_exit_beam_delta = jax.vmap(
 
 #@profile
 #@partial(jit, static_argnames=('LMAX',))
-def TMATRIX_DWG(AF, NewAF, C, E, VPI, LMAX, dense_quantum_numbers, dense_l, dense_l_2lmax, dense_m_2lmax):
+def TMATRIX_DWG(AF, NewAF, C, e_inside, v_imag, LMAX, dense_quantum_numbers, dense_l, dense_l_2lmax, dense_m_2lmax):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
     C(3): Displacement vector;
@@ -203,7 +203,7 @@ def TMATRIX_DWG(AF, NewAF, C, E, VPI, LMAX, dense_quantum_numbers, dense_l, dens
             return DELTAT
     """
 
-    CAPPA = 2*E - 2j*VPI
+    CAPPA = 2*e_inside - 2j*v_imag
     Z = jnp.sqrt(CAPPA)*CL
     BJ = jnp.nan_to_num(bessel(Z,2*LMAX+1))
     YLM = HARMONY(C, LMAX, dense_l_2lmax, dense_m_2lmax)
