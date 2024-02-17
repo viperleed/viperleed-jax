@@ -138,7 +138,8 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
 
     return delwv
 
-
+@partial(vmap, in_axes=(None, None, 0, None, None, None, None, None, None, None, None))  # vmap over atoms
+@partial(vmap, in_axes=(1, None, None, None, 0, 0, None, None, None, None, None), out_axes=0)  # vmap over exit beams
 def calcuclate_exit_beam_delta(EXLM, ALM, DELTAT, k_inside, D2, D3, TV, NRATIO,
                                LMAX, E, v_imag):
     # Equation (41) from Rous, Pendry 1989
@@ -150,23 +151,10 @@ def calcuclate_exit_beam_delta(EXLM, ALM, DELTAT, k_inside, D2, D3, TV, NRATIO,
     AMAT *= 1/(2*k_inside*TV*out_k_perp_inside*NRATIO)
     return AMAT
 
-# vmap over exit beams
-calcuclate_exit_beam_delta = jax.vmap(
-    calcuclate_exit_beam_delta,
-    in_axes=(1, None, None, None, 0, 0, None, None,
-             None, None, None),
-    out_axes=0
-)
-
-# vamp over atoms
-calcuclate_exit_beam_delta = jax.vmap(
-    calcuclate_exit_beam_delta,
-    in_axes=(None, None, 0, None, None, None, None, None, None, None, None)
-)
-
 
 #@profile
 #@partial(jit, static_argnames=('LMAX',))
+@partial(vmap, in_axes=(None, None, 0, None, None, None))
 def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
@@ -211,9 +199,6 @@ def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
 
     return DELTAT
 
-TMATRIX_DWG = jax.vmap(TMATRIX_DWG,
-                       in_axes=(None, None, 0, None, None, None)
-)
 
 # TODO: better name
 @partial(jit, static_argnames=('LMAX',))
