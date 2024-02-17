@@ -10,6 +10,9 @@ from line_profiler import profile
 
 
 from lib_math import *
+from dense_quantum_numbers import DENSE_QUANTUM_NUMBERS, DENSE_L, DENSE_M
+from dense_quantum_numbers import MINUS_ONE_POW_M
+from dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 
 from gaunt_coefficients import fetch_stored_gaunt_coeffs as fetch_gaunt
 from gaunt_coefficients import cppp
@@ -109,15 +112,6 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
     NRATIO: Ration of area of surface unit cell of reconstructed surface to unit cell area of the unreconstructed
     surface. E.G. for P(2x2) NRATIO=4, for C(2x2) NRATIO=2."""
 
-    # Dense quantum number indexing
-    dense_quantum_numbers_2lmax = DENSE_QUANTUM_NUMBERS_2LMAX
-    dense_m_2lmax = dense_quantum_numbers_2lmax[:,0,2]
-    dense_l_2lmax = dense_quantum_numbers_2lmax[:,0,0]
-
-    dense_quantum_numbers = DENSE_QUANTUM_NUMBERS
-    dense_m = dense_quantum_numbers[:,0,2]
-    dense_l = dense_quantum_numbers[:,0,0]
-    minus_1_pow_m = jnp.power(-1, dense_m)  # (-1)**M
     k_inside = jnp.sqrt(2*e_inside-2j*v_imag+0.0000001j)
 
     # EXLM is for outgoing beams, so we need to swap indices m -> -m
@@ -132,13 +126,12 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
 
 
 #   Evaluate DELTAT matrix for current displacement vector
-    DELTAT = TMATRIX_DWG(t_matrix_ref,t_matrix_new,C, e_inside,v_imag,LMAX, dense_quantum_numbers,
-                            dense_l, dense_l_2lmax, dense_m_2lmax)
-    _EXLM = _EXLM[(dense_l+1)**2 - dense_l - dense_m -1]
+    DELTAT = TMATRIX_DWG(t_matrix_ref,t_matrix_new,C, e_inside,v_imag,LMAX)
+    _EXLM = _EXLM[(DENSE_L[LMAX]+1)**2 - DENSE_L[LMAX] - DENSE_M[LMAX] -1]
     
     delwv_per_atom = calcuclate_exit_beam_delta(
             _EXLM, _ALM, DELTAT, k_inside, AK2M, AK3M, TV, NRATIO,
-            minus_1_pow_m, e_inside, v_imag
+            LMAX, e_inside, v_imag
         )
     # sum over atom contributions
     delwv = delwv_per_atom.sum(axis=0)
@@ -147,9 +140,9 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
 
 
 def calcuclate_exit_beam_delta(EXLM, ALM, DELTAT, k_inside, D2, D3, TV, NRATIO,
-                               minus_1_pow_m, E, v_imag):
+                               LMAX, E, v_imag):
     # Equation (41) from Rous, Pendry 1989
-    AMAT = jnp.einsum('k,k,km,m->', minus_1_pow_m, EXLM, DELTAT, ALM)
+    AMAT = jnp.einsum('k,k,km,m->', MINUS_ONE_POW_M[LMAX], EXLM, DELTAT, ALM)
     out_k_par = D2*D2 + D3*D3
 
     # XA is evaluated relative to the muffin tin zero i.e. it uses energy= incident electron energy + inner potential
@@ -174,7 +167,7 @@ calcuclate_exit_beam_delta = jax.vmap(
 
 #@profile
 #@partial(jit, static_argnames=('LMAX',))
-def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX, dense_quantum_numbers, dense_l, dense_l_2lmax, dense_m_2lmax):
+def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
     C(3): Displacement vector;
@@ -205,32 +198,31 @@ def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX, dense_qua
     CAPPA = 2*e_inside - 2j*v_imag
     Z = jnp.sqrt(CAPPA)*CL
     BJ = jnp.nan_to_num(bessel(Z,2*LMAX+1))
-    YLM = HARMONY(C, LMAX, dense_l_2lmax, dense_m_2lmax)
-    GTWOC = sum_quantum_numbers(LMAX, BJ, YLM, dense_quantum_numbers)
+    YLM = HARMONY(C, LMAX, DENSE_L[2*LMAX], DENSE_M[2*LMAX])
+    GTWOC = sum_quantum_numbers(LMAX, BJ, YLM)
 
-    broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(t_matrix_new, LMAX, dense_l)
+    broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(t_matrix_new, LMAX)
     GTEMP = GTWOC.T*1.0j*broadcast_New_t_matrix
 
     DELTAT = jax.numpy.einsum('il,lj->ij', GTEMP, GTWOC)
 
-    mapped_t_matrix_ref = map_l_array_to_compressed_quantum_index(t_matrix_ref, LMAX, dense_l)
+    mapped_t_matrix_ref = map_l_array_to_compressed_quantum_index(t_matrix_ref, LMAX)
     DELTAT = DELTAT + jnp.diag(-1.0j*mapped_t_matrix_ref)
 
     return DELTAT
 
 TMATRIX_DWG = jax.vmap(TMATRIX_DWG,
-                       in_axes=(None, None, 0, None, None,
-                                None, None, None, None, None)
+                       in_axes=(None, None, 0, None, None, None)
 )
 
 # TODO: better name
 @partial(jit, static_argnames=('LMAX',))
-def sum_quantum_numbers(LMAX, BJ, YLM, dense_quantum_numbers):
+def sum_quantum_numbers(LMAX, BJ, YLM):
     propagator_origin_to_c = jax.vmap(jax.vmap(
         get_csum,
         in_axes=(None, None, None, 0),
     ), in_axes=(None, None, None, 0),
-    )(BJ, YLM, LMAX, dense_quantum_numbers)
+    )(BJ, YLM, LMAX, DENSE_QUANTUM_NUMBERS[LMAX])
     return propagator_origin_to_c  # named GTWOC in fortran code
 
 
@@ -253,29 +245,3 @@ def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
     csum = jnp.sum(bessel_values*ylm_values*gaunt_coeffs*1j**(L-LP-all_lpp))
     csum = csum*4*np.pi
     return csum
-
-
-# TODO: come up with a jittable version of this
-def get_valid_quantum_numbers(LMAX):
-    valid_quantum_numbers = np.empty(((LMAX+1)*(LMAX+1), (LMAX+1)*(LMAX+1), 4), dtype=int)
-    for L in range(LMAX+1):
-        for LP in range(LMAX+1):
-            for M in range(-L, L+1):
-                for MP in range(-LP, LP+1):
-                    valid_quantum_numbers[(L+1)*(L+1)-L+M-1][(LP+1)*(LP+1)-LP+MP-1] = [L, LP, M, MP]
-    return jnp.array(valid_quantum_numbers)
-
-
-def map_l_array_to_compressed_quantum_index(array, LMAX, broadcast_l_index):
-    """Takes an array of shape (LMAX+1) with values for each L and maps it to a
-    dense form of shape (LMAX+1)*(LMAX+1) with the values for each L replicated
-    (2L+1) times. I.e. an array
-    [val(l=0), val(l=1), val(l=2), ...] is mapped to
-    [val(l=0), val(l=1), val(l=1), val(l=1), val(l=2), ...].
-    """
-    mapped_array = jnp.asarray(array)[broadcast_l_index]
-    return mapped_array
-
-LMAX = 14
-DENSE_QUANTUM_NUMBERS = get_valid_quantum_numbers(LMAX)
-DENSE_QUANTUM_NUMBERS_2LMAX = get_valid_quantum_numbers(2*LMAX)
