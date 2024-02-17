@@ -1,9 +1,13 @@
+from functools import partial
+
 from jax import config
 config.update("jax_enable_x64", True)
 import jax.numpy as jnp
-from jax import jit
+from jax import jit, vmap
 import jax
 from pathlib import Path
+
+from dense_quantum_numbers import MAXIMUM_LMAX
 
 _REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__).parent / "gaunt_coefficients.npy",
                                        allow_pickle=False)
@@ -52,9 +56,13 @@ def fetch_stored_gaunt_coeffs(l1: int, l2: int, l3: int,
         l1, l2, l3, m1, m2,
     )
 
+# vectorize cppp in all arguments
 # Clebsh-Gordon coefficients for computation of temperature-dependent phase shifts
 # used in tscatf; can be jitted
 # TODO: @ Paul: chose a better name for this function
+@partial(vmap, in_axes=(0, None, None))
+@partial(vmap, in_axes=(None, 0, None))
+@partial(vmap, in_axes=(None, None, 0))
 def cppp(l1: int, l2: int , l3: int) -> float:
     """Calculates integral over three associated Legendre polynomials.
 
@@ -85,3 +93,9 @@ def cppp(l1: int, l2: int , l3: int) -> float:
     pre_factor = 1/jnp.sqrt((2*l1+1)*(2*l2+1)*(2*l3+1))
     pre_factor *= jnp.sqrt(4*jnp.pi)
     return pre_factor * _REDUCED_GAUNT_COEFFICIENTS[l1, l2, l3, 0, 0]
+
+
+PRE_CALCULATED_CPPP = {
+    l: cppp(jnp.arange(0, 2*l+1), jnp.arange(0, l+1), jnp.arange(0, l+1))
+    for l in range(MAXIMUM_LMAX+1)
+}

@@ -15,7 +15,7 @@ from dense_quantum_numbers import MINUS_ONE_POW_M
 from dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 
 from gaunt_coefficients import fetch_stored_gaunt_coeffs as fetch_gaunt
-from gaunt_coefficients import cppp
+from gaunt_coefficients import PRE_CALCULATED_CPPP
 
 fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
                             in_axes=(None, None, 0, None, None, None),
@@ -25,10 +25,6 @@ MEMACH = 1.0E-6
 HARTREE = 27.211396
 BOHR = 0.529177
 
-# vectorize cppp in all arguments
-vectorized_cppp = jax.vmap(jax.vmap(jax.vmap(cppp, (None, None, 0)), (None, 0, None)), (0, None, None))
-
-PRE_CALCULATED_CPPP = vectorized_cppp(jnp.arange(0, 2*LMAX+1), jnp.arange(0, LMAX+1), jnp.arange(0, LMAX+1))
 
 @profile
 def tscatf(IEL,LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR,T0,T):
@@ -55,11 +51,11 @@ def tscatf(IEL,LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR,T0,T):
 #   Average any anisotropy of RMS vibration amplitudes
     DR = jnp.sqrt((DRPER*DRPER+2*DRPAR*DRPAR)/3)
 #   Compute temperature-dependent t-matrix elements
-    t_matrix = PSTEMP(DR0, DR, T0, T, E, phaseshifts)
+    t_matrix = PSTEMP(DR0, DR, T0, T, E, phaseshifts, LMAX)
     return t_matrix
 
 #@jit
-def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
+def PSTEMP(DR0, DR, T0, TEMP, E, PHS, LMAX):
     """PSTEMP incorporates the thermal vibration effects in the phase shifts, through a Debye-Waller factor. Isotropic
     vibration amplitudes are assumed.
 
@@ -88,7 +84,7 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
 
     CTAB = (jnp.exp(2j*PHS)-1)*(2*jnp.arange(LMAX+1) + 1)
 
-    SUM = jnp.einsum('jki,i,j->k', PRE_CALCULATED_CPPP, CTAB, BJ)
+    SUM = jnp.einsum('jki,i,j->k', PRE_CALCULATED_CPPP[LMAX], CTAB, BJ)
     t_matrix = (SUM)/(2j)
     # SUM is the factor exp(2*i*delta) -1, t_matrix is temperature-dependent t-matrix.
     # Equation (22), page 29 in Van Hove, Tong book
