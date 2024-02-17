@@ -119,7 +119,7 @@ def MATEL_DWG(AF,NewAF,E,VPI,LMAX,EXLM,ALM,AK2M,
     dense_l = dense_quantum_numbers[:,0,0]
     minus_1_pow_m = jnp.power(-1, dense_m)  # (-1)**M
     CAK = 2*E-2j*VPI+0.0000001j
-    CAK = np.sqrt(CAK)
+    CAK = jnp.sqrt(CAK)
 
     # EXLM is for outgoing beams, so we need to swap indices m -> -m
     # to do this in the dense representation, we do the following:
@@ -128,7 +128,8 @@ def MATEL_DWG(AF,NewAF,E,VPI,LMAX,EXLM,ALM,AK2M,
 #   The vector C must be expressed W.R.T. a right handed set of axes.
 #   CDISP() is input W.R.T. a left handed set of axes.
     C = CDISP[:, :]/BOHR
-    C[:, -1] *= -1
+    C = C * jnp.array([[1, 1, -1],]*C.shape[0])
+
 
 #   Evaluate DELTAT matrix for current displacement vector
     DELTAT = TMATRIX_DWG(AF,NewAF,C, E,VPI,LMAX, dense_quantum_numbers,
