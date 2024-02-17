@@ -215,9 +215,8 @@ def TMATRIX_DWG(AF, NewAF, C, E, VPI, LMAX, dense_quantum_numbers, dense_l, dens
 
     DELTAT = jax.numpy.einsum('il,lj->ij', GTEMP, GTWOC)
 
-    diagonal_indices = jnp.diag_indices_from(DELTAT)
     mapped_AF = map_l_array_to_compressed_quantum_index(AF, LMAX, dense_l)
-    DELTAT = DELTAT.at[diagonal_indices].add(-1.0j*mapped_AF)
+    DELTAT = DELTAT + jnp.diag(-1.0j*mapped_AF)
 
     return DELTAT
 
@@ -245,13 +244,10 @@ def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
     # we could skip some computations with non_zero_lpp = jnp.where((all_lpp >= abs(L-LP)) & (all_lpp <= L+LP))
     # but I'm not sure the conditional is worth it in terms of performance
     # Convert scalar values to arrays
-    L_array = jnp.array(L)
-    LP_array = jnp.array(LP)
-    M_array = jnp.array(M)
-    MP_array = jnp.array(MP)
+
 
     # Use the array versions in the vmap call
-    gaunt_coeffs = fetch_lpp_gaunt(L_array, LP_array, all_lpp, M_array, -MP_array, -M_array+MP_array)
+    gaunt_coeffs = fetch_lpp_gaunt(L, LP, all_lpp, M, -MP, -M+MP)
     gaunt_coeffs = gaunt_coeffs*(-1)**(LP+MP)  #TODO: @Paul: I found we need this factor, but I still don't understand why
     bessel_values = BJ[all_lpp]
     ylm_values = YLM[all_lpp*all_lpp+all_lpp+1-MPP-1]
