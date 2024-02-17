@@ -50,7 +50,7 @@ def tscatf(IEL,LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR,T0,T):
     E = e_inside - V
 
 #   Average any anisotropy of RMS vibration amplitudes
-    DR = np.sqrt((DRPER*DRPER+2*DRPAR*DRPAR)/3)
+    DR = jnp.sqrt((DRPER*DRPER+2*DRPAR*DRPAR)/3)
 #   Compute temperature-dependent t-matrix elements
     t_matrix = PSTEMP(DR0, DR, T0, T, E, phaseshifts)
     return t_matrix
