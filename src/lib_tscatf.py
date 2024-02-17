@@ -122,6 +122,7 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
 
     # EXLM is for outgoing beams, so we need to swap indices m -> -m
     # to do this in the dense representation, we do the following:
+    _EXLM = EXLM[:(LMAX+1)**2, :]  # TODO: crop EXLM, ALM earlier
     _ALM = ALM[:(LMAX+1)**2]
 
 #   The vector C must be expressed W.R.T. a right handed set of axes.
@@ -133,7 +134,6 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
 #   Evaluate DELTAT matrix for current displacement vector
     DELTAT = TMATRIX_DWG(t_matrix_ref,t_matrix_new,C, e_inside,v_imag,LMAX, dense_quantum_numbers,
                             dense_l, dense_l_2lmax, dense_m_2lmax)
-    _EXLM = EXLM[:(LMAX+1)**2, :]  # TODO: crop EXLM, ALM earlier
     _EXLM = _EXLM[(dense_l+1)**2 - dense_l - dense_m -1]
     
     delwv_per_atom = calcuclate_exit_beam_delta(
