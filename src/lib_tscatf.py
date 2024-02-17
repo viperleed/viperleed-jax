@@ -21,7 +21,6 @@ fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
                             in_axes=(None, None, 0, None, None, None),
                             out_axes=0)
 
-MEMACH = 1.0E-6
 HARTREE = 27.211396
 BOHR = 0.529177
 
