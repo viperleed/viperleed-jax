@@ -187,7 +187,7 @@ def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
     Z = jnp.sqrt(CAPPA)*CL
     BJ = jnp.nan_to_num(bessel(Z,2*LMAX+1))
     YLM = HARMONY(C, LMAX, DENSE_L[2*LMAX], DENSE_M[2*LMAX])
-    GTWOC = sum_quantum_numbers(LMAX, BJ, YLM)
+    GTWOC = get_csum(BJ, YLM, LMAX, DENSE_QUANTUM_NUMBERS[LMAX])
 
     broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(t_matrix_new, LMAX)
     GTEMP = GTWOC.T*1.0j*broadcast_New_t_matrix
@@ -200,18 +200,9 @@ def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
     return DELTAT
 
 
-# TODO: better name
 @partial(jit, static_argnames=('LMAX',))
-def sum_quantum_numbers(LMAX, BJ, YLM):
-    propagator_origin_to_c = jax.vmap(jax.vmap(
-        get_csum,
-        in_axes=(None, None, None, 0),
-    ), in_axes=(None, None, None, 0),
-    )(BJ, YLM, LMAX, DENSE_QUANTUM_NUMBERS[LMAX])
-    return propagator_origin_to_c  # named GTWOC in fortran code
-
-
-@partial(jit, static_argnames=('LMAX',))
+@partial(vmap, in_axes=(None, None, None, 0))
+@partial(vmap, in_axes=(None, None, None, 0))
 def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
     L, LP, M, MP = l_lp_m_mp
     MPP = MP-M  # I don't fully understand this, technically it should be MPP = -M - MP
