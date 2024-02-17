@@ -8,6 +8,9 @@ from functools import partial
 # Spherical Bessel functions from NeuralIL
 from spherical_bessel import functions
 
+# numerical epsilon to avoid division by zero
+EPS = 1e-8
+
 def _generate_bessel_functions(l_max):
     """Generate a list of spherical Bessel functions up to order l_max"""
     bessel_functions = []
@@ -48,7 +51,7 @@ def HARMONY(C, LMAX, dense_l, dense_m):
     This is a python implementation of the fortran subroutine HARMONY from
     TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
     equivalent results."""
-    r = jnp.sqrt(C[0] ** 2 + C[1] ** 2 + C[2] ** 2 + 1.0e-8)
+    r = jnp.sqrt(C[0] ** 2 + C[1] ** 2 + C[2] ** 2 + EPS)
     theta = jnp.arccos(C[0] / r)
     phi = jnp.arctan2(C[2], C[1])
     return sph_harm(dense_m, dense_l, jnp.array([phi]), jnp.array([theta]), n_max=LMAX)

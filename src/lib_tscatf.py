@@ -153,7 +153,7 @@ def calcuclate_exit_beam_delta(EXLM, ALM, DELTAT, k_inside, D2, D3, TV, NRATIO,
     out_k_par = D2*D2 + D3*D3
 
     # XA is evaluated relative to the muffin tin zero i.e. it uses energy= incident electron energy + inner potential
-    out_k_perp_inside = jnp.sqrt(2*E-out_k_par-2j*v_imag+0.0000001j)
+    out_k_perp_inside = jnp.sqrt(2*E-out_k_par-2j*v_imag+1j*EPS)
     AMAT *= 1/(2*k_inside*TV*out_k_perp_inside*NRATIO)
     return AMAT
 
