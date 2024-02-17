@@ -68,22 +68,22 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS):
     PHS= Input phase shifts.
     DEL= Output (complex) phase shifts."""
     ALFA = DR*DR*TEMP/T0
-    ALFA = 0.166667*jnp.sqrt(ALFA*ALFA+DR0)
-    FALFE = -4.0*ALFA*E
+    ALFA = jnp.sqrt(ALFA*ALFA+DR0)/6
+    FALFE = -4*ALFA*E
     # TODO: probably we can just skip this conditional
     # if abs(FALFE) < 0.001:
     #     for i in range(LMAX+1):
     #         DEL[i] = PHS[i]
     #     return DEL
-    Z = FALFE*1.0j
+    Z = FALFE*1j
 
     # TODO: @Paul choose better variable names
     BJ = bessel(Z, 2*LMAX+1)
     FL = (2*jnp.arange(2*LMAX+1) + 1)
-    CS = 1.0j ** jnp.arange(2*LMAX+1)
+    CS = 1j ** jnp.arange(2*LMAX+1)
     BJ = jnp.exp(FALFE) * FL * CS * BJ
 
-    CTAB = (jnp.exp(2.0j*PHS)-1)*(2*jnp.arange(LMAX+1) + 1)
+    CTAB = (jnp.exp(2j*PHS)-1)*(2*jnp.arange(LMAX+1) + 1)
 
     SUM = jnp.einsum('jki,i,j->k', PRE_CALCULATED_CPPP, CTAB, BJ)
     t_matrix = (SUM)/(2j)
