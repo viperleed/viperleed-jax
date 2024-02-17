@@ -24,7 +24,7 @@ LMAX = 14
 # generate a list of spherical Bessel functions up to order l_max
 BESSEL_FUNCTIONS = _generate_bessel_functions(LMAX)
 
-@partial(jax.jit, static_argnames=('BESSEL_FUNCTIONS',))
+@jit
 def custom_spherical_jn(n, z):
     return jax.lax.switch(n, BESSEL_FUNCTIONS, z)
 
