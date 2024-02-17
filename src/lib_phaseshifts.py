@@ -251,7 +251,3 @@ def regrid_phaseshifts(old_grid, new_grid, phaseshifts):
                 new_phaseshifts[el, en_id, l] = interpolate_phaseshift(
                     phaseshifts, old_grid, en_id, el, l)
     return new_phaseshifts
-
-
-
-firstline, phaseshifts, newpsGen, newpsWrite = readPHASESHIFTS(None, None, readfile='PHASESHIFTS', check=False, ignoreEnRange=False)
