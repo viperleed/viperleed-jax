@@ -13,7 +13,6 @@ from lib_tensors import *
 from lib_tscatf import *
 
 #From "GLOBAL"
-MEMACH = 1.0E-6
 HARTREE = 27.211396
 BOHR = 0.529177
 
