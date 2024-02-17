@@ -250,7 +250,7 @@ def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
     bessel_values = BJ[all_lpp]
     ylm_values = YLM[all_lpp*all_lpp+all_lpp+1-MPP-1]
     # Equation (34) from Rous, Pendry 1989
-    csum = jnp.sum(bessel_values*ylm_values*gaunt_coeffs*1.0j**(L-LP-all_lpp))
+    csum = jnp.sum(bessel_values*ylm_values*gaunt_coeffs*1j**(L-LP-all_lpp))
     csum = csum*4*np.pi
     return csum
 
