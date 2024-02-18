@@ -123,7 +123,7 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
 #   Evaluate DELTAT matrix for current displacement vector
     DELTAT = TMATRIX_DWG(t_matrix_ref,t_matrix_new,C, e_inside,v_imag,LMAX)
     _EXLM = _EXLM[(DENSE_L[LMAX]+1)**2 - DENSE_L[LMAX] - DENSE_M[LMAX] -1]
-    
+
     delwv_per_atom = calcuclate_exit_beam_delta(
             _EXLM, _ALM, DELTAT, k_inside, AK2M, AK3M, TV, NRATIO,
             LMAX, e_inside, v_imag
@@ -204,7 +204,6 @@ def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
     all_lpp = jnp.arange(0, LMAX*2+1)
     # we could skip some computations with non_zero_lpp = jnp.where((all_lpp >= abs(L-LP)) & (all_lpp <= L+LP))
     # but I'm not sure the conditional is worth it in terms of performance
-    # Convert scalar values to arrays
 
 
     # Use the array versions in the vmap call
