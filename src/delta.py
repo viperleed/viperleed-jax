@@ -55,18 +55,6 @@ VSITE = 0  # possible energy shift in phase shift computations - can be used to 
 @profile
 def main():
 
-
-    T0 = 100  # must equal T if input vib. amplitudes are to be used properly - not 0. !!
-    T = 100  # must equal T0 if input vib. amplitudes are to be used properly - not 0. !!
-    #          if T0 is set to the temperature that the vibs. were computed for, T could
-    #          in principle be used to simulate the temperature behaviour of
-    #          a Debye-like phonon spectrum. Yet, this simply alters the vib. amplitude used
-    #          for the DW factor, thus it only makes sense to either vary DRPER or T.
-    NRATIO = 1  # originally, ratio between substrate and overlayer unit cell area. However,
-    #             currently all TLEED parts must be performed with overlayer symmetry only,
-    #             thus NRATIO = 1 and TV = TVB are the only safe choice
-
-
     firstline, phaseshifts, newpsGen, newpsWrite = readPHASESHIFTS(None, None, readfile='PHASESHIFTS', check=False, ignoreEnRange=False)
 
     n_energies = 0
@@ -108,7 +96,7 @@ def main():
         if (IEL != 0):
             # TODO: when treating multiple atoms, choose the correct site for phaseshifts (IEL)
             t_matrix_new = tscatf(IEL, LMAX, interpolated_phaseshifts[i, IEL-1, :],
-                            e_inside, VSITE, DR0, DRPER, DRPAR, T0, T)
+                            e_inside, VSITE, DR0, DRPER, DRPAR)
         else:
             t_matrix_new = np.full((LMAX+1,), dtype=np.complex128, fill_value=0.0)
 
@@ -117,12 +105,12 @@ def main():
             C = CDISP[nc,...]
             DELWV = MATEL_DWG(t_matrix_ref, t_matrix_new, e_inside, v_imag,
                             LMAX, EXLM, ALM, out_k_par2, out_k_par3,
-                            NRATIO, TV, C)
+                            TV, C)
 
             all_delwv[i, nc, :] = DELWV
         print(DELWV)
     with open('delta.npy','wb') as f:
-        np.save(f, all_delwv[:, :, 0])
+        np.save(f, all_delwv[:, :, :])
 
 # TODO: We should consider a spline interpolation instead of a linear
 def interpolate_phaseshifts(phaseshifts, l_max, energies):

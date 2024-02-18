@@ -24,9 +24,20 @@ fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
 HARTREE = 27.211396
 BOHR = 0.529177
 
+# Hard coded constants from TensErLEED - TODO: remove these
+T0 = 100  # must equal T if input vib. amplitudes are to be used properly - not 0. !!
+T = 100  # must equal T0 if input vib. amplitudes are to be used properly - not 0. !!
+#          if T0 is set to the temperature that the vibs. were computed for, T could
+#          in principle be used to simulate the temperature behaviour of
+#          a Debye-like phonon spectrum. Yet, this simply alters the vib. amplitude used
+#          for the DW factor, thus it only makes sense to either vary DRPER or T.
+NRATIO = 1  # originally, ratio between substrate and overlayer unit cell area. However,
+#             currently all TLEED parts must be performed with overlayer symmetry only,
+#             thus NRATIO = 1 and TV = TVB are the only safe choice
+
 
 @profile
-def tscatf(IEL,LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR,T0,T):
+def tscatf(IEL,LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR):
     """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
     These are also corrected for thermal vibrations (output in CAF). AF and CAF are meant to be stored in array TMAT for
     later use in RSMF, RTINV.
@@ -50,11 +61,11 @@ def tscatf(IEL,LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR,T0,T):
 #   Average any anisotropy of RMS vibration amplitudes
     DR = jnp.sqrt((DRPER*DRPER+2*DRPAR*DRPAR)/3)
 #   Compute temperature-dependent t-matrix elements
-    t_matrix = PSTEMP(DR0, DR, T0, T, E, phaseshifts, LMAX)
+    t_matrix = PSTEMP(DR0, DR, E, phaseshifts, LMAX)
     return t_matrix
 
 #@jit
-def PSTEMP(DR0, DR, T0, TEMP, E, PHS, LMAX):
+def PSTEMP(DR0, DR, E, PHS, LMAX):
     """PSTEMP incorporates the thermal vibration effects in the phase shifts, through a Debye-Waller factor. Isotropic
     vibration amplitudes are assumed.
 
@@ -65,7 +76,7 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS, LMAX):
     E= Current Energy (real number).
     PHS= Input phase shifts.
     DEL= Output (complex) phase shifts."""
-    ALFA = DR*DR*TEMP/T0
+    ALFA = DR*DR*T/T0
     ALFA = jnp.sqrt(ALFA*ALFA+DR0)/6
     FALFE = -4*ALFA*E
     # TODO: probably we can just skip this conditional
@@ -94,7 +105,7 @@ def PSTEMP(DR0, DR, T0, TEMP, E, PHS, LMAX):
 
 @profile
 def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
-      AK3M,NRATIO,TV,CDISP):
+      AK3M,TV,CDISP):
     """The function MATEL_DWG evaluates the change in amplitude delwv for each of the exit beams for each of the
     displacements given the sph wave amplitudes corresponding to the incident wave ALM & for each of the time reversed
     exit beams EXLM.
@@ -125,7 +136,7 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
     _EXLM = _EXLM[(DENSE_L[LMAX]+1)**2 - DENSE_L[LMAX] - DENSE_M[LMAX] -1]
 
     delwv_per_atom = calcuclate_exit_beam_delta(
-            _EXLM, _ALM, DELTAT, k_inside, AK2M, AK3M, TV, NRATIO,
+            _EXLM, _ALM, DELTAT, k_inside, AK2M, AK3M, TV,
             LMAX, e_inside, v_imag
         )
     # sum over atom contributions
@@ -133,9 +144,9 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
 
     return delwv
 
-@partial(vmap, in_axes=(None, None, 0, None, None, None, None, None, None, None, None))  # vmap over atoms
-@partial(vmap, in_axes=(1, None, None, None, 0, 0, None, None, None, None, None), out_axes=0)  # vmap over exit beams
-def calcuclate_exit_beam_delta(EXLM, ALM, DELTAT, k_inside, D2, D3, TV, NRATIO,
+@partial(vmap, in_axes=(None, None, 0, None, None, None, None, None, None, None))  # vmap over atoms
+@partial(vmap, in_axes=(1, None, None, None, 0, 0, None, None, None, None), out_axes=0)  # vmap over exit beams
+def calcuclate_exit_beam_delta(EXLM, ALM, DELTAT, k_inside, D2, D3, TV,
                                LMAX, E, v_imag):
     # Equation (41) from Rous, Pendry 1989
     AMAT = jnp.einsum('k,k,km,m->', MINUS_ONE_POW_M[LMAX], EXLM, DELTAT, ALM)
