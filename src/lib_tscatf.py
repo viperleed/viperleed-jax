@@ -107,7 +107,7 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
     NRATIO: Ration of area of surface unit cell of reconstructed surface to unit cell area of the unreconstructed
     surface. E.G. for P(2x2) NRATIO=4, for C(2x2) NRATIO=2."""
 
-    k_inside = jnp.sqrt(2*e_inside-2j*v_imag+0.0000001j)
+    k_inside = jnp.sqrt(2*e_inside-2j*v_imag+1j*EPS)
 
     # EXLM is for outgoing beams, so we need to swap indices m -> -m
     # to do this in the dense representation, we do the following:
