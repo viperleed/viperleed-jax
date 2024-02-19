@@ -16,8 +16,27 @@ def find_interval(knots, x_val):
     return jnp.searchsorted(knots, x_val, side='left') -1
 
 
+def get_bspline_coeffs(lhs, rhs):
+    """Return the coefficients of the B-spline interpolant.
+
+    Solves the linear system lhs * coeffs = rhs for coeffs."""
+    # TODO: we could do this more efficiently. One easy improvement would be to
+    # pre-factorize lhs by splitting .solve() into .lu_factor() and .lu_solve()
+    # parts. Only the solve part depends on the right hand side.
+    return jnp.linalg.solve(lhs, rhs)
+
+
+def evaluate_bspline(knots, coeffs, target_grid, intpol_deg):
+    """Evaluate the B-spline interpolant at the points x"""
+    pass #TODO: implement this AND derivatives
+
+
+def not_a_knot_rhs(values):
+    return values.reshape(-1, 1)
+
+
 ## Set up left hand side (LHS)
-def set_up_lhs(original_grid, target_grid, intpol_deg,
+def set_up_knots_and_lhs(original_grid, target_grid, intpol_deg,
                boundary_condition='not-a-knot'):
     """Taken mostly from scipy interpolate.py, with some modifications"""
     if boundary_condition != 'not-a-knot':
@@ -29,6 +48,9 @@ def set_up_lhs(original_grid, target_grid, intpol_deg,
 
     full_colloc_matrix = _banded_colloc_matrix_to_full(colloc_matrix,
                                                        intpol_deg)
+
+    # we can now determine the coefficients by solving the linear system
+    return knots, full_colloc_matrix
 
 
 
