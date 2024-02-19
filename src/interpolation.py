@@ -76,8 +76,7 @@ def _knots_and_colloc_matrix_not_a_knot(original_grid, intpol_deg):
 ## Deal with collocation matrix
 
 def _banded_colloc_matrix_to_full(colloc_matrix, intpol_deg):
-    kl = ku = intpol_deg
-    n = colloc_matrix.shape[1]
+    kl = intpol_deg
     center_row = 2*kl
     full_matrix = np.diag(colloc_matrix[center_row,:])
     for k in range(1, kl+1):
