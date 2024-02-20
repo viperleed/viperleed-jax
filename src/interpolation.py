@@ -9,14 +9,18 @@ import jax
 from jax import numpy as jnp
 from scipy import interpolate
 
+from hashable_array import HashableArray
+
 def find_interval(knots, x_val, intpol_deg):
     """Return index of interval in knots that contains x_val"""
     # raise if knots are not sorted
     if not jnp.all(knots[:-1] <= knots[1:]):
         raise ValueError('knots must be sorted')
-    return jnp.clip(jnp.searchsorted(knots, x_val, side='left'),
+    intervals = jnp.clip(jnp.searchsorted(knots, x_val, side='left'),
                     a_min=intpol_deg + 1,
-                    a_max=knots.size - intpol_deg - 1) -1
+                    a_max=knots.size - intpol_deg - 1) - 1
+    return HashableArray(intervals)
+
 
 @partial(jax.jit, static_argnames=('lhs',))
 def get_bspline_coeffs(lhs, rhs):
@@ -26,40 +30,41 @@ def get_bspline_coeffs(lhs, rhs):
     # TODO: we could do this more efficiently. One easy improvement would be to
     # pre-factorize lhs by splitting .solve() into .lu_factor() and .lu_solve()
     # parts. Only the solve part depends on the right hand side.
-    spline_coeffs = jnp.linalg.inv(lhs) @ rhs
+    spline_coeffs = jnp.linalg.inv(lhs.val) @ rhs
     return spline_coeffs
 
 
 @jax.jit
 def not_a_knot_rhs(values):
+    values = jnp.asarray(values)
     return values.reshape(-1, 1)
 
 
 def calc_de_boor(knots, target_grid, deriv_order, intpol_deg):
     """Calculate the De Boor coefficients for the given knots and target grid"""
-    de_boor_matrix = np.zeros((intpol_deg + 1, target_grid.size))
+    de_boor_coeffs = np.zeros((intpol_deg + 1, target_grid.size))
     intervals = find_interval(knots, target_grid, intpol_deg)
-    for i, (interval, new_x) in enumerate(zip(intervals, target_grid)):
+    for i, (interval, new_x) in enumerate(zip(intervals.val, target_grid)):
         beta_coeffs = interpolate._bspl.evaluate_all_bspl(knots,
                                                           intpol_deg,
                                                           new_x,
                                                           interval,
                                                           deriv_order)
-        de_boor_matrix[:, i] = beta_coeffs
-    return de_boor_matrix
+        de_boor_coeffs[:, i] = beta_coeffs
+    return HashableArray(de_boor_coeffs)
 
 
 @partial(jax.jit, static_argnames=('de_boor_coeffs', 'intervals', 'intpol_deg',))
 def evaluate_spline(spline_coeffs, de_boor_coeffs, intervals, intpol_deg):
     """Evaluate the spline using the De Boor coefficients and the B-spline coefficients"""
     # Extract the relevant coefficients for each interval
-    lower_indices = intervals - intpol_deg
-    coeff_indices = lower_indices.reshape(-1,1) + np.arange(intpol_deg+1)
+    lower_indices = intervals.val - intpol_deg
+    coeff_indices = lower_indices.reshape(-1,1) + jnp.arange(intpol_deg+1)
     coeff_subarrays = spline_coeffs[coeff_indices]
     coeff_subarrays = coeff_subarrays.reshape(-1, intpol_deg+1) # remove tailing 1 dimension
 
     # Element-wise multiplication between coefficients and de_boor values, sum over basis functions
-    return np.einsum('ij,ji->i', coeff_subarrays, de_boor_coeffs)
+    return jnp.einsum('ij,ji->i', coeff_subarrays, de_boor_coeffs.val)
 
 
 ## Set up left hand side (LHS)
@@ -75,6 +80,7 @@ def set_up_knots_and_lhs(original_grid, intpol_deg,
 
     full_colloc_matrix = _banded_colloc_matrix_to_full(colloc_matrix,
                                                        intpol_deg)
+    full_colloc_matrix = HashableArray(jnp.asarray(full_colloc_matrix))
 
     # we can now determine the coefficients by solving the linear system
     return knots, full_colloc_matrix
