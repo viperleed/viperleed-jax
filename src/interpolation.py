@@ -37,7 +37,7 @@ def get_bspline_coeffs(lhs, rhs):
 @jax.jit
 def not_a_knot_rhs(values):
     values = jnp.asarray(values)
-    return values.reshape(-1, 1)
+    return values
 
 
 def calc_de_boor(knots, target_grid, deriv_order, intpol_deg):
@@ -145,6 +145,7 @@ def get_natural_knots(x, deg):
          x,
          np.full(shape=(deg,), fill_value=x[-1])])
     return knots
+
 
 def natural_derivative_bc(deg):
     _supported_degrees = (3, 5)
