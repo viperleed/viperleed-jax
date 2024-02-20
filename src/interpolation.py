@@ -2,6 +2,7 @@
 
 This module is a reworking of scipy's and my Bspline interpolation methods.
 It can interpolate functions efficiently and in a JAX-compatible way."""
+from functools import partial
 
 import numpy as np
 import jax
@@ -17,7 +18,7 @@ def find_interval(knots, x_val, intpol_deg):
                     a_min=intpol_deg + 1,
                     a_max=knots.size - intpol_deg - 1) -1
 
-
+@partial(jax.jit, static_argnames=('lhs',))
 def get_bspline_coeffs(lhs, rhs):
     """Return the coefficients of the B-spline interpolant.
 
@@ -25,10 +26,11 @@ def get_bspline_coeffs(lhs, rhs):
     # TODO: we could do this more efficiently. One easy improvement would be to
     # pre-factorize lhs by splitting .solve() into .lu_factor() and .lu_solve()
     # parts. Only the solve part depends on the right hand side.
-    return jnp.linalg.solve(lhs, rhs)
+    spline_coeffs = jnp.linalg.inv(lhs) @ rhs
+    return spline_coeffs
 
 
-
+@jax.jit
 def not_a_knot_rhs(values):
     return values.reshape(-1, 1)
 
@@ -47,7 +49,8 @@ def calc_de_boor(knots, target_grid, deriv_order, intpol_deg):
     return de_boor_matrix
 
 
-def evaluate_spline(de_boor_coeffs, spline_coeffs, intervals, intpol_deg):
+@partial(jax.jit, static_argnames=('de_boor_coeffs', 'intervals', 'intpol_deg',))
+def evaluate_spline(spline_coeffs, de_boor_coeffs, intervals, intpol_deg):
     """Evaluate the spline using the De Boor coefficients and the B-spline coefficients"""
     # Extract the relevant coefficients for each interval
     lower_indices = intervals - intpol_deg
@@ -57,6 +60,7 @@ def evaluate_spline(de_boor_coeffs, spline_coeffs, intervals, intpol_deg):
 
     # Element-wise multiplication between coefficients and de_boor values, sum over basis functions
     return np.einsum('ij,ji->i', coeff_subarrays, de_boor_coeffs)
+
 
 ## Set up left hand side (LHS)
 def set_up_knots_and_lhs(original_grid, intpol_deg,
@@ -74,8 +78,6 @@ def set_up_knots_and_lhs(original_grid, intpol_deg,
 
     # we can now determine the coefficients by solving the linear system
     return knots, full_colloc_matrix
-
-
 
 
 def _knots_and_colloc_matrix_not_a_knot(original_grid, intpol_deg):
@@ -118,8 +120,8 @@ def _knots_and_colloc_matrix_not_a_knot(original_grid, intpol_deg):
             offset=nt-nright)
     return knots, banded_colloc_matrix
 
-## Deal with collocation matrix
 
+## Deal with collocation matrix
 def _banded_colloc_matrix_to_full(colloc_matrix, intpol_deg):
     kl = intpol_deg
     center_row = 2*kl
