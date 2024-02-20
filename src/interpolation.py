@@ -47,9 +47,16 @@ def calc_de_boor(knots, target_grid, deriv_order, intpol_deg):
     return de_boor_matrix
 
 
-def evaluate_spline(de_boor_matrix, coeffs):
+def evaluate_spline(de_boor_coeffs, spline_coeffs, intervals, intpol_deg):
     """Evaluate the spline using the De Boor coefficients and the B-spline coefficients"""
-    return np.dot(de_boor_matrix.T, coeffs)
+    # Extract the relevant coefficients for each interval
+    lower_indices = intervals - intpol_deg
+    coeff_indices = lower_indices.reshape(-1,1) + np.arange(intpol_deg+1)
+    coeff_subarrays = spline_coeffs[coeff_indices]
+    coeff_subarrays = coeff_subarrays.reshape(-1, intpol_deg+1) # remove tailing 1 dimension
+
+    # Element-wise multiplication between coefficients and de_boor values, sum over basis functions
+    return np.einsum('ij,ji->i', coeff_subarrays, de_boor_coeffs)
 
 ## Set up left hand side (LHS)
 def set_up_knots_and_lhs(original_grid, intpol_deg,
