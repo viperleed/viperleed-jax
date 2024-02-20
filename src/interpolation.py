@@ -8,12 +8,14 @@ import jax
 from jax import numpy as jnp
 from scipy import interpolate
 
-def find_interval(knots, x_val):
+def find_interval(knots, x_val, intpol_deg):
     """Return index of interval in knots that contains x_val"""
     # raise if knots are not sorted
     if not jnp.all(knots[:-1] <= knots[1:]):
         raise ValueError('knots must be sorted')
-    return jnp.searchsorted(knots, x_val, side='left') -1
+    return jnp.clip(jnp.searchsorted(knots, x_val, side='left'),
+                    a_min=intpol_deg + 1,
+                    a_max=knots.size - intpol_deg - 1) -1
 
 
 def get_bspline_coeffs(lhs, rhs):
@@ -26,17 +28,31 @@ def get_bspline_coeffs(lhs, rhs):
     return jnp.linalg.solve(lhs, rhs)
 
 
-def evaluate_bspline(knots, coeffs, target_grid, intpol_deg):
-    """Evaluate the B-spline interpolant at the points x"""
-    pass #TODO: implement this AND derivatives
-
 
 def not_a_knot_rhs(values):
     return values.reshape(-1, 1)
 
 
+def calc_de_boor(knots, target_grid, deriv_order, intpol_deg):
+    """Calculate the De Boor coefficients for the given knots and target grid"""
+    de_boor_matrix = np.zeros((intpol_deg + 1, target_grid.size))
+    intervals = find_interval(knots, target_grid, intpol_deg)
+    for i, (interval, new_x) in enumerate(zip(intervals, target_grid)):
+        beta_coeffs = interpolate._bspl.evaluate_all_bspl(knots,
+                                                          intpol_deg,
+                                                          new_x,
+                                                          interval,
+                                                          deriv_order)
+        de_boor_matrix[:, i] = beta_coeffs
+    return de_boor_matrix
+
+
+def evaluate_spline(de_boor_matrix, coeffs):
+    """Evaluate the spline using the De Boor coefficients and the B-spline coefficients"""
+    return np.dot(de_boor_matrix.T, coeffs)
+
 ## Set up left hand side (LHS)
-def set_up_knots_and_lhs(original_grid, target_grid, intpol_deg,
+def set_up_knots_and_lhs(original_grid, intpol_deg,
                boundary_condition='not-a-knot'):
     """Taken mostly from scipy interpolate.py, with some modifications"""
     if boundary_condition != 'not-a-knot':
