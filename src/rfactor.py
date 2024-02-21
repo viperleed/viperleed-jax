@@ -5,6 +5,7 @@ import jax
 from jax import numpy as jnp
 
 import interpolation
+from trapezoid import trapezoid
 
 
 def pendry_R(intensity_1, intensity_2,
@@ -66,8 +67,9 @@ def pendry_R_vs_reference(reference_intensity, reference_interpolator,
 def pendry_R_from_y(y_1, y_2, v0_real, v0_imag, energy_step):
     #TODO: figure out how to implement v0_real
 
-    numerator = jax.scipy.trapezoid((y_1 - y_2)**2, dx=energy_step)
-    denominator = jax.scipy.trapezoid((y_1**2 + y_2**2), dx=energy_step)
+    # TODO?: potentially, one could do these integrals analytically based on the spline coefficients
+    numerator = trapezoid((y_1 - y_2)**2, dx=energy_step)
+    denominator = trapezoid((y_1**2 + y_2**2), dx=energy_step)
     return numerator / denominator  # R-factor for a single beam
 
 
