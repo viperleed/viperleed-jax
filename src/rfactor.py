@@ -31,12 +31,12 @@ def pendry_R(intensity_1, intensity_2,
     b_spline_coeffs_2 = interpolation.get_bspline_coeffs(
         interpolator_2,
         interpolation.not_a_knot_rhs(intensity_2))
-    intens_1 = interpolation.evaluated_spline(
+    intens_2 = interpolation.evaluated_spline(
         b_spline_coeffs_2,
         interpolator_2,
         0
     )
-    deriv_1 = interpolation.evaluated_spline(
+    deriv_2 = interpolation.evaluated_spline(
         b_spline_coeffs_2,
         interpolator_2,
         1
