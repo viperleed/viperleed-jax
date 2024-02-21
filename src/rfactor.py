@@ -5,7 +5,6 @@ import jax
 from jax import numpy as jnp
 
 import interpolation
-from hashable_array import HashableArray
 
 
 def pendry_R(intensity_1, intensity_2,
