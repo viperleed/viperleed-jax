@@ -63,6 +63,16 @@ def pendry_R_vs_reference(reference_intensity, reference_interpolator,
     return partial(jitted_rfactor, reference_intensity, reference_interpolator,
                    sampling_interpolator, v0_real, v0_imag, energy_step)
 
+def pendry_R_from_intensity_and_derivative(intens_deriv_1, intens_deriv_2,
+                                      v0_real, v0_imag, energy_step):
+    intens_1, deriv_1 = intens_deriv_1
+    intens_2, deriv_2 = intens_deriv_2
+
+    y_1 = pendry_y(intens_1, deriv_1, v0_imag)
+    y_2 = pendry_y(intens_2, deriv_2, v0_imag)
+
+    return pendry_R_from_y(y_1, y_2, v0_real, v0_imag, energy_step)
+
 
 def pendry_R_from_y(y_1, y_2, v0_real, v0_imag, energy_step):
     #TODO: figure out how to implement v0_real
