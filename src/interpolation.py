@@ -117,6 +117,9 @@ class StaticNotAKnotSplineInterpolator(StaticGridSplineInterpolator):
         # get full collocation matrix
         return self._banded_colloc_matrix_to_full(banded_colloc_matrix)
 
+# TODO: The below functions could (and probably should be) interpolator class
+#       methods. However, we need to figure out how to make this work with JAX.
+
 @partial(jax.jit, static_argnames=('interpolator',))
 def get_bspline_coeffs(interpolator, rhs):
     """Return the coefficients of the B-spline interpolant.
