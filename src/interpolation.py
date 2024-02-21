@@ -35,6 +35,12 @@ class StaticGridSplineInterpolator(ABC):
         # to a simple matrix- vector multiplication
         self.inv_colloc_matrix = jnp.linalg.inv(self.full_colloc_matrix)
 
+    def is_compatible(self, other):
+        if not isinstance(other, type(self)):
+            return False
+        return (self.target_grid == other.target_grid and
+                self.intpol_deg == other.intpol_deg)
+
     @abstractmethod
     def _get_knots(self):
         raise NotImplementedError
