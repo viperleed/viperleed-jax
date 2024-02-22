@@ -104,7 +104,7 @@ def PSTEMP(DR0, DR, E, PHS, LMAX):
 
 
 @profile
-def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
+def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,tensor_amps_in,AK2M,
       AK3M,TV,CDISP):
     """The function MATEL_DWG evaluates the change in amplitude delwv for each of the exit beams for each of the
     displacements given the sph wave amplitudes corresponding to the incident wave ALM & for each of the time reversed
@@ -122,8 +122,7 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
 
     # EXLM is for outgoing beams, so we need to swap indices m -> -m
     # to do this in the dense representation, we do the following:
-    _EXLM = EXLM[:(LMAX+1)**2, :]  # TODO: crop EXLM, ALM earlier
-    _ALM = ALM[:(LMAX+1)**2]
+    tensor_amps_out = tensor_amps_out[(DENSE_L[LMAX]+1)**2 - DENSE_L[LMAX] - DENSE_M[LMAX] -1]
 
 #   The vector C must be expressed W.R.T. a right handed set of axes.
 #   CDISP() is input W.R.T. a left handed set of axes.
@@ -133,10 +132,10 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,EXLM,ALM,AK2M,
 
 #   Evaluate DELTAT matrix for current displacement vector
     DELTAT = TMATRIX_DWG(t_matrix_ref,t_matrix_new,C, e_inside,v_imag,LMAX)
-    _EXLM = _EXLM[(DENSE_L[LMAX]+1)**2 - DENSE_L[LMAX] - DENSE_M[LMAX] -1]
+    
 
     delwv_per_atom = calcuclate_exit_beam_delta(
-            _EXLM, _ALM, DELTAT, k_inside, AK2M, AK3M, TV,
+            tensor_amps_out, tensor_amps_in, DELTAT, k_inside, AK2M, AK3M, TV,
             LMAX, e_inside, v_imag
         )
     # sum over atom contributions
