@@ -9,8 +9,8 @@ from lib_tscatf import HARTREE
 def intensity_prefactor(CDISP, e_kin, v_real, v_imag, beam_indices, theta, phi, trar):
     # prefactors (refraction) from amplitudes to intensities
     n_geo = CDISP.shape[0]
-    n_energies = in_k.shape[0]
-    n_beams = out_k_perp.shape[1]
+    n_energies = e_kin.shape[0]
+    n_beams = beam_indices.shape[0]
 
     in_k, bk_z, out_k_z, out_k_perp = _wave_vectors(e_kin, v_real, v_imag, theta, phi, trar, beam_indices)
 
