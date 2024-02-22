@@ -48,7 +48,7 @@ VSITE = 0  # possible energy shift in phase shift computations - can be used to 
 @profile
 def main():
 
-    firstline, phaseshifts, newpsGen, newpsWrite = readPHASESHIFTS(None, None, readfile='PHASESHIFTS', check=False, ignoreEnRange=False)
+    _, phaseshifts, _, _ = readPHASESHIFTS(None, None, readfile='PHASESHIFTS', check=False, ignoreEnRange=False)
 
     n_energies = 0
     with open('T_1', 'r') as datei:
