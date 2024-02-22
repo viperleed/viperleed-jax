@@ -88,6 +88,7 @@ def main():
         print("Current energy", EEV, "eV")
 
         # NewCAF: working array in which current (displaced) atomic t-matrix is stored
+        # TODO: we could also either append empty phaseshifts to the phaseshifts array or move the conditional around tscatf
         t_matrix_new = tscatf(IEL, LMAX,
                               _select_phaseshifts(IEL, interpolated_phaseshifts)[i,:],
                             e_inside, VSITE, DR0, DRPER, DRPAR)
