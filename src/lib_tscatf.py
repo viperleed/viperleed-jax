@@ -64,8 +64,7 @@ def PSTEMP(DR0, DR, E, PHS, LMAX):
     E= Current Energy (real number).
     PHS= Input phase shifts.
     DEL= Output (complex) phase shifts."""
-    ALFA = DR*DR
-    ALFA = jnp.sqrt(ALFA*ALFA+DR0)/6
+    ALFA = jnp.sqrt(DR**4+DR0)/6
     FALFE = -4*ALFA*E
     # TODO: probably we can just skip this conditional
     # if abs(FALFE) < 0.001:
