@@ -251,3 +251,32 @@ def regrid_phaseshifts(old_grid, new_grid, phaseshifts):
                 new_phaseshifts[el, en_id, l] = interpolate_phaseshift(
                     phaseshifts, old_grid, en_id, el, l)
     return new_phaseshifts
+
+
+# TODO: We should consider a spline interpolation instead of a linear
+def interpolate_phaseshifts(phaseshifts, l_max, energies):
+    """Interpolate phaseshifts for a given site and energy.
+    """
+    stored_phaseshift_energies = [entry[0] for entry in phaseshifts]
+    stored_phaseshift_energies = np.array(stored_phaseshift_energies)
+
+    stored_phaseshifts = [entry[1] for entry in phaseshifts]
+    # covert to numpy array, indexed as [energy][site][l]
+    stored_phaseshifts = np.array(stored_phaseshifts)
+
+    if (min(energies) < min(stored_phaseshift_energies)
+        or max(energies) > max(stored_phaseshift_energies)):
+        raise ValueError("Requested energies are out of range the range for the"
+                         "loaded phaseshifts.")
+
+    n_sites = stored_phaseshifts.shape[1]
+    # interpolate over energies for each l and site
+    interpolated = np.empty(shape=(len(energies), n_sites, l_max + 1),
+                            dtype=np.float64)
+
+    for l in range(l_max + 1):
+        for site in range(n_sites):
+            interpolated[:, site, l] = np.interp(energies,
+                                                stored_phaseshift_energies,
+                                                stored_phaseshifts[:, site, l])
+    return interpolated
