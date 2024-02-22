@@ -4,17 +4,11 @@ Created on Fri Oct 27 14:31:49 2023
 
 @author: haide
 """
-
 import numpy as np
-import fortranformat as ff
 
 from lib_phaseshifts import *
 from lib_tensors import *
 from lib_tscatf import *
-
-#From "GLOBAL"
-HARTREE = 27.211396
-BOHR = 0.529177
 
 #From "PARAM"
 LMAX = 14  # maximum angular momentum to be used in calculation
@@ -42,7 +36,6 @@ for i in range(2):
     ARB2[i] /= BOHR
 TV = abs(ARB1[0]*ARB2[1]-ARB1[1]*ARB2[0])  # area of (overlayer) lateral unit cell - in case TLEED wrt smaller unit cell
 #                                            is used, TVA from reference computation must be set.
-
 
 
 IEL = 1  # element no. (in phase shifts supplied with input) that delta amplitudes
