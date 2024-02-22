@@ -8,21 +8,22 @@ import interpolation
 from trapezoid import trapezoid
 
 
-def pendry_R(intensity_1, intensity_2,
+def pendry_R(intensity_2,
              interpolator_1, interpolator_2,
-             v0_real, v0_imag, energy_step):
+             v0_real, v0_imag, energy_step,
+             intensity_1):
     """Calculate the R-factor for two beams"""
 
     # calculate the interpolated intensities and derivatives
     b_spline_coeffs_1 = interpolation.get_bspline_coeffs(
         interpolator_1,
         interpolation.not_a_knot_rhs(intensity_1))
-    intens_1 = interpolation.evaluated_spline(
+    intens_1 = interpolation.evaluate_spline(
         b_spline_coeffs_1,
         interpolator_1,
         0
     )
-    deriv_1 = interpolation.evaluated_spline(
+    deriv_1 = interpolation.evaluate_spline(
         b_spline_coeffs_1,
         interpolator_1,
         1
@@ -31,12 +32,12 @@ def pendry_R(intensity_1, intensity_2,
     b_spline_coeffs_2 = interpolation.get_bspline_coeffs(
         interpolator_2,
         interpolation.not_a_knot_rhs(intensity_2))
-    intens_2 = interpolation.evaluated_spline(
+    intens_2 = interpolation.evaluate_spline(
         b_spline_coeffs_2,
         interpolator_2,
         0
     )
-    deriv_2 = interpolation.evaluated_spline(
+    deriv_2 = interpolation.evaluate_spline(
         b_spline_coeffs_2,
         interpolator_2,
         1
@@ -53,12 +54,11 @@ def pendry_R_vs_reference(reference_intensity, reference_interpolator,
     if not (reference_interpolator.is_compatible(sampling_interpolator)):
         raise ValueError("Interpolators are not compatible")
     jitted_rfactor = jax.jit(pendry_R, static_argnames=(
-        'intensity_2',
         'interpolator_2',
         'interpolator_1',
         'v0_real',
         'v0_imag',
-        'energy_step'
+        'energy_step',
     ))
     return partial(jitted_rfactor, reference_intensity, reference_interpolator,
                    sampling_interpolator, v0_real, v0_imag, energy_step)
@@ -86,4 +86,3 @@ def pendry_R_from_y(y_1, y_2, v0_real, v0_imag, energy_step):
 def pendry_y(intensity, intensity_derivative, v0_imag):
     intens_deriv_ratio = intensity / intensity_derivative
     return intens_deriv_ratio / (intens_deriv_ratio**2 + v0_imag**2)
-
