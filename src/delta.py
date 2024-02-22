@@ -29,13 +29,13 @@ for i in range(n_geo):
     CDISP[i][0][1] = 0
     CDISP[i][0][2] = 0
 print(CDISP)
-ARB1 = [1.2722, -2.2036]  # einheits vektoren
-ARB2 = [1.2722, 2.2036]
-for i in range(2):
-    ARB1[i] /= BOHR
-    ARB2[i] /= BOHR
-TV = abs(ARB1[0]*ARB2[1]-ARB1[1]*ARB2[0])  # area of (overlayer) lateral unit cell - in case TLEED wrt smaller unit cell
-#                                            is used, TVA from reference computation must be set.
+
+# unit vectors in Angstrom
+u_vec1 = np.array([1.2722, -2.2036])
+u_vec2 = np.array([1.2722,  2.2036])
+
+# area of (overlayer) lateral unit cell - in case TLEED wrt smaller unit cell is used, TVA from reference computation must be set.
+TV = np.linalg.norm(np.cross(u_vec1, u_vec2))
 
 
 IEL = 1  # element no. (in phase shifts supplied with input) that delta amplitudes
@@ -64,7 +64,7 @@ def main():
     n_energies = 51
     energies = np.array([my_dict['e_kin'][i] for i in range(n_energies)])
     interpolated_phaseshifts = interpolate_phaseshifts(phaseshifts, LMAX, energies)
-    
+
     all_delwv = np.full((n_energies, n_geo, n_beams), dtype=np.complex128, fill_value=np.nan)
     for i in range(n_energies):
         e_inside = my_dict['e_kin'][i]  # computational energy inside crystal
