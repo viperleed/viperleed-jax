@@ -7,7 +7,7 @@ def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11):
         with open(filename, mode="r") as file:
             content = file.readlines()
     except Exception:
-        raise RuntimeError(f"Unable to read Delta file: {filename}")
+        raise RuntimeError(f"Unable to read Tensor file: {filename}")
     # make into an iterator
     file_lines = iter(content)
 
