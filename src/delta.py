@@ -36,7 +36,8 @@ u_vec2 = np.array([1.2722,  2.2036])
 
 # area of (overlayer) lateral unit cell - in case TLEED wrt smaller unit cell is used, TVA from reference computation must be set.
 unit_cell_area = np.linalg.norm(np.cross(u_vec1, u_vec2))
-
+# In Bohr radii
+unit_cell_area = unit_cell_area / BOHR**2
 
 IEL = 1  # element no. (in phase shifts supplied with input) that delta amplitudes
 #          will be calculated for (not necessarily the same element as the one
