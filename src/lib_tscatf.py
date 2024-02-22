@@ -192,7 +192,7 @@ def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
     return DELTAT
 
 
-@partial(jit, static_argnames=('LMAX',))
+@partial(jit, static_argnames=('LMAX',), inline=True)
 @partial(vmap, in_axes=(None, None, None, 0))
 @partial(vmap, in_axes=(None, None, None, 0))
 def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
