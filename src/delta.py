@@ -57,32 +57,32 @@ def main():
             if '-1' in zeile:
                 n_energies += 1
 
-    my_dict = read_tensor('T_1', n_beams=9, n_energies= n_energies, l_max=LMAX+1)
+    tensor_dict = read_tensor('T_1', n_beams=9, n_energies= n_energies, l_max=LMAX+1)
 
     # TODO: raise Error if requested energies are out of range respective to
     # phaseshift energies (can't interpolate if out of range)
 
     n_energies = 51
-    energies = np.array([my_dict['e_kin'][i] for i in range(n_energies)])
+    energies = np.array([tensor_dict['e_kin'][i] for i in range(n_energies)])
     interpolated_phaseshifts = interpolate_phaseshifts(phaseshifts, LMAX, energies)
 
     all_delwv = np.full((n_energies, n_geo, n_beams), dtype=np.complex128, fill_value=np.nan)
     for i in range(n_energies):
-        e_inside = my_dict['e_kin'][i]  # computational energy inside crystal
-        t_matrix_ref = my_dict['t_matrix'][i]  # atomic t-matrix of current site as used in reference calculation
-        VV = my_dict['v0r'][i]  # real part of the inner potential
-        v_imag = my_dict['v0i_substrate'][i]  # imaginary part of the inner potential, substrate, resp.
-        tensor_amps_out = my_dict['tensor_amps_out'][i]  # spherical wave amplitudes incident from exit beam NEXIT in "time-reversed"
+        e_inside = tensor_dict['e_kin'][i]  # computational energy inside crystal
+        t_matrix_ref = tensor_dict['t_matrix'][i]  # atomic t-matrix of current site as used in reference calculation
+        VV = tensor_dict['v0r'][i]  # real part of the inner potential
+        v_imag = tensor_dict['v0i_substrate'][i]  # imaginary part of the inner potential, substrate, resp.
+        tensor_amps_out = tensor_dict['tensor_amps_out'][i]  # spherical wave amplitudes incident from exit beam NEXIT in "time-reversed"
         #                                       LEED experiment (or rather, all terms of Born series immediately after
         #                                       scattering on current atom)
-        tensor_amps_in = my_dict['tensor_amps_in'][i]  # spherical wave amplitudes incident on current atomic site in reference calculation
+        tensor_amps_in = tensor_dict['tensor_amps_in'][i]  # spherical wave amplitudes incident on current atomic site in reference calculation
         # crop to LMAX
         tensor_amps_out = tensor_amps_out[:(LMAX+1)**2, :]
         tensor_amps_in = tensor_amps_in[:(LMAX+1)**2] 
         #                                     (i.e., scattering path ends before scattering on that atom)
-        out_k_par2, out_k_par3 = my_dict['kx_in'][i], my_dict['ky_in'][i]  # (negative) absolute lateral momentum of Tensor LEED beams
+        out_k_par2, out_k_par3 = tensor_dict['kx_in'][i], tensor_dict['ky_in'][i]  # (negative) absolute lateral momentum of Tensor LEED beams
         #                                                        (for use as incident beams in time-reversed LEED calculation)
-        PSQ = my_dict['k_delta'][i]  # lateral momentum of Tensor LEED beams relative to incident beam (0,0)
+        PSQ = tensor_dict['k_delta'][i]  # lateral momentum of Tensor LEED beams relative to incident beam (0,0)
 
         EEV = (e_inside-VV)*HARTREE  # current energy in eV
         print("Current energy", EEV, "eV")
