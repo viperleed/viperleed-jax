@@ -88,12 +88,9 @@ def main():
         print("Current energy", EEV, "eV")
 
         # NewCAF: working array in which current (displaced) atomic t-matrix is stored
-        if (IEL != 0):
-            # TODO: when treating multiple atoms, choose the correct site for phaseshifts (IEL)
-            t_matrix_new = tscatf(IEL, LMAX, interpolated_phaseshifts[i, IEL-1, :],
+        t_matrix_new = tscatf(IEL, LMAX,
+                              _select_phaseshifts(IEL, interpolated_phaseshifts)[i,:],
                             e_inside, VSITE, DR0, DRPER, DRPAR)
-        else:
-            t_matrix_new = np.full((LMAX+1,), dtype=np.complex128, fill_value=0.0)
 
         # DELWV : working space for computation and storage of amplitude differences
         for nc in range(n_geo):
@@ -106,6 +103,14 @@ def main():
         print(DELWV)
     with open('delta.npy','wb') as f:
         np.save(f, all_delwv[:, :, :])
+
+
+def _select_phaseshifts(IEL, phaseshifts):
+    """Selects the phaseshifts for the given element number IEL"""
+    return jax.lax.select(IEL == 0,
+                          jnp.zeros_like(phaseshifts[:, 0, :]),
+                          phaseshifts[:, IEL-1, :])
+
 
 if __name__ == '__main__':
     main()
