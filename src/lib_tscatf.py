@@ -21,8 +21,8 @@ fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
                             in_axes=(None, None, 0, None, None, None),
                             out_axes=0)
 
-HARTREE = 27.211396
-BOHR = 0.529177
+HARTREE = 27.211386245
+BOHR = 0.529177211
 
 # Hard coded constants from TensErLEED - TODO: remove these
 T0 = 100  # must equal T if input vib. amplitudes are to be used properly - not 0. !!
