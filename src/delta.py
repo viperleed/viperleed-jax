@@ -35,7 +35,7 @@ u_vec1 = np.array([1.2722, -2.2036])
 u_vec2 = np.array([1.2722,  2.2036])
 
 # area of (overlayer) lateral unit cell - in case TLEED wrt smaller unit cell is used, TVA from reference computation must be set.
-TV = np.linalg.norm(np.cross(u_vec1, u_vec2))
+unit_cell_area = np.linalg.norm(np.cross(u_vec1, u_vec2))
 
 
 IEL = 1  # element no. (in phase shifts supplied with input) that delta amplitudes
@@ -99,7 +99,7 @@ def main():
             C = CDISP[nc,...]
             DELWV = MATEL_DWG(t_matrix_ref, t_matrix_new, e_inside, v_imag,
                             LMAX, tensor_amps_out, tensor_amps_in, out_k_par2, out_k_par3,
-                            TV, C)
+                            unit_cell_area, C)
 
             all_delwv[i, nc, :] = DELWV
         print(DELWV)
