@@ -6,7 +6,7 @@ import jax.numpy as jnp
 from lib_tscatf import HARTREE
 
 
-def intensity_prefactor(CDISP, e_kin, v_real, v_imag, beam_indices, theta, phi, trar):
+def intensity_prefactor(CDISP, e_kin, v_real, v_imag, beam_indices, theta, phi, trar, is_surface_atom):
     # prefactors (refraction) from amplitudes to intensities
     n_geo = CDISP.shape[0]
     n_energies = e_kin.shape[0]
@@ -19,7 +19,7 @@ def intensity_prefactor(CDISP, e_kin, v_real, v_imag, beam_indices, theta, phi, 
 
     prefactor = np.full((n_geo, n_energies, n_beams), dtype=np.float64, fill_value=np.nan)
     for i in range(n_geo):
-        CXDisp = CDISP[i,0,0]
+        CXDisp = _potential_onset_height_change(CDISP[i,:,:], is_surface_atom)
         # TODO: @Paul: should we use out_k_z here really? Also this raises a warning in numpy about complex casting
         prefactor[i,:,:] = abs(np.exp(-1j * CXDisp * (np.outer(bk_z, np.ones(shape=(n_beams,))) + out_k_z
                                                     ))) ** 2 * a / np.outer(c, np.ones(shape=(n_beams,))).real
@@ -61,3 +61,11 @@ def _wave_vectors(e_kin, v_real, v_imag, theta, phi, trar, beam_indices):
     out_bk_3 = out_k_par * np.sin(phi)
 
     return in_k, bk_z, out_k_z, out_k_perp
+
+
+def _potential_onset_height_change(displacement_step, is_surface_atom):
+    """Calculates the displacement of the topmost surface atom in the z direction."""
+    # TODO: this is actually not really correct!
+    # We should not consider suface atoms, but only the topmost one probably!!
+    surface_z = displacement_step[is_surface_atom, 0] # z disp for surface atoms
+    return jnp.max(surface_z)
