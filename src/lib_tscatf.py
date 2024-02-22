@@ -24,18 +24,6 @@ fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
 HARTREE = 27.211386245
 BOHR = 0.529177211
 
-# Hard coded constants from TensErLEED - TODO: remove these
-T0 = 100  # must equal T if input vib. amplitudes are to be used properly - not 0. !!
-T = 100  # must equal T0 if input vib. amplitudes are to be used properly - not 0. !!
-#          if T0 is set to the temperature that the vibs. were computed for, T could
-#          in principle be used to simulate the temperature behaviour of
-#          a Debye-like phonon spectrum. Yet, this simply alters the vib. amplitude used
-#          for the DW factor, thus it only makes sense to either vary DRPER or T.
-NRATIO = 1  # originally, ratio between substrate and overlayer unit cell area. However,
-#             currently all TLEED parts must be performed with overlayer symmetry only,
-#             thus NRATIO = 1 and TV = TVB are the only safe choice
-
-
 @profile
 def tscatf(IEL,LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR):
     """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
@@ -76,7 +64,7 @@ def PSTEMP(DR0, DR, E, PHS, LMAX):
     E= Current Energy (real number).
     PHS= Input phase shifts.
     DEL= Output (complex) phase shifts."""
-    ALFA = DR*DR*T/T0
+    ALFA = DR*DR
     ALFA = jnp.sqrt(ALFA*ALFA+DR0)/6
     FALFE = -4*ALFA*E
     # TODO: probably we can just skip this conditional
@@ -154,7 +142,7 @@ def calcuclate_exit_beam_delta(tensor_amps_out, tensor_amps_in,
 
     # XA is evaluated relative to the muffin tin zero i.e. it uses energy= incident electron energy + inner potential
     out_k_perp_inside = jnp.sqrt(2*E-out_k_par-2j*v_imag+1j*EPS)
-    AMAT *= 1/(2*k_inside*unit_cell_area*out_k_perp_inside*NRATIO)
+    AMAT *= 1/(2*k_inside*unit_cell_area*out_k_perp_inside)
     return AMAT
 
 
