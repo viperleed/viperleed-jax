@@ -38,7 +38,7 @@ class StaticGridSplineInterpolator(ABC):
     def is_compatible(self, other):
         if not isinstance(other, type(self)):
             return False
-        return (self.target_grid == other.target_grid and
+        return (jnp.all(self.target_grid == other.target_grid) and
                 self.intpol_deg == other.intpol_deg)
 
     @abstractmethod
