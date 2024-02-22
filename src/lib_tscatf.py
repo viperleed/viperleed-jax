@@ -21,6 +21,7 @@ fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
                             in_axes=(None, None, 0, None, None, None),
                             out_axes=0)
 
+# TODO: could we switch the entire calculation to use eV and Angstroms?
 HARTREE = 27.211386245
 BOHR = 0.529177211
 
