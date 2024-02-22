@@ -52,7 +52,7 @@ def tscatf(IEL,LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR):
     t_matrix = PSTEMP(DR0, DR, E, phaseshifts, LMAX)
     return t_matrix
 
-#@jit
+@partial(jit, static_argnames=('LMAX',)
 def PSTEMP(DR0, DR, E, PHS, LMAX):
     """PSTEMP incorporates the thermal vibration effects in the phase shifts, through a Debye-Waller factor. Isotropic
     vibration amplitudes are assumed.
