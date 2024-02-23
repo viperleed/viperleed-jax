@@ -70,8 +70,9 @@ def main():
     for displacement in CDISP:
         for energy_index in range(n_energies):
             DELWV = delta_amplitude(tensor_dict, interpolated_phaseshifts, energy_index, displacement)
+            d_amplitude = delta_amplitude(tensor_dict, interpolated_phaseshifts, energy_index, displacement)
             #all_delwv[energy_index, nc, :] = DELWV
-            print(DELWV)
+            print(d_amplitude)
     with open('delta.npy','wb') as f:
         np.save(f, all_delwv[:, :, :])
 
@@ -102,12 +103,12 @@ def delta_amplitude(tensor_dict, interpolated_phaseshifts, energy_index, displac
                               _select_phaseshifts(IEL, interpolated_phaseshifts)[energy_index,:],
                             e_inside, VSITE, DR0, DRPER, DRPAR)
 
-    # DELWV : working space for computation and storage of amplitude differences
-    DELWV = MATEL_DWG(t_matrix_ref, t_matrix_new, e_inside, v_imag,
+    # amplitude differences
+    d_amplitude = MATEL_DWG(t_matrix_ref, t_matrix_new, e_inside, v_imag,
                         LMAX, tensor_amps_out, tensor_amps_in, out_k_par2, out_k_par3,
                         unit_cell_area, displacement)
 
-    return DELWV
+    return d_amplitude
 
 
 def _select_phaseshifts(IEL, phaseshifts):
