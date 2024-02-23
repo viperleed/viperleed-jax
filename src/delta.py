@@ -67,14 +67,15 @@ def main():
     interpolated_phaseshifts = interpolate_phaseshifts(phaseshifts, LMAX, energies)
 
     all_delwv = np.full((n_energies, n_geo, n_beams), dtype=np.complex128, fill_value=np.nan)
-    for energy_index in range(n_energies):
-        DELWV = delta_amplitude(tensor_dict, interpolated_phaseshifts, energy_index, CDISP)
-        #all_delwv[energy_index, nc, :] = DELWV
-        print(DELWV)
+    for displacement in CDISP:
+        for energy_index in range(n_energies):
+            DELWV = delta_amplitude(tensor_dict, interpolated_phaseshifts, energy_index, displacement)
+            #all_delwv[energy_index, nc, :] = DELWV
+            print(DELWV)
     with open('delta.npy','wb') as f:
         np.save(f, all_delwv[:, :, :])
 
-def delta_amplitude(tensor_dict, interpolated_phaseshifts, energy_index, CDISP):
+def delta_amplitude(tensor_dict, interpolated_phaseshifts, energy_index, displacement):
     e_inside = tensor_dict['e_kin'][energy_index]  # computational energy inside crystal
     t_matrix_ref = tensor_dict['t_matrix'][energy_index]  # atomic t-matrix of current site as used in reference calculation
     VV = tensor_dict['v0r'][energy_index]  # real part of the inner potential
@@ -101,11 +102,10 @@ def delta_amplitude(tensor_dict, interpolated_phaseshifts, energy_index, CDISP):
                             e_inside, VSITE, DR0, DRPER, DRPAR)
 
         # DELWV : working space for computation and storage of amplitude differences
-    for nc in range(n_geo):
-        C = CDISP[nc,...]
-        DELWV = MATEL_DWG(t_matrix_ref, t_matrix_new, e_inside, v_imag,
-                            LMAX, tensor_amps_out, tensor_amps_in, out_k_par2, out_k_par3,
-                            unit_cell_area, C)
+
+    DELWV = MATEL_DWG(t_matrix_ref, t_matrix_new, e_inside, v_imag,
+                        LMAX, tensor_amps_out, tensor_amps_in, out_k_par2, out_k_par3,
+                        unit_cell_area, displacement)
 
     return DELWV
 
