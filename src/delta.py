@@ -43,6 +43,7 @@ IEL = 1  # element no. (in phase shifts supplied with input) that delta amplitud
 #          will be calculated for (not necessarily the same element as the one
 #          used in the reference calculation!) - IEL = 0 means a vacancy will be assumed
 
+# TODO: check if we ever use this in ViPErLEED
 VSITE = 0  # possible energy shift in phase shift computations - can be used to describe
 #            local variations of the muffin-tin-constant
 
