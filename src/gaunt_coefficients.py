@@ -7,7 +7,7 @@ from jax import jit, vmap
 import jax
 from pathlib import Path
 
-from dense_quantum_numbers import MAXIMUM_LMAX
+from src.dense_quantum_numbers import MAXIMUM_LMAX
 
 _REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__).parent / "gaunt_coefficients.npy",
                                        allow_pickle=False)

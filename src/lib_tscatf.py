@@ -9,13 +9,13 @@ from functools import partial
 from line_profiler import profile
 
 
-from lib_math import *
-from dense_quantum_numbers import DENSE_QUANTUM_NUMBERS, DENSE_L, DENSE_M
-from dense_quantum_numbers import MINUS_ONE_POW_M
-from dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
+from src.lib_math import *
+from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS, DENSE_L, DENSE_M
+from src.dense_quantum_numbers import MINUS_ONE_POW_M
+from src.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 
-from gaunt_coefficients import fetch_stored_gaunt_coeffs as fetch_gaunt
-from gaunt_coefficients import PRE_CALCULATED_CPPP
+from src.gaunt_coefficients import fetch_stored_gaunt_coeffs as fetch_gaunt
+from src.gaunt_coefficients import PRE_CALCULATED_CPPP
 
 fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
                             in_axes=(None, None, 0, None, None, None),

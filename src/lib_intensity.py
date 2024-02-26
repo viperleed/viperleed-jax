@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from lib_tscatf import HARTREE
+from src.lib_tscatf import HARTREE
 
 
 def intensity_prefactor(CDISP, e_kin, v_real, v_imag, beam_indices, theta, phi, trar, is_surface_atom):
