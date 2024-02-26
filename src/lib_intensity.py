@@ -5,9 +5,8 @@ from src.lib_tscatf import HARTREE
 
 
 def intensity_prefactor(CDISP, e_kin, v_real, v_imag, beam_indices, theta, phi, trar, is_surface_atom):
+def intensity_prefactor(displacement, e_kin, v_real, v_imag, beam_indices, theta, phi, trar, is_surface_atom):
     # prefactors (refraction) from amplitudes to intensities
-    n_geo = CDISP.shape[0]
-    n_energies = e_kin.shape[0]
     n_beams = beam_indices.shape[0]
 
     in_k, bk_z, out_k_z, out_k_perp = _wave_vectors(e_kin, v_real, v_imag, theta, phi, trar, beam_indices)
@@ -15,12 +14,10 @@ def intensity_prefactor(CDISP, e_kin, v_real, v_imag, beam_indices, theta, phi, 
     a = jnp.sqrt(out_k_perp)
     c = in_k * jnp.cos(theta)
 
-    prefactor = jnp.full((n_geo, n_energies, n_beams), dtype=jnp.float64, fill_value=jnp.nan)
-    for i in range(n_geo):
-        CXDisp = _potential_onset_height_change(CDISP[i,:,:], is_surface_atom)
-        # TODO: @Paul: should we use out_k_z here really? Also this raises a warning in numpy about complex casting
-        prefactor[i,:,:] = abs(jnp.exp(-1j * CXDisp * (jnp.outer(bk_z, jnp.ones(shape=(n_beams,))) + out_k_z
-                                                    ))) ** 2 * a / jnp.outer(c, jnp.ones(shape=(n_beams,))).real
+    CXDisp = _potential_onset_height_change(displacement, is_surface_atom)
+    # TODO: @Paul: should we use out_k_z here really? Also this raises a warning in numpy about complex casting
+    prefactor = abs(jnp.exp(-1j * CXDisp * (jnp.outer(bk_z, jnp.ones(shape=(n_beams,))) + out_k_z
+                                                ))) ** 2 * a / jnp.outer(c, jnp.ones(shape=(n_beams,))).real
     return prefactor
 
 
