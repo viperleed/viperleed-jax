@@ -5,6 +5,8 @@ import jax
 import jax.numpy as jnp
 from functools import partial
 
+from dense_quantum_numbers import DENSE_M, DENSE_L
+
 # Spherical Bessel functions from NeuralIL
 from spherical_bessel import functions
 
@@ -71,8 +73,8 @@ def bessel(z, n1):
     return vmapped_custom_bessel(jnp.arange(n1), z)
 
 
-@partial(jax.jit, static_argnames=('LMAX', 'dense_l', 'dense_m'))
-def HARMONY(C, LMAX, dense_l, dense_m):
+@partial(jax.jit, static_argnames=('LMAX',))
+def HARMONY(C, LMAX):
     """Generates the spherical harmonics for the vector C.
 
     This is a python implementation of the fortran subroutine HARMONY from
@@ -84,4 +86,4 @@ def HARMONY(C, LMAX, dense_l, dense_m):
     # Alternative implementation to avoid division by zero:
     # theta = jnp.arccos((C[0]+eps_sign_z)/(jnp.linalg.norm(C)+EPS)-eps_sign_z)
     phi = jnp.arctan2(C[2]+EPS, C[1]+EPS)
-    return sph_harm(dense_m, dense_l, jnp.asarray([phi]), jnp.asarray([theta]), n_max=LMAX)
+    return sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.asarray([phi]), jnp.asarray([theta]), n_max=LMAX)

@@ -178,7 +178,7 @@ def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
     CAPPA = 2*e_inside - 2j*v_imag
     Z = jnp.sqrt(CAPPA)*CL
     BJ = masked_bessel(Z,2*LMAX+1)
-    YLM = HARMONY(C, LMAX, DENSE_L[2*LMAX], DENSE_M[2*LMAX])
+    YLM = HARMONY(C, LMAX)
     GTWOC = get_csum(BJ, YLM, LMAX, DENSE_QUANTUM_NUMBERS[LMAX])
 
     broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(t_matrix_new, LMAX)
