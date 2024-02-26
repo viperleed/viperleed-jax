@@ -144,7 +144,6 @@ def calcuclate_exit_beam_delta(tensor_amps_out, tensor_amps_in,
     return AMAT
 
 
-#@profile
 #@partial(jit, static_argnames=('LMAX',))
 @partial(vmap, in_axes=(None, None, 0, None, None, None)) # vmap over atoms
 def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
