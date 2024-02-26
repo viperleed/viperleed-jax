@@ -71,8 +71,7 @@ def bessel(z, n1):
     return vmapped_custom_bessel(jnp.arange(n1), z)
 
 
-# TODO: jit once fixed for neg values by Paul
-@partial(jax.jit, static_argnames=('LMAX',))
+@partial(jax.jit, static_argnames=('LMAX', 'dense_l', 'dense_m'))
 def HARMONY(C, LMAX, dense_l, dense_m):
     """Generates the spherical harmonics for the vector C.
 
