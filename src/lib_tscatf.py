@@ -146,7 +146,7 @@ def calcuclate_exit_beam_delta(tensor_amps_out, tensor_amps_in,
 
 #@profile
 #@partial(jit, static_argnames=('LMAX',))
-@partial(vmap, in_axes=(None, None, 0, None, None, None))
+@partial(vmap, in_axes=(None, None, 0, None, None, None)) # vmap over atoms
 def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
