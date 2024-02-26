@@ -6,9 +6,6 @@ Created on Fri Oct 27 14:31:49 2023
 """
 import numpy as np
 
-from lib_phaseshifts import *
-from lib_tensors import *
-from lib_tscatf import *
 
 #From "PARAM"
 LMAX = 14  # maximum angular momentum to be used in calculation
@@ -28,7 +25,6 @@ for i in range(n_geo):
     CDISP[i][0][0] = -0.01*i + 0.05
     CDISP[i][0][1] = 0
     CDISP[i][0][2] = 0
-print(CDISP)
 
 # unit vectors in Angstrom
 u_vec1 = np.array([1.2722, -2.2036])
