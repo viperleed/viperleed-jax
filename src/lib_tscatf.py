@@ -158,7 +158,7 @@ def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
     BJ(LMAX1): Bessel functions for each L.
     YLM(LMMAX): Spherical harmonics of vector C.
     GTWOC(LMMAX,LMMAX): Propagator from origin to C."""
-    CL = jnp.linalg.norm(C)
+    CL = safe_norm(C)
 
     #TODO: I disabled this for now, because I believe the conditional is going 
     #      to be slower than just computing the DELTAT matrix.

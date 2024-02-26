@@ -37,6 +37,12 @@ def _divide_zero_safe(
     )
 
 
+def safe_norm(vector: jnp.ndarray) -> jnp.ndarray:
+    """Safe norm calculation to avoid NaNs in gradients"""
+    # avoids nan in gradient for jnp.linalg.norm(C)
+    return jnp.sqrt(jnp.sum(vector**2) + EPS)
+
+
 def _generate_bessel_functions(l_max):
     """Generate a list of spherical Bessel functions up to order l_max"""
     bessel_functions = []
@@ -75,17 +81,17 @@ def bessel(z, n1):
     return vmapped_custom_bessel(jnp.arange(n1), z)
 
 
-@partial(jax.jit, static_argnames=('LMAX',))
+#@partial(jax.jit, static_argnames=('LMAX',))
 def HARMONY(C, LMAX):
     """Generates the spherical harmonics for the vector C.
 
     This is a python implementation of the fortran subroutine HARMONY from
     TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
     equivalent results."""
-    r = jnp.linalg.norm(C)
+    r = safe_norm(C)
     eps_sign_z = EPS*jnp.sign(C[0])
-    theta = jnp.arccos(_divide_zero_safe(C[0], jnp.linalg.norm(C), 1.0)-eps_sign_z)
+    theta = jnp.arccos(_divide_zero_safe(C[0], r, 1.0)-eps_sign_z)
     # Alternative implementation to avoid division by zero:
-    # theta = jnp.arccos((C[0]+eps_sign_z)/(jnp.linalg.norm(C)+EPS)-eps_sign_z)
+    # theta = jnp.arccos((C[0]+eps_sign_z)/(r+EPS)-eps_sign_z)
     phi = jnp.arctan2(C[2]+EPS, C[1]+EPS)
     return sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.asarray([phi]), jnp.asarray([theta]), n_max=LMAX)
