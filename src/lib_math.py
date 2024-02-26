@@ -62,11 +62,6 @@ def masked_bessel(z, n1):
 def custom_spherical_jn(n, z):
     return jax.lax.switch(n, BESSEL_FUNCTIONS, z)
 
-@lru_cache(maxsize=None)
-def fac(n):
-    return n * fac(n-1) if n else 1
-
-
 
 # need to find a better way to do this; not available in JAX yet
 @partial(jax.jit, static_argnames=('n1',))
