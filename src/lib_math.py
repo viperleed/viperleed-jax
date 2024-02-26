@@ -5,10 +5,10 @@ import jax
 import jax.numpy as jnp
 from functools import partial
 
-from dense_quantum_numbers import DENSE_M, DENSE_L
+from src.dense_quantum_numbers import DENSE_M, DENSE_L
 
 # Spherical Bessel functions from NeuralIL
-from spherical_bessel import functions
+from src.spherical_bessel import functions
 
 # numerical epsilon to avoid division by zero
 EPS = 1e-8
