@@ -66,4 +66,4 @@ def _potential_onset_height_change(displacement_step, is_surface_atom):
     # TODO: this is actually not really correct!
     # We should not consider suface atoms, but only the topmost one probably!!
     surface_z = displacement_step[is_surface_atom, 0] # z disp for surface atoms
-    return jjnp.max(surface_z)
+    return jnp.max(surface_z)
