@@ -4,7 +4,10 @@ import jax.numpy as jnp
 from src.lib_tscatf import HARTREE
 
 
-def intensity_prefactor(CDISP, e_kin, v_real, v_imag, beam_indices, theta, phi, trar, is_surface_atom):
+def sum_intensity(prefactors, reference_amplitudes, delta_amplitudes):
+    return prefactors * abs(reference_amplitudes + delta_amplitudes) ** 2
+
+
 def intensity_prefactor(displacement, e_kin, v_real, v_imag, beam_indices, theta, phi, trar, is_surface_atom):
     # prefactors (refraction) from amplitudes to intensities
     n_beams = beam_indices.shape[0]
