@@ -62,7 +62,6 @@ def fac(n):
 @partial(jax.jit, static_argnames=('n1',))
 def bessel(z, n1):
     """Spherical Bessel functions. Evaluated at z, up to degree n1."""
-    bj = jnp.empty(shape=(n1,), dtype=jnp.complex128)
     vmapped_custom_bessel = jax.vmap(custom_spherical_jn, (0, None))
     return vmapped_custom_bessel(jnp.arange(n1), z)
 
