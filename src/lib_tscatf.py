@@ -177,7 +177,7 @@ def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
 
     CAPPA = 2*e_inside - 2j*v_imag
     Z = jnp.sqrt(CAPPA)*CL
-    BJ = _masked_bessel(Z,2*LMAX+1)
+    BJ = masked_bessel(Z,2*LMAX+1)
     YLM = HARMONY(C, LMAX, DENSE_L[2*LMAX], DENSE_M[2*LMAX])
     GTWOC = get_csum(BJ, YLM, LMAX, DENSE_QUANTUM_NUMBERS[LMAX])
 
@@ -190,16 +190,6 @@ def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
     DELTAT = DELTAT + jnp.diag(-1.0j*mapped_t_matrix_ref)
 
     return DELTAT
-
-
-def _masked_bessel(z, n1):
-    return jnp.nan_to_num(
-        # Needs a limit of >=10e-7 to avoid numerical noise around z=0 for
-        # small values of z with imaginary component
-        jnp.where(abs(z) < 10e-7,
-                  jnp.zeros(shape=(n1), dtype=jnp.complex128).at[0].set(1.0),
-                  bessel(z, n1))
-    )
 
 
 @partial(jit, static_argnames=('LMAX',), inline=True)

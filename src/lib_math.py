@@ -48,6 +48,16 @@ LMAX = 14
 # generate a list of spherical Bessel functions up to order l_max
 BESSEL_FUNCTIONS = _generate_bessel_functions(LMAX)
 
+
+def masked_bessel(z, n1):
+    return jnp.nan_to_num(
+        # Needs a limit of >=10e-7 to avoid numerical noise around z=0 for
+        # small values of z with imaginary component
+        jnp.where(abs(z) < 10e-7,
+                  jnp.zeros(shape=(n1), dtype=jnp.complex128).at[0].set(1.0),
+                  bessel(z, n1))
+    )
+
 @jax.jit
 def custom_spherical_jn(n, z):
     return jax.lax.switch(n, BESSEL_FUNCTIONS, z)
