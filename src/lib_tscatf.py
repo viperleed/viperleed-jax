@@ -112,8 +112,8 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,ten
 
 #   The vector C must be expressed W.R.T. a right handed set of axes.
 #   CDISP() is input W.R.T. a left handed set of axes.
-    C = CDISP[:, :]/BOHR
-    C = C * jnp.array([[1, 1, -1],]*C.shape[0])
+    C = CDISP/BOHR
+    C = C * jnp.array([1, 1, -1])
 
 
 #   Evaluate DELTAT matrix for current displacement vector
