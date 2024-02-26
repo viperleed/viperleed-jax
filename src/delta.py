@@ -6,6 +6,9 @@ Created on Fri Oct 27 14:31:49 2023
 """
 import numpy as np
 
+from src.lib_phaseshifts import *
+from src.lib_tensors import *
+from src.lib_tscatf import *
 
 #From "PARAM"
 LMAX = 14  # maximum angular momentum to be used in calculation
