@@ -52,12 +52,14 @@ BESSEL_FUNCTIONS = _generate_bessel_functions(LMAX)
 
 
 def masked_bessel(z, n1):
+    z_is_small = abs(z) < 10e-7
+    _z = jnp.where(z_is_small, 10e-7, z)
     return jnp.nan_to_num(
         # Needs a limit of >=10e-7 to avoid numerical noise around z=0 for
         # small values of z with imaginary component
-        jnp.where(abs(z) < 10e-7,
+        jnp.where(z_is_small,
                   jnp.zeros(shape=(n1), dtype=jnp.complex128).at[0].set(1.0),
-                  bessel(z, n1))
+                  bessel(_z, n1))
     )
 
 @jax.jit
