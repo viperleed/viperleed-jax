@@ -62,7 +62,6 @@ def main():
     # TODO: raise Error if requested energies are out of range respective to
     # phaseshift energies (can't interpolate if out of range)
 
-    n_energies = 51
     energies = np.array([tensor_dict['e_kin'][i] for i in range(n_energies)])
     interpolated_phaseshifts = interpolate_phaseshifts(phaseshifts, LMAX, energies)
 
