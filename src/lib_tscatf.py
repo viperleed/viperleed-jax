@@ -136,7 +136,8 @@ def calcuclate_exit_beam_delta(tensor_amps_out, tensor_amps_in,
     AMAT = jnp.einsum('k,k,km,m->', MINUS_ONE_POW_M[LMAX], tensor_amps_out, DELTAT, tensor_amps_in)
     out_k_par = out_k_par_2*out_k_par_2 + out_k_par_3*out_k_par_3
 
-    # XA is evaluated relative to the muffin tin zero i.e. it uses energy= incident electron energy + inner potential
+    # the propagator is evaluated relative to the muffin tin zero i.e.
+    # it uses energy = incident electron energy + inner potential
     out_k_perp_inside = jnp.sqrt(2*E-out_k_par-2j*v_imag+1j*EPS)
     AMAT *= 1/(2*k_inside*unit_cell_area*out_k_perp_inside)
     return AMAT
