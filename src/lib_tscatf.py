@@ -25,7 +25,7 @@ fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
 HARTREE = 27.211386245
 BOHR = 0.529177211
 
-def tscatf(LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR):
+def tscatf(LMAX,phaseshifts,e_inside,V,DRPER,DRPAR):
     """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
     These are also corrected for thermal vibrations (output in CAF). AF and CAF are meant to be stored in array TMAT for
     later use in RSMF, RTINV.
@@ -38,7 +38,7 @@ def tscatf(LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR):
     e_inside-V= current energy (V can be used to describe local variations
     of the muffin-tin constant).
 
-    DR0= fourth power of RMS zero-temperature vibration amplitude.
+
     DRPER= RMS vibration amplitude perpendicular to surface.
     DRPAR= RMS vibration amplitude parallel to surface.
 
@@ -48,22 +48,35 @@ def tscatf(LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR):
 #   Average any anisotropy of RMS vibration amplitudes
     DR = jnp.sqrt((DRPER*DRPER+2*DRPAR*DRPAR)/3)
 #   Compute temperature-dependent t-matrix elements
-    t_matrix = PSTEMP(DR0, DR, E, phaseshifts, LMAX)
+    t_matrix = PSTEMP(DR, E, phaseshifts, LMAX)
     return t_matrix
 
 @partial(jit, static_argnames=('LMAX',))
-def PSTEMP(DR0, DR, E, PHS, LMAX):
+def PSTEMP(DR, E, PHS, LMAX):
     """PSTEMP incorporates the thermal vibration effects in the phase shifts, through a Debye-Waller factor. Isotropic
     vibration amplitudes are assumed.
 
-    DR0= 4th power of RMS zero-temperature vibration amplitudes.
+
     DR= Isotropic RMS vibration amplitude at reference temperature T0.
-    T0= Arbitrary reference temperature from DR
-    TEMP= Actual temperature.
+
+
     E= Current Energy (real number).
     PHS= Input phase shifts.
-    DEL= Output (complex) phase shifts."""
-    ALFA = jnp.sqrt(DR**4+DR0)/6
+    DEL= Output (complex) phase shifts.
+    
+    Note
+    ----
+    This function corresponds loosely to the subroutines TSCATF and PSTEMP in
+    TensErLEED. Those subroutines used to take a reference temperature T0 and
+    a current temperature TEMP as input. However, this functionality was not
+    implemented in TensErLEED and is not implemented here either.
+    Similarly, the TensErLEED versions used to take a zero-temperture
+    vibrational amplitude DR0, and an anisotropic current vibrational amplitude
+    (in the form of DRPER and DRPAR, perpendicular and parallel to the surface,
+    respectively) as input. This functionality was also not implemented, with
+    DR0 hardcoded to 0 and DRPER and DRPAR hardcoded to be equal. We thus only
+    implement the isotropic case here, with a single input parameter DR."""
+    ALFA = jnp.sqrt(DR**4)/6
     FALFE = -4*ALFA*E
     # TODO: probably we can just skip this conditional
     # if abs(FALFE) < 0.001:

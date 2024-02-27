@@ -19,7 +19,7 @@ n_geo = 1  # number of geometric variations ('displacements') to be considered
 # From Stdin
 # DR0,DRPER,DRPAR: thermal vibration amplitude steps to be included in
 # current variation - DR0 is always 0., DRPER = DRPAR forced
-DR0 = 0
+
 DRPER = 0.1908624
 DRPAR = DRPER
 
@@ -105,10 +105,10 @@ def delta_amplitude(tensor_dict, interpolated_phaseshifts, displacement):
     # NewCAF: working array in which current (displaced) atomic t-matrix is stored
     # TODO: we could also either append empty phaseshifts to the phaseshifts array or move the conditional around tscatf
     selected_phaseshifts = _select_phaseshifts(IEL, interpolated_phaseshifts)
-    tscatf_vmap = jax.vmap(tscatf, in_axes=(None, 0, 0, None, None, None, None))
+    tscatf_vmap = jax.vmap(tscatf, in_axes=(None, 0, 0, None, None, None))
     t_matrix_new = tscatf_vmap(LMAX,
                               selected_phaseshifts,
-                              e_inside, VSITE, DR0, DRPER, DRPAR)
+                              e_inside, VSITE, DRPER, DRPAR)
 
     # amplitude differences
     matel_dwg_vmap_energy = jax.vmap(MATEL_DWG, in_axes=(0, 0, 0, 0, None, 0, 0, 0, 0, None, None))
