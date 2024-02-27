@@ -10,7 +10,6 @@ import jax
 from jax import numpy as jnp
 from scipy import interpolate
 
-from hashable_array import HashableArray
 
 class StaticGridSplineInterpolator(ABC):
     def __init__(self, origin_grid, target_grid, intpol_deg):

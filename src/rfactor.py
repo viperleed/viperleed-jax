@@ -4,8 +4,8 @@ from functools import partial
 import jax
 from jax import numpy as jnp
 
-import interpolation
-from trapezoid import trapezoid
+from src import interpolation
+from src.trapezoid import trapezoid
 
 
 def pendry_R(intensity_2,
