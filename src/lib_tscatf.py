@@ -41,8 +41,7 @@ def tscatf(IEL,LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR):
     DR0= fourth power of RMS zero-temperature vibration amplitude.
     DRPER= RMS vibration amplitude perpendicular to surface.
     DRPAR= RMS vibration amplitude parallel to surface.
-    T0= temperature at which drper and drpar have been computed.
-    T= current temperature.
+
     TSF0, TSF, AF, CAF  see above."""
     E = e_inside - V
 
