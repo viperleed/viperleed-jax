@@ -87,7 +87,7 @@ def tscatf(LMAX, phaseshifts, e_inside, DR):
 
 
 def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,tensor_amps_in,out_k_par2,
-      out_k_par_3,unit_cell_area,CDISP):
+      out_k_par_3,unit_cell_area,displacements):
     """The function MATEL_DWG evaluates the change in amplitude delwv for each of the exit beams for each of the
     displacements given the sph wave amplitudes corresponding to the incident wave ALM & for each of the time reversed
     exit beams EXLM.
@@ -108,7 +108,7 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,ten
 
     #   The vector C must be expressed W.R.T. a right handed set of axes.
     #   CDISP() is input W.R.T. a left handed set of axes.
-    C = CDISP/BOHR
+    C = displacements/BOHR
     C = C * jnp.array([1, 1, -1])
 
 
