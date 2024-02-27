@@ -5,7 +5,7 @@ from jax import config
 config.update("jax_enable_x64", True)
 import jax
 import jax.numpy as jnp
-from jax import jit, vmap
+from jax import jit
 
 MAXIMUM_LMAX = 18
 
