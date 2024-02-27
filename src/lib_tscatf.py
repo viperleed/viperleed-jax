@@ -1,10 +1,8 @@
-import numpy as np
 from jax import config
 config.update("jax_enable_x64", True)
 import jax
 import jax.numpy as jnp
 from jax import jit, vmap
-import fortranformat as ff
 from functools import partial
 from line_profiler import profile
 
@@ -208,5 +206,5 @@ def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
     ylm_values = YLM[all_lpp*all_lpp+all_lpp+1-MPP-1]
     # Equation (34) from Rous, Pendry 1989
     csum = jnp.sum(bessel_values*ylm_values*gaunt_coeffs*1j**(L-LP-all_lpp))
-    csum = csum*4*np.pi
+    csum = csum*4*jnp.pi
     return csum
