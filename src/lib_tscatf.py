@@ -51,12 +51,10 @@ def tscatf(LMAX,phaseshifts,e_inside,V,DR):
 
 @partial(jit, static_argnames=('LMAX',))
 def PSTEMP(DR, E, PHS, LMAX):
-    """PSTEMP incorporates the thermal vibration effects in the phase shifts, through a Debye-Waller factor. Isotropic
-    vibration amplitudes are assumed.
-
+    """PSTEMP incorporates the thermal vibration effects in the phase shifts,
+    through a Debye-Waller factor. Isotropic vibration amplitudes are assumed.
 
     DR= Isotropic RMS vibration amplitude at reference temperature T0.
-
 
     E= Current Energy (real number).
     PHS= Input phase shifts.
@@ -88,8 +86,8 @@ def PSTEMP(DR, E, PHS, LMAX):
     t_matrix = (SUM)/(2j) # temperature-dependent t-matrix.
     # SUM is the factor exp(2*i*delta) -1
     # Equation (22), page 29 in Van Hove, Tong book
-    # Unlike TensErLEED, we do not convert it to a phase shift, but keep it as a t-matrix.
-    # which we use going forward.
+    # Unlike TensErLEED, we do not convert it to a phase shift, but keep it as a
+    # t-matrix, which we use going forward.
     return t_matrix
 
 
@@ -113,13 +111,13 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,ten
     # to do this in the dense representation, we do the following:
     tensor_amps_out = tensor_amps_out[(DENSE_L[LMAX]+1)**2 - DENSE_L[LMAX] - DENSE_M[LMAX] -1]
 
-#   The vector C must be expressed W.R.T. a right handed set of axes.
-#   CDISP() is input W.R.T. a left handed set of axes.
+    #   The vector C must be expressed W.R.T. a right handed set of axes.
+    #   CDISP() is input W.R.T. a left handed set of axes.
     C = CDISP/BOHR
     C = C * jnp.array([1, 1, -1])
 
 
-#   Evaluate DELTAT matrix for current displacement vector
+    #   Evaluate DELTAT matrix for current displacement vector
     DELTAT = TMATRIX_DWG(t_matrix_ref,t_matrix_new,C, e_inside,v_imag,LMAX)
 
 
