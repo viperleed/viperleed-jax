@@ -25,7 +25,7 @@ fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
 HARTREE = 27.211386245
 BOHR = 0.529177211
 
-def tscatf(IEL,LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR):
+def tscatf(LMAX,phaseshifts,e_inside,V,DR0,DRPER,DRPAR):
     """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
     These are also corrected for thermal vibrations (output in CAF). AF and CAF are meant to be stored in array TMAT for
     later use in RSMF, RTINV.
