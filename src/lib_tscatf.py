@@ -76,11 +76,6 @@ def PSTEMP(DR, E, PHS, LMAX):
     implement the isotropic case here, with a single input parameter DR."""
     ALFA = jnp.sqrt(DR**4)/6
     FALFE = -4*ALFA*E
-    # TODO: probably we can just skip this conditional
-    # if abs(FALFE) < 0.001:
-    #     for i in range(LMAX+1):
-    #         DEL[i] = PHS[i]
-    #     return DEL
     Z = FALFE*1j
 
     # TODO: @Paul choose better variable names
@@ -92,8 +87,8 @@ def PSTEMP(DR, E, PHS, LMAX):
     CTAB = (jnp.exp(2j*PHS)-1)*(2*jnp.arange(LMAX+1) + 1)
 
     SUM = jnp.einsum('jki,i,j->k', PRE_CALCULATED_CPPP[LMAX], CTAB, BJ)
-    t_matrix = (SUM)/(2j)
-    # SUM is the factor exp(2*i*delta) -1, t_matrix is temperature-dependent t-matrix.
+    t_matrix = (SUM)/(2j) # temperature-dependent t-matrix.
+    # SUM is the factor exp(2*i*delta) -1
     # Equation (22), page 29 in Van Hove, Tong book
     # Unlike TensErLEED, we do not convert it to a phase shift, but keep it as a t-matrix.
     # which we use going forward.
