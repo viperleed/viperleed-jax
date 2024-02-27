@@ -6,6 +6,7 @@ import jax.numpy as jnp
 from functools import partial
 
 from src.dense_quantum_numbers import DENSE_M, DENSE_L
+from src.dense_quantum_numbers import MAXIMUM_LMAX
 
 # Spherical Bessel functions from NeuralIL
 from src.spherical_bessel import functions
@@ -50,11 +51,9 @@ def _generate_bessel_functions(l_max):
         bessel_functions.append(functions.create_j_l(order))
     return bessel_functions
 
-# LMAX here for testing; TODO: remove
-LMAX = 14
 
 # generate a list of spherical Bessel functions up to order l_max
-BESSEL_FUNCTIONS = _generate_bessel_functions(LMAX)
+BESSEL_FUNCTIONS = _generate_bessel_functions(MAXIMUM_LMAX)
 
 
 def masked_bessel(z, n1):
