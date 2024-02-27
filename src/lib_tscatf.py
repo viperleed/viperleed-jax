@@ -8,7 +8,6 @@ import fortranformat as ff
 from functools import partial
 from line_profiler import profile
 
-
 from src.lib_math import *
 from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS, DENSE_L, DENSE_M
 from src.dense_quantum_numbers import MINUS_ONE_POW_M
@@ -25,35 +24,32 @@ fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
 HARTREE = 27.211386245
 BOHR = 0.529177211
 
-def tscatf(LMAX,phaseshifts,e_inside,DR):
-    """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
-    These are also corrected for thermal vibrations (output in CAF). AF and CAF are meant to be stored in array TMAT for
-    later use in RSMF, RTINV.
-
-    IEL= chemical element to be treated now, identified by the input
-    sequence order of the phase shifts (iel=1,2 or 3).
-    ES= list of energies at which phase shifts are tabulated.
-    PHSS= tabulated phase shifts.
-    NPSI= no. of energies at which phase shifts are given.
-    e_inside-V= current energy (V can be used to describe local variations
-    of the muffin-tin constant).
-    """
-
-#   Compute temperature-dependent t-matrix elements
-    t_matrix = PSTEMP(DR, e_inside, phaseshifts, LMAX)
-    return t_matrix
-
 @partial(jit, static_argnames=('LMAX',))
-def PSTEMP(DR, E, PHS, LMAX):
-    """PSTEMP incorporates the thermal vibration effects in the phase shifts,
-    through a Debye-Waller factor. Isotropic vibration amplitudes are assumed.
+def tscatf(LMAX, phaseshifts, e_inside, DR):
+    """Computes the temperature-dependent t-matrix elements.
 
-    DR= Isotropic RMS vibration amplitude at reference temperature T0.
-
-    E= Current Energy (real number).
-    PHS= Input phase shifts.
-    DEL= Output (complex) phase shifts.
+    Takes the interpolated phase shifts and computes the atomic t-matrix
+    elements. Thermal vibrations are taken into account through a Debye-Waller
+    factor, whereby isotropic vibration amplitudes are assumed.
     
+    # TODO @Paul: Finsh desciption. Add here, which math is used and reference to the book.
+    
+    Parameters
+    ----------
+    LMAX : int
+        Maximum angular momentum quantum number.
+    phaseshifts : array
+        Interpolated phase shifts.
+    e_inside : float
+        Current energy (real number).
+    DR : float
+        Isotropic RMS vibration amplitude.
+
+    Returns
+    -------
+    t_matrix : array
+        Temperature-dependent atomic t-matrix (complex number).
+
     Note
     ----
     This function corresponds loosely to the subroutines TSCATF and PSTEMP in
@@ -71,8 +67,9 @@ def PSTEMP(DR, E, PHS, LMAX):
     Finally, the TensErLEED versions used allow a local variation of the of the
     muffin-tin constant, via a parameter VSITE that shifts the used energy in
     the crystal potential as E -> E - VSITE. This functionality was also not
-    included as VSITE was also hardcoded to 0 in the TensErLEED code."""
-    FALFE = -2/3 * DR**2 * E
+    included as VSITE was also hardcoded to 0 in the TensErLEED code.
+    """
+    FALFE = -2/3 * DR**2 * e_inside
     Z = FALFE * 1j
 
     # TODO: @Paul choose better variable names
@@ -80,7 +77,7 @@ def PSTEMP(DR, E, PHS, LMAX):
     CS = 1j ** jnp.arange(2*LMAX+1)
     BJ = jnp.exp(FALFE) * FL * CS * bessel(Z, 2*LMAX+1)
 
-    CTAB = (jnp.exp(2j*PHS)-1)*(2*jnp.arange(LMAX+1) + 1)
+    CTAB = (jnp.exp(2j*phaseshifts)-1)*(2*jnp.arange(LMAX+1) + 1)
 
     SUM = jnp.einsum('jki,i,j->k', PRE_CALCULATED_CPPP[LMAX], CTAB, BJ)
     t_matrix = (SUM)/(2j) # temperature-dependent t-matrix.
