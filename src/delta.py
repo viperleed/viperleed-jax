@@ -41,10 +41,6 @@ IEL = 1  # element no. (in phase shifts supplied with input) that delta amplitud
 #          will be calculated for (not necessarily the same element as the one
 #          used in the reference calculation!) - IEL = 0 means a vacancy will be assumed
 
-# TODO: check if we ever use this in ViPErLEED
-VSITE = 0  # possible energy shift in phase shift computations - can be used to describe
-#            local variations of the muffin-tin-constant
-
 @profile
 def main():
 
@@ -107,7 +103,6 @@ def delta_amplitude(tensor_dict, interpolated_phaseshifts, displacement):
     tscatf_vmap = jax.vmap(tscatf, in_axes=(None, 0, 0, None, None))
     t_matrix_new = tscatf_vmap(LMAX,
                               selected_phaseshifts,
-                              e_inside, VSITE, DR)
 
     # amplitude differences
     matel_dwg_vmap_energy = jax.vmap(MATEL_DWG, in_axes=(0, 0, 0, 0, None, 0, 0, 0, 0, None, None))

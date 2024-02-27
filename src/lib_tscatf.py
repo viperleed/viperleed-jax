@@ -25,7 +25,7 @@ fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
 HARTREE = 27.211386245
 BOHR = 0.529177211
 
-def tscatf(LMAX,phaseshifts,e_inside,V,DR):
+def tscatf(LMAX,phaseshifts,e_inside,DR):
     """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
     These are also corrected for thermal vibrations (output in CAF). AF and CAF are meant to be stored in array TMAT for
     later use in RSMF, RTINV.
@@ -37,16 +37,10 @@ def tscatf(LMAX,phaseshifts,e_inside,V,DR):
     NPSI= no. of energies at which phase shifts are given.
     e_inside-V= current energy (V can be used to describe local variations
     of the muffin-tin constant).
-
-
-    DRPER= RMS vibration amplitude perpendicular to surface.
-    DRPAR= RMS vibration amplitude parallel to surface.
-
-    TSF0, TSF, AF, CAF  see above."""
-    E = e_inside - V
+    """
 
 #   Compute temperature-dependent t-matrix elements
-    t_matrix = PSTEMP(DR, E, phaseshifts, LMAX)
+    t_matrix = PSTEMP(DR, e_inside, phaseshifts, LMAX)
     return t_matrix
 
 @partial(jit, static_argnames=('LMAX',))
@@ -66,12 +60,18 @@ def PSTEMP(DR, E, PHS, LMAX):
     TensErLEED. Those subroutines used to take a reference temperature T0 and
     a current temperature TEMP as input. However, this functionality was not
     implemented in TensErLEED and is not implemented here either.
-    Similarly, the TensErLEED versions used to take a zero-temperture
+
+    Similarly, the TensErLEED versions used to take a zero-temperature
     vibrational amplitude DR0, and an anisotropic current vibrational amplitude
     (in the form of DRPER and DRPAR, perpendicular and parallel to the surface,
     respectively) as input. This functionality was also not implemented, with
     DR0 hardcoded to 0 and DRPER and DRPAR hardcoded to be equal. We thus only
-    implement the isotropic case here, with a single input parameter DR."""
+    implement the isotropic case here, with a single input parameter DR.
+
+    Finally, the TensErLEED versions used allow a local variation of the of the
+    muffin-tin constant, via a parameter VSITE that shifts the used energy in
+    the crystal potential as E -> E - VSITE. This functionality was also not
+    included as VSITE was also hardcoded to 0 in the TensErLEED code."""
     FALFE = -2/3 * DR**2 * E
     Z = FALFE * 1j
 
