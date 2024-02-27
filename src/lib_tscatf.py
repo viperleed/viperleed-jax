@@ -74,13 +74,13 @@ def PSTEMP(DR, E, PHS, LMAX):
     respectively) as input. This functionality was also not implemented, with
     DR0 hardcoded to 0 and DRPER and DRPAR hardcoded to be equal. We thus only
     implement the isotropic case here, with a single input parameter DR."""
-    Z = -2/3 * DR**2 * E * 1j
+    FALFE = -2/3 * DR**2 * E
+    Z = FALFE * 1j
 
     # TODO: @Paul choose better variable names
-    BJ = bessel(Z, 2*LMAX+1)
     FL = (2*jnp.arange(2*LMAX+1) + 1)
     CS = 1j ** jnp.arange(2*LMAX+1)
-    BJ = jnp.exp(FALFE) * FL * CS * BJ
+    BJ = jnp.exp(FALFE) * FL * CS * bessel(Z, 2*LMAX+1)
 
     CTAB = (jnp.exp(2j*PHS)-1)*(2*jnp.arange(LMAX+1) + 1)
 
