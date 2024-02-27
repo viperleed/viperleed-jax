@@ -25,7 +25,7 @@ fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
 HARTREE = 27.211386245
 BOHR = 0.529177211
 
-def tscatf(LMAX,phaseshifts,e_inside,V,DRPER,DRPAR):
+def tscatf(LMAX,phaseshifts,e_inside,V,DR):
     """The function tscatf interpolates tabulated phase shifts and produces the atomic T-matrix elements (output in AF).
     These are also corrected for thermal vibrations (output in CAF). AF and CAF are meant to be stored in array TMAT for
     later use in RSMF, RTINV.
@@ -45,8 +45,6 @@ def tscatf(LMAX,phaseshifts,e_inside,V,DRPER,DRPAR):
     TSF0, TSF, AF, CAF  see above."""
     E = e_inside - V
 
-#   Average any anisotropy of RMS vibration amplitudes
-    DR = jnp.sqrt((DRPER*DRPER+2*DRPAR*DRPAR)/3)
 #   Compute temperature-dependent t-matrix elements
     t_matrix = PSTEMP(DR, E, phaseshifts, LMAX)
     return t_matrix
