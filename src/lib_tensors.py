@@ -1,6 +1,13 @@
 import numpy as np
 import fortranformat as ff
 
+
+FF_READER_5E16_12 = ff.FortranRecordReader("5E16.12")
+FF_READER_4E16_12 = ff.FortranRecordReader("4E16.12")
+FF_READER_5E12_6 = ff.FortranRecordReader("5E12.6")
+FF_READER_4E12_6 = ff.FortranRecordReader("4E12.6")
+FF_READER_I5 = ff.FortranRecordReader("I5")
+
 def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11):
     # Reading in the data of a file
     try:
@@ -12,12 +19,6 @@ def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11):
     file_lines = iter(content)
 
     # fortran format readers
-    ff_reader_5E16_12 = ff.FortranRecordReader("5E16.12")
-    ff_reader_4E16_12 = ff.FortranRecordReader("4E16.12")
-    ff_reader_5E12_6 = ff.FortranRecordReader("5E12.6")
-    ff_reader_4E12_6 = ff.FortranRecordReader("4E12.6")
-    ff_reader_I5 = ff.FortranRecordReader("I5")
-    
     e_kin = np.full((n_energies,) ,dtype=np.float64, fill_value = np.nan)
     v0i_substrate = np.full((n_energies,) ,dtype=np.float64, fill_value = np.nan)
     v0i_overlayer = np.full((n_energies,), dtype=np.float64, fill_value=np.nan)
@@ -44,65 +45,60 @@ def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11):
 
         # energy values - version 1.71 and up compatible only
         line = next(file_lines)
-        e_kin[e_step], v0i_substrate[e_step], v0i_overlayer[e_step], v0r[e_step] = ff_reader_4E16_12.read(
+        e_kin[e_step], v0i_substrate[e_step], v0i_overlayer[e_step], v0r[e_step] = FF_READER_4E16_12.read(
             line)
 
 
         # number of phaseshifts used - important for size of arrays
         line = next(file_lines)
-        n_phaseshifts_per_energy[e_step] = ff_reader_I5.read(line)[0]
+        n_phaseshifts_per_energy[e_step] = FF_READER_I5.read(line)[0]
         
         # atomic T matrices
         # 2*(lmax +1) numbers
-        t_matrix_as_real = read_block(ff_reader_5E16_12, file_lines, shape=(
+        t_matrix_as_real = read_block(FF_READER_5E16_12, file_lines, shape=(
             n_phaseshifts_per_energy[e_step], 2,))
         t_matrix_as_complex = t_matrix_as_real.view(dtype=np.complex128)
         t_matrix[e_step, :n_phaseshifts_per_energy[e_step]] = t_matrix_as_complex.flatten()
         
         # complex amplitudes of outgoing beams
         # 2*n_beams numbers
-        amps_as_real = read_block(ff_reader_5E16_12, file_lines, shape=(n_beams, 2))
+        amps_as_real = read_block(FF_READER_5E16_12, file_lines, shape=(n_beams, 2))
         amps_as_complex = amps_as_real.view(dtype=np.complex128)
         ref_amps[e_step, :] = amps_as_complex.flatten()
         
         # block for incident beam
         line = next(file_lines)
-        n_beam = ff_reader_I5.read(line)[0]
+        n_beam = FF_READER_I5.read(line)[0]
         assert(n_beam == 0)
         line = next(file_lines) # discard relative momenta vs. incident beam (==0)
         
-        tens_amps_as_real = read_block(ff_reader_5E12_6, file_lines, shape=(
+        tens_amps_as_real = read_block(FF_READER_5E12_6, file_lines, shape=(
         n_phaseshifts_per_energy[e_step]**2, 2))
         tens_amps_as_complex = tens_amps_as_real.view(np.complex128)[..., 0]
         tensor_amps_in[e_step, :n_phaseshifts_per_energy[e_step]**2] = tens_amps_as_complex
 
-    
         # blocks for exiting beams
         while True:
             
             # number of beam
             line = next(file_lines)
-            n_beam = ff_reader_I5.read(line)[0]
+            n_beam = FF_READER_I5.read(line)[0]
             
             if n_beam< 0:
                 break
             
             # delta k and k
             line = next(file_lines)
-            delta_kx[e_step, n_beam - 1], delta_ky[e_step, n_beam - 1], kx_in[e_step, n_beam - 1], ky_in[e_step, n_beam - 1] = ff_reader_4E12_6.read(
+            delta_kx[e_step, n_beam - 1], delta_ky[e_step, n_beam - 1], kx_in[e_step, n_beam - 1], ky_in[e_step, n_beam - 1] = FF_READER_4E12_6.read(
                 line)
             # complex Tensor amplitudes
             
-            tens_amps_as_real = read_block(ff_reader_5E12_6, file_lines, shape=(
+            tens_amps_as_real = read_block(FF_READER_5E12_6, file_lines, shape=(
                 n_phaseshifts_per_energy[e_step]**2, 2))
             tens_amps_as_complex = tens_amps_as_real.view(np.complex128)[..., 0]
             tensor_amps_exit[e_step, n_beam-1, :n_phaseshifts_per_energy[e_step]**2] = tens_amps_as_complex
 
 
-    k_in = np.full((n_energies, n_beams, 2) ,dtype=np.float64, fill_value = np.nan)
-    k_in[:, :, 0] = kx_in
-    k_in[:, :, 1] = ky_in
-    
     k_delta = np.full((n_energies, 2, n_beams) ,dtype=np.float64, fill_value = np.nan)
     k_delta[:, 0, :] = delta_kx
     k_delta[:, 1, :] = delta_ky
@@ -125,7 +121,7 @@ def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11):
         "n_energies": n_energies,
         "n_beams": n_beams, #NT0
         }
-    
+
     return tensor_data_dict
 
 
