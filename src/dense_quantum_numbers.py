@@ -10,14 +10,19 @@ from jax import jit
 MAXIMUM_LMAX = 18
 
 # TODO: come up with a faster version of this
-def _dense_quantum_numbers(LMAX):
-    valid_quantum_numbers = np.empty(((LMAX+1)*(LMAX+1), (LMAX+1)*(LMAX+1), 4), dtype=int)
-    for L in range(LMAX+1):
-        for LP in range(LMAX+1):
+def _asymmetric_dense_quantum_numbers(lmax_1, lmax_2):
+    valid_quantum_numbers = np.empty(((lmax_1+1)*(lmax_1+1), (lmax_2+1)*(lmax_2+1), 4), dtype=int)
+    for L in range(lmax_1+1):
+        for LP in range(lmax_2+1):
             for M in range(-L, L+1):
                 for MP in range(-LP, LP+1):
                     valid_quantum_numbers[(L+1)*(L+1)-L+M-1][(LP+1)*(LP+1)-LP+MP-1] = [L, LP, M, MP]
     return jnp.array(valid_quantum_numbers)
+
+
+def _dense_quantum_numbers(lmax):
+    return _asymmetric_dense_quantum_numbers(lmax, lmax)
+
 
 _FULL_DENSE_QUANTUM_NUMBERS = _dense_quantum_numbers(2*MAXIMUM_LMAX)
 DENSE_QUANTUM_NUMBERS = {
