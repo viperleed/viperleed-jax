@@ -133,21 +133,21 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,ten
 @partial(vmap, in_axes=(1, None, None, None, 0, 0, None, None, None, None), out_axes=0)  # vmap over exit beams
 def calcuclate_exit_beam_delta(tensor_amps_out, tensor_amps_in,
                                DELTAT, k_inside, out_k_par_2, out_k_par_3, unit_cell_area,
-                               LMAX, E, v_imag):
+                               LMAX, energies, v_imag):
     # Equation (41) from Rous, Pendry 1989
     AMAT = jnp.einsum('k,k,km,m->', MINUS_ONE_POW_M[LMAX], tensor_amps_out, DELTAT, tensor_amps_in)
     out_k_par = out_k_par_2*out_k_par_2 + out_k_par_3*out_k_par_3
 
     # the propagator is evaluated relative to the muffin tin zero i.e.
     # it uses energy = incident electron energy + inner potential
-    out_k_perp_inside = jnp.sqrt(2*E-out_k_par-2j*v_imag+1j*EPS)
+    out_k_perp_inside = jnp.sqrt(2*energies-out_k_par-2j*v_imag+1j*EPS)
     AMAT *= 1/(2*k_inside*unit_cell_area*out_k_perp_inside)
     return AMAT
 
 
 #@partial(jit, static_argnames=('LMAX',))
 @partial(vmap, in_axes=(None, None, 0, None, None, None)) # vmap over atoms
-def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
+def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
     C(3): Displacement vector;
@@ -175,13 +175,13 @@ def TMATRIX_DWG(t_matrix_ref, t_matrix_new, C, e_inside, v_imag, LMAX):
             return DELTAT
     """
 
-    CAPPA = 2*e_inside - 2j*v_imag
+    CAPPA = 2*energies - 2j*v_imag
     Z = jnp.sqrt(CAPPA)*CL
     BJ = masked_bessel(Z,2*LMAX+1)
     YLM = HARMONY(C, LMAX)
     GTWOC = get_csum(BJ, YLM, LMAX, DENSE_QUANTUM_NUMBERS[LMAX])
 
-    broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(t_matrix_new, LMAX)
+    broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
     GTEMP = GTWOC.T*1.0j*broadcast_New_t_matrix
 
     DELTAT = jax.numpy.einsum('il,lj->ij', GTEMP, GTWOC)
