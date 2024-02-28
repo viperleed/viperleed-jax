@@ -196,8 +196,7 @@ def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
     MPP = MP-M  # I don't fully understand this, technically it should be MPP = -M - MP
     all_lpp = jnp.arange(0, LMAX*2+1)
     # we could skip some computations with non_zero_lpp = jnp.where((all_lpp >= abs(L-LP)) & (all_lpp <= L+LP))
-    # but I'm not sure the conditional is worth it in terms of performance
-
+    # but this would need a way around the non-static array size
 
     # Use the array versions in the vmap call
     gaunt_coeffs = fetch_lpp_gaunt(L, LP, all_lpp, M, -MP, -M+MP)
