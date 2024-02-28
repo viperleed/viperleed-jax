@@ -4,6 +4,9 @@ import sys
 import scipy
 import fortranformat as ff
 
+import logging
+logger = logging.getLogger(__name__)
+
 def readPHASESHIFTS(sl, rp, readfile='PHASESHIFTS', check=True,
                     ignoreEnRange=False):
     """Reads from a PHASESHIFTS file, returns the data as a list of tuples
