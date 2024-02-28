@@ -88,17 +88,21 @@ def tscatf(LMAX, phaseshifts, e_inside, DR):
 
 def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,tensor_amps_in,out_k_par2,
       out_k_par_3,unit_cell_area,displacements):
-    """The function MATEL_DWG evaluates the change in amplitude delwv for each of the exit beams for each of the
-    displacements given the sph wave amplitudes corresponding to the incident wave ALM & for each of the time reversed
-    exit beams EXLM.
-    DELWV(NCSTEP,NT0): Change in amplitude due to displacement C for each displacement & for each exit beam.
-    ALM(LMMAX): Sph wave amplitudes incident at the origin of the top layer due to the incident LEED beam.
-    EXLM(NT0,LMMAX): As ALM but for each time reversed exit beam.
-    C(3): Current displacement, C(1)= component along x into the surface. C(2),C(3) along ARB1/ARB2.
-    CSTEP(3): Increment in displacement.
-    NT0: Number of exit beams.
-    NRATIO: Ration of area of surface unit cell of reconstructed surface to unit cell area of the unreconstructed
-    surface. E.G. for P(2x2) NRATIO=4, for C(2x2) NRATIO=2."""
+    """Evaluates the amplitude change due to displacement for each exit beam.
+    
+    Using the the tensor produced by the reference calculation, and the adapted
+    t-matrix elements produced by tscatf, this function calculates the change in
+    amplitude for each of the exit beams for a given displacement vector.
+
+    Parameters
+    ----------
+    displacements : array
+        Displacement vector for all atoms.
+
+    Note
+    ----
+    This function corresponds to the subroutine MATEL_DWG in TensErLEED.
+    """
 
     k_inside = jnp.sqrt(2*e_inside-2j*v_imag+1j*EPS)
 
