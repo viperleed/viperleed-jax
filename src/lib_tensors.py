@@ -20,20 +20,62 @@ class TensorData:
     for every non-bulk atom. They contain the atomic t-matrices and the
     scattering amplitudes for the reference structure.
     While the t-matrices are unique, every tensor file contains the same
-    reference-amplitudes."""
-    # attribute name                      TensErLEEED variable
-    e_kin: np.ndarray                     # E
-    v0i_substrate: np.ndarray             # VPIS
-    v0i_overlayer: np.ndarray             # VPIO
-    v0r: np.ndarray                       # VV
-    n_phaseshifts_per_energy: np.ndarray  # L1DAT
-    ref_amps: np.ndarray                  # XIST
-    t_matrix: np.ndarray                  # CAF
-    tensor_amps_in: np.ndarray            # ALM
-    tensor_amps_out: np.ndarray           # EXLM
-    k_delta: np.ndarray                   # PSQ
-    kx_in: np.ndarray                     # AK2M
-    ky_in: np.ndarray                     # AK3M
+    reference-amplitudes.
+    
+    Attributes
+    ----------
+    e_kin : np.ndarray
+        Kinetic energies of the reference calculation.
+        Parameter E in TensErLEED.
+    v0i_substrate : np.ndarray
+        Imaginary part of the inner potential (substrate).
+        Parameter VPIS in TensErLEED.
+    v0i_overlayer : np.ndarray
+        Imaginary part of the inner potential (overlayer).                      # TODO: can we get rid of this?
+        Parameter VPIO in TensErLEED.
+    v0r : np.ndarray
+        Real part of the inner potential.
+        Parameter VV in TensErLEED.
+    n_phaseshifts_per_energy : np.ndarray
+        Number of phaseshifts used for each energy
+        Parameter L1DAT in TensErLEED.
+    ref_amps : np.ndarray
+        Reference scattering amplitudes.
+        Parameter XIST in TensErLEED.
+    t_matrix : np.ndarray
+        Atomic t-matrix of current site as used in reference calculation.
+        Parameter CAF in TensErLEED.
+    tensor_amps_in : np.ndarray
+        Spherical wave amplitudes incident on current atomic site in
+        the reference calculation.
+        Parameter ALM in TensErLEED.
+    tensor_amps_out : np.ndarray
+        Spherical wave amplitudes incident from exit beam NEXIT in "time-reversed"
+        LEED experiment (or rather, all terms of Born series immediately after
+        scattering on current atom).
+        Parameter EXLM in TensErLEED.
+    k_delta : np.ndarray
+        Absolute lateral momentum of Tensor LEED beams
+    kx_in : np.ndarray
+        (Negative) absolute lateral momentum of Tensor LEED beams
+        (for use as incident beams in time-reversed LEED calculation).
+        PARAMETER AK2M in TensErLEED.
+    ky_in : np.ndarray
+        Same as kx_in, but for the y-component.
+        PARAMETER AK3M in TensErLEED.
+    """
+    e_kin: np.ndarray
+    v0i_substrate: np.ndarray
+    v0i_overlayer: np.ndarray
+    v0r: np.ndarray
+    n_phaseshifts_per_energy: np.ndarray
+    ref_amps: np.ndarray
+    t_matrix: np.ndarray
+    tensor_amps_in: np.ndarray
+    tensor_amps_out: np.ndarray
+    k_delta: np.ndarray
+    kx_in: np.ndarray
+    ky_in: np.ndarray
 
     @property
     def n_energies(self):
