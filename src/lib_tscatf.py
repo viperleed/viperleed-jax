@@ -120,28 +120,18 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,ten
     DELTAT = TMATRIX_DWG(t_matrix_ref,t_matrix_new,C, e_inside,v_imag,LMAX)
 
 
-    delwv_per_atom = calcuclate_exit_beam_delta(
-            tensor_amps_out, tensor_amps_in, DELTAT, k_inside, out_k_par2, out_k_par_3, unit_cell_area,
-            LMAX, e_inside, v_imag
-        )
-    # sum over atom contributions
-    delwv = delwv_per_atom.sum(axis=0)
+    AMAT = jnp.einsum('l,lb,alk,k->ab',
+                      MINUS_ONE_POW_M[LMAX], 
+                      tensor_amps_out,
+                      DELTAT, tensor_amps_in)
 
-    return delwv
+    out_k_par = out_k_par2**2 + out_k_par_3**2
+    energy_broadcast = (2*e_inside - 2j*v_imag + 1j*EPS) # @ jnp.ones_like(out_k_par)
+    out_k_perp_inside = jnp.sqrt(energy_broadcast - out_k_par)
 
-@partial(vmap, in_axes=(None, None, 0, None, None, None, None, None, None, None))  # vmap over atoms
-@partial(vmap, in_axes=(1, None, None, None, 0, 0, None, None, None, None), out_axes=0)  # vmap over exit beams
-def calcuclate_exit_beam_delta(tensor_amps_out, tensor_amps_in,
-                               DELTAT, k_inside, out_k_par_2, out_k_par_3, unit_cell_area,
-                               LMAX, energies, v_imag):
-    # Equation (41) from Rous, Pendry 1989
-    AMAT = jnp.einsum('k,k,km,m->', MINUS_ONE_POW_M[LMAX], tensor_amps_out, DELTAT, tensor_amps_in)
-    out_k_par = out_k_par_2*out_k_par_2 + out_k_par_3*out_k_par_3
+    AMAT = jnp.einsum('ab,,b->b', AMAT, 1/k_inside, 1/out_k_perp_inside)
+    AMAT = AMAT/(2*unit_cell_area)
 
-    # the propagator is evaluated relative to the muffin tin zero i.e.
-    # it uses energy = incident electron energy + inner potential
-    out_k_perp_inside = jnp.sqrt(2*energies-out_k_par-2j*v_imag+1j*EPS)
-    AMAT *= 1/(2*k_inside*unit_cell_area*out_k_perp_inside)
     return AMAT
 
 
