@@ -37,10 +37,8 @@ def delta_amplitude(IEL, LMAX, DR, tensor_data, unit_cell_area, interpolated_pha
     # NewCAF: working array in which current (displaced) atomic t-matrix is stored
     # TODO: we could also either append empty phaseshifts to the phaseshifts array or move the conditional around tscatf
     selected_phaseshifts = _select_phaseshifts(IEL, interpolated_phaseshifts)
-    tscatf_vmap = jax.vmap(tscatf, in_axes=(None, 0, 0, None))
-    t_matrix_new = tscatf_vmap(LMAX,
-                              selected_phaseshifts,
-                              e_inside, DR)
+    tscatf_vmap = jax.vmap(tscatf, in_axes=(None, 0, 0, None))  # vmap over energy
+    t_matrix_new = tscatf_vmap(LMAX, selected_phaseshifts, e_inside, DR)
 
     # amplitude differences
     matel_dwg_vmap_energy = jax.vmap(MATEL_DWG, in_axes=(0, 0, 0, 0, None, 0, 0, 0, 0, None, None))
