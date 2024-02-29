@@ -138,8 +138,8 @@ def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11):
     tensor_amps_out = np.transpose(tensor_amps_out, axes=(0, 2, 1))
 
     # crop Tensor amplitudes to the LMAX used - TODO: check if we can do this earlier
-    tensor_amps_in = tensor_amps_in[:, :(l_max+1)**2] 
-    tensor_amps_out = tensor_amps_out[:, :(l_max+1)**2, :]
+    tensor_amps_in = tensor_amps_in[:, :(l_max+1-1)**2] 
+    tensor_amps_out = tensor_amps_out[:, :(l_max+1-1)**2, :]
 
     return TensorData(
         e_kin=e_kin,
