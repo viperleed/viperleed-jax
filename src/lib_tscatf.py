@@ -126,10 +126,13 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,ten
                       tensor_amps_out,
                       DELTAT, tensor_amps_in)
 
+    # the propagator is evaluated relative to the muffin tin zero i.e.
+    # it uses energy = incident electron energy + inner potential
     out_k_par = out_k_par2**2 + out_k_par_3**2
     energy_broadcast = (2*e_inside - 2j*v_imag + 1j*EPS) # @ jnp.ones_like(out_k_par)
     out_k_perp_inside = jnp.sqrt(energy_broadcast - out_k_par)
 
+    # Equation (41) from Rous, Pendry 1989 & sum over atoms (index a)
     AMAT = jnp.einsum('ab,,b->b', AMAT, 1/k_inside, 1/out_k_perp_inside)
     AMAT = AMAT/(2*unit_cell_area)
 
