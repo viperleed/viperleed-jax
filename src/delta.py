@@ -18,20 +18,20 @@ def _select_phaseshifts(IEL, phaseshifts):
                           phaseshifts[:, IEL-1, :])
 
 
-def delta_amplitude(IEL, LMAX, DR, tensor_dict, unit_cell_area, interpolated_phaseshifts, displacement):
-    e_inside = tensor_dict['e_kin']  # computational energy inside crystal
-    t_matrix_ref = tensor_dict['t_matrix']  # atomic t-matrix of current site as used in reference calculation
-    v_imag = tensor_dict['v0i_substrate']# imaginary part of the inner potential, substrate
+def delta_amplitude(IEL, LMAX, DR, tensor_data, unit_cell_area, interpolated_phaseshifts, displacement):
+    e_inside = tensor_data.e_kin  # computational energy inside crystal
+    t_matrix_ref = tensor_data.t_matrix  # atomic t-matrix of current site as used in reference calculation
+    v_imag = tensor_data.v0i_substrate # imaginary part of the inner potential, substrate
 
-    tensor_amps_out = tensor_dict['tensor_amps_out']  # spherical wave amplitudes incident from exit beam NEXIT in "time-reversed"
+    tensor_amps_out = tensor_data.tensor_amps_out  # spherical wave amplitudes incident from exit beam NEXIT in "time-reversed"
     #                                       LEED experiment (or rather, all terms of Born series immediately after
     #                                       scattering on current atom)
-    tensor_amps_in = tensor_dict['tensor_amps_in']  # spherical wave amplitudes incident on current atomic site in reference calculation
+    tensor_amps_in = tensor_data.tensor_amps_in  # spherical wave amplitudes incident on current atomic site in reference calculation
     # crop tensors to LMAX
     tensor_amps_out = tensor_amps_out[:, :(LMAX+1)**2, :]
     tensor_amps_in = tensor_amps_in[:, :(LMAX+1)**2] 
     #                                     (i.e., scattering path ends before scattering on that atom)
-    out_k_par2, out_k_par3 = tensor_dict['kx_in'], tensor_dict['ky_in']  # (negative) absolute lateral momentum of Tensor LEED beams
+    out_k_par2, out_k_par3 = tensor_data.kx_in, tensor_data.ky_in  # (negative) absolute lateral momentum of Tensor LEED beams
     #                                                        (for use as incident beams in time-reversed LEED calculation)
 
     # NewCAF: working array in which current (displaced) atomic t-matrix is stored
