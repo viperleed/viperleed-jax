@@ -23,6 +23,7 @@ HARTREE = 27.211386245
 BOHR = 0.529177211
 
 @partial(jit, static_argnames=('LMAX',))
+@partial(vmap, in_axes=(None, 0, None, 0))  # vmap over atoms
 def tscatf(LMAX, phaseshifts, e_inside, DR):
     """Computes the temperature-dependent t-matrix elements.
 
@@ -30,8 +31,8 @@ def tscatf(LMAX, phaseshifts, e_inside, DR):
     elements. Thermal vibrations are taken into account through a Debye-Waller
     factor, whereby isotropic vibration amplitudes are assumed.
     
-    # TODO @Paul: Finsh desciption. Add here, which math is used and reference to the book.
-    
+    # TODO @Paul: Finish desciption. Add here, which math is used and reference to the book.
+
     Parameters
     ----------
     LMAX : int
@@ -136,7 +137,7 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,ten
 
 
 #@partial(jit, static_argnames=('LMAX',))
-@partial(vmap, in_axes=(None, None, 0, None, None, None)) # vmap over atoms
+@partial(vmap, in_axes=(None, 0, 0, None, None, None))  # vmap over atoms
 def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).

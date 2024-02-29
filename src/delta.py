@@ -11,15 +11,7 @@ from src.lib_tensors import *
 from src.lib_tscatf import *
 
 
-def _select_phaseshifts(IEL, phaseshifts):
-    """Selects the phaseshifts for the given element number IEL"""
-    return jax.lax.select(IEL == 0,
-                          jnp.zeros_like(phaseshifts[:, 0, :]),
-                          phaseshifts[:, IEL-1, :])
-
-
-def delta_amplitude(IEL, LMAX, DR, tensor_data, unit_cell_area, interpolated_phaseshifts, displacement):
-    e_inside = tensor_data.e_kin  # computational energy inside crystal
+def delta_amplitude(LMAX, DR, tensor_data, unit_cell_area, phaseshifts, displacements):
     t_matrix_ref = tensor_data.t_matrix  # atomic t-matrix of current site as used in reference calculation
     v_imag = tensor_data.v0i_substrate # imaginary part of the inner potential, substrate
 
@@ -27,23 +19,20 @@ def delta_amplitude(IEL, LMAX, DR, tensor_data, unit_cell_area, interpolated_pha
     #                                       LEED experiment (or rather, all terms of Born series immediately after
     #                                       scattering on current atom)
     tensor_amps_in = tensor_data.tensor_amps_in  # spherical wave amplitudes incident on current atomic site in reference calculation
-    # crop tensors to LMAX
-    tensor_amps_out = tensor_amps_out[:, :(LMAX+1)**2, :]
-    tensor_amps_in = tensor_amps_in[:, :(LMAX+1)**2] 
+
     #                                     (i.e., scattering path ends before scattering on that atom)
     out_k_par2, out_k_par3 = tensor_data.kx_in, tensor_data.ky_in  # (negative) absolute lateral momentum of Tensor LEED beams
     #                                                        (for use as incident beams in time-reversed LEED calculation)
 
     # NewCAF: working array in which current (displaced) atomic t-matrix is stored
     # TODO: we could also either append empty phaseshifts to the phaseshifts array or move the conditional around tscatf
-    selected_phaseshifts = _select_phaseshifts(IEL, interpolated_phaseshifts)
     tscatf_vmap = jax.vmap(tscatf, in_axes=(None, 0, 0, None))  # vmap over energy
-    t_matrix_new = tscatf_vmap(LMAX, selected_phaseshifts, e_inside, DR)
+    t_matrix_new = tscatf_vmap(LMAX, phaseshifts, tensor_data.e_kin, DR)
 
     # amplitude differences
     matel_dwg_vmap_energy = jax.vmap(MATEL_DWG, in_axes=(0, 0, 0, 0, None, 0, 0, 0, 0, None, None))
-    d_amplitude = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, e_inside, v_imag,
+    d_amplitude = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, tensor_data.e_kin, v_imag,
                         LMAX, tensor_amps_out, tensor_amps_in, out_k_par2, out_k_par3,
-                        unit_cell_area, displacement)
+                        unit_cell_area, displacements)
 
     return d_amplitude
