@@ -8,11 +8,11 @@ def sum_intensity(prefactors, reference_amplitudes, delta_amplitudes):
     return prefactors * abs(reference_amplitudes + delta_amplitudes) ** 2
 
 
-def intensity_prefactor(tensor_dict, displacement, beam_indices, theta, phi, trar, is_surface_atom):
+def intensity_prefactor(tensor_data, displacement, beam_indices, theta, phi, trar, is_surface_atom):
     # prefactors (refraction) from amplitudes to intensities
-    e_kin = tensor_dict['e_kin']
-    v_real = tensor_dict['v0r']
-    v_imag = tensor_dict['v0i_substrate']
+    e_kin = tensor_data.e_kin
+    v_real = tensor_data.v0r
+    v_imag = tensor_data.v0i_substrate
     n_beams = beam_indices.shape[0]
 
     in_k, bk_z, out_k_z, out_k_perp = _wave_vectors(e_kin, v_real, v_imag, theta, phi, trar, beam_indices)
