@@ -104,12 +104,12 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,ten
     ----
     This function corresponds to the subroutine MATEL_DWG in TensErLEED.
     """
-
-    k_inside = jnp.sqrt(2*e_inside-2j*v_imag+1j*EPS)
+    e_broadcast = jnp.ones_like(v_imag)*e_inside
+    k_inside = jnp.sqrt(2*e_broadcast-2j*v_imag+1j*EPS)
 
     # EXLM is for outgoing beams, so we need to swap indices m -> -m
     # to do this in the dense representation, we do the following:
-    tensor_amps_out = tensor_amps_out[(DENSE_L[LMAX]+1)**2 - DENSE_L[LMAX] - DENSE_M[LMAX] -1]
+    tensor_amps_out = tensor_amps_out[:,(DENSE_L[LMAX]+1)**2 - DENSE_L[LMAX] - DENSE_M[LMAX] -1]
 
     #   The vector C must be expressed W.R.T. a right handed set of axes.
     #   CDISP() is input W.R.T. a left handed set of axes.
@@ -121,7 +121,7 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,ten
     DELTAT = TMATRIX_DWG(t_matrix_ref,t_matrix_new,C, e_inside,v_imag,LMAX)
 
 
-    AMAT = jnp.einsum('l,lb,alk,k->ab',
+    AMAT = jnp.einsum('l,alb,alk,ak->ab',
                       MINUS_ONE_POW_M[LMAX], 
                       tensor_amps_out,
                       DELTAT, tensor_amps_in)
@@ -129,18 +129,18 @@ def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,ten
     # the propagator is evaluated relative to the muffin tin zero i.e.
     # it uses energy = incident electron energy + inner potential
     out_k_par = out_k_par2**2 + out_k_par_3**2
-    energy_broadcast = (2*e_inside - 2j*v_imag + 1j*EPS) # @ jnp.ones_like(out_k_par)
-    out_k_perp_inside = jnp.sqrt(energy_broadcast - out_k_par)
+    energy_broadcast = (2*e_broadcast - 2j*v_imag + 1j*EPS) # @ jnp.ones_like(out_k_par)
+    out_k_perp_inside = jnp.sqrt(energy_broadcast@jnp.ones_like(out_k_par) - out_k_par)
 
     # Equation (41) from Rous, Pendry 1989 & sum over atoms (index a)
-    AMAT = jnp.einsum('ab,,b->b', AMAT, 1/k_inside, 1/out_k_perp_inside)
+    AMAT = jnp.einsum('ab,a,ab->b', AMAT, 1/k_inside, 1/out_k_perp_inside)
     AMAT = AMAT/(2*unit_cell_area)
 
     return AMAT
 
 
 #@partial(jit, static_argnames=('LMAX',))
-@partial(vmap, in_axes=(None, 0, 0, None, None, None))  # vmap over atoms
+@partial(vmap, in_axes=(0, 0, 0, None, 0, None))  # vmap over atoms
 def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
