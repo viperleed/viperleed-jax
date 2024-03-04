@@ -8,7 +8,7 @@ import numpy as np
 
 from src.lib_phaseshifts import *
 from src.lib_tensors import *
-from src.lib_tscatf import *
+from src.lib_delta import *
 
 
 def delta_amplitude(LMAX, DR, tensor_data, unit_cell_area, phaseshifts, displacements):
@@ -26,12 +26,12 @@ def delta_amplitude(LMAX, DR, tensor_data, unit_cell_area, phaseshifts, displace
 
     # NewCAF: working array in which current (displaced) atomic t-matrix is stored
     # TODO: we could also either append empty phaseshifts to the phaseshifts array or move the conditional around tscatf
-    tscatf_vmap = jax.vmap(tscatf, in_axes=(None, 0, 0, None))  # vmap over energy
-    t_matrix_new = tscatf_vmap(LMAX, phaseshifts, tensor_data.e_kin, DR)
+    apply_vibrational_displacements_vmap = jax.vmap(apply_vibrational_displacements, in_axes=(None, 0, 0, None))  # vmap over energy
+    t_matrix_new = apply_vibrational_displacements_vmap(LMAX, phaseshifts, tensor_data.e_kin, DR)
 
     # amplitude differences
-    matel_dwg_vmap_energy = jax.vmap(MATEL_DWG, in_axes=(0, 0, 0, 0, None, 0, 0, 0, 0, None, None))
-    d_amplitude = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, tensor_data.e_kin, v_imag,
+    apply_geometric_displacements_vmap_energy = jax.vmap(apply_geometric_displacements, in_axes=(0, 0, 0, 0, None, 0, 0, 0, 0, None, None))
+    d_amplitude = apply_geometric_displacements_vmap_energy(t_matrix_ref, t_matrix_new, tensor_data.e_kin, v_imag,
                         LMAX, tensor_amps_out, tensor_amps_in, out_k_par2, out_k_par3,
                         unit_cell_area, displacements)
 
