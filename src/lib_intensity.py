@@ -14,14 +14,12 @@ def intensity_prefactor(tensor_data, displacement, beam_indices, theta, phi, tra
     v_real = tensor_data.v0r
     v_imag = tensor_data.v0i_substrate
     n_beams = beam_indices.shape[0]
-    # in_k, bk_z, out_k_z, out_k_perp
     in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum = _wave_vectors(e_kin, v_real, v_imag, theta, phi, trar, beam_indices)
 
     a = out_k_perp_vacuum
     c = in_k_vacuum * jnp.cos(theta)
 
     CXDisp = _potential_onset_height_change(displacement, is_surface_atom)
-    # TODO: @Paul: should we use out_k_z here really? Also this raises a warning in numpy about complex casting
     prefactor = abs(jnp.exp(-1j * CXDisp * (jnp.outer(in_k_perp_vacuum, jnp.ones(shape=(n_beams,))) + out_k_perp
                                                 ))) ** 2 * a.real / jnp.outer(c, jnp.ones(shape=(n_beams,))).real
     return prefactor
