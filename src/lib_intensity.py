@@ -14,16 +14,16 @@ def intensity_prefactor(tensor_data, displacement, beam_indices, theta, phi, tra
     v_real = tensor_data.v0r
     v_imag = tensor_data.v0i_substrate
     n_beams = beam_indices.shape[0]
+    # in_k, bk_z, out_k_z, out_k_perp
+    in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum = _wave_vectors(e_kin, v_real, v_imag, theta, phi, trar, beam_indices)
 
-    in_k, bk_z, out_k_z, out_k_perp = _wave_vectors(e_kin, v_real, v_imag, theta, phi, trar, beam_indices)
-
-    a = jnp.sqrt(out_k_perp)
-    c = in_k * jnp.cos(theta)
+    a = out_k_perp_vacuum
+    c = in_k_vacuum * jnp.cos(theta)
 
     CXDisp = _potential_onset_height_change(displacement, is_surface_atom)
     # TODO: @Paul: should we use out_k_z here really? Also this raises a warning in numpy about complex casting
-    prefactor = abs(jnp.exp(-1j * CXDisp * (jnp.outer(bk_z, jnp.ones(shape=(n_beams,))) + out_k_z
-                                                ))) ** 2 * a / jnp.outer(c, jnp.ones(shape=(n_beams,))).real
+    prefactor = abs(jnp.exp(-1j * CXDisp * (jnp.outer(in_k_perp_vacuum, jnp.ones(shape=(n_beams,))) + out_k_perp
+                                                ))) ** 2 * a.real / jnp.outer(c, jnp.ones(shape=(n_beams,))).real
     return prefactor
 
 
@@ -31,37 +31,30 @@ def _wave_vectors(e_kin, v_real, v_imag, theta, phi, trar, beam_indices):
     n_energies = e_kin.shape[0]
     n_beams = beam_indices.shape[0]
     # incident wave vector
-    in_k = jnp.sqrt(jnp.maximum(0, 2 * (e_kin - v_real)))
-    in_k_par = in_k * jnp.sin(theta)  # parallel component
-    bk_2 = in_k_par * jnp.cos(phi)  # shape =( n_energy )
-    bk_3 = in_k_par * jnp.sin(phi)  # shape =( n_energy )
-    bk_z = jnp.empty_like(e_kin, dtype="complex64")
-    bk_z = 2 * e_kin - bk_2 ** 2 - bk_3 ** 2 - 2 * 1j * v_imag
-    bk_z = jnp.sqrt(bk_z)
+    in_k_vacuum = jnp.sqrt(jnp.maximum(0, 2 * (e_kin - v_real)))
+    in_k_par = in_k_vacuum * jnp.sin(theta)  # parallel component
+    in_k_par_2 = in_k_par * jnp.cos(phi)  # shape =( n_energy )
+    in_k_par_3 = in_k_par * jnp.sin(phi)  # shape =( n_energy )
+    in_k_perp_vacuum = jnp.empty_like(e_kin, dtype="complex64")
+    in_k_perp_vacuum = 2 * e_kin - in_k_par_2 ** 2 - in_k_par_3 ** 2 - 2 * 1j * v_imag
+    in_k_perp_vacuum = jnp.sqrt(in_k_perp_vacuum)
 
     # outgoing wave vector components
-    bk_components = jnp.stack((bk_2, bk_3))  # shape =(n_en, 2)
-    bk_components = jnp.outer(bk_components, jnp.ones(shape=(n_beams,))).reshape(
+    in_k_par_components = jnp.stack((in_k_par_2, in_k_par_3))  # shape =(n_en, 2)
+    in_k_par_components = jnp.outer(in_k_par_components, jnp.ones(shape=(n_beams,))).reshape(
     (n_energies, 2, n_beams))  # shape =(n_en ,2 ,n_beams)
     out_wave_vec = jnp.dot(beam_indices, trar)  # shape =(n_beams, 2)
-    out_wave_vec = jnp.outer(jnp.ones_like(e_kin), out_wave_vec).reshape((n_energies, 2, n_beams))  # shape =(n_en , n_beams)
-    out_components = bk_components + out_wave_vec
+    out_wave_vec = jnp.outer(jnp.ones_like(e_kin), out_wave_vec.transpose()).reshape((n_energies, 2, n_beams))  # shape =(n_en , n_beams)
+    out_k_par_components = in_k_par_components + out_wave_vec
 
     # out k vector
-    out_k = (2 * jnp.outer(e_kin, jnp.ones(shape=(n_beams,)))  # 2*E
-         + bk_components[:, 0, :] ** 2  # + h **2
-         + bk_components[:, 1, :] ** 2  # + k **2
-         ).astype(dtype="complex64")
-    out_k_z = jnp.empty_like(out_k, dtype="complex64")  # shape =(n_en , n_beams )
-    out_k_z = jnp.sqrt(out_k - 2 * 1.0j * jnp.outer(v_imag, jnp.ones(shape=(n_beams,))))
-    out_k_perp = out_k - 2 * jnp.outer(v_real, jnp.ones(shape=(n_beams,)))
+    out_k_perp_vacuum = (2*jnp.outer(e_kin-v_real,jnp.ones(shape=(n_beams,)))
+                - out_k_par_components[:, 0, :] ** 2
+                - out_k_par_components[:, 1, :] ** 2).astype(dtype="complex64")
+    out_k_perp = jnp.sqrt(out_k_perp_vacuum + 2*jnp.outer(v_real-1j*v_imag,np.ones(shape=(n_beams,))))
+    out_k_perp_vacuum = jnp.sqrt(out_k_perp_vacuum)
 
-    # TODO: @Paul: below quantities are unused, is that intentional?
-    out_k_par = 2 * 1.0j * jnp.outer(v_imag, jnp.ones(shape=(n_beams,)))
-    out_bk_2 = out_k_par * jnp.cos(phi)
-    out_bk_3 = out_k_par * jnp.sin(phi)
-
-    return in_k, bk_z, out_k_z, out_k_perp
+    return in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum
 
 
 def _potential_onset_height_change(displacement_step, is_surface_atom):
