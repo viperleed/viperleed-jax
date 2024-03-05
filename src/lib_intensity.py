@@ -8,13 +8,10 @@ def sum_intensity(prefactors, reference_amplitudes, delta_amplitudes):
     return prefactors * abs(reference_amplitudes + delta_amplitudes) ** 2
 
 
-def intensity_prefactor(tensor_data, displacement, beam_indices, theta, phi, trar, is_surface_atom):
+def intensity_prefactor(energies, v_real, v_imag, displacement, beam_indices, theta, phi, trar, is_surface_atom):
     # prefactors (refraction) from amplitudes to intensities
-    e_kin = tensor_data.e_kin
-    v_real = tensor_data.v0r
-    v_imag = tensor_data.v0i_substrate
     n_beams = beam_indices.shape[0]
-    in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum = _wave_vectors(e_kin, v_real, v_imag, theta, phi, trar, beam_indices)
+    in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum = _wave_vectors(energies, v_real, v_imag, theta, phi, trar, beam_indices)
 
     a = out_k_perp_vacuum
     c = in_k_vacuum * jnp.cos(theta)
@@ -49,7 +46,7 @@ def _wave_vectors(e_kin, v_real, v_imag, theta, phi, trar, beam_indices):
     out_k_perp_vacuum = (2*jnp.outer(e_kin-v_real,jnp.ones(shape=(n_beams,)))
                 - out_k_par_components[:, 0, :] ** 2
                 - out_k_par_components[:, 1, :] ** 2).astype(dtype="complex64")
-    out_k_perp = jnp.sqrt(out_k_perp_vacuum + 2*jnp.outer(v_real-1j*v_imag,np.ones(shape=(n_beams,))))
+    out_k_perp = jnp.sqrt(out_k_perp_vacuum + 2*jnp.outer(v_real-1j*v_imag, jnp.ones(shape=(n_beams,))))
     out_k_perp_vacuum = jnp.sqrt(out_k_perp_vacuum)
 
     return in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum
