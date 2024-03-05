@@ -8,7 +8,7 @@ import numpy as np
 
 from src.lib_phaseshifts import *
 from src.lib_tensors import *
-from src.lib_tscatf import *
+from src.lib_delta import *
 
 
 def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, displacements):

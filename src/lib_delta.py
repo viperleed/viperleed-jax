@@ -24,7 +24,7 @@ BOHR = 0.529177211
 
 @partial(jit, static_argnames=('LMAX',))
 @partial(vmap, in_axes=(None, 0, None, 0))  # vmap over atoms
-def tscatf(LMAX, phaseshifts, e_inside, DR):
+def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     """Computes the temperature-dependent t-matrix elements.
 
     Takes the interpolated phase shifts and computes the atomic t-matrix
@@ -87,7 +87,7 @@ def tscatf(LMAX, phaseshifts, e_inside, DR):
     return t_matrix
 
 
-def MATEL_DWG(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,tensor_amps_in,out_k_par2,
+def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,tensor_amps_in,out_k_par2,
       out_k_par_3,unit_cell_area,displacements):
     """Evaluates the amplitude change due to displacement for each exit beam.
     
