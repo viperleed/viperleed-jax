@@ -119,8 +119,6 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
     #   The vector C must be expressed W.R.T. a right handed set of axes.
     #   CDISP() is input W.R.T. a left handed set of axes.
     _C = _C * jnp.array([1, 1, -1])
-    print('C:', _C[0])
-
 
     #   Evaluate DELTAT matrix for current displacement vector
     DELTAT = TMATRIX_DWG(t_matrix_ref, t_matrix_new, _C, e_inside,v_imag,LMAX)
