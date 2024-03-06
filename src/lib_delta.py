@@ -68,7 +68,8 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     the crystal potential as E -> E - VSITE. This functionality was also not
     included as VSITE was also hardcoded to 0 in the TensErLEED code.
     """
-    FALFE = -2/3 * DR**2 * e_inside
+    _DR = DR/BOHR
+    FALFE = -2/3 * _DR**2 * e_inside
     Z = FALFE * 1j
 
     # TODO: @Paul choose better variable names
@@ -104,6 +105,10 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
     ----
     This function corresponds to the subroutine MATEL_DWG in TensErLEED.
     """
+    # convert to atomic units
+    _C = displacements/BOHR
+    _unit_cell_area = unit_cell_area/BOHR**2
+
     e_broadcast = jnp.ones_like(v_imag)*e_inside
     k_inside = jnp.sqrt(2*e_broadcast-2j*v_imag+1j*EPS)
 
@@ -113,12 +118,12 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
 
     #   The vector C must be expressed W.R.T. a right handed set of axes.
     #   CDISP() is input W.R.T. a left handed set of axes.
-    C = displacements/BOHR
-    C = C * jnp.array([1, 1, -1])
+    _C = _C * jnp.array([1, 1, -1])
+    print('C:', _C[0])
 
 
     #   Evaluate DELTAT matrix for current displacement vector
-    DELTAT = TMATRIX_DWG(t_matrix_ref,t_matrix_new,C, e_inside,v_imag,LMAX)
+    DELTAT = TMATRIX_DWG(t_matrix_ref, t_matrix_new, _C, e_inside,v_imag,LMAX)
 
 
     AMAT = jnp.einsum('l,alb,alk,ak->ab',
@@ -134,7 +139,7 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
 
     # Equation (41) from Rous, Pendry 1989 & sum over atoms (index a)
     AMAT = jnp.einsum('ab,a,ab->b', AMAT, 1/k_inside, 1/out_k_perp_inside)
-    AMAT = AMAT/(2*unit_cell_area)
+    AMAT = AMAT/(2*_unit_cell_area)
 
     return AMAT
 
