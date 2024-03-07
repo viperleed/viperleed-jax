@@ -11,7 +11,11 @@ from src.lib_tensors import *
 from src.lib_delta import *
 
 
+@partial(jit, static_argnames=('LMAX','energies', 'tensors', 'unit_cell_area', 'phaseshifts',))
 def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, displacements):
+    # unpack hashable arrays
+    _energies = energies.val
+    _phaseshifts = phaseshifts.val
     # unpack tensor data
     t_matrix_ref = jnp.array([t.t_matrix for t in tensors])
     v_imag = jnp.array([t.v0i_substrate for t in tensors])
@@ -21,11 +25,11 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
     out_k_par3 = jnp.array([t.ky_in for t in tensors])
 
     tscatf_vmap = jax.vmap(apply_vibrational_displacements, in_axes=(None, 0, 0, None), out_axes=1)  # vmap over energy
-    t_matrix_new = tscatf_vmap(LMAX, phaseshifts, energies, DR)
+    t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
 
     # amplitude differences
     matel_dwg_vmap_energy = jax.vmap(apply_geometric_displacements, in_axes=(1, 1, 0, 1, None, 1, 1, 1, 1, None, None))
-    d_amplitude = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, energies, v_imag,
+    d_amplitude = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, _energies, v_imag,
                         LMAX, tensor_amps_out, tensor_amps_in, out_k_par2, out_k_par3,
                         unit_cell_area, displacements)
 

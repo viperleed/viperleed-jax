@@ -4,7 +4,6 @@ import jax
 import jax.numpy as jnp
 from jax import jit, vmap
 from functools import partial
-from line_profiler import profile
 
 from src.lib_math import *
 from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS, DENSE_L, DENSE_M

@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import numpy as np
 import fortranformat as ff
 
+from src.hashable_array import HashableArray
+
 
 FF_READER_5E16_12 = ff.FortranRecordReader("5E16.12")
 FF_READER_4E16_12 = ff.FortranRecordReader("4E16.12")
@@ -21,7 +23,7 @@ class TensorData:
     scattering amplitudes for the reference structure.
     While the t-matrices are unique, every tensor file contains the same
     reference-amplitudes.
-    
+
     Attributes
     ----------
     e_kin : np.ndarray
@@ -76,6 +78,10 @@ class TensorData:
     k_delta: np.ndarray
     kx_in: np.ndarray
     ky_in: np.ndarray
+
+    def __hash__(self):
+        return sum(hash(HashableArray(arr)) for arr in
+                   (self.e_kin, self.ref_amps, self.t_matrix,))
 
     @property
     def n_energies(self):
