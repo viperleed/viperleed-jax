@@ -1,4 +1,4 @@
-name: viper-dev
+name: on-the-fly
 channels:
   - conda-forge
   - defaults
