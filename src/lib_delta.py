@@ -30,25 +30,22 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     elements. Thermal vibrations are taken into account through a Debye-Waller
     factor, whereby isotropic vibration amplitudes are assumed.
 
-    The entire function comprises equations (22), (23), and (24) on page 29 of
-    the Van Hove, Tong book from 1979. Initially, alpha is derived from the
-    vibration amplitude (eq. 24) and transformed to FALFE by multiplying it 
-    with 4*E to suit better in eq. 23. It's important to note that the 
-    vibration amplitude is the sole temperature-dependent component. Therefore, 
+    The entire function comprises equations (22), (23), and (24), page 29 of 
+    the Van Hove and Tong, 1979. Vibrational amplitudes are transformed into
+    a Debye-Waller factor.  It's important to note that the vibrational
+    amplitudes are the sole temperature-dependent component. Therefore, 
     utilizing a temperature-independent vibration amplitude obviates the need 
-    for temperature, and the phaseshifts in eq. 23 are now dependent on the 
-    vibration. Up to and including the calculation of SUM, every operation is 
-    derived from eq. 23.
+    to explicitly include temperature, and the phaseshifts in (23) depend on
+    vibrations only. Up to and including the calculation of SUM, every
+    operation is derived from (23).
 
-    The factor PRE_CALCULATED_CPPP is defined as (4Pi/((2l+1)(2l'+1)(2*l''+1)))^0.5 *
-    Gaunt(l,0,l',0,l'',0). 
-    The factor BJ includes all other terms dependent on l'. 
-    The factor CTAB includes all other terms dependent on l''.
+    The factor PRE_CALCULATED_CPPP is defined as 
+    (4Pi/((2l+1)(2l'+1)(2*l''+1)))^0.5 * Gaunt(l,0,l',0,l'',0). The factor BJ
+    is an array of Bessel functions and contains all terms dependent on l'. The
+    factor CTAB includes all other terms dependent on l''.
 
     To compute the t-matrix, the resulting term is divided by 4ik_0 (eq. 22). 
     In the code SUM is only devided by 2i.
-    
-    # TODO @Paul: Finish desciption. Add here, which math is used and reference to the book.
 
     Parameters
     ----------
