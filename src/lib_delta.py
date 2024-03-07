@@ -30,18 +30,23 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     elements. Thermal vibrations are taken into account through a Debye-Waller
     factor, whereby isotropic vibration amplitudes are assumed.
 
-    The whole function consists of the equations (22), (23) and (24) on page 29 in the 
-    Van Hove, Tong book from 1979. First alpha is calculated from the vibration amplitude (eq. 24)
-    and changed to FALFE by multiplying it with 4*E to suit better in eq. 23. Note, that the 
-    vibration amplitude is the only temperature-dependent part. So by using a temperature-
-    independent vibration amplitude the temperature is not needed and the phaseshifts in eq. 23
-    depend on the vibration now. Until (including) the calculation of SUM every operation is from eq. 23.
+    The entire function comprises equations (22), (23), and (24) on page 29 of
+    the Van Hove, Tong book from 1979. Initially, alpha is derived from the
+    vibration amplitude (eq. 24) and transformed to FALFE by multiplying it 
+    with 4*E to suit better in eq. 23. It's important to note that the 
+    vibration amplitude is the sole temperature-dependent component. Therefore, 
+    utilizing a temperature-independent vibration amplitude obviates the need 
+    for temperature, and the phaseshifts in eq. 23 are now dependent on the 
+    vibration. Up to and including the calculation of SUM, every operation is 
+    derived from eq. 23.
 
-    The Factor PRE_CALCULATED_CPPP is (4Pi/((2*l+1)*(2*l'+1)*(2*l''+1)))^0.5 * Gaunt(l,0,l',0,l'',0). 
-    The Factor BJ contains all other terms which depend on l'.
-    The Factor CTAB contains all other terms which depend on l''.
+    The factor PRE_CALCULATED_CPPP is defined as (4Pi/((2l+1)(2l'+1)(2*l''+1)))^0.5 *
+    Gaunt(l,0,l',0,l'',0). 
+    The factor BJ includes all other terms dependent on l'. 
+    The factor CTAB includes all other terms dependent on l''.
 
-    To calculate the t-matrix it needs to be divided by 4ik_0 (eq. 22). In the Code just 2i.
+    To compute the t-matrix, the resulting term is divided by 4ik_0 (eq. 22). 
+    In the code SUM is only devided by 2i.
     
     # TODO @Paul: Finish desciption. Add here, which math is used and reference to the book.
 
