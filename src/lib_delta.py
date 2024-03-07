@@ -30,6 +30,19 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     Takes the interpolated phase shifts and computes the atomic t-matrix
     elements. Thermal vibrations are taken into account through a Debye-Waller
     factor, whereby isotropic vibration amplitudes are assumed.
+
+    The whole function consists of the equations (22), (23) and (24) on page 29 in the 
+    Van Hove, Tong book from 1979. First alpha is calculated from the vibration amplitude (eq. 24)
+    and changed to FALFE by multiplying it with 4*E to suit better in eq. 23. Note, that the 
+    vibration amplitude is the only temperature-dependent part. So by using a temperature-
+    independent vibration amplitude the temperature is not needed and the phaseshifts in eq. 23
+    depend on the vibration now. Until (including) the calculation of SUM every operation is from eq. 23.
+
+    The Factor PRE_CALCULATED_CPPP is (4Pi/((2*l+1)*(2*l'+1)*(2*l''+1)))^0.5 * Gaunt(l,0,l',0,l'',0). 
+    The Factor BJ contains all other terms which depend on l'.
+    The Factor CTAB contains all other terms which depend on l''.
+
+    To calculate the t-matrix it needs to be divided by 4ik_0 (eq. 22). In the Code just 2i.
     
     # TODO @Paul: Finish desciption. Add here, which math is used and reference to the book.
 
@@ -82,7 +95,7 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     SUM = jnp.einsum('jki,i,j->k', PRE_CALCULATED_CPPP[LMAX], CTAB, BJ)
     t_matrix = (SUM)/(2j) # temperature-dependent t-matrix.
     # SUM is the factor exp(2*i*delta) -1
-    # Equation (22), page 29 in Van Hove, Tong book
+    # Equation (22), page 29 in Van Hove, Tong book from 1979
     # Unlike TensErLEED, we do not convert it to a phase shift, but keep it as a
     # t-matrix, which we use going forward.
     return t_matrix
