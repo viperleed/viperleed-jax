@@ -21,7 +21,6 @@ fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
 HARTREE = 27.211386245
 BOHR = 0.529177211
 
-@partial(jit, static_argnames=('LMAX',))
 @partial(vmap, in_axes=(None, 0, None, 0))  # vmap over atoms
 def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     """Computes the temperature-dependent t-matrix elements.
@@ -156,7 +155,6 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
     return AMAT
 
 
-#@partial(jit, static_argnames=('LMAX',))
 @partial(vmap, in_axes=(0, 0, 0, None, 0, None))  # vmap over atoms
 def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
@@ -203,7 +201,6 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     return DELTAT
 
 
-@partial(jit, static_argnames=('LMAX',), inline=True)
 @partial(vmap, in_axes=(None, None, None, 0))
 @partial(vmap, in_axes=(None, None, None, 0))
 def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
