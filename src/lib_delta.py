@@ -170,20 +170,6 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     GTWOC(LMMAX,LMMAX): Propagator from origin to C."""
     CL = safe_norm(C)
 
-    #TODO: I disabled this for now, because I believe the conditional is going 
-    #      to be slower than just computing the DELTAT matrix.
-    """
-    #   If displacement = 0, calculate DELTAT and jump to end
-        if CL <= 1.0e-7:
-    #       Calcualte DELTAT
-            for L in range(LSMAX+1):
-                for M in range(-L,L+1):
-                    I = L+1
-                    I = I*I-L+M
-                    DELTAT[I-1][I-1] = 1.0j*(NewAF[L]-AF[L])
-            return DELTAT
-    """
-
     CAPPA = 2*energies - 2j*v_imag
     Z = jnp.sqrt(CAPPA)*CL
     BJ = masked_bessel(Z,2*LMAX+1)
