@@ -120,8 +120,7 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
     _C = displacements/BOHR
     _unit_cell_area = unit_cell_area/BOHR**2
 
-    e_broadcast = jnp.ones_like(v_imag)*e_inside
-    k_inside = jnp.sqrt(2*e_broadcast-2j*v_imag+1j*EPS)
+    k_inside = jnp.sqrt(2*e_inside-2j*v_imag+1j*EPS)
 
     # EXLM is for outgoing beams, so we need to swap indices m -> -m
     # to do this in the dense representation, we do the following:
@@ -144,17 +143,16 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
     # the propagator is evaluated relative to the muffin tin zero i.e.
     # it uses energy = incident electron energy + inner potential
     out_k_par = out_k_par2**2 + out_k_par_3**2
-    energy_broadcast = (2*e_broadcast - 2j*v_imag + 1j*EPS) # @ jnp.ones_like(out_k_par)
-    out_k_perp_inside = jnp.sqrt(energy_broadcast@jnp.ones_like(out_k_par) - out_k_par)
+    out_k_perp_inside = jnp.sqrt(2*e_inside - 2j*v_imag - out_k_par + 1j*EPS)
 
     # Equation (41) from Rous, Pendry 1989 & sum over atoms (index a)
-    AMAT = jnp.einsum('ab,a,ab->b', AMAT, 1/k_inside, 1/out_k_perp_inside)
+    AMAT = jnp.einsum('ab,,ab->b', AMAT, 1/k_inside, 1/out_k_perp_inside)
     AMAT = AMAT/(2*_unit_cell_area)
 
     return AMAT
 
 
-@partial(vmap, in_axes=(0, 0, 0, None, 0, None))  # vmap over atoms
+@partial(vmap, in_axes=(0, 0, 0, None, None, None))  # vmap over atoms
 def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
