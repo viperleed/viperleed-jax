@@ -130,18 +130,19 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
     # to do this in the dense representation, we do the following:
     tensor_amps_out = tensor_amps_out[:,(DENSE_L[LMAX]+1)**2 - DENSE_L[LMAX] - DENSE_M[LMAX] -1]
 
-    #   The vector C must be expressed W.R.T. a right handed set of axes.
-    #   CDISP() is input W.R.T. a left handed set of axes.
+    # The vector C must be expressed W.R.T. a right handed set of axes.
+    # CDISP() is input W.R.T. a left handed set of axes.
     _C = _C * jnp.array([1, 1, -1])
 
-    #   Evaluate DELTAT matrix for current displacement vector
+    # Evaluate DELTAT matrix for current displacement vector
     DELTAT = TMATRIX_DWG(t_matrix_ref, t_matrix_new, _C, e_inside,v_imag,LMAX)
 
 
     AMAT = jnp.einsum('l,alb,alk,ak->ab',
-                      MINUS_ONE_POW_M[LMAX], 
+                      MINUS_ONE_POW_M[LMAX],
                       tensor_amps_out,
-                      DELTAT, tensor_amps_in)
+                      DELTAT,
+                      tensor_amps_in)
 
     # the propagator is evaluated relative to the muffin tin zero i.e.
     # it uses energy = incident electron energy + inner potential
