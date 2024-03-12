@@ -202,9 +202,9 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
     GTEMP = GTWOC.T*1.0j*broadcast_New_t_matrix
 
-    DELTAT = jax.numpy.einsum('il,lj->ij', GTEMP, GTWOC)
+    DELTAT = jnp.einsum('il,lj->ij', GTEMP, GTWOC)
 
     mapped_t_matrix_ref = map_l_array_to_compressed_quantum_index(t_matrix_ref, LMAX)
-    DELTAT = DELTAT + jnp.diag(-1.0j*mapped_t_matrix_ref)
+    DELTAT = DELTAT - jnp.diag(1j*mapped_t_matrix_ref)
 
     return DELTAT
