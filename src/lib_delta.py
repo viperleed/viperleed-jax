@@ -11,7 +11,7 @@ from src.dense_quantum_numbers import MINUS_ONE_POW_M
 from src.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 
 from src.gaunt_coefficients import fetch_stored_gaunt_coeffs as fetch_gaunt
-from src.gaunt_coefficients import PRE_CALCULATED_CPPP
+from src.gaunt_coefficients import PRE_CALCULATED_CPPP, CSUM_COEFFS
 
 fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
                             in_axes=(None, None, 0, None, None, None),
@@ -174,7 +174,27 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     Z = jnp.sqrt(CAPPA)*CL
     BJ = masked_bessel(Z,2*LMAX+1)
     YLM = HARMONY(C, LMAX)
-    GTWOC = get_csum(BJ, YLM, LMAX, DENSE_QUANTUM_NUMBERS[LMAX])
+
+    dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
+    dense_mp_2d =  DENSE_QUANTUM_NUMBERS[LMAX][:, :, 3]
+
+    dense_mpp = dense_mp_2d - dense_m_2d
+
+    # pre-computed coeffs, capped to LMAX
+    capped_coeffs = CSUM_COEFFS[:2*LMAX+1, :(LMAX+1)**2, :(LMAX+1)**2]
+
+    def csum_element(lpp, running_sum):
+        bessel_values = BJ[lpp]
+        ylm_values = YLM[lpp*lpp+lpp-dense_mpp]
+        return running_sum + bessel_values * ylm_values * capped_coeffs[lpp,:,:]
+
+
+    csum = jax.lax.fori_loop(0, LMAX*2+1, csum_element,
+                             jnp.zeros(shape=((LMAX+1)**2, (LMAX+1)**2),
+                                       dtype=jnp.complex128))
+    csum *= 4*jnp.pi
+
+    GTWOC = csum
 
     broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
     GTEMP = GTWOC.T*1.0j*broadcast_New_t_matrix
