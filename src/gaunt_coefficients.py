@@ -8,6 +8,7 @@ import jax
 from pathlib import Path
 
 from src.dense_quantum_numbers import MAXIMUM_LMAX
+from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 
 _REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__).parent / "gaunt_coefficients.npy",
                                        allow_pickle=False)
@@ -99,3 +100,17 @@ PRE_CALCULATED_CPPP = {
     l: cppp(jnp.arange(0, 2*l+1), jnp.arange(0, l+1), jnp.arange(0, l+1))
     for l in range(MAXIMUM_LMAX+1)
 }
+
+lpp_gaunt = jax.vmap(jax.vmap(fetch_stored_gaunt_coeffs,
+                    in_axes=(0, 0, None, 0, 0, 0),out_axes=0),
+                    in_axes=(0, 0, None, 0, 0, 0),out_axes=0)
+
+_DENSE_L_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 0]
+_DENSE_LP_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 1]
+_DENSE_M_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 2]
+_DENSE_MP_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 3]
+
+CSUM_COEFFS = jnp.array([lpp_gaunt(_DENSE_L_2D, _DENSE_LP_2D, lpp, _DENSE_M_2D, -_DENSE_MP_2D, -_DENSE_M_2D+_DENSE_MP_2D)
+                    *(-1)**(_DENSE_LP_2D+_DENSE_MP_2D)
+                    *1j**(_DENSE_L_2D-_DENSE_LP_2D-lpp)
+                    for lpp in range(MAXIMUM_LMAX*2+1)])
