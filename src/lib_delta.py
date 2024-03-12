@@ -21,6 +21,7 @@ fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
 HARTREE = 27.211386245
 BOHR = 0.529177211
 
+
 @partial(vmap, in_axes=(None, 0, None, 0))  # vmap over atoms
 def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     """Computes the temperature-dependent t-matrix elements.
@@ -178,6 +179,7 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
     dense_mp_2d =  DENSE_QUANTUM_NUMBERS[LMAX][:, :, 3]
 
+    # AI: I don't fully understand this, technically it should be MPP = -M - MP
     dense_mpp = dense_mp_2d - dense_m_2d
 
     # pre-computed coeffs, capped to LMAX
@@ -186,9 +188,12 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     def csum_element(lpp, running_sum):
         bessel_values = BJ[lpp]
         ylm_values = YLM[lpp*lpp+lpp-dense_mpp]
+        # Equation (34) from Rous, Pendry 1989
         return running_sum + bessel_values * ylm_values * capped_coeffs[lpp,:,:]
 
-
+    # we could skip some computations because some lpp are guaranteed to give
+    # zero contributions, but this would need a way around the non-static array
+    # sizes
     csum = jax.lax.fori_loop(0, LMAX*2+1, csum_element,
                              jnp.zeros(shape=((LMAX+1)**2, (LMAX+1)**2),
                                        dtype=jnp.complex128))
@@ -205,23 +210,3 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     DELTAT = DELTAT + jnp.diag(-1.0j*mapped_t_matrix_ref)
 
     return DELTAT
-
-
-@partial(vmap, in_axes=(None, None, None, 0))
-@partial(vmap, in_axes=(None, None, None, 0))
-def get_csum(BJ, YLM, LMAX, l_lp_m_mp):
-    L, LP, M, MP = l_lp_m_mp
-    MPP = MP-M  # I don't fully understand this, technically it should be MPP = -M - MP
-    all_lpp = jnp.arange(0, LMAX*2+1)
-    # we could skip some computations with non_zero_lpp = jnp.where((all_lpp >= abs(L-LP)) & (all_lpp <= L+LP))
-    # but this would need a way around the non-static array size
-
-    # Use the array versions in the vmap call
-    gaunt_coeffs = fetch_lpp_gaunt(L, LP, all_lpp, M, -MP, -M+MP)
-    gaunt_coeffs = gaunt_coeffs*(-1)**(LP+MP)  #TODO: @Paul: I found we need this factor, but I still don't understand why
-    bessel_values = BJ[all_lpp]
-    ylm_values = YLM[all_lpp*all_lpp+all_lpp+1-MPP-1]
-    # Equation (34) from Rous, Pendry 1989
-    csum = jnp.sum(bessel_values*ylm_values*gaunt_coeffs*1j**(L-LP-all_lpp))
-    csum = csum*4*jnp.pi
-    return csum
