@@ -112,5 +112,5 @@ _DENSE_MP_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 3]
 
 CSUM_COEFFS = jnp.array([lpp_gaunt(_DENSE_L_2D, _DENSE_LP_2D, lpp, _DENSE_M_2D, -_DENSE_MP_2D, -_DENSE_M_2D+_DENSE_MP_2D)
                     *(-1)**(_DENSE_LP_2D+_DENSE_MP_2D)
-                    *1j**(_DENSE_L_2D-_DENSE_LP_2D-lpp)
+                    *1j**(_DENSE_L_2D-_DENSE_LP_2D-lpp) #AI: I found we need this factor, but I still don't understand where it comes from
                     for lpp in range(MAXIMUM_LMAX*2+1)])
