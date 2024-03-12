@@ -13,9 +13,6 @@ from src.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 from src.gaunt_coefficients import fetch_stored_gaunt_coeffs as fetch_gaunt
 from src.gaunt_coefficients import PRE_CALCULATED_CPPP, CSUM_COEFFS
 
-fetch_lpp_gaunt = jax.vmap(fetch_gaunt,
-                            in_axes=(None, None, 0, None, None, None),
-                            out_axes=0)
 
 # TODO: could we switch the entire calculation to use eV and Angstroms?
 HARTREE = 27.211386245
