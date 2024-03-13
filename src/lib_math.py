@@ -67,13 +67,12 @@ def masked_bessel(z, n1):
                   bessel(_z, n1))
     )
 
-@jax.jit
+
 def custom_spherical_jn(n, z):
     return jax.lax.switch(n, BESSEL_FUNCTIONS, z)
 
 
-# need to find a better way to do this; not available in JAX yet
-@partial(jax.jit, static_argnames=('n1',))
+# Bessel functions from NeuralIL
 def bessel(z, n1):
     """Spherical Bessel functions. Evaluated at z, up to degree n1."""
     vmapped_custom_bessel = jax.vmap(custom_spherical_jn, (0, None))
