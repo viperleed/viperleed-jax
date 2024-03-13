@@ -56,8 +56,6 @@ class TensorData:
         LEED experiment (or rather, all terms of Born series immediately after
         scattering on current atom).
         Parameter EXLM in TensErLEED.
-    k_delta : np.ndarray
-        Absolute lateral momentum of Tensor LEED beams
     kx_in : np.ndarray
         (Negative) absolute lateral momentum of Tensor LEED beams
         (for use as incident beams in time-reversed LEED calculation).
@@ -75,7 +73,6 @@ class TensorData:
     t_matrix: np.ndarray
     tensor_amps_in: np.ndarray
     tensor_amps_out: np.ndarray
-    k_delta: np.ndarray
     kx_in: np.ndarray
     ky_in: np.ndarray
 
@@ -179,9 +176,6 @@ def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11):
             tens_amps_as_complex = tens_amps_as_real.view(np.complex128)[..., 0]
             tensor_amps_out[e_step, n_beam-1, :n_phaseshifts_per_energy[e_step]**2] = tens_amps_as_complex
 
-    k_delta = np.full((n_energies, 2, n_beams) ,dtype=np.float64, fill_value = np.nan)
-    k_delta[:, 0, :] = delta_kx
-    k_delta[:, 1, :] = delta_ky
 
     tensor_amps_out = np.transpose(tensor_amps_out, axes=(0, 2, 1))
 
@@ -201,7 +195,6 @@ def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11):
         tensor_amps_out=tensor_amps_out,
         kx_in=kx_in,
         ky_in=ky_in,
-        k_delta=k_delta
         )
 
 
