@@ -146,7 +146,7 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
     out_k_perp_inside = jnp.sqrt(2*e_inside - 2j*v_imag - out_k_par + 1j*EPS)
 
     # Equation (41) from Rous, Pendry 1989 & sum over atoms (index a)
-    AMAT = jnp.einsum('ab,,ab->b', AMAT, 1/k_inside, 1/out_k_perp_inside)
+    AMAT = jnp.einsum('ab,,b->b', AMAT, 1/k_inside, 1/out_k_perp_inside)
     AMAT = AMAT/(2*_unit_cell_area)
 
     return AMAT
