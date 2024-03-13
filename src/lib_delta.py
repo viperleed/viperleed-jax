@@ -163,8 +163,7 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     DELTAT(LMMAX,LMMAX): Change in t matrix caused by the displacement.
     AF(LMAX1): exp(i*PHS(L))*sin(PHS(L)). Note that atomic t matrix is i*AF.
     BJ(LMAX1): Bessel functions for each L.
-    YLM(LMMAX): Spherical harmonics of vector C.
-    GTWOC(LMMAX,LMMAX): Propagator from origin to C."""
+    YLM(LMMAX): Spherical harmonics of vector C."""
     CL = safe_norm(C)
 
     CAPPA = 2*energies - 2j*v_imag
@@ -194,13 +193,14 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
                              jnp.zeros(shape=((LMAX+1)**2, (LMAX+1)**2),
                                        dtype=jnp.complex128))
     csum *= 4*jnp.pi
+    # csum is the propagator from origin to C
 
     broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
 
     DELTAT = (csum.T * 1j * broadcast_New_t_matrix) @ csum
 
     # alternative einsum version:
-    #DELTAT = jnp.einsum('ji,j,lj->il', csum, 1j * broadcast_New_t_matrix, csum, optimize=True)
+    # DELTAT = jnp.einsum('ji,j,lj->il', csum, 1j * broadcast_New_t_matrix, csum, optimize=True)
 
     mapped_t_matrix_ref = map_l_array_to_compressed_quantum_index(t_matrix_ref, LMAX)
     DELTAT = DELTAT - jnp.diag(1j*mapped_t_matrix_ref)
