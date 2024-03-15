@@ -27,6 +27,9 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
     tensor_amps_out = tensor_amps_out.swapaxes(0, 1)  # swap energy and beam indices
     tensor_amps_in = tensor_amps_in.swapaxes(0, 1)  # swap energy and beam indices
 
+    # tensor_amps_out is for outgoing beams, so we need to swap indices m -> -m
+    # to do this in the dense representation, we do the following:
+    tensor_amps_out = tensor_amps_out[:, :, (DENSE_L[LMAX]+1)**2 - DENSE_L[LMAX] - DENSE_M[LMAX] -1, :]
     # energy dependent quantities
     out_k_par2 = tensors[0].kx_in # same for all atoms
     out_k_par3 = tensors[0].ky_in # same for all atoms

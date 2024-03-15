@@ -122,9 +122,6 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
 
     k_inside = jnp.sqrt(2*e_inside-2j*v_imag+1j*EPS)
 
-    # EXLM is for outgoing beams, so we need to swap indices m -> -m
-    # to do this in the dense representation, we do the following:
-    tensor_amps_out = tensor_amps_out[:,(DENSE_L[LMAX]+1)**2 - DENSE_L[LMAX] - DENSE_M[LMAX] -1]
 
     # The vector C must be expressed W.R.T. a right handed set of axes.
     # CDISP() is input W.R.T. a left handed set of axes.
