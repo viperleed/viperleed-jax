@@ -98,9 +98,10 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     # t-matrix, which we use going forward.
     return t_matrix
 
-
-def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,tensor_amps_in,out_k_par2,
-      out_k_par_3,displacements):
+@profile
+def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,
+                                  LMAX,tensor_amps_out,tensor_amps_in,
+                                  displacements):
     """Evaluates the amplitude change due to displacement for each exit beam.
     
     Using the the tensor produced by the reference calculation, and the adapted
@@ -118,8 +119,6 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
     """
     # convert to atomic units
     _C = displacements/BOHR
-    k_inside = jnp.sqrt(2*e_inside-2j*v_imag+1j*EPS)
-
 
     # The vector C must be expressed W.R.T. a right handed set of axes.
     # CDISP() is input W.R.T. a left handed set of axes.
@@ -128,20 +127,11 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
     # Evaluate DELTAT matrix for current displacement vector
     DELTAT = TMATRIX_DWG(t_matrix_ref, t_matrix_new, _C, e_inside,v_imag,LMAX)
 
-
-    AMAT = jnp.einsum('alb,alk,ak,b->b',
+    # Equation (41) from Rous, Pendry 1989 & sum over atoms (index a)
+    AMAT = jnp.einsum('alb,alk,ak->b',
                       tensor_amps_out,
                       DELTAT,
                       tensor_amps_in)
-
-    # the propagator is evaluated relative to the muffin tin zero i.e.
-    # it uses energy = incident electron energy + inner potential
-    out_k_par = out_k_par2**2 + out_k_par_3**2
-    out_k_perp_inside = jnp.sqrt(2*e_inside - 2j*v_imag - out_k_par + 1j*EPS)
-
-    # Equation (41) from Rous, Pendry 1989 & sum over atoms (index a)
-    AMAT = jnp.einsum('ab,,b->b', AMAT, 1/k_inside, 1/out_k_perp_inside)
-    # AMAT = AMAT/(2*_unit_cell_area)
 
     return AMAT
 

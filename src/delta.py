@@ -46,11 +46,30 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
     t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
     t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
 
+    k_inside = jnp.sqrt(2*_energies-2j*v_imag+1j*EPS)
+
+    # Propagator evaluated relative to the muffin tin zero i.e.
+    # it uses energy = incident electron energy + inner potential
+    out_k_par = out_k_par2**2 + out_k_par3**2
+    out_k_perp_inside = jnp.sqrt(
+        ((2*_energies-2j*v_imag)[:, jnp.newaxis] - out_k_par)
+        + 1j*EPS
+    )
+
+    # TODO: this could be done earlier already (even in tensor data readin)
+    # Prefactors from Equation (41) from Rous, Pendry 1989
+    # pulled into the tensor_amps_out array
+    tensor_amps_out_with_prefactors = jnp.einsum('ealb,e,eb,->ealb',
+        tensor_amps_out,
+        1/k_inside,
+        1/out_k_perp_inside,
+        1/(2*(unit_cell_area/BOHR**2))
+    )
+
     # amplitude differences
-    matel_dwg_vmap_energy = jax.vmap(apply_geometric_displacements, in_axes=(0, 0, 0, None, None, 0, 0, 0, 0, None))
+    matel_dwg_vmap_energy = jax.vmap(apply_geometric_displacements, in_axes=(0, 0, 0, None, None, 0, 0, None))
     d_amplitude = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, _energies, v_imag,
-                        LMAX, tensor_amps_out, tensor_amps_in, out_k_par2, out_k_par3,
-                        unit_cell_area, displacements)
-    d_amplitude = d_amplitude/(2*(unit_cell_area/BOHR**2))
+                        LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
+                        displacements)
 
     return d_amplitude
