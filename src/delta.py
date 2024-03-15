@@ -41,6 +41,7 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
     out_k_par2 = tensors[0].kx_in # same for all atoms
     out_k_par3 = tensors[0].ky_in # same for all atoms
 
+    # Calculate the t-matrix with the vibrational displacements
     tscatf_vmap = jax.vmap(apply_vibrational_displacements, in_axes=(None, 0, 0, None), out_axes=1)  # vmap over energy
     t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
     t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
