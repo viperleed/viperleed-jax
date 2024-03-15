@@ -12,6 +12,8 @@ from src.lib_delta import *
 
 
 @partial(jit, static_argnames=('LMAX','energies', 'tensors', 'unit_cell_area', 'phaseshifts',))
+BOHR = 0.529177211
+
 def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, displacements):
     # unpack hashable arrays
     _energies = energies.val
@@ -44,9 +46,10 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
     t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
 
     # amplitude differences
-    matel_dwg_vmap_energy = jax.vmap(apply_geometric_displacements, in_axes=(0, 0, 0, None, None, 0, 0, 0, 0, None, None))
+    matel_dwg_vmap_energy = jax.vmap(apply_geometric_displacements, in_axes=(0, 0, 0, None, None, 0, 0, 0, 0, None))
     d_amplitude = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, _energies, v_imag,
                         LMAX, tensor_amps_out, tensor_amps_in, out_k_par2, out_k_par3,
                         unit_cell_area, displacements)
+    d_amplitude = d_amplitude/(2*(unit_cell_area/BOHR**2))
 
     return d_amplitude

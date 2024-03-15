@@ -100,7 +100,7 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
 
 
 def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX,tensor_amps_out,tensor_amps_in,out_k_par2,
-      out_k_par_3,unit_cell_area,displacements):
+      out_k_par_3,displacements):
     """Evaluates the amplitude change due to displacement for each exit beam.
     
     Using the the tensor produced by the reference calculation, and the adapted
@@ -118,8 +118,6 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
     """
     # convert to atomic units
     _C = displacements/BOHR
-    _unit_cell_area = unit_cell_area/BOHR**2
-
     k_inside = jnp.sqrt(2*e_inside-2j*v_imag+1j*EPS)
 
 
@@ -143,7 +141,7 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
 
     # Equation (41) from Rous, Pendry 1989 & sum over atoms (index a)
     AMAT = jnp.einsum('ab,,b->b', AMAT, 1/k_inside, 1/out_k_perp_inside)
-    AMAT = AMAT/(2*_unit_cell_area)
+    # AMAT = AMAT/(2*_unit_cell_area)
 
     return AMAT
 
