@@ -30,6 +30,11 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
     # tensor_amps_out is for outgoing beams, so we need to swap indices m -> -m
     # to do this in the dense representation, we do the following:
     tensor_amps_out = tensor_amps_out[:, :, (DENSE_L[LMAX]+1)**2 - DENSE_L[LMAX] - DENSE_M[LMAX] -1, :]
+
+    # apply (-1)^m to tensor_amps_out - this factor is needed
+    # in the calculation of the amplitude differences
+    tensor_amps_out = jnp.einsum('l,ealb->ealb', MINUS_ONE_POW_M[LMAX], tensor_amps_out)
+
     # energy dependent quantities
     out_k_par2 = tensors[0].kx_in # same for all atoms
     out_k_par3 = tensors[0].ky_in # same for all atoms

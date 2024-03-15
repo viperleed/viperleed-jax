@@ -131,8 +131,7 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,LMAX
     DELTAT = TMATRIX_DWG(t_matrix_ref, t_matrix_new, _C, e_inside,v_imag,LMAX)
 
 
-    AMAT = jnp.einsum('l,alb,alk,ak->ab',
-                      MINUS_ONE_POW_M[LMAX],
+    AMAT = jnp.einsum('alb,alk,ak,b->b',
                       tensor_amps_out,
                       DELTAT,
                       tensor_amps_in)
