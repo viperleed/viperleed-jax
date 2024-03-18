@@ -6,13 +6,13 @@ Created on Fri Oct 27 14:31:49 2023
 """
 import numpy as np
 
+from src.constants import HARTREE, BOHR
 from src.lib_phaseshifts import *
 from src.lib_tensors import *
 from src.lib_delta import *
 
 
 @partial(jit, static_argnames=('LMAX','energies', 'tensors', 'unit_cell_area', 'phaseshifts',))
-BOHR = 0.529177211
 
 def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, displacements):
     # unpack hashable arrays

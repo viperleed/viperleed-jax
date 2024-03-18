@@ -4,7 +4,7 @@ import numpy as np
 import fortranformat as ff
 
 from src.hashable_array import HashableArray
-
+from src.constants import HARTREE
 
 FF_READER_5E16_12 = ff.FortranRecordReader("5E16.12")
 FF_READER_4E16_12 = ff.FortranRecordReader("4E16.12")

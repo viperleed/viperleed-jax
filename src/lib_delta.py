@@ -10,13 +10,13 @@ from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS, DENSE_L, DENSE_M
 from src.dense_quantum_numbers import MINUS_ONE_POW_M
 from src.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 
+# TODO: could we switch the entire calculation to use eV and Angstroms?
+from src.constants import BOHR, HARTREE
+
 from src.gaunt_coefficients import fetch_stored_gaunt_coeffs as fetch_gaunt
 from src.gaunt_coefficients import PRE_CALCULATED_CPPP, CSUM_COEFFS
 
 
-# TODO: could we switch the entire calculation to use eV and Angstroms?
-HARTREE = 27.211386245
-BOHR = 0.529177211
 
 
 @partial(vmap, in_axes=(None, 0, None, 0))  # vmap over atoms
