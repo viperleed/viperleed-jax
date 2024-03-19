@@ -90,6 +90,12 @@ class TensorData:
 
 
 def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11):
+@dataclass
+class AtomTensorData:
+    tensor_amps_in: np.ndarray
+    tensor_amps_out: np.ndarray
+
+
     # Reading in the data of a file
     try:
         with open(filename, mode="r") as file:
