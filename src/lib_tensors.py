@@ -158,7 +158,7 @@ class AtomTensorData:
         n_beam = FF_READER_I5.read(line)[0]
         assert(n_beam == 0)
         line = next(file_lines) # discard relative momenta vs. incident beam (==0)
-        
+
         tens_amps_as_real = read_block(FF_READER_5E12_6, file_lines, shape=(
         n_phaseshifts_per_energy[e_step]**2, 2))
         tens_amps_as_complex = tens_amps_as_real.view(np.complex128)[..., 0]
@@ -175,8 +175,8 @@ class AtomTensorData:
             line = next(file_lines)
             delta_kx[e_step, n_beam - 1], delta_ky[e_step, n_beam - 1], kx_in[e_step, n_beam - 1], ky_in[e_step, n_beam - 1] = FF_READER_4E12_6.read(
                 line)
+
             # complex Tensor amplitudes
-            
             tens_amps_as_real = read_block(FF_READER_5E12_6, file_lines, shape=(
                 n_phaseshifts_per_energy[e_step]**2, 2))
             tens_amps_as_complex = tens_amps_as_real.view(np.complex128)[..., 0]
