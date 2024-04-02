@@ -80,17 +80,24 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     included as VSITE was also hardcoded to 0 in the TensErLEED code.
     """
     _DR = DR/BOHR
-    FALFE = -2/3 * _DR**2 * e_inside
-    Z = FALFE * 1j
+    debye_waller_exponent = -2/3 * _DR**2 * e_inside
 
     # TODO: @Paul choose better variable names
-    FL = (2*jnp.arange(2*LMAX+1) + 1)
-    CS = 1j ** jnp.arange(2*LMAX+1)
-    BJ = jnp.exp(FALFE) * FL * CS * bessel(Z, 2*LMAX+1)
+    all_l = (2*jnp.arange(2*LMAX+1) + 1)
+    bessel_with_prefactor = (
+        jnp.exp(debye_waller_exponent)
+        * all_l
+        * 1j ** jnp.arange(2*LMAX+1)
+        * bessel(debye_waller_exponent * 1j, 2*LMAX+1)
+    )
 
-    CTAB = (jnp.exp(2j*phaseshifts)-1)*(2*jnp.arange(LMAX+1) + 1)
+    temperature_independent_t_matrix = (
+        jnp.exp(2j*phaseshifts)-1)*(2*jnp.arange(LMAX+1) + 1)
 
-    SUM = jnp.einsum('jki,i,j->k', PRE_CALCULATED_CPPP[LMAX], CTAB, BJ)
+    SUM = jnp.einsum('jki,i,j->k',
+                     PRE_CALCULATED_CPPP[LMAX],
+                     temperature_independent_t_matrix,
+                     bessel_with_prefactor)
     t_matrix = (SUM)/(2j) # temperature-dependent t-matrix.
     # SUM is the factor exp(2*i*delta) -1
     # Equation (22), page 29 in Van Hove, Tong book from 1979
