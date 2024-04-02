@@ -98,7 +98,7 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     # t-matrix, which we use going forward.
     return t_matrix
 
-@profile
+
 def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,
                                   LMAX,tensor_amps_out,tensor_amps_in,
                                   displacements):
