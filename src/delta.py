@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Oct 27 14:31:49 2023
 
-@author: haide
+@author: Paul Haidegger, Alexander M. Imre
 """
 import numpy as np
 

@@ -65,7 +65,7 @@ class TestHARMONY:
         expected_output = sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.array([np.arctan2(3.0+EPS, 2.0+EPS)]), jnp.array([np.arccos((1.0+EPS)/safe_norm(C))]), n_max=LMAX)
         # Compare with the output of HARMONY function
         assert jnp.allclose(HARMONY(C, LMAX), expected_output)
-    
+
     def test_HARMONY_division_by_zero(self):
         # Define input vector C where division by zero might occur
         C = jnp.array([1.0, 0.0, 0.0])
@@ -74,6 +74,51 @@ class TestHARMONY:
         expected_output = sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], np.pi*0.25, 0, n_max=LMAX)
         # Compare with the output of HARMONY function
         assert jnp.allclose(HARMONY(C, LMAX), expected_output, atol=1e-03) #very big because arccos is sensible to small changes
+
+class TestBessel:
+    def test_real_case(self):
+        # Test case for normal scenario
+        z = 1.5
+        n1 = 3
+        expected_output = jax.vmap(custom_spherical_jn, (0, None))(jnp.arange(n1), z)
+        assert jnp.allclose(masked_bessel(z, n1), expected_output)
+
+    def test_imaginary_case(self):
+        # Test case for edge case where z=0
+        z = -2.0j
+        n1 = 3
+        # For z=0, the expression should be directly computed without vectorization
+        expected_output = jax.vmap(custom_spherical_jn, (0, None))(jnp.arange(n1), z)
+        assert jnp.allclose(bessel(z, n1), expected_output)
+
+class TestMaskedBessel:
+    def test_normal_case(self):
+        # Test case for normal scenario
+        z = 1.5
+        n1 = 3
+        result = masked_bessel(z, n1)
+        assert result.dtype == jnp.complex128
+        assert result.shape == (n1,)
+
+    def test_small_z(self):
+        # Test case for small z
+        z = 1e-8j
+        n1 = 3
+        result = masked_bessel(z, n1)
+        assert result.dtype == jnp.complex128
+        assert result.shape == (n1,)
+        # The result should be close to [1.0, 0.0, 0.0] because bessel function is approximated as 1.0 for very small z
+        assert jnp.allclose(result, np.array([1.0, 0.0, 0.0]))
+
+    def test_zero_z(self):
+        # Test case for z = 0
+        z = 0.0
+        n1 = 3
+        result = masked_bessel(z, n1)
+        assert result.dtype == jnp.complex128
+        assert result.shape == (n1,)
+        # The result should be [1.0, 0.0, 0.0] because bessel function is approximated as 1.0 for z = 0
+        assert jnp.allclose(result, np.array([1.0, 0.0, 0.0]))
 
 if __name__ == "__main__":
     pytest.main([__file__])

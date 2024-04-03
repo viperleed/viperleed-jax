@@ -82,7 +82,6 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     _DR = DR/BOHR
     debye_waller_exponent = -2/3 * _DR**2 * e_inside
 
-    # TODO: @Paul choose better variable names
     all_l = (2*jnp.arange(2*LMAX+1) + 1)
     bessel_with_prefactor = (
         jnp.exp(debye_waller_exponent)
