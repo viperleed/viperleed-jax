@@ -86,14 +86,14 @@ def HARMONY(C, LMAX):
     This is a python implementation of the fortran subroutine HARMONY from
     TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
     equivalent results."""
-    r, theta, phi = cart_to_polar(C)
+    _, theta, phi = cart_to_polar(C)
     return sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.asarray([phi]), jnp.asarray([theta]), n_max=LMAX)
 
 
 def cart_to_polar(c):
     """Converts cartesian coordinates to polar coordinates."""
     z, x, y = c
+    r = jnp.linalg.norm(c)
     theta = jnp.arctan2(np.sqrt(x**2 + y**2), z)
     phi = jnp.arctan2(y, x)
-    r = jnp.linalg.norm(c)
     return r, theta, phi
