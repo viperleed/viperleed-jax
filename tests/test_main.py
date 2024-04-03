@@ -7,6 +7,7 @@ import warnings
 
 from src.delta import *
 
+# TODO: this should move elsewhere (ideally, import from viperleed later on)
 def read_delta_file(filename, n_energies, read_header_only=False):
     """Read and return the contents of a 
     TensErLEED delta-amplitude file.
@@ -104,7 +105,7 @@ def read_delta_file(filename, n_energies, read_header_only=False):
     #trar2 variables
     line = next(file_lines)
     header_block_1 = ff_reader_6E13_7.read(line)
-    
+
     # surface unit cell vectors - what used to be 
     # trar1 is now trar[:,0].
     # Similarly trar2 -> trar[:,1]
@@ -136,7 +137,6 @@ def read_delta_file(filename, n_energies, read_header_only=False):
         raise ValueError(f"Invalid header in file {filename}: "
                          "second line should contain 2 or 3 elements. "
                          f"Found (len{header_block_2}")
-    
 
     # 3.Block of Header - (h,k) indices of the beams
     beam_indices = read_block(reader=ff_reader_10F10_5, 
@@ -443,7 +443,7 @@ class TestDelta:
         expected_output = read_in_data['amplitudes_del'][0,:,0,10,:]
         my_output = delta_amp(np.array([[-0.05, 0.0, 0.0],]))
         assert jnp.allclose(my_output, expected_output, rtol=1e-03,atol=1e-05)
-    
+
     def test_delta_zero_displacement(self):
         expected_output = read_in_data['amplitudes_del'][0,:,0,5,:]
         my_output = delta_amp(np.array([[0.0, 0.0, 0.0],]))
