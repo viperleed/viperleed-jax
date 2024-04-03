@@ -92,10 +92,8 @@ def HARMONY(C, LMAX):
 
 def cart_to_polar(c):
     """Converts cartesian coordinates to polar coordinates."""
-    r = safe_norm(c)
-    eps_sign_z = EPS*jnp.sign(c[0])
-    theta = jnp.arccos(_divide_zero_safe(c[0], r, 1.0)-eps_sign_z)
-    # Alternative implementation to avoid division by zero:
-    # theta = jnp.arccos((C[0]+eps_sign_z)/(r+EPS)-eps_sign_z)
-    phi = jnp.arctan2(c[2]+EPS, c[1]+EPS)
+    z, x, y = c
+    theta = jnp.arctan2(np.sqrt(x**2 + y**2), z)
+    phi = jnp.arctan2(y, x)
+    r = jnp.linalg.norm(c)
     return r, theta, phi
