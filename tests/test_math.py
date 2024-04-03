@@ -76,14 +76,14 @@ class TestHARMONY:
         assert jnp.allclose(HARMONY(C, LMAX), expected_output, atol=1e-03) #very big because arccos is sensible to small changes
 
 class TestBessel:
-    def test_real_case(self):
+    def test_bessel_real_case(self):
         # Test case for normal scenario
         z = 1.5
         n1 = 3
         expected_output = jax.vmap(custom_spherical_jn, (0, None))(jnp.arange(n1), z)
         assert jnp.allclose(masked_bessel(z, n1), expected_output)
 
-    def test_imaginary_case(self):
+    def test_bessel_imaginary_case(self):
         # Test case for edge case where z=0
         z = -2.0j
         n1 = 3
@@ -92,7 +92,7 @@ class TestBessel:
         assert jnp.allclose(bessel(z, n1), expected_output)
 
 class TestMaskedBessel:
-    def test_normal_case(self):
+    def test_masked_bessel_normal_case(self):
         # Test case for normal scenario
         z = 1.5
         n1 = 3
@@ -100,7 +100,7 @@ class TestMaskedBessel:
         assert result.dtype == jnp.complex128
         assert result.shape == (n1,)
 
-    def test_small_z(self):
+    def test_masked_bessel_small_z(self):
         # Test case for small z
         z = 1e-8j
         n1 = 3
@@ -110,7 +110,7 @@ class TestMaskedBessel:
         # The result should be close to [1.0, 0.0, 0.0] because bessel function is approximated as 1.0 for very small z
         assert jnp.allclose(result, np.array([1.0, 0.0, 0.0]))
 
-    def test_zero_z(self):
+    def test_masked_bessel_zero_z(self):
         # Test case for z = 0
         z = 0.0
         n1 = 3
