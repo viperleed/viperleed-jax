@@ -1,3 +1,4 @@
+"""Test Delta Amplitude Calculation"""
 import pytest
 
 from pathlib import Path
@@ -9,11 +10,11 @@ from src.delta import *
 def read_delta_file(filename, n_energies, read_header_only=False):
     """Read and return the contents of a 
     TensErLEED delta-amplitude file.
-    
+
     This function reads in one file of data and stores the data 
     in arrays, which can be used in later functions 
     (ex.: calc_delta_intensities).
-    
+
     Parameters
     ----------
     filename : str
@@ -25,7 +26,7 @@ def read_delta_file(filename, n_energies, read_header_only=False):
         Also possible to just loop the file until the end.
     read_header_only : bool
         If True does reads Header only and stops afterwards
-    
+
     Returns
     -------
     (phi, theta): tuple of float
@@ -406,9 +407,9 @@ u_vec2 = np.array([1.2722,  2.2036])
 # area of (overlayer) lateral unit cell - in case TLEED wrt smaller unit cell is used, TVA from reference computation must be set.
 unit_cell_area = np.linalg.norm(np.cross(u_vec1, u_vec2))
 
-direction = 'test_data/Cu_111/'
-phaseshifts_file = Path(direction + "PHASESHIFTS")
-T1_file = Path(direction + "Tensors/T_1")
+cu111_dir = 'tests/test_data/Cu_111/'
+phaseshifts_file = Path(cu111_dir) / "PHASESHIFTS"
+T1_file = Path(cu111_dir) / "Tensors/T_1"
 
 _, phaseshifts, _, _ = readPHASESHIFTS(None, None, readfile=phaseshifts_file,
                                        check=False, ignoreEnRange=False)
@@ -430,7 +431,7 @@ delta_amp = lambda displacement: delta_amplitude(LMAX, np.array([DR,]),
                                                  HashableArray(atom_phaseshifts),
                                                  displacement)
 
-read_in_data = Transform(n_energies, direction + 'Deltas/',['DEL_1_Cu_1'])
+read_in_data = Transform(n_energies, cu111_dir + 'Deltas/',['DEL_1_Cu_1'])
 
 class TestDelta:
     def test_delta_positive_displacement(self):
@@ -447,6 +448,3 @@ class TestDelta:
         expected_output = read_in_data['amplitudes_del'][0,:,0,5,:]
         my_output = delta_amp(np.array([[0.0, 0.0, 0.0],]))
         assert jnp.allclose(my_output, expected_output, atol=1e-04)
-
-if __name__ == "__main__":
-    pytest.main([__file__])

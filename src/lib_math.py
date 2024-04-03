@@ -94,6 +94,6 @@ def cart_to_polar(c):
     """Converts cartesian coordinates to polar coordinates."""
     z, x, y = c
     r = jnp.linalg.norm(c)
-    theta = jnp.arctan2(np.sqrt(x**2 + y**2), z)
+    theta = jnp.arctan2(jnp.sqrt(x**2 + y**2), z)
     phi = jnp.arctan2(y, x)
     return r, theta, phi
