@@ -436,15 +436,17 @@ read_in_data = Transform(n_energies, cu111_dir + 'Deltas/',['DEL_1_Cu_1'])
 class TestDelta:
     def test_delta_positive_displacement(self):
         expected_output = read_in_data['amplitudes_del'][0,:,0,0,:]
-        my_output = delta_amp(np.array([[0.05, 0.0, 0.0],]))
-        assert jnp.allclose(my_output, expected_output, rtol=1e-03,atol=1e-05)
+        output = delta_amp(np.array([[0.05, 0.0, 0.0],]))
+        assert jnp.allclose(output, expected_output, rtol=1e-03,atol=1e-06)
 
     def test_delta_negative_displacement(self):
         expected_output = read_in_data['amplitudes_del'][0,:,0,10,:]
-        my_output = delta_amp(np.array([[-0.05, 0.0, 0.0],]))
-        assert jnp.allclose(my_output, expected_output, rtol=1e-03,atol=1e-05)
+        output = delta_amp(np.array([[-0.05, 0.0, 0.0],]))
+        assert jnp.allclose(output, expected_output, rtol=1e-03,atol=1e-06)
 
+    # TODO: consider comparing output < EPS, because it should be
+    # (close to) zero for zero displacement
     def test_delta_zero_displacement(self):
         expected_output = read_in_data['amplitudes_del'][0,:,0,5,:]
-        my_output = delta_amp(np.array([[0.0, 0.0, 0.0],]))
-        assert jnp.allclose(my_output, expected_output, atol=1e-04)
+        output = delta_amp(np.array([[0.0, 0.0, 0.0],]))
+        assert jnp.allclose(output, expected_output, atol=1e-04)
