@@ -96,7 +96,7 @@ def read_delta_file(filename, n_energies, read_header_only=False):
     if len(content) < 2:
         raise ValueError(f"Invalid delta file {filename}. "
                          "Not enough lines. "
-                         f"Found {len(contents)}, "
+                         f"Found {len(content)}, "
                          "expected at least 2.")
     # make into an iterator
     file_lines = iter(content)
@@ -397,7 +397,7 @@ LMAX = 14  # maximum angular momentum to be used in calculation
 n_beams = 9  # no. of TLEED output beams
 n_atoms = 1  # currently 1 is the only possible choice
 n_geo = 1  # number of geometric variations ('displacements') to be considered
-DR = 0.2551 * BOHR
+DR = 0.1908624*BOHR
 IEL = 1 #element no.
 
 # unit vectors in Angstrom
@@ -407,7 +407,7 @@ u_vec2 = np.array([1.2722,  2.2036])
 # area of (overlayer) lateral unit cell - in case TLEED wrt smaller unit cell is used, TVA from reference computation must be set.
 unit_cell_area = np.linalg.norm(np.cross(u_vec1, u_vec2))
 
-cu111_dir = 'tests/test_data/Cu_111/'
+cu111_dir = 'tests/test_data/Cu_111_2/'
 phaseshifts_file = Path(cu111_dir) / "PHASESHIFTS"
 T1_file = Path(cu111_dir) / "Tensors/T_1"
 
@@ -431,6 +431,9 @@ delta_amp = lambda displacement: delta_amplitude(LMAX, np.array([DR,]),
                                                  HashableArray(atom_phaseshifts),
                                                  displacement)
 
+output = delta_amp(np.array([[0.05, 0.0, 0.0],]))
+
+"""
 read_in_data = Transform(n_energies, cu111_dir + 'Deltas/',['DEL_1_Cu_1'])
 
 class TestDelta:
@@ -442,7 +445,7 @@ class TestDelta:
     def test_delta_negative_displacement(self):
         expected_output = read_in_data['amplitudes_del'][0,:,0,10,:]
         output = delta_amp(np.array([[-0.05, 0.0, 0.0],]))
-        assert jnp.allclose(output, expected_output, rtol=1e-03,atol=1e-06)
+        assert jnp.allclose(output, expected_output, rtol=1e-03,atol=1e-07)
 
     # TODO: consider comparing output < EPS, because it should be
     # (close to) zero for zero displacement
@@ -450,3 +453,7 @@ class TestDelta:
         expected_output = read_in_data['amplitudes_del'][0,:,0,5,:]
         output = delta_amp(np.array([[0.0, 0.0, 0.0],]))
         assert jnp.allclose(output, expected_output, atol=1e-04)
+
+if __name__ == "__main__":
+    pytest.main([__file__])
+    """

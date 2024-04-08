@@ -73,7 +73,7 @@ class TestHARMONY:
         # Compute expected output manually as sph_harm will raise errors
         expected_output = sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], np.pi*0.25, 0, n_max=LMAX)
         # Compare with the output of HARMONY function
-        assert jnp.allclose(HARMONY(C, LMAX), expected_output, atol=1e-03) #very big because arccos is sensible to small changes
+        assert jnp.allclose(HARMONY(C, LMAX), expected_output)
 
 class TestBessel:
     def test_bessel_real_case(self):
