@@ -170,6 +170,13 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     # pre-computed coeffs, capped to LMAX
     capped_coeffs = CSUM_COEFFS[:2*LMAX+1, :(LMAX+1)**2, :(LMAX+1)**2]
 
+    """lpp = 1
+    bessel_values = BJ[lpp]
+    ylm_values = YLM[lpp*lpp+lpp-dense_mpp]
+    print(bessel_values, ylm_values, capped_coeffs[lpp,:,:])
+    print(bessel_values*ylm_values*capped_coeffs[lpp,:,:])"""
+
+
     def csum_element(lpp, running_sum):
         bessel_values = BJ[lpp]
         ylm_values = YLM[lpp*lpp+lpp-dense_mpp]
@@ -187,7 +194,7 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
 
     broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
 
-    DELTAT = (csum.T * 1j * broadcast_New_t_matrix) @ csum
+    DELTAT = (csum * 1j * broadcast_New_t_matrix) @ csum
 
     # alternative einsum version:
     # DELTAT = jnp.einsum('ji,j,lj->il', csum, 1j * broadcast_New_t_matrix, csum, optimize=True)

@@ -81,23 +81,38 @@ tscatf_vmap = jax.vmap(apply_vibrational_displacements, in_axes=(None, 0, 0, Non
 t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
 t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
 tmatrix_vmap_energy = jax.vmap(TMATRIX_DWG, in_axes=(0, 0, None, 0, None, None))
-C = np.array([[0.05, 0.0, 0.0]])
+C = np.array([[0.0, 0.0, 0.05]])
 C = C/BOHR
 output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
-print(output)
+#with open('test_tmatrix_dwg_disp_x.npy','wb') as f:
+#    np.save(f, output)
 
 class TestVibration:
     def test_vibration_no_change(self):
         t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
         t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
-        my_output = t_matrix_new[:,0,:]
+        output = t_matrix_new[:,0,:]
 
 class TestTMATRIX_DWG:
-    def test_tmatrix_no_geo_or_vib_displacement(self):
-        C = np.array([[0.0, 0.0, 0.0]])
+    def test_tmatrix_no_displacement(self):
+        C = np.array([[0.0, 0.0, 0.0]])/BOHR
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         expected_output = np.zeros_like(output)
         assert jnp.allclose(output, expected_output, atol=1e-02) # very big but only for very few indizes and same in TensErLEED
+
+    def test_tmatrix_z_displacement(self):
+        C = np.array([[0.05, 0.0, 0.0]])/BOHR
+        output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
+        with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_z.npy', 'rb') as f:
+            expected_output = np.load(f)
+        assert jnp.allclose(output, expected_output)
+
+    def test_tmatrix_x_displacement(self):
+        C = np.array([[0.0, 0.05, 0.0]])/BOHR
+        output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
+        with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_x.npy', 'rb') as f:
+            expected_output = np.load(f)
+        assert jnp.allclose(output, expected_output)
 
 if __name__ == "__main__":
     pytest.main([__file__])
