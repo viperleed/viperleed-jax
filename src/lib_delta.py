@@ -87,7 +87,7 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
         jnp.exp(debye_waller_exponent)
         * all_l
         * 1j ** jnp.arange(2*LMAX+1)
-        * bessel(debye_waller_exponent * 1j, 2*LMAX+1)
+        * masked_bessel(debye_waller_exponent * 1j, 2*LMAX+1)
     )
 
     temperature_independent_t_matrix = (
@@ -169,13 +169,6 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
 
     # pre-computed coeffs, capped to LMAX
     capped_coeffs = CSUM_COEFFS[:2*LMAX+1, :(LMAX+1)**2, :(LMAX+1)**2]
-
-    """lpp = 1
-    bessel_values = BJ[lpp]
-    ylm_values = YLM[lpp*lpp+lpp-dense_mpp]
-    print(bessel_values, ylm_values, capped_coeffs[lpp,:,:])
-    print(bessel_values*ylm_values*capped_coeffs[lpp,:,:])"""
-
 
     def csum_element(lpp, running_sum):
         bessel_values = BJ[lpp]

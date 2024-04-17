@@ -78,39 +78,143 @@ out_k_par3 = tensors[0].ky_in # same for all atoms
 
 # Calculate the t-matrix with the vibrational displacements
 tscatf_vmap = jax.vmap(apply_vibrational_displacements, in_axes=(None, 0, 0, None), out_axes=1)  # vmap over energy
-t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
-t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
 tmatrix_vmap_energy = jax.vmap(TMATRIX_DWG, in_axes=(0, 0, None, 0, None, None))
-C = np.array([[0.0, 0.0, 0.05]])
-C = C/BOHR
-output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
-#with open('test_tmatrix_dwg_disp_x.npy','wb') as f:
+
+t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+t_matrix_new = t_matrix_new.swapaxes(0, 1) 
+C = np.array([[0.0, 0.0, 0.0]])/BOHR
+C = C * jnp.array([1, 1, -1])
+output = tmatrix_vmap_energy(t_matrix_new, t_matrix_new, C, _energies, v_imag, LMAX)
+
+
+#with open('test_tmatrix_dwg_disp_xyz_vib.npy','wb') as f:
 #    np.save(f, output)
 
 class TestVibration:
     def test_vibration_no_change(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
         t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
         t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
-        output = t_matrix_new[:,0,:]
+        output = t_matrix_new
+        expected_output = t_matrix_ref
+        assert jnp.allclose(output, expected_output,atol=1e-02) # in refcalc the LMAX is changed depending on the energie.
+                                                                # In the delta calculation always the same LMAX is used so 
+                                                                # some matrix elements are not zero which are in refcalc.
+
+    def test_vibration_positive_change(self):
+        DR = 0.3 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
+        output = t_matrix_new
+        with open(cu111_dir + 'Premade_cases/test_vibration_positive_change.npy', 'rb') as f:
+            expected_output = np.load(f)
+        assert jnp.allclose(output, expected_output)
+
+    def test_vibration_negative_change(self):
+        DR = 0.1 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
+        output = t_matrix_new
+        with open(cu111_dir + 'Premade_cases/test_vibration_negative_change.npy', 'rb') as f:
+            expected_output = np.load(f)
+        assert jnp.allclose(output, expected_output)
+    
+    def test_vibration_zero_vibration(self): #with no vibration the t_matrix is the temperature independent
+                                             #t_matrix, which can be calculated from the phaseshifts
+        DR = 0
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
+        output = t_matrix_new
+        expected_output = (np.exp(2j*_phaseshifts)-1)/2j
+        assert jnp.allclose(output, expected_output)
+
 
 class TestTMATRIX_DWG:
     def test_tmatrix_no_displacement(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
         C = np.array([[0.0, 0.0, 0.0]])/BOHR
+        C = C * jnp.array([1, 1, -1])
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         expected_output = np.zeros_like(output)
-        assert jnp.allclose(output, expected_output, atol=1e-02) # very big but only for very few indizes and same in TensErLEED
+        assert jnp.allclose(output, expected_output, atol=1e-02) # very big because of the differnce in LMAX to the recalc 
+                                                                 # mentioned in test_vibration_no_change
+    
+    def test_tmatrix_no_displacement_own_ref_matrix(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
+        C = np.array([[0.0, 0.0, 0.0]])/BOHR
+        C = C * jnp.array([1, 1, -1])
+        output = tmatrix_vmap_energy(t_matrix_new, t_matrix_new, C, _energies, v_imag, LMAX)
+        expected_output = np.zeros_like(output)
+        assert jnp.allclose(output, expected_output)
 
     def test_tmatrix_z_displacement(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
         C = np.array([[0.05, 0.0, 0.0]])/BOHR
+        C = C * jnp.array([1, 1, -1])
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_z.npy', 'rb') as f:
             expected_output = np.load(f)
         assert jnp.allclose(output, expected_output)
 
     def test_tmatrix_x_displacement(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
         C = np.array([[0.0, 0.05, 0.0]])/BOHR
+        C = C * jnp.array([1, 1, -1])
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_x.npy', 'rb') as f:
+            expected_output = np.load(f)
+        assert jnp.allclose(output, expected_output)
+
+    def test_tmatrix_y_displacement(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
+        C = np.array([[0.0, 0.0, 0.05]])/BOHR
+        C = C * jnp.array([1, 1, -1])     # The vector C must be expressed W.R.T. a right handed set of axes.
+                                          # CDISP() is input W.R.T. a left handed set of axes.
+        output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
+        with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_y.npy', 'rb') as f:
+            expected_output = np.load(f)
+        assert jnp.allclose(output, expected_output)
+    
+    def test_tmatrix_xyz_displacement(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
+        C = np.array([[-0.01, 0.02, -0.03]])/BOHR
+        C = C * jnp.array([1, 1, -1])
+        output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
+        with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_xyz.npy', 'rb') as f:
+            expected_output = np.load(f)
+        assert jnp.allclose(output, expected_output)
+    
+    def test_tmatrix_xyz_and_vibrational_displacement(self):
+        DR = 0.3* BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
+        C = np.array([[-0.01, 0.02, -0.03]])/BOHR
+        C = C * jnp.array([1, 1, -1])
+        output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
+        with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_xyz_vib.npy', 'rb') as f:
             expected_output = np.load(f)
         assert jnp.allclose(output, expected_output)
 

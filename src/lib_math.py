@@ -13,6 +13,7 @@ from src.spherical_bessel import functions
 
 # numerical epsilon to avoid division by zero
 EPS = 1e-8
+bessel_EPS = 10e-7
 
 
 def _divide_zero_safe(
@@ -41,7 +42,7 @@ def _divide_zero_safe(
 def safe_norm(vector: jnp.ndarray) -> jnp.ndarray:
     """Safe norm calculation to avoid NaNs in gradients"""
     # avoids nan in gradient for jnp.linalg.norm(C)
-    return jnp.sqrt(jnp.sum(vector**2) + EPS)
+    return jnp.sqrt(jnp.sum(vector**2) + EPS**2)
 
 
 def _generate_bessel_functions(l_max):
@@ -57,8 +58,8 @@ BESSEL_FUNCTIONS = _generate_bessel_functions(MAXIMUM_LMAX)
 
 
 def masked_bessel(z, n1):
-    z_is_small = abs(z) < 10e-7
-    _z = jnp.where(z_is_small, 10e-7, z)
+    z_is_small = abs(z) < bessel_EPS
+    _z = jnp.where(z_is_small, bessel_EPS, z)
     return jnp.nan_to_num(
         # Needs a limit of >=10e-7 to avoid numerical noise around z=0 for
         # small values of z with imaginary component
