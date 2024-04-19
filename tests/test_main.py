@@ -431,19 +431,19 @@ delta_amp = lambda displacement: delta_amplitude(LMAX, np.array([DR,]),
                                                  HashableArray(atom_phaseshifts),
                                                  displacement)
 
-#print(delta_amp(np.array([[0.0, 0.0, 0.05],])))
+#print(delta_amp(np.array([[0.05, 0.0, 0.0],])))
 read_in_data = Transform(n_energies, cu111_dir + 'Deltas/',['DEL_1_Cu_1'])
 
 class TestDelta: # if you try to make the atol/rtol smaller dont forgett to replace 2/3 with 0.166667*4 in lib_delta -> apply_vibrational_displacements -> debye_waller_exponent
     def test_delta_positive_displacement(self):
         expected_output = read_in_data['amplitudes_del'][0,:,0,0,:]
         output = delta_amp(np.array([[0.05, 0.0, 0.0],]))
-        assert jnp.allclose(output, expected_output, rtol=1e-03,atol=1e-06)
+        assert jnp.allclose(output, expected_output, rtol=1e-04)
 
     def test_delta_negative_displacement(self):
         expected_output = read_in_data['amplitudes_del'][0,:,0,10,:]
         output = delta_amp(np.array([[-0.05, 0.0, 0.0],]))
-        assert jnp.allclose(output, expected_output, rtol=1e-03,atol=1e-06)
+        assert jnp.allclose(output, expected_output, rtol=1e-04)
 
     def test_delta_zero_displacement(self):
         output = delta_amp(np.array([[0.0, 0.0, 0.0],]))

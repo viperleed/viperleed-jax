@@ -39,15 +39,6 @@ tensor_data = read_tensor(T1_file, n_beams=9, n_energies= n_energies, l_max=LMAX
 interpolated_phaseshifts = interpolate_phaseshifts(phaseshifts, LMAX, tensor_data.e_kin)
 atom_phaseshifts = interpolated_phaseshifts[:, [IEL-1,], :]
 
-"""
-delta_amp = lambda displacement: delta_amplitude(LMAX, np.array([DR,]),
-                                                 HashableArray(tensor_data.e_kin),
-                                                 (tensor_data,),
-                                                 unit_cell_area,
-                                                 HashableArray(atom_phaseshifts),
-                                                 displacement)
-"""
-
 tensors = (tensor_data,)
 
  # unpack hashable arrays
@@ -76,19 +67,37 @@ tensor_amps_out = jnp.einsum('l,ealb->ealb', MINUS_ONE_POW_M[LMAX], tensor_amps_
 out_k_par2 = tensors[0].kx_in # same for all atoms
 out_k_par3 = tensors[0].ky_in # same for all atoms
 
+k_inside = jnp.sqrt(2*_energies-2j*v_imag+1j*EPS)
+
+# Propagator evaluated relative to the muffin tin zero i.e.
+# it uses energy = incident electron energy + inner potential
+out_k_par = out_k_par2**2 + out_k_par3**2
+out_k_perp_inside = jnp.sqrt(
+    ((2*_energies-2j*v_imag)[:, jnp.newaxis] - out_k_par)
+    + 1j*EPS
+)
+
+tensor_amps_out_with_prefactors = jnp.einsum('ealb,e,eb,->ealb',
+    tensor_amps_out,
+    1/k_inside,
+    1/out_k_perp_inside,
+    1/(2*(unit_cell_area/BOHR**2))
+)
+
 # Calculate the t-matrix with the vibrational displacements
-tscatf_vmap = jax.vmap(apply_vibrational_displacements, in_axes=(None, 0, 0, None), out_axes=1)  # vmap over energy
+tscatf_vmap = jax.vmap(apply_vibrational_displacements, in_axes=(None, 0, 0, None), out_axes=1) # vmap over energy
 tmatrix_vmap_energy = jax.vmap(TMATRIX_DWG, in_axes=(0, 0, None, 0, None, None))
+matel_dwg_vmap_energy = jax.vmap(apply_geometric_displacements, in_axes=(0, 0, 0, None, None, 0, 0, None))
 
-t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
-t_matrix_new = t_matrix_new.swapaxes(0, 1) 
-C = np.array([[0.0, 0.0, 0.0]])/BOHR
-C = C * jnp.array([1, 1, -1])
-output = tmatrix_vmap_energy(t_matrix_new, t_matrix_new, C, _energies, v_imag, LMAX)
+#with open('test_geo_disp_xyz_vib.npy','wb') as f:
+#    np.save(f, d_amplitude)
 
+"""All the premade cases (the .npy data which is used for reference in the tests) are made by a working
+python version of the code. All data have been compared manually with the FORTRAN code and the error is small
+enough. (relative error smaller than 1e-04 for numbers of regular magnitude. Very small numbers differ more)
 
-#with open('test_tmatrix_dwg_disp_xyz_vib.npy','wb') as f:
-#    np.save(f, output)
+Note that 0.166667*4 (approximation of 2/3) from the FORTRAN code is replaced with 2/3 which also changed
+the output a little. If it is necessary to compare with the FORTRAN code again, please change it back."""
 
 class TestVibration:
     def test_vibration_no_change(self):
@@ -218,7 +227,96 @@ class TestTMATRIX_DWG:
             expected_output = np.load(f)
         assert jnp.allclose(output, expected_output)
 
+class TestGeo:
+    def test_geo_no_displacement(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
+        C = np.array([[0.0, 0.0, 0.0]])
+        output = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, _energies, v_imag,
+                        LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
+                        C)
+        expected_output = np.zeros_like(output)
+        assert jnp.allclose(output, expected_output, atol=1e-04) # very big because of the differnce in LMAX to the recalc 
+                                                                 # mentioned in test_vibration_no_change
+    
+    def test_geo_no_displacement_own_ref_matrix(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
+        C = np.array([[0.0, 0.0, 0.0]])
+        output = matel_dwg_vmap_energy(t_matrix_new, t_matrix_new, _energies, v_imag,
+                        LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
+                        C)
+        expected_output = np.zeros_like(output)
+        assert jnp.allclose(output, expected_output)
+    
+    def test_geo_z_displacement(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
+        C = np.array([[0.05, 0.0, 0.0]])
+        output = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, _energies, v_imag,
+                        LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
+                        C)
+        with open(cu111_dir + 'Premade_cases/test_geo_disp_z.npy', 'rb') as f:
+            expected_output = np.load(f)
+        assert jnp.allclose(output, expected_output)
+    
+    def test_geo_x_displacement(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
+        C = np.array([[0.0, 0.05, 0.0]])
+        output = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, _energies, v_imag,
+                        LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
+                        C)
+        with open(cu111_dir + 'Premade_cases/test_geo_disp_x.npy', 'rb') as f:
+            expected_output = np.load(f)
+        assert jnp.allclose(output, expected_output)
+    
+    def test_geo_y_displacement(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
+        C = np.array([[0.0, 0.0, 0.05]])
+        output = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, _energies, v_imag,
+                        LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
+                        C)
+        with open(cu111_dir + 'Premade_cases/test_geo_disp_y.npy', 'rb') as f:
+            expected_output = np.load(f)
+        assert jnp.allclose(output, expected_output)
+    
+    def test_geo_xyz_displacement(self):
+        DR = 0.1908624 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
+        C = np.array([[-0.03, 0.02, -0.01]])
+        output = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, _energies, v_imag,
+                        LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
+                        C)
+        with open(cu111_dir + 'Premade_cases/test_geo_disp_xyz.npy', 'rb') as f:
+            expected_output = np.load(f)
+        assert jnp.allclose(output, expected_output)
+    
+    def test_geo_xyz_and_vibrational_displacement(self):
+        DR = 0.1 * BOHR
+        DR = np.array([DR,])
+        t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
+        t_matrix_new = t_matrix_new.swapaxes(0, 1) 
+        C = np.array([[-0.03, 0.02, -0.01]])
+        output = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, _energies, v_imag,
+                        LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
+                        C)
+        with open(cu111_dir + 'Premade_cases/test_geo_disp_xyz_vib.npy', 'rb') as f:
+            expected_output = np.load(f)
+        assert jnp.allclose(output, expected_output)
+
 if __name__ == "__main__":
     pytest.main([__file__])
-
-
