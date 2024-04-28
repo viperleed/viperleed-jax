@@ -12,11 +12,10 @@ from src.lib_delta import *
 
 
 @partial(jit, static_argnames=('LMAX','energies', 'tensors', 'unit_cell_area', 'phaseshifts',))
-
 def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, displacements):
     # unpack hashable arrays
-    _energies = energies.val
-    _phaseshifts = phaseshifts.val
+    _energies = jnp.asarray(energies.val)
+    _phaseshifts = jnp.asarray(phaseshifts.val)
     # unpack tensor data
     t_matrix_ref = jnp.array([t.t_matrix for t in tensors])
     t_matrix_ref = t_matrix_ref.swapaxes(0, 1)  # swap energy and atom indices
@@ -65,12 +64,25 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
         1/(2*(unit_cell_area/BOHR**2))
     )
 
-    delta_amps = [
-        apply_geometric_displacements(
-            t_matrix_ref[en_id], t_matrix_new[en_id], energy, v_imag, LMAX,
+    # Applying the geometric displacements is most efficiently handled
+    # by a scan operation as a loop over the energies
+    # A for loop is much slower to jit-compile and a vmap
+    # results in too large intermediate arrays
+
+    def _geo_disp_by_energy(carry, en_id):
+        delta_amp = apply_geometric_displacements(
+            t_matrix_ref[en_id], t_matrix_new[en_id],
+            _energies[en_id],
+            v_imag, LMAX,
             tensor_amps_out_with_prefactors[en_id], tensor_amps_in[en_id],
             displacements)
-            for en_id, energy in enumerate(_energies)
-        ]
+        return carry, delta_amp
 
-    return jnp.array(delta_amps)
+    # Prepare the sequence to scan over.
+    energy_seq = jnp.arange(len(_energies))
+
+    # Perform the scan 
+    _, delta_amps = jax.lax.scan(_geo_disp_by_energy, None, energy_seq)
+
+    # The result is already a JAX array, so there's no need to call jnp.array on delta_amps.
+    return delta_amps
