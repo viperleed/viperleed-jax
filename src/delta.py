@@ -65,10 +65,12 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
         1/(2*(unit_cell_area/BOHR**2))
     )
 
-    # amplitude differences
-    matel_dwg_vmap_energy = jax.vmap(apply_geometric_displacements, in_axes=(0, 0, 0, None, None, 0, 0, None))
-    d_amplitude = matel_dwg_vmap_energy(t_matrix_ref, t_matrix_new, _energies, v_imag,
-                        LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
-                        displacements)
+    delta_amps = [
+        apply_geometric_displacements(
+            t_matrix_ref[en_id], t_matrix_new[en_id], energy, v_imag, LMAX,
+            tensor_amps_out_with_prefactors[en_id], tensor_amps_in[en_id],
+            displacements)
+            for en_id, energy in enumerate(_energies)
+        ]
 
-    return d_amplitude
+    return jnp.array(delta_amps)

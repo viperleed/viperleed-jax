@@ -105,6 +105,7 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     return t_matrix
 
 
+@partial(jax.jit, static_argnames=('LMAX', 'v_imag'))
 def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,
                                   LMAX,tensor_amps_out,tensor_amps_in,
                                   displacements):
