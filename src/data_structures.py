@@ -8,7 +8,16 @@ from src.hashable_array import HashableArray
 from src.constants import HARTREE
 
 
-@register_pytree_node_class
+#@register_pytree_node_class
+
+# TODO: To discuss:
+# - separation TensorFileData and ReferenceData
+# - units for calculations?
+# - pack phaseshifts into this data structure?
+# - note from below: zero or NaN padding?
+# - register as pytree node? (probably yes)
+# - best way to estimate memory size
+
 @dataclass
 class ReferenceData:
     """Holds the data from the reference calculation
@@ -81,17 +90,39 @@ class ReferenceData:
         v0i_per_energy = tensors[0].v0i_substrate
         if not np.all(v0i_per_energy == v0i_per_energy[0]):
             raise ValueError("Energy dependent v0i not supported")
-        self.v0i = v0i_per_energy[0]
+        self.v0i = v0i_per_energy[0]     # in Hartree
 
         # Energy Dependent Data
-        self.energies = tensors[0].e_kin * HARTREE # check units
-        # TODO: v0r, ref_amps, kx_in, ky_in, lmax
+        self.energies = tensors[0].e_kin # in Hartree
+        self.v0r = tensors[0].v0r        # in Hartree
 
-        # set energy dependent LMAX
+        # TODO: To discuss:
+        # should these be zero or NaN for non-emerging energies?
+        self.ref_amps = tensors[0].ref_amps
 
-        # crop other arrays to the max needed shape
+        # Note: kx and ky maybe could be simplified as well
+        self.kx_in = tensors[0].kx_in
+        self.ky_in = tensors[0].ky_in
 
-        # rearange and apply prefactors to tensor_amps_out
+        # energy dependent LMAX – NB: 1 smaller than number of phaseshifts
+        self.lmax = tensors[0].n_phaseshifts_per_energy - 1
+
+        # TODO: ref_amps, kx_in, ky_in, lmax
+
+        # LMAX dependent quantities – crop to max needed shape
+        self.tensor_amps_in = []
+        self.tensor_amps_out = []
+        for en_id, lmax in enumerate(self.lmax):
+            tmp_tensor_amps_in = [t.tensor_amps_in[en_id, :(lmax+1)**2]
+                                  for t in tensors]
+            # transpose to swap lm, and beams axis for tensor_amps_out
+            tmp_tensor_amps_out = [t.tensor_amps_out[en_id, :(lmax+1)**2, :].T
+                                   for t in tensors]
+            # convert to arrays
+            self.tensor_amps_in.append(np.array(tmp_tensor_amps_in))
+            self.tensor_amps_out.append(np.array(tmp_tensor_amps_out))
+
+        # TODO: rearange and apply prefactors to tensor_amps_out
 
     @property
     def n_atoms(self):
@@ -102,14 +133,21 @@ class ReferenceData:
         return self.energies.size
 
     @property
-    def n_beams(self):           # NTO
+    def n_beams(self):
         return self.ref_amps.shape[1]
 
     @property
     def min_energy_per_beam(self):
+        # TODO
         pass
 
     @property
     def min_energy_index_per_beam(self):
+        # TODO
         pass
 
+    @property
+    def size_in_memory(self):
+        """ Estimate size in memory, may be useful for debugging
+        and selective optimization."""
+        pass
