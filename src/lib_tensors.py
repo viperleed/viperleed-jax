@@ -12,6 +12,28 @@ FF_READER_5E12_6 = ff.FortranRecordReader("5E12.6")
 FF_READER_4E12_6 = ff.FortranRecordReader("4E12.6")
 FF_READER_I5 = ff.FortranRecordReader("I5")
 
+"""General Information on the data layout
+
+We use C-style indexing, i.e. the first index is the slowest varying one.
+This is different from TensErLEED, which is Fortran-style indexed since it is
+written in Fortran (though this is not always done consistently).
+
+We thus always index quantities (skipping unncessary indices) as follows
+from outermost (slowest) to innermost (fastest):
+    1) energy
+        Order of ~100-300 values. We cannot (efficiently) vectorize over
+        energies, since the dynamic LMAX is and thus the size of the tensors
+        is energy-dependent.
+    2) atoms
+        Order of ~10-100 values. May or may not be vectorized over. (TBD)
+    3) beams
+        Order of ~10-100 values. Should be vectorized over. Only few
+        calculations are beam-dependent.
+    4) l & m (quantum numbers)
+        Should be vectorized over. Almost every calculation is l & m dependent
+        and these should always be handled in a batched manner.
+"""
+
 
 # TODO: implement consistency checks for the tensor files
 @dataclass
