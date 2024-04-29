@@ -30,8 +30,8 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
     # atom dependent quantities
     tensor_amps_out = jnp.array([t.tensor_amps_out for t in tensors])
     tensor_amps_in = jnp.array([t.tensor_amps_in for t in tensors])
-    tensor_amps_out = tensor_amps_out.swapaxes(0, 1)  # swap energy and beam indices
-    tensor_amps_in = tensor_amps_in.swapaxes(0, 1)  # swap energy and beam indices
+    tensor_amps_out = tensor_amps_out.swapaxes(0, 1)  # swap energy and atom indices
+    tensor_amps_in = tensor_amps_in.swapaxes(0, 1)  # swap energy and atom indices
 
     # tensor_amps_out is for outgoing beams, so we need to swap indices m -> -m
     # to do this in the dense representation, we do the following:
