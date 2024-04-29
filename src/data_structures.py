@@ -51,7 +51,7 @@ class ReferenceData:
     tensor_amps_in: np.ndarray
     """
 
-    def __init__(tensors, fix_lmax=False):
+    def __init__(self, tensors, fix_lmax=False):
         """TODO
 
         Parameters
@@ -69,13 +69,25 @@ class ReferenceData:
             If the consitency checks for the tensors fails.
         """
         # Check consistency of tensor files
+        for comp_tensor in tensors[1:]:
+            if not tensors[0].is_consistent(comp_tensor):
+                raise ValueError("Inconsistent tensor files")
 
+        # Now we can assume that all tensors are consistent, thus we can
+        # extract shared data from the first tensor file.
 
-        # Extract shared data from first tensor file
+        # Energy Independent Data
+        # we don't yet support energy dependent v0i
+        v0i_per_energy = tensors[0].v0i_substrate
+        if not np.all(v0i_per_energy == v0i_per_energy[0]):
+            raise ValueError("Energy dependent v0i not supported")
+        self.v0i = v0i_per_energy[0]
 
+        # Energy Dependent Data
+        self.energies = tensors[0].e_kin * HARTREE # check units
+        # TODO: v0r, ref_amps, kx_in, ky_in, lmax
 
         # set energy dependent LMAX
-
 
         # crop other arrays to the max needed shape
 
