@@ -10,9 +10,15 @@ from src.lib_phaseshifts import *
 from src.lib_tensors import *
 from src.lib_delta import *
 
+DEBUG = True
+
+from time import time
+
 
 @partial(jit, static_argnames=('LMAX','energies', 'tensors', 'unit_cell_area', 'phaseshifts',))
 def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, displacements):
+    if DEBUG:
+        jax.debug.callback(init_time, ordered=True)
     # unpack hashable arrays
     _energies = jnp.asarray(energies.val)
     _phaseshifts = jnp.asarray(phaseshifts.val)
@@ -39,10 +45,18 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
     out_k_par2 = tensors[0].kx_in # same for all atoms
     out_k_par3 = tensors[0].ky_in # same for all atoms
 
+    if DEBUG:
+        jax.debug.print('Setup:', ordered=True)
+        jax.debug.callback(show_time, ordered=True)
+
     # Calculate the t-matrix with the vibrational displacements
     tscatf_vmap = jax.vmap(apply_vibrational_displacements, in_axes=(None, 0, 0, None), out_axes=1)  # vmap over energy
     t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
     t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
+
+    if DEBUG:
+        jax.debug.print('Vib disp:', ordered=True)
+        jax.debug.callback(show_time, ordered=True)
 
     k_inside = jnp.sqrt(2*_energies-2j*v_imag+1j*EPS)
 
@@ -81,8 +95,31 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
     # Prepare the sequence to scan over.
     energy_seq = jnp.arange(len(_energies))
 
+    if DEBUG:
+        jax.debug.print('Geo setup:', ordered=True)
+        jax.debug.callback(show_time, ordered=True)
+
     # Perform the scan 
     _, delta_amps = jax.lax.scan(_geo_disp_by_energy, None, energy_seq)
 
+    if DEBUG:
+        jax.debug.print('Geo disp:', ordered=True)
+        jax.debug.callback(show_time, ordered=True)
+        jax.debug.print("hello {bar}", bar=jnp.sum(abs(delta_amps)), ordered=True)
+        jax.debug.callback(show_time, ordered=True)
+
     # The result is already a JAX array, so there's no need to call jnp.array on delta_amps.
     return delta_amps
+
+last_time = time()
+
+def init_time():
+    global last_time
+    last_time = time()
+    print(f'Start: {last_time}')
+
+def show_time():
+    global last_time
+    now = time()
+    print(f'{(now - last_time):3f} s')
+    last_time = now
