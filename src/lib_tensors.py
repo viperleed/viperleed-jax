@@ -22,8 +22,8 @@ We thus always index quantities (skipping unncessary indices) as follows
 from outermost (slowest) to innermost (fastest):
     1) energy
         Order of ~100-300 values. We cannot (efficiently) vectorize over
-        energies, since the dynamic LMAX is and thus the size of the tensors
-        is energy-dependent.
+        energies, since the dynamic LMAX and thus the size of the tensors
+        are energy-dependent.
     2) atoms
         Order of ~10-100 values. May or may not be vectorized over. (TBD)
     3) beams
