@@ -10,15 +10,11 @@ from src.constants import HARTREE
 
 #@register_pytree_node_class
 
-# TODO: To discuss:
-# - separation TensorFileData and ReferenceData
-# - units for calculations?
-# - pack phaseshifts into this data structure?
-# - note from below: zero or NaN padding?
-# - register as pytree node? (probably yes)
-# - best way to estimate memory size
 
-@dataclass
+# TODO: keep everything in atomic units (Hartree, Bohr) internally
+# TODO: maybe make property to print into eV, Angstroms, etc.
+# TODO: delete tensor file data at the end
+
 class ReferenceData:
     """Holds the data from the reference calculation
 
@@ -75,7 +71,7 @@ class ReferenceData:
         Raises
         ------
         ValueError
-            If the consitency checks for the tensors fails.
+            If the consistency checks for the tensors fails.
         """
         # Check consistency of tensor files
         for comp_tensor in tensors[1:]:
@@ -96,8 +92,7 @@ class ReferenceData:
         self.energies = tensors[0].e_kin # in Hartree
         self.v0r = tensors[0].v0r        # in Hartree
 
-        # TODO: To discuss:
-        # should these be zero or NaN for non-emerging energies?
+
         self.ref_amps = tensors[0].ref_amps
 
         # Note: kx and ky maybe could be simplified as well
@@ -106,8 +101,6 @@ class ReferenceData:
 
         # energy dependent LMAX – NB: 1 smaller than number of phaseshifts
         self.lmax = tensors[0].n_phaseshifts_per_energy - 1
-
-        # TODO: ref_amps, kx_in, ky_in, lmax
 
         # LMAX dependent quantities – crop to max needed shape
         self.tensor_amps_in = []

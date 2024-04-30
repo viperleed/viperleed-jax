@@ -20,14 +20,16 @@ written in Fortran (though this is not always done consistently).
 
 We thus always index quantities (skipping unncessary indices) as follows
 from outermost (slowest) to innermost (fastest):
+    # TODO: check if it would make sense to index by LMAX and then vectorize
+    # over all energies for one LMAX.
     1) energy
         Order of ~100-300 values. We cannot (efficiently) vectorize over
         energies, since the dynamic LMAX and thus the size of the tensors
         are energy-dependent.
-    2) atoms
+    2) tensors / atom&site
         Order of ~10-100 values. May or may not be vectorized over. (TBD)
     3) beams
-        Order of ~10-100 values. Should be vectorized over. Only few
+        Order of ~10-1000s values. Should be vectorized over. Only few
         calculations are beam-dependent.
     4) l & m (quantum numbers)
         Should be vectorized over. Almost every calculation is l & m dependent
