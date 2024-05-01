@@ -138,6 +138,14 @@ class ReferenceData:
             self.tensor_amps_in.append(jnp.asarray(tmp_tensor_amps_in))
             self.tensor_amps_out.append(jnp.asarray(tmp_tensor_amps_out))
 
+    @property
+    def needed_lmax(self):
+        return sorted(set(self.lmax))
+
+    @property
+    def energy_ids_for_lmax(self, l):
+        return jnp.where(self.lmax == l)
+
 
     def _rebuild_from_dict(self, kw_dict):
         if not all(kw in kw_dict.keys() for kw in self.expected_kws):
