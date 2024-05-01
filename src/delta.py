@@ -49,10 +49,20 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
         jax.debug.print('Setup:', ordered=True)
         jax.debug.callback(show_time, ordered=True)
 
+    # Prepare the sequence to scan over.
+    energy_seq = jnp.arange(len(_energies))
+
+    def _vib_disp_by_energy(en_id):
+        return apply_vibrational_displacements(
+            LMAX,
+            _phaseshifts[en_id,...],
+            _energies[en_id],
+            jnp.asarray(DR))
+
     # Calculate the t-matrix with the vibrational displacements
-    tscatf_vmap = jax.vmap(apply_vibrational_displacements, in_axes=(None, 0, 0, None), out_axes=1)  # vmap over energy
-    t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
-    t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
+    t_matrix_new = jax.lax.map(_vib_disp_by_energy, energy_seq)
+    # TODO: refactor so we don't need to swap axis
+    t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
 
     if DEBUG:
         jax.debug.print('Vib disp:', ordered=True)
@@ -83,24 +93,21 @@ def delta_amplitude(LMAX, DR, energies, tensors, unit_cell_area, phaseshifts, di
     # A for loop is much slower to jit-compile and a vmap
     # results in too large intermediate arrays
 
-    def _geo_disp_by_energy(carry, en_id):
+    def _geo_disp_by_energy(en_id):
         delta_amp = apply_geometric_displacements(
             t_matrix_ref[en_id], t_matrix_new[en_id],
             _energies[en_id],
             v_imag, LMAX,
             tensor_amps_out_with_prefactors[en_id], tensor_amps_in[en_id],
             displacements)
-        return carry, delta_amp
-
-    # Prepare the sequence to scan over.
-    energy_seq = jnp.arange(len(_energies))
+        return delta_amp
 
     if DEBUG:
         jax.debug.print('Geo setup:', ordered=True)
         jax.debug.callback(show_time, ordered=True)
 
     # Perform the scan 
-    _, delta_amps = jax.lax.scan(_geo_disp_by_energy, None, energy_seq)
+    delta_amps = jax.lax.map(_geo_disp_by_energy, energy_seq)
 
     if DEBUG:
         jax.debug.print('Geo disp:', ordered=True)

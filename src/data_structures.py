@@ -112,6 +112,7 @@ class ReferenceData:
         self.ref_amps = tensors[0].ref_amps
 
         # Note: kx and ky maybe could be simplified as well
+        # TODO: pack into a single array (maybe already in read_tensor)
         self.kx_in = tensors[0].kx_in
         self.ky_in = tensors[0].ky_in
 
