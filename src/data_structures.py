@@ -140,9 +140,9 @@ class ReferenceData:
 
 
     def _rebuild_from_dict(self, kw_dict):
-        if not all(kw in kw_dict.keys() for kw in expected_kws):
+        if not all(kw in kw_dict.keys() for kw in self.expected_kws):
             raise ValueError("Not all keywords supplied to rebuild from dict.")
-        for kw in expected_kws:
+        for kw in self.expected_kws:
             setattr(self, kw, kw_dict[kw])
 
         # TODO: rearange and apply prefactors to tensor_amps_out
