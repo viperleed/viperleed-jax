@@ -119,7 +119,7 @@ class ReferenceData:
         self.lmax = tensors[0].n_phaseshifts_per_energy - 1
 
         # LMAX dependent quantities – crop to max needed shape
-        self.ref_t_matrix
+        self.ref_t_matrix = []
         self.tensor_amps_in = []
         self.tensor_amps_out = []
         for en_id, lmax in enumerate(self.lmax):
