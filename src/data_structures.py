@@ -4,6 +4,7 @@ import sys
 
 import numpy as np
 
+import jax.numpy as jnp
 from jax.tree_util import register_pytree_node_class
 
 from src.hashable_array import HashableArray
@@ -107,17 +108,30 @@ class ReferenceData:
         self.lmax = tensors[0].n_phaseshifts_per_energy - 1
 
         # LMAX dependent quantities – crop to max needed shape
+        self.ref_t_matrix
         self.tensor_amps_in = []
         self.tensor_amps_out = []
         for en_id, lmax in enumerate(self.lmax):
+            # crop to the first lmax+1 elements (l indexed)
+            tmp_ref_t_matrix = [t.t_matrix[en_id, :lmax+1]
+                                for t in tensors]
+            # crops to the first (lmax+1)^2 elements (lm indexed)
             tmp_tensor_amps_in = [t.tensor_amps_in[en_id, :(lmax+1)**2]
                                   for t in tensors]
             # transpose to swap lm, and beams axis for tensor_amps_out
             tmp_tensor_amps_out = [t.tensor_amps_out[en_id, :(lmax+1)**2, :].T
                                    for t in tensors]
             # convert to arrays
-            self.tensor_amps_in.append(np.array(tmp_tensor_amps_in))
-            self.tensor_amps_out.append(np.array(tmp_tensor_amps_out))
+            self.ref_t_matrix.append(jnp.asarray(tmp_ref_t_matrix))
+            self.tensor_amps_in.append(jnp.asarray(tmp_tensor_amps_in))
+            self.tensor_amps_out.append(jnp.asarray(tmp_tensor_amps_out))
+
+
+    def _rebuild_from_dict(self, kw_dict):
+        if not all(kw in kw_dict.keys() for kw in expected_kws):
+            raise ValueError("Not all keywords supplied to rebuild from dict.")
+        for kw in expected_kws:
+            setattr(self, kw, kw_dict[kw])
 
         # TODO: rearange and apply prefactors to tensor_amps_out
 
