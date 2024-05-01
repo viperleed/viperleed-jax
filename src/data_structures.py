@@ -58,6 +58,17 @@ class ReferenceData:
     tensor_amps_out: np.ndarray
     tensor_amps_in: np.ndarray
     """
+    expected_kws = (
+            'energies',
+            'v0r',
+            'ref_amps',
+            'kx_in',
+            'ky_in',
+            'lmax',
+            'ref_t_matrix'
+            'tensor_amps_in',
+            'tensor_amps_out'
+        )
 
     def __init__(self, tensors, fix_lmax=False):
         """TODO
@@ -134,6 +145,20 @@ class ReferenceData:
             setattr(self, kw, kw_dict[kw])
 
         # TODO: rearange and apply prefactors to tensor_amps_out
+
+    def _build_from_tensors(tensors):
+        pass
+
+    def tree_flatten(self):
+        # build kw_dict to rebuild the object
+        kw_dict = {}
+        for kw in self.expected_kws:
+            kw_dict[kw] = getattr(self, kw)
+        return kw_dict
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        return cls(tensors=None, kw_dict=aux_data)
 
     @property
     def n_energies(self):
