@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import sys
+
 import numpy as np
 
 from jax.tree_util import register_pytree_node_class
@@ -141,6 +143,23 @@ class ReferenceData:
 
     @property
     def size_in_memory(self):
-        """ Estimate size in memory, may be useful for debugging
-        and selective optimization."""
-        pass
+        """Estimate size in memory.
+
+        This may be useful for debugging and selective optimization.
+
+        Returns
+        -------
+        int
+            Total size in bytes of all arrays."""
+        total_size_in_bytes = 0
+        # simple arrays
+        for attr in ["energies", "v0i", "v0r", "ref_amps", "kx_in", "ky_in"]:
+            total_size_in_bytes += sys.getsizeof(getattr(self, attr))
+
+        # lists of arrays
+        for attr in ["tensor_amps_in", "tensor_amps_out"]:
+            for array in getattr(self, attr):
+                total_size_in_bytes += sys.getsizeof(array)
+
+        return total_size_in_bytes
+
