@@ -80,6 +80,8 @@ class ReferenceData:
             if not tensors[0].is_consistent(comp_tensor):
                 raise ValueError("Inconsistent tensor files")
 
+        self.n_tensors = len(tensors)
+
         # Now we can assume that all tensors are consistent, thus we can
         # extract shared data from the first tensor file.
 
@@ -118,10 +120,6 @@ class ReferenceData:
             self.tensor_amps_out.append(np.array(tmp_tensor_amps_out))
 
         # TODO: rearange and apply prefactors to tensor_amps_out
-
-    @property
-    def n_atoms(self):
-        pass
 
     @property
     def n_energies(self):
