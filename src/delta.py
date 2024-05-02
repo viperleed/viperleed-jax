@@ -3,8 +3,6 @@
 
 @author: Paul Haidegger, Alexander M. Imre
 """
-import numpy as np
-
 from src.constants import HARTREE, BOHR
 from src.lib_phaseshifts import *
 from src.lib_tensors import *
