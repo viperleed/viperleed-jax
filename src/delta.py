@@ -8,7 +8,7 @@ from src.lib_phaseshifts import *
 from src.lib_tensors import *
 from src.lib_delta import *
 
-DEBUG = True
+DEBUG = False
 
 from time import time
 
