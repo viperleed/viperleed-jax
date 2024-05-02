@@ -67,7 +67,7 @@ class ReferenceData:
             'kx_in',
             'ky_in',
             'lmax',
-            'ref_t_matrix'
+            'ref_t_matrix',
             'tensor_amps_in',
             'tensor_amps_out'
         )
