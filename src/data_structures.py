@@ -79,7 +79,7 @@ class ReferenceData:
         ----------
         tensors : tuple of TensorFileData
             _description_
-        fix_lmax : bool, optional
+        fix_lmax : bool or int, optional
             Fixes LMAX to a constant (energy-independent) value. If an integer,
             uses this value for LMAX. If True, uses the maximum LMAX of the
             tensor files. By default False.
@@ -117,9 +117,16 @@ class ReferenceData:
         self.kx_in = jnp.asarray(tensors[0].kx_in)
         self.ky_in = jnp.asarray(tensors[0].ky_in)
 
-
         # energy dependent LMAX – NB: 1 smaller than number of phaseshifts
-        self.lmax = tensors[0].n_phaseshifts_per_energy - 1
+        dynamic_lmax = tensors[0].n_phaseshifts_per_energy - 1
+        if fix_lmax:
+            if isinstance(fix_lmax, int):
+                self.lmax = jnp.full_like(self.energies, fix_lmax)
+            else:
+                max_lmax = max(dynamic_lmax)
+                self.lmax = jnp.full_like(self.energies, max_lmax)
+        else:
+            self.lmax = dynamic_lmax
 
         self.energy_ids_for_lmax = {l:jnp.where(self.lmax == l)[0]
                                     for l in self.lmax}
