@@ -116,8 +116,6 @@ def delta_amplitude(LMAX, ref_data, DR, energies, tensors, unit_cell_area, phase
     if DEBUG:
         jax.debug.print('Displacements:', ordered=True)
         jax.debug.callback(show_time, ordered=True)
-        jax.debug.print("hello {bar}", bar=jnp.sum(abs(delta_amps)), ordered=True)
-        jax.debug.callback(show_time, ordered=True)
 
     # The result is already a JAX array, so there's no need to call jnp.array on delta_amps.
     return delta_amps
