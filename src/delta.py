@@ -110,7 +110,7 @@ def delta_amplitude(LMAX, ref_data, DR, energies, tensors, unit_cell_area, phase
     delta_amps = jnp.concatenate(delta_amps_by_lmax, axis=0)
     delta_amps = delta_amps[ref_data.energy_sorting]
 
-    # Finally apply the prefactors calculated earlier to the result (element)
+    # Finally apply the prefactors calculated earlier to the result
     delta_amps = prefactors * delta_amps
 
     if DEBUG:
