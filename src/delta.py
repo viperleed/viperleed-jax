@@ -12,13 +12,12 @@ from src.lib_delta import *
 
 DEBUG = True
 
-BATCH = False # TODO: try later (also variable batch sizes)
-
 from time import time
 
 
-#@partial(jit, static_argnames=('LMAX','energies', 'tensors', 'unit_cell_area', 'phaseshifts',))
-def delta_amplitude(LMAX, ref_data, DR, energies, tensors, unit_cell_area, phaseshifts, displacements):
+#@partial(jit, static_argnames=('ref_data', 'unit_cell_area', 'phaseshifts',))
+def delta_amplitude(DR, displacements, ref_data, unit_cell_area, phaseshifts,
+                    batch_lmax=False):
     if DEBUG:
         jax.debug.callback(init_time, ordered=True)
     # unpack hashable arrays
@@ -52,9 +51,7 @@ def delta_amplitude(LMAX, ref_data, DR, energies, tensors, unit_cell_area, phase
         jax.debug.print('Setup:', ordered=True)
         jax.debug.callback(show_time, ordered=True)
 
-
     delta_amps_by_lmax = []
-    energy_ids_by_lmax = []
 
     for lmax in ref_data.needed_lmax:
         print(f'compiling for lmax {lmax}')
@@ -70,7 +67,7 @@ def delta_amplitude(LMAX, ref_data, DR, energies, tensors, unit_cell_area, phase
 
         sequential_ids = jnp.arange(len(energy_ids))
 
-        if BATCH:
+        if batch_lmax:
             t_matrix_new = jax.vmap(
                 apply_vibrational_displacements,
                 in_axes=(None, 0, 0, None))(lmax, l_phaseshifts, l_energies, DR)
@@ -85,26 +82,42 @@ def delta_amplitude(LMAX, ref_data, DR, energies, tensors, unit_cell_area, phase
             # Calculate the t-matrix with the vibrational displacements
             t_matrix_new = jax.lax.map(_vib_disp_by_energy, sequential_ids)
 
-        # Applying the geometric displacements is most efficiently handled
-        # by a map operation as a loop over the energies
-        # A for loop is much slower to jit-compile and a vmap
-        # results in too large intermediate arrays
+        if batch_lmax:
+            delta_amps = jax.vmap(
+                apply_geometric_displacements,
+                in_axes=(0, 0, 0, None, None, 0, 0, None),
+                )(l_t_matrix_ref,
+                  t_matrix_new,
+                  l_energies,
+                  v_imag,
+                  lmax,
+                  l_tensor_amps_out,
+                  l_tensor_amps_in,
+                  jnp.asarray(displacements)
+            )
+        else:
 
-        def _geo_disp_by_energy(id):
-            return apply_geometric_displacements(
-                l_t_matrix_ref[id],
-                t_matrix_new[id],
-                l_energies[id],
-                v_imag,
-                lmax,
-                l_tensor_amps_out[id],
-                l_tensor_amps_in[id],
-                jnp.asarray(displacements))
+            # Applying the geometric displacements is most efficiently handled
+            # by a map operation as a loop over the energies
+            # A for loop is much slower to jit-compile and a vmap
+            # results in too large intermediate arrays
 
-        # Perform the map
-        delta_amps = jax.lax.map(_geo_disp_by_energy, sequential_ids)
+            def _geo_disp_by_energy(id):
+                return apply_geometric_displacements(
+                    l_t_matrix_ref[id],
+                    t_matrix_new[id],
+                    l_energies[id],
+                    v_imag,
+                    lmax,
+                    l_tensor_amps_out[id],
+                    l_tensor_amps_in[id],
+                    jnp.asarray(displacements))
+
+            # Perform the map
+            delta_amps = jax.lax.map(_geo_disp_by_energy, sequential_ids)
+
+        # add to list for later concatenation
         delta_amps_by_lmax.append(delta_amps)
-        energy_ids_by_lmax.append(energy_ids)
 
     # now re-sort the delta_amps to the original order
     delta_amps = jnp.concatenate(delta_amps_by_lmax, axis=0)
