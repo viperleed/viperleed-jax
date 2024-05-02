@@ -174,6 +174,15 @@ class ReferenceData:
     def needed_lmax(self):
         return sorted(set(self.lmax))
 
+    @property
+    def energy_sorting(self):
+        """Sorting to return the energies to the original order from lmax."""
+        energy_ids = []
+        for lmax in self.needed_lmax:
+            energy_ids.append(self.energy_ids_for_lmax[lmax])
+        energy_ids = jnp.concatenate(energy_ids)
+        return jnp.argsort(energy_ids)
+
     def energy_ids_for_lmax(self, l):
         return jnp.where(self.lmax == l)[0]
 
