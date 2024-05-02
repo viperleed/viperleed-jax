@@ -19,7 +19,7 @@ def delta_amplitude(DR, displacements, ref_data, unit_cell_area, phaseshifts,
     if DEBUG:
         jax.debug.callback(init_time, ordered=True)
     # unpack hashable arrays
-    _energies = jnp.asarray(ref_data.energies)
+    energies = ref_data.energies
     _phaseshifts = jnp.asarray(phaseshifts.val)
     # unpack tensor data
     v_imag = ref_data.v0i
@@ -28,13 +28,13 @@ def delta_amplitude(DR, displacements, ref_data, unit_cell_area, phaseshifts,
     out_k_par2 = ref_data.kx_in
     out_k_par3 = ref_data.ky_in
 
-    k_inside = jnp.sqrt(2*_energies-2j*v_imag+1j*EPS)
+    k_inside = jnp.sqrt(2*energies-2j*v_imag+1j*EPS)
 
     # Propagator evaluated relative to the muffin tin zero i.e.
     # it uses energy = incident electron energy + inner potential
     out_k_par = out_k_par2**2 + out_k_par3**2
     out_k_perp_inside = jnp.sqrt(
-        ((2*_energies-2j*v_imag)[:, jnp.newaxis] - out_k_par)
+        ((2*energies-2j*v_imag)[:, jnp.newaxis] - out_k_par)
         + 1j*EPS
     )
 
@@ -57,7 +57,7 @@ def delta_amplitude(DR, displacements, ref_data, unit_cell_area, phaseshifts,
         energy_ids = ref_data.energy_ids_for_lmax[lmax]
 
         # select the relevant data for the current lmax
-        l_energies = _energies[energy_ids]
+        l_energies = energies[energy_ids]
         l_phaseshifts = _phaseshifts[energy_ids, :, :lmax+1]
         l_t_matrix_ref = ref_data.ref_t_matrix[lmax]
         l_tensor_amps_in = ref_data.tensor_amps_in[lmax]
