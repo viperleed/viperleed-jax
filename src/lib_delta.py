@@ -20,6 +20,7 @@ from src.gaunt_coefficients import PRE_CALCULATED_CPPP, CSUM_COEFFS
 
 
 @partial(vmap, in_axes=(None, 0, None, 0))  # vmap over atoms
+@partial(jax.jit, static_argnames=('LMAX',))
 def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     """Computes the temperature-dependent t-matrix elements.
 
@@ -135,7 +136,7 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,
     DELTAT = TMATRIX_DWG(t_matrix_ref, t_matrix_new, _C, e_inside,v_imag,LMAX)
 
     # Equation (41) from Rous, Pendry 1989 & sum over atoms (index a)
-    AMAT = jnp.einsum('alb,alk,ak->b',
+    AMAT = jnp.einsum('abl,alk,ak->b',
                       tensor_amps_out,
                       DELTAT,
                       tensor_amps_in)
