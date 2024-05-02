@@ -14,7 +14,7 @@ from time import time
 
 
 #@partial(jit, static_argnames=('ref_data', 'unit_cell_area', 'phaseshifts',))
-def delta_amplitude(DR, displacements, ref_data, unit_cell_area, phaseshifts,
+def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshifts,
                     batch_lmax=False):
     if DEBUG:
         jax.debug.callback(init_time, ordered=True)
@@ -68,14 +68,14 @@ def delta_amplitude(DR, displacements, ref_data, unit_cell_area, phaseshifts,
         if batch_lmax:
             t_matrix_new = jax.vmap(
                 apply_vibrational_displacements,
-                in_axes=(None, 0, 0, None))(lmax, l_phaseshifts, l_energies, DR)
+                in_axes=(None, 0, 0, None))(lmax, l_phaseshifts, l_energies, vib_amps)
         else:
             def _vib_disp_by_energy(id):
                 return apply_vibrational_displacements(
                     lmax,
                     l_phaseshifts[id, ...],
                     l_energies[id],
-                    jnp.asarray(DR))
+                    jnp.asarray(vib_amps))
 
             # Calculate the t-matrix with the vibrational displacements
             t_matrix_new = jax.lax.map(_vib_disp_by_energy, sequential_ids)
