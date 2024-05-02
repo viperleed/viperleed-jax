@@ -13,7 +13,8 @@ DEBUG = True
 from time import time
 
 
-#@partial(jit, static_argnames=('ref_data', 'unit_cell_area', 'phaseshifts',))
+@partial(jit, static_argnames=('ref_data', 'unit_cell_area', 'phaseshifts',
+                               'batch_lmax'))
 def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshifts,
                     batch_lmax=False):
     if DEBUG:
