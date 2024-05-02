@@ -21,7 +21,6 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
         jax.debug.callback(init_time, ordered=True)
     # unpack hashable arrays
     energies = ref_data.energies
-    _phaseshifts = jnp.asarray(phaseshifts.val)
     # unpack tensor data
     v_imag = ref_data.v0i
 
@@ -59,7 +58,7 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
 
         # select the relevant data for the current lmax
         l_energies = energies[energy_ids]
-        l_phaseshifts = _phaseshifts[energy_ids, :, :lmax+1]
+        l_phaseshifts = phaseshifts.phaseshifts[energy_ids, :, :lmax+1]
         l_t_matrix_ref = ref_data.ref_t_matrix[lmax]
         l_tensor_amps_in = ref_data.tensor_amps_in[lmax]
         l_tensor_amps_out = ref_data.tensor_amps_out[lmax]
