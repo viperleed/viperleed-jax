@@ -13,9 +13,6 @@ from src.hashable_array import HashableArray
 from src.constants import HARTREE
 
 
-#@register_pytree_node_class
-
-
 # TODO: keep everything in atomic units (Hartree, Bohr) internally
 # TODO: maybe make property to print into eV, Angstroms, etc.
 
@@ -247,7 +244,7 @@ class ReferenceData:
         for attr in ["energies", "v0i", "v0r", "ref_amps", "kx_in", "ky_in"]:
             total_size_in_bytes += sys.getsizeof(getattr(self, attr))
 
-        # lists of arrays
+        # lists of arrays - TODO: fix, this is broken since refactor
         for attr in ["tensor_amps_in", "tensor_amps_out"]:
             for array in getattr(self, attr):
                 total_size_in_bytes += sys.getsizeof(array)
