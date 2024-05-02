@@ -112,8 +112,34 @@ class TensorFileData:
     def n_beams(self):           # NTO
         return self.ref_amps.shape[1]
 
+    def is_consistent(self, other):
+        """Check if two tensor files are consistent
 
+        Consistency is checked by comparing all data that is
+        atom/site-independent. This includes the kinetic energies,
 
+        Parameters
+        ----------
+        other : TensorFileData
+            The other tensor file to compare with.
+
+        Returns
+        -------
+        bool
+            True if the two tensor files are consistent, False otherwise.
+        """
+        return (
+            np.allclose(self.e_kin, other.e_kin)
+            and np.all(self.n_phaseshifts_per_energy ==
+                       other.n_phaseshifts_per_energy)
+            and np.all(self.n_beams == other.n_beams)
+            and np.allclose(self.v0i_substrate, other.v0i_substrate)
+            and np.allclose(self.v0i_overlayer, other.v0i_overlayer)
+            and np.allclose(self.v0r, other.v0r)
+            and np.allclose(self.ref_amps, other.ref_amps)
+            and np.allclose(self.kx_in, other.kx_in)
+            and np.allclose(self.ky_in, other.ky_in)
+        )
 
 
 def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11, compare_with=None):
