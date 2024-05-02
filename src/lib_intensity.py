@@ -8,10 +8,13 @@ def sum_intensity(prefactors, reference_amplitudes, delta_amplitudes):
     return prefactors * abs(reference_amplitudes + delta_amplitudes) ** 2
 
 
-def intensity_prefactor(energies, v_real, v_imag, displacement, beam_indices, theta, phi, trar, is_surface_atom):
+def intensity_prefactor(displacement, ref_data,
+                        beam_indices, theta, phi, trar, is_surface_atom):
     # prefactors (refraction) from amplitudes to intensities
     n_beams = beam_indices.shape[0]
-    in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum = _wave_vectors(energies, v_real, v_imag, theta, phi, trar, beam_indices)
+    (in_k_vacuum, in_k_perp_vacuum,
+     out_k_perp, out_k_perp_vacuum) = _wave_vectors(ref_data, theta, phi,
+                                                    trar, beam_indices)
 
     a = out_k_perp_vacuum
     c = in_k_vacuum * jnp.cos(theta)
@@ -22,7 +25,10 @@ def intensity_prefactor(energies, v_real, v_imag, displacement, beam_indices, th
     return prefactor
 
 
-def _wave_vectors(e_kin, v_real, v_imag, theta, phi, trar, beam_indices):
+def _wave_vectors(ref_data, theta, phi, trar, beam_indices):
+    e_kin = ref_data.energies
+    v_real = ref_data.v0r
+    v_imag = ref_data.v0i
     n_energies = e_kin.shape[0]
     n_beams = beam_indices.shape[0]
     # incident wave vector
