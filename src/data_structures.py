@@ -18,8 +18,8 @@ from src.constants import HARTREE
 
 # TODO: keep everything in atomic units (Hartree, Bohr) internally
 # TODO: maybe make property to print into eV, Angstroms, etc.
-# TODO: delete tensor file data at the end
 
+@register_pytree_node_class
 class ReferenceData:
     """Holds the data from the reference calculation
 
@@ -124,7 +124,6 @@ class ReferenceData:
         self.energy_ids_for_lmax = {l:jnp.where(self.lmax == l)[0]
                                     for l in self.lmax}
 
-
         # LMAX dependent quantities – crop to max needed shape
         ref_t_matrix = defaultdict(list)
         tensor_amps_in = defaultdict(list)
@@ -155,7 +154,6 @@ class ReferenceData:
                 jnp.einsum('l,bl->bl', MINUS_ONE_POW_M[lmax], amps)
                 for amps in tmp_tensor_amps_out
             ]
-
 
             # append to dict
             ref_t_matrix[lmax].append(jnp.asarray(tmp_ref_t_matrix))
@@ -193,21 +191,21 @@ class ReferenceData:
         for kw in self.expected_kws:
             setattr(self, kw, kw_dict[kw])
 
-        # TODO: rearange and apply prefactors to tensor_amps_out
-
-    def _build_from_tensors(tensors):
-        pass
+    # PyTree methods for serialization in JAX
 
     def tree_flatten(self):
         # build kw_dict to rebuild the object
         kw_dict = {}
         for kw in self.expected_kws:
             kw_dict[kw] = getattr(self, kw)
-        return kw_dict
+        return None, kw_dict
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        return cls(tensors=None, kw_dict=aux_data)
+        del children  # unused in this class
+        new_object = cls.__new__(cls)
+        new_object._rebuild_from_dict(aux_data[1])
+        return new_object
 
     @property
     def n_energies(self):
