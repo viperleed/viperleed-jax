@@ -147,10 +147,9 @@ def evaluate_spline(spline_coeffs, interpolator, deriv_order=0):
     lower_indices = interpolator.intervals - interpolator.intpol_deg
     coeff_indices = lower_indices.reshape(-1,1) + jnp.arange(interpolator.intpol_deg+1)
     coeff_subarrays = spline_coeffs[coeff_indices]
-    coeff_subarrays = coeff_subarrays.reshape(-1, interpolator.intpol_deg+1) # remove tailing 1 dimension
 
     # Element-wise multiplication between coefficients and de_boor values, sum over basis functions
-    return jnp.einsum('ij,ji->i',
+    return jnp.einsum('ijb,ji->ib',
                       coeff_subarrays,
                       interpolator.de_boor_coeffs[deriv_order])
 
