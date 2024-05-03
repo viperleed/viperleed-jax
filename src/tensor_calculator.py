@@ -87,7 +87,7 @@ class TensorLEEDCalculator:
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def R_pendry(self, vib_amps, displacements, v0_real=3.0):
-        return self._pendry_R(vib_amps, displacements, v0_real)
+        return self._R_pendry(vib_amps, displacements, v0_real)
 
     def _R_pendry(self, vib_amps, displacements, v0_real=3.0):
         if self.comp_intensity is None:
