@@ -118,14 +118,14 @@ class ReferenceData:
         dynamic_lmax = tensors[0].n_phaseshifts_per_energy - 1
         if fix_lmax:
             if isinstance(fix_lmax, int):
-                self.lmax = jnp.full_like(self.energies, fix_lmax)
+                self.lmax = [fix_lmax,]*len(self.energies)
             else:
-                max_lmax = max(dynamic_lmax)
-                self.lmax = jnp.full_like(self.energies, max_lmax)
+                max_lmax = int(max(dynamic_lmax))
+                self.lmax = [max_lmax,]*len(self.energies)
         else:
             self.lmax = dynamic_lmax
 
-        self.energy_ids_for_lmax = {l:jnp.where(self.lmax == l)[0]
+        self.energy_ids_for_lmax = {int(l):jnp.where(self.lmax == l)[0]
                                     for l in self.lmax}
 
         # LMAX dependent quantities – crop to max needed shape
