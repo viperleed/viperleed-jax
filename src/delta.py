@@ -3,22 +3,21 @@
 
 @author: Paul Haidegger, Alexander M. Imre
 """
-from src.constants import HARTREE, BOHR
-from src.lib_phaseshifts import *
-from src.lib_tensors import *
-from src.lib_delta import *
+import jax
+from jax import jit
+from jax import numpy as jnp
+from functools import partial
 
-DEBUG = False
-
-from time import time
+from src.constants import BOHR
+from src.lib_delta import apply_vibrational_displacements
+from src.lib_delta import apply_geometric_displacements
 
 
 @partial(jit, static_argnames=('ref_data', 'unit_cell_area', 'phaseshifts',
                                'batch_lmax'))
 def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshifts,
                     batch_lmax=False):
-    if DEBUG:
-        jax.debug.callback(init_time, ordered=True)
+
     # unpack hashable arrays
     energies = ref_data.energies
     # unpack tensor data
@@ -44,10 +43,6 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
         1/out_k_perp_inside,
         1/(2*(unit_cell_area/BOHR**2))
     )
-
-    if DEBUG:
-        jax.debug.print('Setup:', ordered=True)
-        jax.debug.callback(show_time, ordered=True)
 
     delta_amps_by_lmax = []
 
@@ -125,22 +120,6 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
     # Finally apply the prefactors calculated earlier to the result
     delta_amps = prefactors * delta_amps
 
-    if DEBUG:
-        jax.debug.print('Displacements:', ordered=True)
-        jax.debug.callback(show_time, ordered=True)
 
     # The result is already a JAX array, so there's no need to call jnp.array on delta_amps.
     return delta_amps
-
-last_time = time()
-
-def init_time():
-    global last_time
-    last_time = time()
-    print(f'Start: {last_time}')
-
-def show_time():
-    global last_time
-    now = time()
-    print(f'{(now - last_time):3f} s')
-    last_time = now
