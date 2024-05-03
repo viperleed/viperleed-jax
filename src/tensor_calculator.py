@@ -4,11 +4,11 @@ import jax.numpy as jnp
 
 
 from functools import partial
-from src.rfactor import *
-from src.lib_intensity import intensity_prefactor, sum_intensity
-from src.interpolation import *
-from src.constants import BOHR, HARTREE
 from src import delta
+from src import rfactor
+from src.constants import BOHR, HARTREE
+from src.interpolation import *
+from src.lib_intensity import intensity_prefactor, sum_intensity
 
 class TensorLEEDCalculator:
 
