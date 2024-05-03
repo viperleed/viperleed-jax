@@ -68,7 +68,8 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
         if batch_lmax:
             t_matrix_new = jax.vmap(
                 apply_vibrational_displacements,
-                in_axes=(None, 0, 0, None))(lmax, l_phaseshifts, l_energies, vib_amps)
+                in_axes=(None, 0, 0, None))(lmax, l_phaseshifts,
+                                            l_energies, jnp.asarray(vib_amps))
         else:
             def _vib_disp_by_energy(id):
                 return apply_vibrational_displacements(
