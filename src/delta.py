@@ -18,6 +18,8 @@ from src.lib_math import EPS
                                'batch_lmax'))
 def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshifts,
                     batch_lmax=False):
+    vib_amps = jnp.asarray(vib_amps)
+    displacements = jnp.asarray(displacements)
 
     # unpack hashable arrays
     energies = ref_data.energies
@@ -65,14 +67,14 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
             t_matrix_new = jax.vmap(
                 apply_vibrational_displacements,
                 in_axes=(None, 0, 0, None))(lmax, l_phaseshifts,
-                                            l_energies, jnp.asarray(vib_amps))
+                                            l_energies, vib_amps))
         else:
             def _vib_disp_by_energy(id):
                 return apply_vibrational_displacements(
                     lmax,
                     l_phaseshifts[id, ...],
                     l_energies[id],
-                    jnp.asarray(vib_amps))
+                    vib_amps)
 
             # Calculate the t-matrix with the vibrational displacements
             t_matrix_new = jax.lax.map(_vib_disp_by_energy, sequential_ids)
@@ -88,7 +90,7 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
                   lmax,
                   l_tensor_amps_out,
                   l_tensor_amps_in,
-                  jnp.asarray(displacements)
+                  displacements
             )
         else:
 
@@ -106,7 +108,7 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
                     lmax,
                     l_tensor_amps_out[id],
                     l_tensor_amps_in[id],
-                    jnp.asarray(displacements))
+                    displacements)
 
             # Perform the map
             delta_amps = jax.lax.map(_geo_disp_by_energy, sequential_ids)
