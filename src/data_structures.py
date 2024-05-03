@@ -230,6 +230,10 @@ class ReferenceData:
         pass
 
     @property
+    def incident_energy_ev(self):
+        return (self.energies - self.v0r)*HARTREE
+
+    @property
     def size_in_memory(self):
         """Estimate size in memory.
 
