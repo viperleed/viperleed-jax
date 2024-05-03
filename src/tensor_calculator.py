@@ -107,7 +107,7 @@ class TensorLEEDCalculator:
         )
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
-    def R_pendry_val_and_grad_func(self, vib_amps, displacements, v0_real=3.0):
+    def R_pendry_val_and_grad(self, vib_amps, displacements, v0_real=3.0):
         # TODO: urgent: currently only gives gradients for geo displacements
         return jax.value_and_grad(self._R_pendry, argnums=(1))(vib_amps, displacements, v0_real)
 
