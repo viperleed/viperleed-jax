@@ -5,18 +5,20 @@ import jax.numpy as jnp
 
 from functools import partial
 from src.rfactor import *
-from src.lib_intensity import *
+from src.lib_intensity import intensity_prefactor, sum_intensity
 from src.interpolation import *
-from constants import BOHR, HARTREE
-from src.lib_delta import delta_amplitude
+from src.constants import BOHR, HARTREE
+from src import delta
 
 class TensorLEEDCalculator:
 
     def __init__(self, ref_data, phaseshifts, slab, rparams,
                  interpolation_step=0.5,
-                 interpolation_deg=3):
+                 interpolation_deg=3,
+                 batch_lmax=False):
         self.ref_data = ref_data
         self.phaseshifts = phaseshifts
+        self.batch_lmax = batch_lmax
         self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
         self.comp_intensity = None
 
@@ -45,30 +47,49 @@ class TensorLEEDCalculator:
     def set_experiment_intesity(self, comp_intensity):
         self.comp_intensity = comp_intensity
 
-    @property
-    def delta_amp_func(self):
-        return partial(delta_amplitude,
-                       ref_data=self.ref_data,
-                       phaseshifts=self.phaseshifts,
-                       unit_cell_area=self.unit_cell_area)
+    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
+    def delta_amplitude(self, vib_amps, displacements):
+        """TODO: docstring"""
+        return self._delta_amplitude(vib_amps, displacements)
 
-    @property
-    def intensity_func(self):
-        return partial(_calc_intensity, ref_data=self.ref_data, phaseshifts=self.phaseshifts,
-                       unit_cell_area=self.unit_cell_area, theta=self.theta, phi=self.phi,
-                       beam_indices=self.beam_indices, is_surface_atom=self.is_surface_atom)
+    def _delta_amplitude(self, vib_amps, displacements):
+        """Internal non-jitted version of delta_amplitude."""
+        return delta.delta_amplitude(vib_amps, displacements,
+                              ref_data=self.ref_data,
+                              unit_cell_area=self.unit_cell_area,
+                              phaseshifts=self.phaseshifts,
+                              batch_lmax=self.batch_lmax
+                              )
 
+    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
+    def intensity(self, vib_amps, displacements):
+        return self._intensity(vib_amps, displacements)
 
-    # not absoulutely necessary, but could be useful
-    @property
-    def interpolation_func(self):
-        return partial(_interpolated_intensity_and_deriv, interpolator=self.interpolator)
+    def _intensity(self, vib_amps, displacements):
+        delta_amps = self._delta_amplitude(vib_amps, displacements)
+        refraction_prefactor =  intensity_prefactor(
+            displacements,
+            self.ref_data, self.beam_indices, self.theta, self.phi,
+            self.unit_cell_area, self.is_surface_atom)
+        return sum_intensity(refraction_prefactor, self.ref_data.ref_amps,
+                             delta_amps)
 
+    def interpolated(self, vib_amps, displacements, deriv_deg=0):
+        return jax.jit(self._interpolated)(vib_amps, displacements, deriv_deg)
+
+    def _interpolated(self, vib_amps, displacements, deriv_deg=0):
+        pass
+
+    def pendry_R_vs_reference(self, vib_amps, displacements, v0_real=3.0):
+        if self.comp_intensity is None:
+            raise ValueError("Comparison intensity not set.")
+        v0i_electron_volt = -self.ref_data.v0i*HARTREE
+        pass
+    
 
     @property
     def pendry_R_vs_reference_func(self):
-        if self.comp_intensity is None:
-            raise ValueError("Comparison intensity not set.")
+
         v0i_electron_volt = -self.ref_data.v0i*HARTREE
         e_step = 0.5 #TODO: dynamic!!
         v0_real = 3.0
@@ -87,10 +108,14 @@ class TensorLEEDCalculator:
     def _benchmark():
         pass
 
-def _calc_intensity(vib_amps, displacements, ref_data, phaseshifts, unit_cell_area, theta, phi, beam_indices, is_surface_atom):
-    delta_amps = delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshifts)
-    refraction_prefactor = intensity_prefactor(displacements, ref_data, beam_indices, theta, phi, unit_cell_area, is_surface_atom)
-    return sum_intensity(refraction_prefactor, ref_data.ref_amps, delta_amps)
+    # JAX PyTree methods
+
+    def tree_flatten(self):
+        pass
+
+    def tree_unflatten():
+        pass
+
 
 def _interpolated_intensity_and_deriv(raw_intensity, interpolator):
     rhs = not_a_knot_rhs(raw_intensity)
