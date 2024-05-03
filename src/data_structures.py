@@ -125,8 +125,8 @@ class ReferenceData:
         else:
             self.lmax = dynamic_lmax
 
-        self.energy_ids_for_lmax = {int(l):jnp.where(self.lmax == l)[0]
-                                    for l in self.lmax}
+        self.energy_ids_for_lmax = {int(l):
+            jnp.where(jnp.array(self.lmax) == l)[0] for l in self.lmax}
 
         # LMAX dependent quantities – crop to max needed shape
         ref_t_matrix = defaultdict(list)
