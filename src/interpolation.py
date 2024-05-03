@@ -125,7 +125,6 @@ class StaticNotAKnotSplineInterpolator(StaticGridSplineInterpolator):
 # TODO: The below functions could (and probably should be) interpolator class
 #       methods. However, we need to figure out how to make this work with JAX.
 
-@partial(jax.jit, static_argnames=('interpolator',))
 def get_bspline_coeffs(interpolator, rhs):
     """Return the coefficients of the B-spline interpolant.
 
@@ -136,13 +135,12 @@ def get_bspline_coeffs(interpolator, rhs):
     spline_coeffs = interpolator.inv_colloc_matrix @ rhs
     return spline_coeffs
 
-@jax.jit
+
 def not_a_knot_rhs(values):
     values = jnp.asarray(values)
     return values
 
 
-@partial(jax.jit, static_argnames=('interpolator', 'deriv_order'))
 def evaluate_spline(spline_coeffs, interpolator, deriv_order=0):
     """Evaluate the spline using the De Boor coefficients and the B-spline coefficients"""
     # Extract the relevant coefficients for each interval
