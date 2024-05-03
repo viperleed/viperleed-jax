@@ -80,7 +80,6 @@ def bessel(z, n1):
     return vmapped_custom_bessel(jnp.arange(n1), z)
 
 
-#@partial(jax.jit, static_argnames=('LMAX',))
 def HARMONY(C, LMAX):
     """Generates the spherical harmonics for the vector C.
 
