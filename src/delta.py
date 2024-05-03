@@ -48,8 +48,6 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
     delta_amps_by_lmax = []
 
     for lmax in ref_data.needed_lmax:
-        print(f'compiling for lmax {lmax}')
-        #energy_ids = ref_data.energy_ids_for_lmax(lmax)  # TODO: reuse this one ref_data is a proper pytree
         energy_ids = ref_data.energy_ids_for_lmax[lmax]
 
         # select the relevant data for the current lmax
