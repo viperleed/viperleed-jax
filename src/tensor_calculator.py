@@ -23,6 +23,8 @@ class TensorLEEDCalculator:
         self.comp_intensity = None
         self.interpolation_step = interpolation_step
 
+        self.ref_vibrational_amps = jnp.array(
+            [at.site.vibamp[at.el] for at in non_bulk_atoms])
         self.target_grid = jnp.arange(rparams.THEO_ENERGIES.start,
                                       rparams.THEO_ENERGIES.stop,
                                       self.interpolation_step)
