@@ -14,8 +14,6 @@ from src.lib_delta import apply_geometric_displacements
 from src.lib_math import EPS
 
 
-@partial(jit, static_argnames=('ref_data', 'unit_cell_area', 'phaseshifts',
-                               'batch_lmax'))
 def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshifts,
                     batch_lmax=False):
     vib_amps = jnp.asarray(vib_amps)
