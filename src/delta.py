@@ -11,6 +11,7 @@ from functools import partial
 from src.constants import BOHR
 from src.lib_delta import apply_vibrational_displacements
 from src.lib_delta import apply_geometric_displacements
+from src.lib_math import EPS
 
 
 @partial(jit, static_argnames=('ref_data', 'unit_cell_area', 'phaseshifts',
