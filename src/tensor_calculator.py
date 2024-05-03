@@ -23,8 +23,6 @@ class TensorLEEDCalculator:
         self.comp_intensity = None
         self.interpolation_step = interpolation_step
 
-        self.ref_vibrational_amps = jnp.array(
-            [at.site.vibamp[at.el] for at in non_bulk_atoms])
         self.target_grid = jnp.arange(rparams.THEO_ENERGIES.start,
                                       rparams.THEO_ENERGIES.stop,
                                       self.interpolation_step)
@@ -41,6 +39,8 @@ class TensorLEEDCalculator:
         # TODO check this
         self.is_surface_atom = np.array([at.layer.num == 0 for at in non_bulk_atoms])
 
+        self.ref_vibrational_amps = jnp.array(
+            [at.site.vibamp[at.el] for at in non_bulk_atoms])
         self.interpolator = StaticNotAKnotSplineInterpolator(
             ref_data.incident_energy_ev,
             self.target_grid,
@@ -82,7 +82,7 @@ class TensorLEEDCalculator:
         return self._interpolated(vib_amps, displacements, deriv_deg)
 
     def _interpolated(self, vib_amps, displacements, deriv_deg=0):
-        non_interpolated_intensity = self._intensity(vib_amps, displacements)[:,0] # beam 0 only # TODO: this is urgent!!
+        non_interpolated_intensity = self._intensity(vib_amps, displacements)
         rhs = not_a_knot_rhs(non_interpolated_intensity)
         bspline_coeffs = get_bspline_coeffs(self.interpolator, rhs)
         return evaluate_spline(bspline_coeffs, self.interpolator, deriv_deg)
