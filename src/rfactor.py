@@ -48,6 +48,7 @@ def pendry_R(intensity_2,
 
     return pendry_R_from_y(y_1, y_2, v0_real, v0_imag, energy_step)
 
+
 def pendry_R_vs_reference(reference_intensity, reference_interpolator,
                           sampling_interpolator, v0_real, v0_imag, energy_step):
     """Return an R-factor function that compares a given intensity to a reference"""
@@ -78,9 +79,10 @@ def pendry_R_from_y(y_1, y_2, v0_real, v0_imag, energy_step):
     #TODO: figure out how to implement v0_real
 
     # TODO?: potentially, one could do these integrals analytically based on the spline coefficients
-    numerator = trapezoid((y_1 - y_2)**2, dx=energy_step)
-    denominator = trapezoid((y_1**2 + y_2**2), dx=energy_step)
-    return numerator / denominator  # R-factor for a single beam
+    numerators = trapezoid((y_1 - y_2)**2, dx=energy_step, axis=0)
+    denominators = trapezoid((y_1**2 + y_2**2), dx=energy_step, axis=0)
+    # R factor for all beams
+    return jnp.sum(numerators) / jnp.sum(denominators)
 
 
 def pendry_y(intensity, intensity_derivative, v0_imag):
