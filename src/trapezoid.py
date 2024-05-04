@@ -3,13 +3,11 @@ from __future__ import annotations
 from functools import partial
 
 import jax
-from jax import numpy as jnp
 
 from jax._src.numpy import util
 from jax._src.typing import Array, ArrayLike
 import jax.numpy as jnp
 
-@partial(jax.jit, static_argnames=('axis',))
 def trapezoid(y: ArrayLike, x: ArrayLike | None = None, dx: ArrayLike = 1.0,
               axis: int = -1) -> Array:
   # TODO(phawkins): remove this annotation after fixing jnp types.
