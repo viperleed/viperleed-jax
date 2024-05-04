@@ -3,10 +3,8 @@
 This module is a reworking of scipy's and my Bspline interpolation methods.
 It can interpolate functions efficiently and in a JAX-compatible way."""
 from abc import ABC, abstractmethod
-from functools import partial
 
 import numpy as np
-import jax
 from jax import numpy as jnp
 from scipy import interpolate
 
@@ -22,10 +20,11 @@ class StaticGridSplineInterpolator(ABC):
         # and pre-factorized collocation matrix
 
         # calculate De Boor coefficients
-        self.de_boor_coeffs = {
-            deriv_order: self._calc_de_boor_coeffs(deriv_order)
+        de_boor_coeffs = [
+            self._calc_de_boor_coeffs(deriv_order)
             for deriv_order in range(intpol_deg)
-        }
+        ]
+        self.de_boor_coeffs = jnp.array(de_boor_coeffs)
 
         # calcualte collocation matrix
         self.full_colloc_matrix = self.calculate_colloc_matrix()
