@@ -95,7 +95,7 @@ class TensorLEEDCalculator:
         if self.comp_intensity is None:
             raise ValueError("Comparison intensity not set.")
         v0i_electron_volt = -self.ref_data.v0i*HARTREE
-        non_interpolated_intensity = self._intensity(vib_amps, displacements)[:,0] # beam 0 only # TODO: this is urgent!!
+        non_interpolated_intensity = self._intensity(vib_amps, displacements)
         return rfactor.pendry_R(
             non_interpolated_intensity,
             self.interpolator,
@@ -103,7 +103,7 @@ class TensorLEEDCalculator:
             v0_real,
             v0i_electron_volt,
             self.interpolation_step,
-            self.comp_intensity[:,0]
+            self.comp_intensity
         )
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
