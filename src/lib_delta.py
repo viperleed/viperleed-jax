@@ -143,7 +143,8 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,
 
 
 @partial(vmap, in_axes=(0, 0, 0, None, None, None))  # vmap over atoms
-def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
+@partial(jax.jit, static_argnames=('v_imag', 'LMAX'))
+def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX):
     """The function TMATRIX_DWG generates the TMATRIX(L,L') matrix for given energy & displacement vector.
     E,VPI: Current energy (real, imaginary).
     C(3): Displacement vector;
@@ -156,7 +157,24 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
     YLM(LMMAX): Spherical harmonics of vector C."""
     CL = safe_norm(C)
 
-    CAPPA = 2*energies - 2j*v_imag
+    # mask with dummy value to avoid division by zero
+    C_masked = jnp.where(CL <= EPS, jnp.array([100*EPS, 100*EPS, 100*EPS]), C)
+
+    # if the displacement is zero, we branch to the simplified calculation
+    without_displacement = TMATRIX_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX)
+    with_displacement = TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C_masked, energy, v_imag, LMAX)
+    DELTAT = jnp.where(CL < EPS, without_displacement, with_displacement)
+
+    # DELTAT = jax.lax.cond(CL < EPS, lambda x: TMATRIX_zero_displacement(*x),
+    #                       lambda x: TMATRIX_non_zero_displacement(*x),
+    #                       (t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX))
+
+    return DELTAT
+
+
+def TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX):
+    CL = safe_norm(C)
+    CAPPA = 2*energy - 2j*v_imag
     Z = jnp.sqrt(CAPPA)*CL
     BJ = masked_bessel(Z,2*LMAX+1)
     YLM = HARMONY(C, LMAX)
@@ -194,5 +212,13 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energies, v_imag, LMAX):
 
     mapped_t_matrix_ref = map_l_array_to_compressed_quantum_index(t_matrix_ref, LMAX)
     DELTAT = DELTAT - jnp.diag(1j*mapped_t_matrix_ref)
+
+    return DELTAT
+
+
+def TMATRIX_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX):
+    mapped_t_matrix_new = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
+    mapped_t_matrix_ref = map_l_array_to_compressed_quantum_index(t_matrix_ref, LMAX)
+    DELTAT = jnp.diag(1j*mapped_t_matrix_new) - jnp.diag(1j*mapped_t_matrix_ref)
 
     return DELTAT
