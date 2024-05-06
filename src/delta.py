@@ -19,9 +19,11 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
     vib_amps = jnp.asarray(vib_amps)
     displacements = jnp.asarray(displacements)
 
+
     # unpack hashable arrays
     energies = ref_data.energies
     # unpack tensor data
+
     v_imag = ref_data.v0i
 
     # energy dependent quantities
@@ -118,7 +120,6 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
 
     # Finally apply the prefactors calculated earlier to the result
     delta_amps = prefactors * delta_amps
-
 
     # The result is already a JAX array, so there's no need to call jnp.array on delta_amps.
     return delta_amps
