@@ -87,7 +87,7 @@ def HARMONY(C, LMAX):
     TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
     equivalent results."""
     _, theta, phi = cart_to_polar(C)
-    return sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.asarray([phi]), jnp.asarray([theta]), n_max=LMAX)
+    return sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.asarray([phi]), jnp.asarray([theta]), n_max=2*LMAX)
 
 
 def cart_to_polar(c):
