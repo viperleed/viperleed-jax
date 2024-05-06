@@ -80,7 +80,6 @@ def bessel(z, n1):
     return vmapped_custom_bessel(jnp.arange(n1), z)
 
 
-#@partial(jax.jit, static_argnames=('LMAX',))
 def HARMONY(C, LMAX):
     """Generates the spherical harmonics for the vector C.
 
@@ -88,13 +87,16 @@ def HARMONY(C, LMAX):
     TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
     equivalent results."""
     _, theta, phi = cart_to_polar(C)
-    return sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.asarray([phi]), jnp.asarray([theta]), n_max=LMAX)
+    return sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.asarray([phi]), jnp.asarray([theta]), n_max=2*LMAX)
 
 
 def cart_to_polar(c):
     """Converts cartesian coordinates to polar coordinates."""
-    z, x, y = c
+    z, x, y = c[2], c[0], c[1]
+    x_y_norm = jnp.sqrt(x**2 + y**2)
     r = jnp.linalg.norm(c)
-    theta = jnp.arctan2(jnp.sqrt(x**2 + y**2), z)
-    phi = jnp.arctan2(y, x)
+    theta = jnp.arctan2(jnp.where(x_y_norm > EPS, x_y_norm, EPS),
+                        jnp.where(z**2 > EPS**2, z, EPS))
+    phi = jnp.arctan2(jnp.where(x_y_norm > EPS, y, EPS),
+                      jnp.where(x_y_norm > EPS, x, EPS))
     return r, theta, phi

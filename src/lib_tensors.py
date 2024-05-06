@@ -20,14 +20,16 @@ written in Fortran (though this is not always done consistently).
 
 We thus always index quantities (skipping unncessary indices) as follows
 from outermost (slowest) to innermost (fastest):
+    # TODO: check if it would make sense to index by LMAX and then vectorize
+    # over all energies for one LMAX.
     1) energy
         Order of ~100-300 values. We cannot (efficiently) vectorize over
         energies, since the dynamic LMAX and thus the size of the tensors
         are energy-dependent.
-    2) atoms
+    2) tensors / atom&site
         Order of ~10-100 values. May or may not be vectorized over. (TBD)
     3) beams
-        Order of ~10-100 values. Should be vectorized over. Only few
+        Order of ~10-1000s values. Should be vectorized over. Only few
         calculations are beam-dependent.
     4) l & m (quantum numbers)
         Should be vectorized over. Almost every calculation is l & m dependent
@@ -37,7 +39,7 @@ from outermost (slowest) to innermost (fastest):
 
 # TODO: implement consistency checks for the tensor files
 @dataclass
-class TensorData:
+class TensorFileData:
     """Holds the data read from a tensor file
 
     Tensor files are atom specific and generated in the reference-calculation
@@ -110,69 +112,34 @@ class TensorData:
     def n_beams(self):           # NTO
         return self.ref_amps.shape[1]
 
+    def is_consistent(self, other):
+        """Check if two tensor files are consistent
 
-@dataclass
-class ReferenceCalculationData:
-    """Holds the general information about the reference calculation.
+        Consistency is checked by comparing all data that is
+        atom/site-independent. This includes the kinetic energies,
 
-    The reference calculation produces a set of tensor files, one for each
-    non-bulk atom. However, not every piece of information is atom-specific and
-    many arrays are redundant between the tensor files. This class holds the
-    data that is shared between all tensor files.
+        Parameters
+        ----------
+        other : TensorFileData
+            The other tensor file to compare with.
 
-    Attributes
-    ----------
-    energies : np.ndarray
-        Kinetic energies of the reference calculation. Converted to electron
-        volts. Parameter E in TensErLEED.
-    n_energies : int
-        Number of energies used in the reference calculation.
-    v0i: float
-        Imaginary part of the inner potential. Parameter VPIS in TensErLEED.
-        This value is read out from the tensor file as the substrate inner
-        potential. ViPErLEED and modern TensErLEED do not support a different
-        inner potential for the overlayer.
-    v0r: np.ndarray
-        Real part of the inner potential. Parameter VV in TensErLEED.
-    ref_amps: np.ndarray
-        Reference scattering amplitudes. Parameter XIST in TensErLEED.
-    kx_in : np.ndarray
-        (Negative) absolute lateral momentum of Tensor LEED beams
-        (for use as incident beams in time-reversed LEED calculation).
-        PARAMETER AK2M in TensErLEED.
-    ky_in : np.ndarray
-        Same as kx_in, but for the y-component.
-        PARAMETER AK3M in TensErLEED.
-    lmax_per_energy : np.ndarray
-        Maximum angular momentum used for each energy. Parameter LMAX & L1DAT in
-        TensErLEED.
-    """
-    energies: np.ndarray
-    v0i: float
-    v0r: np.ndarray
-    lmax_per_energy: np.ndarray
-    ref_amps: np.ndarray
-    kx_in: np.ndarray
-    ky_in: np.ndarray
-
-    def __hash__(self):
-        return sum(hash(HashableArray(arr)) for arr in
-                   (self.energies, self.ref_amps, self.kx_in, self.ky_in,)
-                   ) + hash(self.v0i) + hash(self.v0r)
-
-    @property
-    def n_energies(self):
-        return self.energies.size
-
-    @property
-    def n_beams(self):           # NTO
-        return self.ref_amps.shape[1]
-
-
-@dataclass
-class AtomTensorData:
-    tensor_amps_in: np.ndarray
-    tensor_amps_out: np.ndarray
+        Returns
+        -------
+        bool
+            True if the two tensor files are consistent, False otherwise.
+        """
+        return (
+            np.allclose(self.e_kin, other.e_kin)
+            and np.all(self.n_phaseshifts_per_energy ==
+                       other.n_phaseshifts_per_energy)
+            and np.all(self.n_beams == other.n_beams)
+            and np.allclose(self.v0i_substrate, other.v0i_substrate)
+            and np.allclose(self.v0i_overlayer, other.v0i_overlayer)
+            and np.allclose(self.v0r, other.v0r)
+            and np.allclose(self.ref_amps, other.ref_amps)
+            and np.allclose(self.kx_in, other.kx_in)
+            and np.allclose(self.ky_in, other.ky_in)
+        )
 
 
 def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11, compare_with=None):
@@ -269,7 +236,7 @@ def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11, compare_with=No
     tensor_amps_in = tensor_amps_in[:, :(l_max+1-1)**2] 
     tensor_amps_out = tensor_amps_out[:, :(l_max+1-1)**2, :]
 
-    return TensorData(
+    return TensorFileData(
         e_kin=e_kin,
         v0i_overlayer=v0i_overlayer,
         v0i_substrate=v0i_substrate,
@@ -282,28 +249,6 @@ def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11, compare_with=No
         kx_in=kx_in,
         ky_in=ky_in,
         )
-
-    # atom_tensor_data = AtomTensorData(
-    #     tensor_amps_in=tensor_amps_in,
-    #     tensor_amps_out=tensor_amps_out,
-    # )
-
-    # refcalc_data = ReferenceCalculationData(
-    #     energies=e_kin*HARTREE,
-    #     v0i=v0i_substrate[0],
-    #     v0r=v0r,
-    #     lmax_per_energy=n_phaseshifts_per_energy,
-    #     ref_amps=ref_amps,
-    #     kx_in=kx_in[0],
-    #     ky_in=ky_in[0],
-    # )
-
-    # if compare_with is not None:
-    #     if refcalc_data != compare_with:
-    #         raise ValueError("The read tensor is not compatible with the "
-    #                          "provided reference calculation data.")
-
-    # return atom_tensor_data, t_matrix, refcalc_data
 
 
 def read_block(reader, lines, shape, dtype=np.float64): 

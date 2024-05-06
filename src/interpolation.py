@@ -3,10 +3,8 @@
 This module is a reworking of scipy's and my Bspline interpolation methods.
 It can interpolate functions efficiently and in a JAX-compatible way."""
 from abc import ABC, abstractmethod
-from functools import partial
 
 import numpy as np
-import jax
 from jax import numpy as jnp
 from scipy import interpolate
 
@@ -22,10 +20,11 @@ class StaticGridSplineInterpolator(ABC):
         # and pre-factorized collocation matrix
 
         # calculate De Boor coefficients
-        self.de_boor_coeffs = {
-            deriv_order: self._calc_de_boor_coeffs(deriv_order)
+        de_boor_coeffs = [
+            self._calc_de_boor_coeffs(deriv_order)
             for deriv_order in range(intpol_deg)
-        }
+        ]
+        self.de_boor_coeffs = jnp.array(de_boor_coeffs)
 
         # calcualte collocation matrix
         self.full_colloc_matrix = self.calculate_colloc_matrix()
@@ -125,7 +124,6 @@ class StaticNotAKnotSplineInterpolator(StaticGridSplineInterpolator):
 # TODO: The below functions could (and probably should be) interpolator class
 #       methods. However, we need to figure out how to make this work with JAX.
 
-@partial(jax.jit, static_argnames=('interpolator',))
 def get_bspline_coeffs(interpolator, rhs):
     """Return the coefficients of the B-spline interpolant.
 
@@ -136,23 +134,21 @@ def get_bspline_coeffs(interpolator, rhs):
     spline_coeffs = interpolator.inv_colloc_matrix @ rhs
     return spline_coeffs
 
-@jax.jit
+
 def not_a_knot_rhs(values):
     values = jnp.asarray(values)
     return values
 
 
-@partial(jax.jit, static_argnames=('interpolator', 'deriv_order'))
 def evaluate_spline(spline_coeffs, interpolator, deriv_order=0):
     """Evaluate the spline using the De Boor coefficients and the B-spline coefficients"""
     # Extract the relevant coefficients for each interval
     lower_indices = interpolator.intervals - interpolator.intpol_deg
     coeff_indices = lower_indices.reshape(-1,1) + jnp.arange(interpolator.intpol_deg+1)
     coeff_subarrays = spline_coeffs[coeff_indices]
-    coeff_subarrays = coeff_subarrays.reshape(-1, interpolator.intpol_deg+1) # remove tailing 1 dimension
 
     # Element-wise multiplication between coefficients and de_boor values, sum over basis functions
-    return jnp.einsum('ij,ji->i',
+    return jnp.einsum('ijb,ji->ib',
                       coeff_subarrays,
                       interpolator.de_boor_coeffs[deriv_order])
 

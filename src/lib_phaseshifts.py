@@ -5,7 +5,14 @@ import scipy
 import fortranformat as ff
 
 import logging
+
+import jax
+from jax import numpy as jnp
+from jax.tree_util import register_pytree_node_class
+
 logger = logging.getLogger(__name__)
+
+# TODO: make phaseshifts class with easier indexing (bound method?, pytree)
 
 def readPHASESHIFTS(sl, rp, readfile='PHASESHIFTS', check=True,
                     ignoreEnRange=False):
@@ -255,31 +262,52 @@ def regrid_phaseshifts(old_grid, new_grid, phaseshifts):
                     phaseshifts, old_grid, en_id, el, l)
     return new_phaseshifts
 
+@register_pytree_node_class
+class Phaseshifts:
+    def __init__(self, raw_phaseshifts, energies, l_max, site_indices):
+        self.l_max = l_max
+        self.phaseshifts = self.interpolate(
+            raw_phaseshifts,
+            energies
+        )[:, site_indices, :]
+        self.phaseshifts = jnp.asarray(self.phaseshifts)
 
-# TODO: We should consider a spline interpolation instead of a linear
-def interpolate_phaseshifts(phaseshifts, l_max, energies):
-    """Interpolate phaseshifts for a given site and energy.
-    """
-    stored_phaseshift_energies = [entry[0] for entry in phaseshifts]
-    stored_phaseshift_energies = np.array(stored_phaseshift_energies)
+    # TODO: We should consider a spline interpolation instead of a linear
+    def interpolate(self, raw_phaseshifts, energies):
+        """Interpolate phaseshifts for a given site and energy.
+        """
+        stored_phaseshift_energies = [entry[0] for entry in raw_phaseshifts]
+        stored_phaseshift_energies = np.array(stored_phaseshift_energies)
 
-    stored_phaseshifts = [entry[1] for entry in phaseshifts]
-    # covert to numpy array, indexed as [energy][site][l]
-    stored_phaseshifts = np.array(stored_phaseshifts)
+        stored_phaseshifts = [entry[1] for entry in raw_phaseshifts]
+        # covert to numpy array, indexed as [energy][site][l]
+        stored_phaseshifts = np.array(stored_phaseshifts)
 
-    if (min(energies) < min(stored_phaseshift_energies)
-        or max(energies) > max(stored_phaseshift_energies)):
-        raise ValueError("Requested energies are out of range the range for the"
-                         "loaded phaseshifts.")
+        if (min(energies) < min(stored_phaseshift_energies)
+            or max(energies) > max(stored_phaseshift_energies)):
+            raise ValueError("Requested energies are out of range the range for the"
+                            "loaded phaseshifts.")
 
-    n_sites = stored_phaseshifts.shape[1]
-    # interpolate over energies for each l and site
-    interpolated = np.empty(shape=(len(energies), n_sites, l_max + 1),
-                            dtype=np.float64)
+        n_sites = stored_phaseshifts.shape[1]
+        # interpolate over energies for each l and site
+        interpolated = np.empty(shape=(len(energies), n_sites, self.l_max + 1),
+                                dtype=np.float64)
 
-    for l in range(l_max + 1):
-        for site in range(n_sites):
-            interpolated[:, site, l] = np.interp(energies,
-                                                stored_phaseshift_energies,
-                                                stored_phaseshifts[:, site, l])
-    return interpolated
+        for l in range(self.l_max + 1):
+            for site in range(n_sites):
+                interpolated[:, site, l] = np.interp(energies,
+                                                    stored_phaseshift_energies,
+                                                    stored_phaseshifts[:, site, l])
+        return interpolated
+
+    # TODO: methods for easier access
+
+    # PyTree methods
+    def tree_flatten(self):
+        return (self.phaseshifts, self.l_max), None
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        new_ps = cls.__new__(cls)
+        new_ps.phaseshifts, new_ps.l_max = aux_data
+        return new_ps
