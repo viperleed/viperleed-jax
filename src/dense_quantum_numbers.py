@@ -39,7 +39,6 @@ MINUS_ONE_POW_M = {
     l: jnp.power(-1, DENSE_M[l]) for l in range(2*MAXIMUM_LMAX+1)
 }
 
-@partial(jit, static_argnames=('LMAX',))
 def map_l_array_to_compressed_quantum_index(array, LMAX):
     """Takes an array of shape (LMAX+1) with values for each L and maps it to a
     dense form of shape (LMAX+1)*(LMAX+1) with the values for each L replicated
