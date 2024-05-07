@@ -77,6 +77,17 @@ class TensorLEEDCalculator:
         return sum_intensity(refraction_prefactor, self.ref_data.ref_amps,
                              delta_amps)
 
+    @property
+    def reference_intensity(self):
+        # intensity from reference data only for comparison
+        zero_deltas = jnp.zeros(shape=(self.ref_data.n_energies,
+                                       self.ref_data.n_beams))
+        refraction_prefactor =  intensity_prefactor(
+            jnp.array([[0.0, 0.0, 0.0],]*self.n_atoms),
+            self.ref_data, self.beam_indices, self.theta, self.phi,
+            self.unit_cell_area, self.is_surface_atom)
+        return sum_intensity(refraction_prefactor, self.ref_data.ref_amps,
+                             zero_deltas)
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def interpolated(self, vib_amps, displacements, deriv_deg=0):
         return self._interpolated(vib_amps, displacements, deriv_deg)
