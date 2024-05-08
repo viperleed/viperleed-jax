@@ -5,6 +5,8 @@ from collections import defaultdict
 
 import numpy as np
 
+from viperleed.calc.files.beams import readOUTBEAMS
+
 import jax.numpy as jnp
 from jax.tree_util import register_pytree_node_class
 from src.dense_quantum_numbers import DENSE_L, DENSE_M, MINUS_ONE_POW_M

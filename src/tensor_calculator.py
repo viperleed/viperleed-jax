@@ -29,13 +29,15 @@ class TensorLEEDCalculator:
 
         unit_cell_area = jnp.linalg.norm(jnp.cross(slab.ab_cell[:,0], slab.ab_cell[:,1]))
         # In Bohr radii
-        self.unit_cell_area = unit_cell_area / BOHR**2
+        self.unit_cell_area = unit_cell_area #/ BOHR**2
+        self.unit_cell = slab.ab_cell.copy() #/ BOHR
 
         # theta and phi
         self.theta = rparams.THETA
         self.phi = rparams.PHI
 
         non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
+        self.n_atoms = len(non_bulk_atoms)
         # TODO check this
         self.is_surface_atom = np.array([at.layer.num == 0 for at in non_bulk_atoms])
 
@@ -73,19 +75,23 @@ class TensorLEEDCalculator:
         refraction_prefactor =  intensity_prefactor(
             displacements,
             self.ref_data, self.beam_indices, self.theta, self.phi,
-            self.unit_cell_area, self.is_surface_atom)
+            self.unit_cell, self.is_surface_atom)
         return sum_intensity(refraction_prefactor, self.ref_data.ref_amps,
                              delta_amps)
 
+    def _intensity_prefactor(self, displacements):
+        return intensity_prefactor(
+            displacements,
+            self.ref_data, self.beam_indices, self.theta, self.phi,
+            self.unit_cell, self.is_surface_atom)
+
     @property
-    def reference_intensity(self):
-        # intensity from reference data only for comparison
+    def unperturbed_intensity(self):
+        """Return intensity from reference data without pertubation."""
         zero_deltas = jnp.zeros(shape=(self.ref_data.n_energies,
                                        self.ref_data.n_beams))
-        refraction_prefactor =  intensity_prefactor(
-            jnp.array([[0.0, 0.0, 0.0],]*self.n_atoms),
-            self.ref_data, self.beam_indices, self.theta, self.phi,
-            self.unit_cell_area, self.is_surface_atom)
+        refraction_prefactor = self._intensity_prefactor(
+            jnp.array([[0.0, 0.0, 0.0],]*self.n_atoms))
         return sum_intensity(refraction_prefactor, self.ref_data.ref_amps,
                              zero_deltas)
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
