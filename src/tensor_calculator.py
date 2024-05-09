@@ -36,9 +36,9 @@ class TensorLEEDCalculator:
         self.unit_cell_area = unit_cell_area #/ BOHR**2
         self.unit_cell = slab.ab_cell.copy() #/ BOHR
 
-        # theta and phi
-        self.theta = rparams.THETA
-        self.phi = rparams.PHI
+        # theta and phi (in radians)
+        self.theta = jnp.deg2rad(rparams.THETA)
+        self.phi = jnp.deg2rad(rparams.PHI)
 
         non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
         self.n_atoms = len(non_bulk_atoms)
