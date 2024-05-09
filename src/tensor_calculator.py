@@ -13,13 +13,17 @@ from src.lib_intensity import intensity_prefactor, sum_intensity
 class TensorLEEDCalculator:
 
     def __init__(self, ref_data, phaseshifts, slab, rparams,
+                 beam_indices,
                  interpolation_step=0.5,
                  interpolation_deg=3,
                  batch_lmax=False):
         self.ref_data = ref_data
         self.phaseshifts = phaseshifts
         self.batch_lmax = batch_lmax
-        self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
+        self.interpolation_deg = interpolation_deg
+        self.beam_indices = jnp.array(beam_indices)
+        # reading from IVBEAMS does not guarantee correct order!
+        #self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
         self.comp_intensity = None
         self.interpolation_step = interpolation_step
 
@@ -39,18 +43,24 @@ class TensorLEEDCalculator:
         non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
         self.n_atoms = len(non_bulk_atoms)
         # TODO check this
-        self.is_surface_atom = np.array([at.layer.num == 0 for at in non_bulk_atoms])
+        self.is_surface_atom = jnp.array([at.layer.num == 0 for at in non_bulk_atoms])
 
         self.ref_vibrational_amps = jnp.array(
             [at.site.vibamp[at.el] for at in non_bulk_atoms])
         self.interpolator = StaticNotAKnotSplineInterpolator(
             ref_data.incident_energy_ev,
             self.target_grid,
-            interpolation_deg # TODO: take from rparams.INTPOL_DEG
+            self.interpolation_deg # TODO: take from rparams.INTPOL_DEG
         )
 
-    def set_experiment_intensity(self, comp_intensity):
+    def set_experiment_intensity(self, comp_intensity, comp_energies):
         self.comp_intensity = comp_intensity
+        # set interpolator
+        self.exp_interpolator = StaticNotAKnotSplineInterpolator(
+            comp_energies,
+            self.target_grid,
+            self.interpolation_deg
+        )
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def delta_amplitude(self, vib_amps, displacements):
