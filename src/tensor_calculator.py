@@ -34,7 +34,8 @@ class TensorLEEDCalculator:
         unit_cell_area = jnp.linalg.norm(jnp.cross(slab.ab_cell[:,0], slab.ab_cell[:,1]))
         # In Bohr radii
         self.unit_cell_area = unit_cell_area #/ BOHR**2
-        self.unit_cell = slab.ab_cell.copy() #/ BOHR
+        self.unit_cell = slab.ab_cell.copy() / BOHR
+        self.reciprocal_unit_cell = 2*jnp.pi*jnp.linalg.inv(slab.ab_cell / BOHR)
 
         # theta and phi (in radians)
         self.theta = jnp.deg2rad(rparams.THETA)
@@ -82,10 +83,7 @@ class TensorLEEDCalculator:
 
     def _intensity(self, vib_amps, displacements):
         delta_amps = self._delta_amplitude(vib_amps, displacements)
-        refraction_prefactor =  intensity_prefactor(
-            displacements,
-            self.ref_data, self.beam_indices, self.theta, self.phi,
-            self.unit_cell, self.is_surface_atom)
+        refraction_prefactor = self._intensity_prefactor(displacements)
         return sum_intensity(refraction_prefactor, self.ref_data.ref_amps,
                              delta_amps)
 
@@ -93,7 +91,7 @@ class TensorLEEDCalculator:
         return intensity_prefactor(
             displacements,
             self.ref_data, self.beam_indices, self.theta, self.phi,
-            self.unit_cell, self.is_surface_atom)
+            self.reciprocal_unit_cell, self.is_surface_atom)
 
     @property
     def unperturbed_intensity(self):
