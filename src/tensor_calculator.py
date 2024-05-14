@@ -123,6 +123,7 @@ class TensorLEEDCalculator:
         non_interpolated_intensity = self._intensity(vib_amps, displacements)
         return rfactor.pendry_R(
             non_interpolated_intensity,
+            self.exp_interpolator,
             self.interpolator,
             v0_real,
             v0i_electron_volt,
