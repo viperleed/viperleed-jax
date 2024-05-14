@@ -36,7 +36,6 @@ def _wave_vectors(ref_data, theta, phi, trar, beam_indices):
     in_k_par = in_k_vacuum * jnp.sin(theta)  # parallel component
     in_k_par_2 = in_k_par * jnp.cos(phi)  # shape =( n_energy )
     in_k_par_3 = in_k_par * jnp.sin(phi)  # shape =( n_energy )
-    in_k_perp_vacuum = jnp.empty_like(e_kin, dtype="complex64")
     in_k_perp_vacuum = 2 * e_kin - in_k_par_2 ** 2 - in_k_par_3 ** 2 - 2 * 1j * v_imag
     in_k_perp_vacuum = jnp.sqrt(in_k_perp_vacuum)
 
