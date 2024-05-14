@@ -79,8 +79,8 @@ def pendry_R_from_y(y_1, y_2, v0_real, v0_imag, energy_step):
     #TODO: figure out how to implement v0_real
 
     # TODO?: potentially, one could do these integrals analytically based on the spline coefficients
-    numerators = trapezoid((y_1 - y_2)**2, dx=energy_step, axis=0)
-    denominators = trapezoid((y_1**2 + y_2**2), dx=energy_step, axis=0)
+    numerators = nansum_trapezoid((y_1 - y_2)**2, dx=energy_step, axis=0)
+    denominators = nansum_trapezoid((y_1**2 + y_2**2), dx=energy_step, axis=0)
     # R factor for all beams
     return jnp.sum(numerators) / jnp.sum(denominators)
 
@@ -88,3 +88,9 @@ def pendry_R_from_y(y_1, y_2, v0_real, v0_imag, energy_step):
 def pendry_y(intensity, intensity_derivative, v0_imag):
     intens_deriv_ratio = intensity / intensity_derivative
     return intens_deriv_ratio / (intens_deriv_ratio**2 + v0_imag**2)
+
+
+def nansum_trapezoid(y, dx, axis=-1):
+    y_arr = jnp.moveaxis(y, axis, -1)
+    # select the axis to integrate over
+    return jnp.nansum(y_arr[..., 1:] + y_arr[..., :-1], axis=-1) * dx * 0.5
