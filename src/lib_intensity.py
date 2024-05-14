@@ -43,7 +43,7 @@ def _wave_vectors(ref_data, theta, phi, trar, beam_indices):
     in_k_par_components = jnp.stack((in_k_par_2, in_k_par_3))  # shape =(n_en, 2)
     in_k_par_components = jnp.outer(in_k_par_components, jnp.ones(shape=(n_beams,))).reshape(
     (n_energies, 2, n_beams))  # shape =(n_en ,2 ,n_beams)
-    out_wave_vec = jnp.dot(beam_indices, trar.T)  # shape =(n_beams, 2)
+    out_wave_vec = jnp.dot(beam_indices, trar)  # shape =(n_beams, 2)
     out_wave_vec = jnp.outer(jnp.ones_like(e_kin), out_wave_vec.transpose()).reshape((n_energies, 2, n_beams))  # shape =(n_en , n_beams)
     out_k_par_components = in_k_par_components + out_wave_vec
 
