@@ -131,8 +131,13 @@ def get_bspline_coeffs(interpolator, rhs):
     # TODO: we could do this more efficiently. One easy improvement would be to
     # pre-factorize lhs by splitting .solve() into .lu_factor() and .lu_solve()
     # parts. Only the solve part depends on the right hand side.
-    spline_coeffs = interpolator.inv_colloc_matrix @ rhs
-    return spline_coeffs
+
+    rhs_nan_mask = jnp.isnan(rhs) # get mask for NaN values
+    # solve the linear system
+    raw_spline_coeffs = interpolator.inv_colloc_matrix @ jnp.nan_to_num(rhs, 0)
+    # mask NaN values in the result such that they are not used in the interpolation
+    masked_spline_coeffs = jnp.where(rhs_nan_mask, jnp.nan, raw_spline_coeffs)
+    return masked_spline_coeffs
 
 
 def not_a_knot_rhs(values):
