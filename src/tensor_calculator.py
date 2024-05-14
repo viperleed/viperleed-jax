@@ -126,7 +126,6 @@ class TensorLEEDCalculator:
         return rfactor.pendry_R(
             non_interpolated_intensity,
             self.interpolator,
-            self.interpolator,
             v0_real,
             v0i_electron_volt,
             self.interpolation_step,
