@@ -20,7 +20,7 @@ def intensity_prefactor(displacement, ref_data,
     c = in_k_vacuum * jnp.cos(theta)
 
     CXDisp = _potential_onset_height_change(displacement, is_surface_atom)
-    prefactor = abs(jnp.exp(-1j * CXDisp * (jnp.outer(in_k_perp_vacuum, jnp.ones(shape=(n_beams,))) + out_k_perp
+    prefactor = abs(jnp.exp(-1j * CXDisp/BOHR * (jnp.outer(in_k_perp_vacuum, jnp.ones(shape=(n_beams,))) + out_k_perp
                                                 ))) ** 2 * a.real / jnp.outer(c, jnp.ones(shape=(n_beams,))).real
     return prefactor
 
