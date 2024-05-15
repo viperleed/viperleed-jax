@@ -9,7 +9,7 @@ from src import interpolation
 
 def pendry_R(intensity_2,
              interpolator_1, interpolator_2,
-             v0_real, v0_imag, energy_step,
+             v0_real_steps, v0_imag, energy_step,
              intensity_1):
     """Calculate the R-factor for two beams"""
 
@@ -45,7 +45,10 @@ def pendry_R(intensity_2,
     y_1 = pendry_y(intens_1, deriv_1, v0_imag)
     y_2 = pendry_y(intens_2, deriv_2, v0_imag)
 
-    return pendry_R_from_y(y_1, y_2, v0_real, v0_imag, energy_step)
+    # shift y_1 by v0_real_steps
+    y_1 = shift_v0r(y_1, v0_real_steps)
+
+    return pendry_R_from_y(y_1, y_2, energy_step)
 
 
 def pendry_R_vs_reference(reference_intensity, reference_interpolator,
@@ -64,17 +67,20 @@ def pendry_R_vs_reference(reference_intensity, reference_interpolator,
                    sampling_interpolator, v0_real, v0_imag, energy_step)
 
 def pendry_R_from_intensity_and_derivative(intens_deriv_1, intens_deriv_2,
-                                      v0_real, v0_imag, energy_step):
+                                      v0_real_steps, v0_imag, energy_step):
     intens_1, deriv_1 = intens_deriv_1
     intens_2, deriv_2 = intens_deriv_2
 
     y_1 = pendry_y(intens_1, deriv_1, v0_imag)
     y_2 = pendry_y(intens_2, deriv_2, v0_imag)
 
-    return pendry_R_from_y(y_1, y_2, v0_real, v0_imag, energy_step)
+    # shift y_1 by v0_real_steps
+    y_1 = shift_v0r(y_1, v0_real_steps)
+
+    return pendry_R_from_y(y_1, y_2, energy_step)
 
 
-def pendry_R_from_y(y_1, y_2, v0_real, v0_imag, energy_step):
+def pendry_R_from_y(y_1, y_2, energy_step):
     #TODO: figure out how to implement v0_real
 
     # TODO?: potentially, one could do these integrals analytically based on the spline coefficients
@@ -93,3 +99,21 @@ def nansum_trapezoid(y, dx, axis=-1):
     y_arr = jnp.moveaxis(y, axis, -1)
     # select the axis to integrate over
     return jnp.nansum(y_arr[..., 1:] + y_arr[..., :-1], axis=-1) * dx * 0.5
+
+
+def shift_v0r(array, n_steps):
+    """Applies a v0r shift to the array by shifting the values n_steps up or
+    down the first axis (energy) and padding with NaNs."""
+    # NB, TODO: This only allows for integer shifts (multiples of the set
+    # energy step). This is a limitation of the current implementation.
+    # In principle, we could implement a more general shift and allow real
+    # numbers by doing this earlier and changing the knot values in the
+    # interpolator.
+    n_energies, n_beams = array.shape[0], array.shape[1]
+    
+    rolled_array = jnp.roll(array, n_steps, axis=0)
+    row_ids = jnp.arange(n_energies).reshape(-1, 1)
+    row_ids_tiled = jnp.tile(row_ids, (1, n_beams))
+    mask = jnp.logical_or(row_ids_tiled < n_steps,
+                          row_ids >= n_energies+n_steps)
+    return jnp.where(mask, jnp.nan, rolled_array)

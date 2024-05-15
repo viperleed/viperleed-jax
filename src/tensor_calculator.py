@@ -113,10 +113,10 @@ class TensorLEEDCalculator:
         return evaluate_spline(bspline_coeffs, self.interpolator, deriv_deg)
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
-    def R_pendry(self, vib_amps, displacements, v0_real=3.0):
-        return self._R_pendry(vib_amps, displacements, v0_real)
+    def R_pendry(self, vib_amps, displacements, v0_real_steps=0):
+        return self._R_pendry(vib_amps, displacements, v0_real_steps)
 
-    def _R_pendry(self, vib_amps, displacements, v0_real=3.0):
+    def _R_pendry(self, vib_amps, displacements, v0_real_steps=0):
         if self.comp_intensity is None:
             raise ValueError("Comparison intensity not set.")
         v0i_electron_volt = -self.ref_data.v0i*HARTREE
@@ -125,14 +125,14 @@ class TensorLEEDCalculator:
             non_interpolated_intensity,
             self.exp_interpolator,
             self.interpolator,
-            v0_real,
+            v0_real_steps,
             v0i_electron_volt,
             self.interpolation_step,
             self.comp_intensity
         )
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
-    def R_pendry_val_and_grad(self, vib_amps, displacements, v0_real=3.0):
+    def R_pendry_val_and_grad(self, vib_amps, displacements, v0_real_steps):
         # TODO: urgent: currently only gives gradients for geo displacements
         return jax.value_and_grad(self._R_pendry, argnums=(1))(vib_amps, displacements, v0_real)
 
