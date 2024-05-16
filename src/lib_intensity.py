@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from src.lib_delta import HARTREE
+from src.lib_delta import HARTREE, BOHR
 
 
 def sum_intensity(prefactors, reference_amplitudes, delta_amplitudes):
