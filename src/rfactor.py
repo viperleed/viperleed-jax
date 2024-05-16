@@ -81,7 +81,14 @@ def pendry_R_from_intensity_and_derivative(intens_deriv_1, intens_deriv_2,
 
 
 def pendry_R_from_y(y_1, y_2, energy_step):
-    #TODO: figure out how to implement v0_real
+
+    # mask out NaNs for this calculation
+    y_1_mask = jnp.isnan(y_1)
+    y_2_mask = jnp.isnan(y_2)
+    mask = jnp.logical_or(y_1_mask, y_2_mask)
+
+    y_1 = jnp.where(mask, 0, y_1)
+    y_2 = jnp.where(mask, 0, y_2)
 
     # TODO?: potentially, one could do these integrals analytically based on the spline coefficients
     numerators = nansum_trapezoid((y_1 - y_2)**2, dx=energy_step, axis=0)
