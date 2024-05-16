@@ -309,5 +309,5 @@ class Phaseshifts:
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         new_ps = cls.__new__(cls)
-        new_ps.phaseshifts, new_ps.l_max = aux_data
+        new_ps.phaseshifts, new_ps.l_max = children
         return new_ps
