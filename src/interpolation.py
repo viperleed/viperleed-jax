@@ -5,11 +5,25 @@ It can interpolate functions efficiently and in a JAX-compatible way."""
 from abc import ABC, abstractmethod
 
 import numpy as np
+from jax.tree_util import register_pytree_node_class
 from jax import numpy as jnp
 from scipy import interpolate
 
 
+@register_pytree_node_class
 class StaticGridSplineInterpolator(ABC):
+
+    expected_kws = (
+            'origin_grid',
+            'target_grid',
+            'intpol_deg',
+            'knots',
+            'intervals',
+            'de_boor_coeffs',
+            'full_colloc_matrix',
+            'inv_colloc_matrix',
+        )
+
     def __init__(self, origin_grid, target_grid, intpol_deg):
         self.origin_grid = origin_grid
         self.target_grid = target_grid
@@ -78,6 +92,20 @@ class StaticGridSplineInterpolator(ABC):
             full_matrix += np.diag(banded_colloc_matrix[center_row+k,:-k], -k)
         return full_matrix
 
+
+    def tree_flatten(self):
+        # build kw_dict to rebuild the object
+        kw_dict = {}
+        for kw in self.expected_kws:
+            kw_dict[kw] = getattr(self, kw)
+        return None, kw_dict
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        del children  # unused in this class
+        new_object = cls.__new__(cls)
+        new_object._rebuild_from_dict(aux_data[1])
+        return new_object
 
 class StaticNotAKnotSplineInterpolator(StaticGridSplineInterpolator):
     def _get_knots(self):
