@@ -135,6 +135,7 @@ class TensorLEEDCalculator:
     def R_pendry_val_and_grad(self, vib_amps, displacements, v0_real_steps):
         # TODO: urgent: currently only gives gradients for geo displacements
         return jax.value_and_grad(self._R_pendry, argnums=(1))(vib_amps, displacements, v0_real)
+        return jax.value_and_grad(self._R_pendry, argnums=(1))(vib_amps, displacements, v0_real_steps)
 
     @property
     def zero_displacement():
