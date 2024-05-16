@@ -44,7 +44,7 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
     prefactors = jnp.einsum('e,eb,->eb',
         1/k_inside,
         1/out_k_perp_inside,
-        1/(2*(unit_cell_area/BOHR**2))
+        1/(2*(unit_cell_area))
     )
 
     delta_amps_by_lmax = []
