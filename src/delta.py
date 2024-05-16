@@ -19,11 +19,7 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
     vib_amps = jnp.asarray(vib_amps)
     displacements = jnp.asarray(displacements)
 
-
-    # unpack hashable arrays
     energies = ref_data.energies
-    # unpack tensor data
-
     v_imag = ref_data.v0i
 
     # energy dependent quantities
