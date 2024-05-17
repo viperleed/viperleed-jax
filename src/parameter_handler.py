@@ -2,8 +2,9 @@
 
 class TensorParameterTransformer:
 
-    def __init__(self, slab):
+    def __init__(self, slab, energy_step):
 
+        self.energy_step = energy_step
         # construct symmetry linking from slab
         self._get_sym_linking(slab)
 
@@ -96,12 +97,13 @@ class TensorParameterTransformer:
 
     def unflatten_parameters(self, flattened_params):
         float_v0r = flattened_params[0]
-        irreducible_vib_amps = flattened_params[1:1+self.n_vib_amps]
-        irreducible_displacements = flattened_params[1+self.n_vib_amps:]
+        constrained_vib_amps = flattened_params[1:1+self.n_constrained_vib_amps]
+        constrained_displacements = flattened_params[1+self.n_constrained_vib_amps:]
+        print(constrained_vib_amps.shape, constrained_displacements.shape)
 
         v0r = self._expand_v0r(float_v0r)
-        vib_amps = self._expand_vib_amps(irreducible_vib_amps)
-        displacements = self._expand_displacements(irreducible_displacements)
+        vib_amps = self._expand_vib_amps(constrained_vib_amps)
+        displacements = self._expand_displacements(constrained_displacements)
         return v0r, vib_amps, displacements
 
     def _expand_v0r(self, v0r):
@@ -109,10 +111,11 @@ class TensorParameterTransformer:
         return jnp.array(jnp.rint(v0r/self.energy_step), dtype=jnp.int32)
 
     def _expand_vib_amps(self, irreducible_vib_amps):
-        irreducible_vib_amps.T @ self.vib_constraints @ self.vib_sym_linking_matrix
+        return irreducible_vib_amps @ self.vib_constraints.T @ self.vib_sym_linking_matrix.T
 
     def _expand_displacements(self, irreducible_displacements):
-        return irreducible_displacements.T @ self.geo_constraint_matrix @ self.symmetry_linking_matrix
+        expanded_displacements = irreducible_displacements @ self.geo_constraint_matrix.T @ self.geo_sym_linking_matrix.T
+        return expanded_displacements.reshape(-1, 3)
 
     @property
     def info(self):
