@@ -136,6 +136,14 @@ class TensorLEEDCalculator:
         # TODO: urgent: currently only gives gradients for geo displacements
         return jax.value_and_grad(self._R_pendry, argnums=(1))(vib_amps, displacements, v0_real_steps)
 
+    def _R_pendry_from_flat(self, flat_params):
+        v0r_step, vib_amps, displacements = self.parameter_transformer.unflatten_parameters(flat_params)
+        return self._R_pendry(vib_amps, displacements, v0r_step)
+
+    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
+    def R_pendry_val_and_grad_from_flat(self, flat_params):
+        return jax.value_and_grad(self._R_pendry_from_flat)(flat_params)
+
     @property
     def zero_displacement():
         pass
