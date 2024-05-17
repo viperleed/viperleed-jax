@@ -53,6 +53,20 @@ class TensorLEEDCalculator:
             self.target_grid,
             self.interpolation_deg # TODO: take from rparams.INTPOL_DEG
         )
+        self.parameter_transformer = self._get_parameter_transformer(slab, rparams)
+
+    def _get_parameter_transformer(self, slab, rparams):
+        # find and enforce symmetry on slab
+        rparams.SYMMETRY_FIND_ORI = True
+        slab.full_update(rparams)
+
+        # find symmetry
+        plane_group = symmetry.findSymmetry(slab, rparams)
+        # enforce symmetry
+        symmetry.enforceSymmetry(slab, rparams, plane_group)
+
+        # make parameter transformer
+        return TensorParameterTransformer(slab, self.interpolation_step)
 
     def set_experiment_intensity(self, comp_intensity, comp_energies):
         self.comp_intensity = comp_intensity
