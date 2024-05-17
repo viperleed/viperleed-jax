@@ -2,6 +2,7 @@
 import jax
 import jax.numpy as jnp
 
+from viperleed.calc import symmetry
 
 from functools import partial
 from src import delta
@@ -9,6 +10,7 @@ from src import rfactor
 from src.constants import BOHR, HARTREE
 from src.interpolation import *
 from src.lib_intensity import intensity_prefactor, sum_intensity
+from src.parameter_handler import TensorParameterTransformer
 
 class TensorLEEDCalculator:
 
