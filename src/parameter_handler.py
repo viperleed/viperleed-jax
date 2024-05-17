@@ -1,5 +1,9 @@
 # Note: this would fit into a pytree very nicely
 
+import jax
+import numpy as np
+import jax.numpy as jnp
+
 class TensorParameterTransformer:
 
     def __init__(self, slab, energy_step):
