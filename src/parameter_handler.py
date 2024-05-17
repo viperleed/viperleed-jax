@@ -4,6 +4,8 @@ import jax
 import numpy as np
 import jax.numpy as jnp
 
+# TODO: parameter normalization
+
 class TensorParameterTransformer:
 
     def __init__(self, slab, energy_step):
@@ -103,7 +105,6 @@ class TensorParameterTransformer:
         float_v0r = flattened_params[0]
         constrained_vib_amps = flattened_params[1:1+self.n_constrained_vib_amps]
         constrained_displacements = flattened_params[1+self.n_constrained_vib_amps:]
-        print(constrained_vib_amps.shape, constrained_displacements.shape)
 
         v0r = self._expand_v0r(float_v0r)
         vib_amps = self._expand_vib_amps(constrained_vib_amps)
