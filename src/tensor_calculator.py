@@ -169,8 +169,8 @@ class TensorLEEDCalculator:
         return self._R_pendry_grad_from_reduced(reduced_params)
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
-    def R_pendry_val_and_grad_from_flat(self, flat_params):
-        return jax.value_and_grad(self._R_pendry_from_flat)(flat_params)
+    def R_pendry_val_and_grad_from_reduced(self, reduced_params):
+        return jax.value_and_grad(self._R_pendry_from_reduced)(reduced_params)
 
     @property
     def zero_displacement():
