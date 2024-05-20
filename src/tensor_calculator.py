@@ -118,6 +118,7 @@ class TensorLEEDCalculator:
             jnp.array([[0.0, 0.0, 0.0],]*self.n_atoms))
         return sum_intensity(refraction_prefactor, self.ref_data.ref_amps,
                              zero_deltas)
+
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def interpolated(self, vib_amps, displacements, deriv_deg=0):
         return self._interpolated(vib_amps, displacements, deriv_deg)
@@ -152,9 +153,20 @@ class TensorLEEDCalculator:
         # TODO: urgent: currently only gives gradients for geo displacements
         return jax.value_and_grad(self._R_pendry, argnums=(1))(vib_amps, displacements, v0_real_steps)
 
-    def _R_pendry_from_flat(self, flat_params):
-        v0r_step, vib_amps, displacements = self.parameter_transformer.unflatten_parameters(flat_params)
+    def _R_pendry_from_reduced(self, reduced_params):
+        v0r_step, vib_amps, displacements = self.parameter_transformer.unflatten_parameters(reduced_params)
         return self._R_pendry(vib_amps, displacements, v0r_step)
+
+    def _R_pendry_grad_from_reduced(self, reduced_params):
+        return jax.grad(self._R_pendry_from_reduced)(reduced_params)
+
+    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
+    def R_pendry_from_reduced(self, reduced_params):
+        return self._R_pendry_from_reduced(reduced_params)
+
+    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
+    def R_pendry_grad_from_reduced(self, reduced_params):
+        return self._R_pendry_grad_from_reduced(reduced_params)
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def R_pendry_val_and_grad_from_flat(self, flat_params):
