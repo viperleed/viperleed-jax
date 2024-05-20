@@ -101,6 +101,18 @@ class TensorParameterTransformer:
             raise ValueError("Vib constraints need to map to the number of irreducible vib amps")
         self.vib_constraints = vib_constraints
 
+    # TODO: discuss when these should be applied
+    # at the end, or to the irreducible parameters? – I think irreducible
+
+    def set_v0r_bounds(self, v0r_min, v0r_max):
+        self.v0r_bounds = (v0r_min, v0r_max)
+
+    def set_vib_amp_bounds(self, vib_amp_min, vib_amp_max):
+        self.vib_amp_bounds = (vib_amp_min, vib_amp_max)
+
+    def set_displacement_bounds(self, displacement_min, displacement_max):
+        self.displacement_bounds = (displacement_min, displacement_max)
+
     def unflatten_parameters(self, flattened_params):
         float_v0r = flattened_params[0]
         constrained_vib_amps = flattened_params[1:1+self.n_constrained_vib_amps]
@@ -113,14 +125,29 @@ class TensorParameterTransformer:
 
     def _expand_v0r(self, v0r):
         """V0r is given to the optimizer as a float, but needs to be rounded to an integer"""
+        v0r_min, v0r_max = self.v0r_bounds
+        v0r = v0r_min + (v0r)*(v0r_max-v0r_min) # normalize 0..1
         return jnp.array(jnp.rint(v0r/self.energy_step), dtype=jnp.int32)
 
-    def _expand_vib_amps(self, irreducible_vib_amps):
-        return irreducible_vib_amps @ self.vib_constraints.T @ self.vib_sym_linking_matrix.T
+    def _expand_vib_amps(self, short_vib_amps):
+        # undo normalization (0, 1)
+        vib_amps_min, vib_amps_max = self.vib_amp_bounds
+        vib_amps = vib_amps_min + short_vib_amps*(vib_amps_max-vib_amps_min)
+        # undo constraints
+        vib_amps =  vib_amps @ self.vib_constraints.T 
+        # undo symmetry reduction
+        return vib_amps @ self.vib_sym_linking_matrix.T
 
-    def _expand_displacements(self, irreducible_displacements):
-        expanded_displacements = irreducible_displacements @ self.geo_constraint_matrix.T @ self.geo_sym_linking_matrix.T
-        return expanded_displacements.reshape(-1, 3)
+    def _expand_displacements(self, short_displacements):
+        # normalize to range (0, 1)
+        min_displacement, max_displacement = self.displacement_bounds
+        displacements = min_displacement + short_displacements*(max_displacement-min_displacement)
+        # undo constraints
+        displacements = displacements @ self.geo_constraint_matrix.T
+        # undo symmetry reduction
+        displacements = displacements @ self.geo_sym_linking_matrix.T
+        # undo flattening
+        return displacements.reshape(-1, 3)
 
     @property
     def info(self):
