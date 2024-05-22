@@ -25,3 +25,10 @@ Give this another look.
 ## Parallel I/O for reading Tensors
 Reading the tensor files takes a long time. We should see if we can parallelize
 this or speed it up otherwise.
+
+## Spherical harmonic
+Using symmetries of the Gaunt coefficients and spherical harmonics, it should be
+possible to calculate only half as many qunatum number combinations as we
+currently do.
+The CSUM coeffs are symmetric (execpt for prefactors), and spherical harmonics
+follow Y_(l,-m) = (-1)^m Y_(l,m)^*.
