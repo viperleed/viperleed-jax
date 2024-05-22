@@ -17,8 +17,7 @@ from src.gaunt_coefficients import fetch_stored_gaunt_coeffs as fetch_gaunt
 from src.gaunt_coefficients import PRE_CALCULATED_CPPP, CSUM_COEFFS
 
 
-
-
+@jax.profiler.annotate_function
 @partial(vmap, in_axes=(None, 0, None, 0))  # vmap over atoms
 def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     """Computes the temperature-dependent t-matrix elements.
@@ -94,7 +93,7 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
         jnp.exp(2j*phaseshifts)-1)*(2*jnp.arange(LMAX+1) + 1)
 
     SUM = jnp.einsum('jki,i,j->k',
-                     PRE_CALCULATED_CPPP[LMAX],
+                     PRE_CALCULATED_CPPP[LMAX],  # about 3/4 of these are zero. We could skip them
                      temperature_independent_t_matrix,
                      bessel_with_prefactor)
     t_matrix = (SUM)/(2j) # temperature-dependent t-matrix.
@@ -104,7 +103,7 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     # t-matrix, which we use going forward.
     return t_matrix
 
-
+@jax.profiler.annotate_function
 def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,
                                   LMAX,tensor_amps_out,tensor_amps_in,
                                   displacements):
@@ -141,7 +140,7 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,
 
     return AMAT
 
-
+@jax.profiler.annotate_function
 @partial(vmap, in_axes=(0, 0, 0, None, None, None))  # vmap over atoms
 @partial(jax.jit, static_argnames=('v_imag', 'LMAX'))
 def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX):
@@ -171,7 +170,7 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX):
 
     return DELTAT
 
-
+@jax.profiler.annotate_function
 def TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX):
     CL = safe_norm(C)
     CAPPA = 2*energy - 2j*v_imag

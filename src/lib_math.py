@@ -44,7 +44,7 @@ def safe_norm(vector: jnp.ndarray) -> jnp.ndarray:
     # avoids nan in gradient for jnp.linalg.norm(C)
     return jnp.sqrt(jnp.sum(vector**2) + EPS**2)
 
-
+@jax.profiler.annotate_function
 def _generate_bessel_functions(l_max):
     """Generate a list of spherical Bessel functions up to order l_max"""
     bessel_functions = []
@@ -68,18 +68,19 @@ def masked_bessel(z, n1):
                   bessel(_z, n1))
     )
 
-
+@jax.profiler.annotate_function
 def custom_spherical_jn(n, z):
     return jax.lax.switch(n, BESSEL_FUNCTIONS, z)
 
 
 # Bessel functions from NeuralIL
+@jax.profiler.annotate_function
 def bessel(z, n1):
     """Spherical Bessel functions. Evaluated at z, up to degree n1."""
     vmapped_custom_bessel = jax.vmap(custom_spherical_jn, (0, None))
     return vmapped_custom_bessel(jnp.arange(n1), z)
 
-
+@jax.profiler.annotate_function
 def HARMONY(C, LMAX):
     """Generates the spherical harmonics for the vector C.
 

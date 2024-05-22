@@ -13,7 +13,7 @@ from src.lib_delta import apply_vibrational_displacements
 from src.lib_delta import apply_geometric_displacements
 from src.lib_math import EPS
 
-
+@jax.profiler.annotate_function
 def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshifts,
                     batch_lmax=False):
     vib_amps = jnp.asarray(vib_amps)
