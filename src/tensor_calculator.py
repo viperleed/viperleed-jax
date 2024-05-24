@@ -35,7 +35,7 @@ class TensorLEEDCalculator:
 
         unit_cell_area = jnp.linalg.norm(jnp.cross(slab.ab_cell[:,0], slab.ab_cell[:,1]))
         # In Bohr radii
-        self.unit_cell_area = unit_cell_area #/ BOHR**2
+        self.unit_cell_area = unit_cell_area / BOHR**2
         self.unit_cell = slab.ab_cell.copy() / BOHR
         self.reciprocal_unit_cell = 2*jnp.pi*jnp.linalg.inv(slab.ab_cell / BOHR)
 

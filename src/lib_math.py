@@ -93,7 +93,7 @@ def HARMONY(C, LMAX):
 
 def cart_to_polar(c):
     """Converts cartesian coordinates to polar coordinates."""
-    z, x, y = c[2], c[0], c[1]
+    z, x, y = c
     x_y_norm = jnp.sqrt(x**2 + y**2)
     r = jnp.linalg.norm(c)
     theta = jnp.arctan2(jnp.where(x_y_norm > EPS, x_y_norm, EPS),
