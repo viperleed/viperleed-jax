@@ -86,7 +86,7 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
         jnp.exp(debye_waller_exponent)
         * all_l
         * 1j ** jnp.arange(2*LMAX+1)
-        * masked_bessel(debye_waller_exponent * 1j, 2*LMAX+1)
+        * bessel(debye_waller_exponent * 1j, 2*LMAX+1)
     )
 
     temperature_independent_t_matrix = (
@@ -175,7 +175,7 @@ def TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v
     CL = safe_norm(C)
     CAPPA = 2*energy - 2j*v_imag
     Z = jnp.sqrt(CAPPA)*CL
-    BJ = masked_bessel(Z,2*LMAX+1)
+    BJ = bessel(Z,2*LMAX+1)
     YLM = HARMONY(C, LMAX)
 
     dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
