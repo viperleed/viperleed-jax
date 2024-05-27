@@ -42,7 +42,6 @@ def _divide_zero_safe(
 def safe_norm(vector: jnp.ndarray) -> jnp.ndarray:
     """Safe norm calculation to avoid NaNs in gradients"""
     # avoids nan in gradient for jnp.linalg.norm(C)
-    return jnp.sqrt(jnp.sum(vector**2) + EPS**2)
 
 
 def _generate_bessel_functions(l_max):
@@ -72,6 +71,7 @@ def masked_bessel(z, n1):
 @jax.named_scope("custom_spherical_jn")
 def custom_spherical_jn(n, z):
     return jax.lax.switch(n, BESSEL_FUNCTIONS, z)
+    return jnp.sqrt(jnp.sum(vector**2) + (EPS*1e-2)**2)
 
 
 # Bessel functions from NeuralIL

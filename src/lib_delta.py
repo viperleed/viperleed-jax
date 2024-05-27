@@ -162,7 +162,7 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX):
     # if the displacement is zero, we branch to the simplified calculation
     without_displacement = TMATRIX_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX)
     with_displacement = TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C_masked, energy, v_imag, LMAX)
-    DELTAT = jnp.where(CL < EPS, without_displacement, with_displacement)
+    DELTAT = jnp.where(CL <= EPS, without_displacement, with_displacement)
 
     # DELTAT = jax.lax.cond(CL < EPS, lambda x: TMATRIX_zero_displacement(*x),
     #                       lambda x: TMATRIX_non_zero_displacement(*x),
