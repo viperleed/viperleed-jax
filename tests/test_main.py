@@ -4,8 +4,14 @@ import pytest
 from pathlib import Path
 from tqdm import tqdm
 import warnings
+import numpy as np
 
 from src.delta import *
+from src.lib_phaseshifts import *
+from src.lib_tensors import *
+from src.data_structures import ReferenceData
+
+
 
 # TODO: this should move elsewhere (ideally, import from viperleed later on)
 def read_delta_file(filename, n_energies, read_header_only=False):
@@ -392,6 +398,35 @@ def Transform(n_E, directory, filename_list):
     
     return delta_data
 
+def read_block(reader, lines, shape, dtype=np.float64):
+    """ This function reads in the individual blocks of a 
+    TensErLEED delta-amplitude file.
+    
+    Parameters
+    ----------
+    reader: FortranReader object
+        The Fortran reader that is used on this block.
+    lines: iterator
+        Lines of the whole data file.
+    shape: numpy.ndarray
+        Shape of the array that gets filled with information.
+    dtype: np.float64
+        Type of numbers that can be stored in the returned array.
+        
+    Returns
+    -------
+    np.array(llist,dtype): numpy.ndarray
+        Array with the contents of an individual block with the
+        dimensions defined in "shape".
+    """
+    llist = []
+    len_lim = np.prod(shape)
+    for line in lines:
+        llist.extend((v for v in reader.read(line) if v is not None))
+        if len(llist) >= len_lim:
+            break
+    return np.array(llist, dtype=dtype).reshape(shape)
+
 #From "PARAM"
 LMAX = 14  # maximum angular momentum to be used in calculation
 n_beams = 9  # no. of TLEED output beams
@@ -405,7 +440,7 @@ u_vec1 = np.array([1.2722, -2.2036])
 u_vec2 = np.array([1.2722,  2.2036])
 
 # area of (overlayer) lateral unit cell - in case TLEED wrt smaller unit cell is used, TVA from reference computation must be set.
-unit_cell_area = np.linalg.norm(np.cross(u_vec1, u_vec2))
+unit_cell_area = np.linalg.norm(np.cross(u_vec1, u_vec2))/BOHR**2
 
 cu111_dir = 'tests/test_data/Cu_111_2/'
 phaseshifts_file = Path(cu111_dir) / "PHASESHIFTS"
@@ -421,29 +456,34 @@ with open(T1_file, 'r') as datei:
             n_energies += 1
 
 tensor_data = read_tensor(T1_file, n_beams=9, n_energies= n_energies, l_max=LMAX+1)
-interpolated_phaseshifts = interpolate_phaseshifts(phaseshifts, LMAX, tensor_data.e_kin)
-atom_phaseshifts = interpolated_phaseshifts[:, [IEL-1,], :]
+interpolated_phaseshifts = Phaseshifts(phaseshifts, tensor_data.e_kin, LMAX, [0])
 
-delta_amp = lambda displacement: delta_amplitude(LMAX, np.array([DR,]),
-                                                 HashableArray(tensor_data.e_kin),
-                                                 (tensor_data,),
-                                                 unit_cell_area,
-                                                 HashableArray(atom_phaseshifts),
-                                                 displacement)
+tensors = (tensor_data,)
+ref = ReferenceData(tensors, fix_lmax=10)
+
+delta_amp = lambda displacement: delta_amplitude(np.array([DR,]), displacement,
+                              ref,
+                              unit_cell_area,
+                              interpolated_phaseshifts,
+                              )
 
 #print(delta_amp(np.array([[0.05, 0.0, 0.0],])))
 read_in_data = Transform(n_energies, cu111_dir + 'Deltas/',['DEL_1_Cu_1'])
 
+#The atol is quite large. This is because the results are compared to the FORTRAN code, 
+#which does not use the variable lmax, whereas this code does. Consequently, there are 
+#differences in the vibrationally displaced t_matrix for high energies and high lmax 
+#values, leading to differences in the delta amplitudes at high energies.
 class TestDelta: # if you try to make the atol/rtol smaller dont forgett to replace 2/3 with 0.166667*4 in lib_delta -> apply_vibrational_displacements -> debye_waller_exponent
     def test_delta_positive_displacement(self):
         expected_output = read_in_data['amplitudes_del'][0,:,0,0,:]
         output = delta_amp(np.array([[0.05, 0.0, 0.0],]))
-        assert jnp.allclose(output, expected_output, rtol=1e-04)
+        assert jnp.allclose(output, expected_output, atol=1e-04)
 
     def test_delta_negative_displacement(self):
         expected_output = read_in_data['amplitudes_del'][0,:,0,10,:]
         output = delta_amp(np.array([[-0.05, 0.0, 0.0],]))
-        assert jnp.allclose(output, expected_output, rtol=1e-04)
+        assert jnp.allclose(output, expected_output, atol=1e-04)
 
     def test_delta_zero_displacement(self):
         output = delta_amp(np.array([[0.0, 0.0, 0.0],]))

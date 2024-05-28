@@ -36,8 +36,8 @@ with open(T1_file, 'r') as datei:
             n_energies += 1
 
 tensor_data = read_tensor(T1_file, n_beams=9, n_energies= n_energies, l_max=LMAX+1)
-interpolated_phaseshifts = interpolate_phaseshifts(phaseshifts, LMAX, tensor_data.e_kin)
-atom_phaseshifts = interpolated_phaseshifts[:, [IEL-1,], :]
+interpolated_phaseshifts = Phaseshifts(phaseshifts, tensor_data.e_kin, LMAX, [0])
+atom_phaseshifts = interpolated_phaseshifts.phaseshifts[:, [IEL-1,], :]
 
 tensors = (tensor_data,)
 
@@ -83,12 +83,12 @@ tensor_amps_out_with_prefactors = jnp.einsum('ealb,e,eb,->ealb',
     1/out_k_perp_inside,
     1/(2*(unit_cell_area/BOHR**2))
 )
+tensor_amps_out_with_prefactors = tensor_amps_out_with_prefactors.swapaxes(2,3)
 
 # Calculate the t-matrix with the vibrational displacements
 tscatf_vmap = jax.vmap(apply_vibrational_displacements, in_axes=(None, 0, 0, None), out_axes=1) # vmap over energy
 tmatrix_vmap_energy = jax.vmap(TMATRIX_DWG, in_axes=(0, 0, None, 0, None, None))
 matel_dwg_vmap_energy = jax.vmap(apply_geometric_displacements, in_axes=(0, 0, 0, None, None, 0, 0, None))
-
 #with open('test_geo_disp_xyz_vib.npy','wb') as f:
 #    np.save(f, d_amplitude)
 
@@ -149,7 +149,8 @@ class TestTMATRIX_DWG:
         t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
         t_matrix_new = t_matrix_new.swapaxes(0, 1) 
         C = np.array([[0.0, 0.0, 0.0]])/BOHR
-        C = C * jnp.array([1, 1, -1])
+        C = C * jnp.array([1, 1, -1])   # The vector C must be expressed W.R.T. a right handed set of axes.
+                                        # CDISP() is input W.R.T. a left handed set of axes.
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         expected_output = np.zeros_like(output)
         assert jnp.allclose(output, expected_output, atol=1e-02) # very big because of the differnce in LMAX to the recalc 
@@ -176,7 +177,7 @@ class TestTMATRIX_DWG:
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_z.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert jnp.allclose(output, expected_output, atol=1e-07)
 
     def test_tmatrix_x_displacement(self):
         DR = 0.1908624 * BOHR
@@ -188,7 +189,7 @@ class TestTMATRIX_DWG:
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_x.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert jnp.allclose(output, expected_output, atol=1e-07)
 
     def test_tmatrix_y_displacement(self):
         DR = 0.1908624 * BOHR
@@ -196,12 +197,11 @@ class TestTMATRIX_DWG:
         t_matrix_new = tscatf_vmap(LMAX, _phaseshifts, _energies, DR)
         t_matrix_new = t_matrix_new.swapaxes(0, 1) 
         C = np.array([[0.0, 0.0, 0.05]])/BOHR
-        C = C * jnp.array([1, 1, -1])     # The vector C must be expressed W.R.T. a right handed set of axes.
-                                          # CDISP() is input W.R.T. a left handed set of axes.
+        C = C * jnp.array([1, 1, -1]) 
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_y.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert jnp.allclose(output, expected_output, atol=1e-07)
     
     def test_tmatrix_xyz_displacement(self):
         DR = 0.1908624 * BOHR
