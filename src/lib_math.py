@@ -73,26 +73,6 @@ def HARMONY(C, LMAX):
     _, theta, phi = cart_to_polar(C)
     return sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.asarray([phi]), jnp.asarray([theta]), n_max=2*LMAX)
 
-"""@jax.named_scope("cart_to_polar")
-def cart_to_polar(c):
-    z, x, y = c
-    r = jnp.linalg.norm(c)
-    theta = jnp.arctan2(jnp.sqrt(x**2 + y**2), z)
-    phi = jnp.arctan2(y, x)
-    return r, theta, phi"""
-
-"""@jax.named_scope("cart_to_polar")
-def cart_to_polar2(c):
-    """"""Converts cartesian coordinates to polar coordinates.""""""
-    z, x, y = c
-    x_y_norm = jnp.sqrt(x**2 + y**2)
-    r = jnp.linalg.norm(c)
-    theta = jnp.arctan2(jnp.where(x_y_norm > EPS, x_y_norm, EPS),
-                        jnp.where(z**2 > EPS**2, z, EPS))
-    phi = jnp.arctan2(jnp.where(x_y_norm > EPS, y, EPS),
-                      jnp.where(x_y_norm > EPS, x, EPS))
-    return r, theta, phi
-"""
 
 def cart_to_polar(c):
     """Converts cartesian coordinates to polar coordinates."""
