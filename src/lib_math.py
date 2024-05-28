@@ -13,7 +13,6 @@ from src.spherical_bessel import functions
 
 # numerical epsilon to avoid division by zero
 EPS = 1e-8
-bessel_EPS = 10e-7
 
 
 def _divide_zero_safe(
@@ -54,32 +53,14 @@ def _generate_bessel_functions(l_max):
 
 
 # generate a list of spherical Bessel functions up to order l_max
-BESSEL_FUNCTIONS = _generate_bessel_functions(MAXIMUM_LMAX)
-
-
-@jax.named_scope("masked_bessel")
-def masked_bessel(z, n1):
-    z_is_small = abs(z) < bessel_EPS
-    _z = jnp.where(z_is_small, bessel_EPS, z)
-    return jnp.nan_to_num(
-        # Needs a limit of >=10e-7 to avoid numerical noise around z=0 for
-        # small values of z with imaginary component
-        jnp.where(z_is_small,
-                  jnp.zeros(shape=(n1), dtype=jnp.complex128).at[0].set(1.0),
-                  bessel(_z, n1))
-    )
-
-@jax.named_scope("custom_spherical_jn")
-def custom_spherical_jn(n, z):
-    return jax.lax.switch(n, BESSEL_FUNCTIONS, z)
+BESSEL_FUNCTIONS = _generate_bessel_functions(2*MAXIMUM_LMAX)
 
 
 # Bessel functions from NeuralIL
 @jax.named_scope("bessel")
 def bessel(z, n1):
     """Spherical Bessel functions. Evaluated at z, up to degree n1."""
-    vmapped_custom_bessel = jax.vmap(custom_spherical_jn, (0, None))
-    return vmapped_custom_bessel(jnp.arange(n1), z)
+    return jnp.asarray([BESSEL_FUNCTIONS[n](z) for n in range(n1)])
 
 
 @jax.named_scope("HARMONY")
