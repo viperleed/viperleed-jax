@@ -124,3 +124,80 @@ def shift_v0r(array, n_steps):
     mask = jnp.logical_or(row_ids_tiled < n_steps,
                           row_ids >= n_energies+n_steps)
     return jnp.where(mask, jnp.nan, rolled_array)
+
+### R2 ###
+
+def R_2(intensity_2,
+        interpolator_1, interpolator_2,
+        v0_real_steps, v0_imag, energy_step,
+        intensity_1):
+    
+    # calculate interpolation – no derivatives needed for R2
+
+    b_spline_coeffs_1 = interpolation.get_bspline_coeffs(
+        interpolator_1,
+        interpolation.not_a_knot_rhs(intensity_1))
+    intens_1 = interpolation.evaluate_spline(
+        b_spline_coeffs_1,
+        interpolator_1,
+        0
+    )
+
+    b_spline_coeffs_2 = interpolation.get_bspline_coeffs(
+        interpolator_2,
+        interpolation.not_a_knot_rhs(intensity_2))
+    intens_2 = interpolation.evaluate_spline(
+        b_spline_coeffs_2,
+        interpolator_2,
+        0
+    )
+
+    # shift intens_1 by v0_real_steps
+    intens_1 = shift_v0r(intens_1, v0_real_steps)
+
+    # calculate normalization for each beam
+    beam_normalization = (nansum_trapezoid(intens_1, energy_step, axis=0)
+              / nansum_trapezoid(intens_2, energy_step, axis=0))
+
+    numerators = nansum_trapezoid((intens_1 - beam_normalization*intens_2)**2,
+                                  energy_step, axis=0)
+    denominators = nansum_trapezoid(intens_1**2, energy_step, axis=0)
+    return jnp.sum(numerators) / jnp.sum(denominators)
+
+
+def R_1(intensity_2,
+        interpolator_1, interpolator_2,
+        v0_real_steps, v0_imag, energy_step,
+        intensity_1):
+
+    # calculate interpolation – no derivatives needed for R2
+
+    b_spline_coeffs_1 = interpolation.get_bspline_coeffs(
+        interpolator_1,
+        interpolation.not_a_knot_rhs(intensity_1))
+    intens_1 = interpolation.evaluate_spline(
+        b_spline_coeffs_1,
+        interpolator_1,
+        0
+    )
+
+    b_spline_coeffs_2 = interpolation.get_bspline_coeffs(
+        interpolator_2,
+        interpolation.not_a_knot_rhs(intensity_2))
+    intens_2 = interpolation.evaluate_spline(
+        b_spline_coeffs_2,
+        interpolator_2,
+        0
+    )
+
+    # shift intens_1 by v0_real_steps
+    intens_1 = shift_v0r(intens_1, v0_real_steps)
+
+    # calculate normalization for each beam
+    beam_normalization = (nansum_trapezoid(intens_1, energy_step, axis=0)
+              / nansum_trapezoid(intens_2, energy_step, axis=0))
+
+    numerators = nansum_trapezoid(abs((intens_1 - beam_normalization*intens_2)),
+                                  energy_step, axis=0)
+    denominators = nansum_trapezoid(intens_1, energy_step, axis=0)
+    return jnp.sum(numerators) / jnp.sum(denominators)
