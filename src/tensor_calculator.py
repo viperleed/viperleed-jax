@@ -1,5 +1,6 @@
 
 import jax
+from jax.tree_util import register_pytree_node_class
 import jax.numpy as jnp
 
 from viperleed.calc import symmetry
@@ -171,7 +172,7 @@ class TensorLEEDCalculator:
             raise ValueError("Comparison intensity not set.")
         v0i_electron_volt = -self.ref_data.v0i*HARTREE
         non_interpolated_intensity = self._intensity(vib_amps, displacements)
-        return rfactor.pendry_R(
+        return self.rfactor_func(
             non_interpolated_intensity,
             self.exp_interpolator,
             self.interpolator,
@@ -181,8 +182,8 @@ class TensorLEEDCalculator:
             self.comp_intensity
         )
 
-    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def R_pendry_val_and_grad(self, vib_amps, displacements, v0_real_steps):
+    @jax.jit
         # TODO: urgent: currently only gives gradients for geo displacements
         return jax.value_and_grad(self._R_pendry, argnums=(1))(vib_amps, displacements, v0_real_steps)
 
@@ -190,16 +191,16 @@ class TensorLEEDCalculator:
         v0r_step, vib_amps, displacements = self.parameter_transformer.unflatten_parameters(reduced_params)
         return self._R_pendry(vib_amps, displacements, v0r_step)
 
-    def _R_pendry_grad_from_reduced(self, reduced_params):
         return jax.grad(self._R_pendry_from_reduced)(reduced_params)
+    @jax.jit
 
-    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def R_pendry_from_reduced(self, reduced_params):
         return self._R_pendry_from_reduced(reduced_params)
+    def _R_from_reduced(self, reduced_params):
 
-    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def R_pendry_grad_from_reduced(self, reduced_params):
         return self._R_pendry_grad_from_reduced(reduced_params)
+    @jax.jit
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def R_pendry_val_and_grad_from_reduced(self, reduced_params):
@@ -215,7 +216,42 @@ class TensorLEEDCalculator:
     # JAX PyTree methods
 
     def tree_flatten(self):
-        pass
+        dynamic_elements = {
+            'rfactor_name': _R_FACTOR_SYNONYMS[self.rfactor_func][0]
+        }
+        simple_elements = {
+            'ref_data': self.ref_data,
+            'phaseshifts': self.phaseshifts,
+            'batch_lmax': self.batch_lmax,
+            'interpolation_deg': self.interpolation_deg,
+            'interpolation_step': self.interpolation_step,
+            'beam_indices': self.beam_indices,
+            'ref_vibrational_amps': self.ref_vibrational_amps,
+            'unit_cell': self.unit_cell,
+            'target_grid': self.target_grid,
+            'phi': self.phi,
+            'theta': self.theta,
+            'is_surface_atom': self.is_surface_atom,
+            'parameter_transformer': self.parameter_transformer,
+            'interpolator': self.interpolator,
+            'exp_interpolator': self.exp_interpolator,
+            'comp_intensity': self.comp_intensity,
+            'comp_energies': self.comp_energies,
+        }
+        aux_data = (dynamic_elements, simple_elements)
+        children = ()
+        return children, aux_data
 
-    def tree_unflatten():
-        pass
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        dynamic_elements, simple_elements = aux_data
+
+        calculator = cls.__new__(cls)
+        # set static elements
+        for kw, value in simple_elements.items():
+            setattr(calculator, kw, value)
+
+        # set dynamic elements
+        calculator.set_rfactor(dynamic_elements['rfactor_name'])
+
+        return calculator

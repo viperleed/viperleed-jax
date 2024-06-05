@@ -1,11 +1,11 @@
-# Note: this would fit into a pytree very nicely
+
 
 import jax
 import numpy as np
 import jax.numpy as jnp
+from jax.tree_util import register_pytree_node_class
 
-# TODO: parameter normalization
-
+@register_pytree_node_class
 class TensorParameterTransformer:
 
     def __init__(self, slab, energy_step):
@@ -17,6 +17,11 @@ class TensorParameterTransformer:
         # set identity constraints for now
         self.geo_constraint_matrix = jnp.identity(self.geo_sym_linking_matrix.shape[1])
         self.vib_constraints = jnp.identity(self.vib_sym_linking_matrix.shape[1])
+
+        # set emtpy bounds for now
+        self.v0r_bounds = None
+        self.vib_amp_bounds = None
+        self.displacement_bounds = None
 
     def _get_sym_linking(self, slab):
         if not slab.foundplanegroup:
@@ -167,4 +172,19 @@ class TensorParameterTransformer:
         )
 
     def tree_flatten(self):
-        pass
+        aux_data = {
+            'geo_constraint_matrix': self.geo_constraint_matrix,
+            'vib_constraints': self.vib_constraints,
+            'v0r_bounds': self.v0r_bounds,
+            'vib_amp_bounds': self.vib_amp_bounds,
+            'displacement_bounds': self.displacement_bounds,
+        }
+        children = None
+        return (children, aux_data)
+
+    @classmethod
+    def tree_unflatten(cls, children, aux_data):
+        transformer = cls.__new__
+        for kw, value in aux_data.items():
+            setattr(transformer, kw, value)
+        return transformer
