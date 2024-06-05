@@ -27,6 +27,7 @@ class TensorLEEDCalculator:
         # reading from IVBEAMS does not guarantee correct order!
         #self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
         self.comp_intensity = None
+        self.comp_energies = None
         self.interpolation_step = interpolation_step
 
         self.target_grid = jnp.arange(rparams.THEO_ENERGIES.start,
@@ -81,6 +82,7 @@ class TensorLEEDCalculator:
 
     def set_experiment_intensity(self, comp_intensity, comp_energies):
         self.comp_intensity = comp_intensity
+        self.comp_energies = comp_energies
         # set interpolator
         self.exp_interpolator = StaticNotAKnotSplineInterpolator(
             comp_energies,
