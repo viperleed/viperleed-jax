@@ -12,6 +12,17 @@ from src.interpolation import *
 from src.lib_intensity import intensity_prefactor, sum_intensity
 from src.parameter_handler import TensorParameterTransformer
 
+_R_FACTOR_SYNONYMS = {
+    rfactor.pendry_R: ('pendry', 'r_p', 'rp', 'pendry r-factor'),
+    rfactor.R_1: ('r1', 'r_1', 'r1 factor'),
+    rfactor.R_2: ('r2', 'r_2', 'r2 factor'),
+    # TODO: implement these
+    # rfactor.zannazi_jona: ('zj', 'zj factor', 'zannazi', 'zannazi jona', 'zannazi-jona'),
+    # rfactor.ms: ('ms', 'ms factor', 'schmid',),
+}
+
+
+@register_pytree_node_class
 class TensorLEEDCalculator:
 
     def __init__(self, ref_data, phaseshifts, slab, rparams,
