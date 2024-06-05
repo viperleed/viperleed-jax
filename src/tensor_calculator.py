@@ -164,10 +164,10 @@ class TensorLEEDCalculator:
         return evaluate_spline(bspline_coeffs, self.interpolator, deriv_deg)
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
-    def R_pendry(self, vib_amps, displacements, v0_real_steps=0):
-        return self._R_pendry(vib_amps, displacements, v0_real_steps)
+    def R(self, vib_amps, displacements, v0_real_steps=0):
+        return self._R(vib_amps, displacements, v0_real_steps)
 
-    def _R_pendry(self, vib_amps, displacements, v0_real_steps=0):
+    def _R(self, vib_amps, displacements, v0_real_steps=0):
         if self.comp_intensity is None:
             raise ValueError("Comparison intensity not set.")
         v0i_electron_volt = -self.ref_data.v0i*HARTREE
@@ -182,33 +182,29 @@ class TensorLEEDCalculator:
             self.comp_intensity
         )
 
-    def R_pendry_val_and_grad(self, vib_amps, displacements, v0_real_steps):
     @jax.jit
+    def R_val_and_grad(self, vib_amps, displacements, v0_real_steps):
         # TODO: urgent: currently only gives gradients for geo displacements
-        return jax.value_and_grad(self._R_pendry, argnums=(1))(vib_amps, displacements, v0_real_steps)
+        return jax.value_and_grad(self._R, argnums=(1))(vib_amps, displacements, v0_real_steps)
 
-    def _R_pendry_from_reduced(self, reduced_params):
-        v0r_step, vib_amps, displacements = self.parameter_transformer.unflatten_parameters(reduced_params)
-        return self._R_pendry(vib_amps, displacements, v0r_step)
-
-        return jax.grad(self._R_pendry_from_reduced)(reduced_params)
     @jax.jit
+    def R_from_reduced(self, reduced_params):
+        return self._R_from_reduced(reduced_params)
 
-    def R_pendry_from_reduced(self, reduced_params):
-        return self._R_pendry_from_reduced(reduced_params)
     def _R_from_reduced(self, reduced_params):
+        v0r_step, vib_amps, displacements = self.parameter_transformer.unflatten_parameters(reduced_params)
+        return self._R(vib_amps, displacements, v0r_step)
 
-    def R_pendry_grad_from_reduced(self, reduced_params):
-        return self._R_pendry_grad_from_reduced(reduced_params)
     @jax.jit
+    def R_grad_from_reduced(self, reduced_params):
+        return self._R_grad_from_reduced(reduced_params)
 
-    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
-    def R_pendry_val_and_grad_from_reduced(self, reduced_params):
-        return jax.value_and_grad(self._R_pendry_from_reduced)(reduced_params)
+    def _R_grad_from_reduced(self, reduced_params):
+        return jax.grad(self._R_from_reduced)(reduced_params)
 
-    @property
-    def zero_displacement():
-        pass
+    @jax.jit
+    def R_val_and_grad_from_reduced(self, reduced_params):
+        return jax.value_and_grad(self._R_from_reduced)(reduced_params)
 
     def _benchmark():
         pass
