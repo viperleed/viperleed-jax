@@ -46,7 +46,7 @@ def pendry_R(intensity_2,
     y_2 = pendry_y(intens_2, deriv_2, v0_imag)
 
     # shift y_1 by v0_real_steps
-    y_1 = shift_v0r(y_1, v0_real_steps)
+    y_1 = integer_shift_v0r(y_1, v0_real_steps)
 
     return pendry_R_from_y(y_1, y_2, energy_step)
 
@@ -60,7 +60,7 @@ def pendry_R_from_intensity_and_derivative(intens_deriv_1, intens_deriv_2,
     y_2 = pendry_y(intens_2, deriv_2, v0_imag)
 
     # shift y_1 by v0_real_steps
-    y_1 = shift_v0r(y_1, v0_real_steps)
+    y_1 = integer_shift_v0r(y_1, v0_real_steps)
 
     return pendry_R_from_y(y_1, y_2, energy_step)
 
@@ -93,7 +93,7 @@ def nansum_trapezoid(y, dx, axis=-1):
     return jnp.nansum(y_arr[..., 1:] + y_arr[..., :-1], axis=-1) * dx * 0.5
 
 
-def shift_v0r(array, n_steps):
+def integer_shift_v0r(array, n_steps):
     """Applies a v0r shift to the array by shifting the values n_steps up or
     down the first axis (energy) and padding with NaNs."""
     # NB, TODO: This only allows for integer shifts (multiples of the set
@@ -138,7 +138,7 @@ def R_2(intensity_2,
     )
 
     # shift intens_1 by v0_real_steps
-    intens_1 = shift_v0r(intens_1, v0_real_steps)
+    intens_1 = integer_shift_v0r(intens_1, v0_real_steps)
 
     # calculate normalization for each beam
     beam_normalization = (nansum_trapezoid(intens_1, energy_step, axis=0)
@@ -176,7 +176,7 @@ def R_1(intensity_2,
     )
 
     # shift intens_1 by v0_real_steps
-    intens_1 = shift_v0r(intens_1, v0_real_steps)
+    intens_1 = integer_shift_v0r(intens_1, v0_real_steps)
 
     # calculate normalization for each beam
     beam_normalization = (nansum_trapezoid(intens_1, energy_step, axis=0)
