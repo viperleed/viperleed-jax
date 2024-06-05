@@ -51,21 +51,6 @@ def pendry_R(intensity_2,
     return pendry_R_from_y(y_1, y_2, energy_step)
 
 
-def pendry_R_vs_reference(reference_intensity, reference_interpolator,
-                          sampling_interpolator, v0_real, v0_imag, energy_step):
-    """Return an R-factor function that compares a given intensity to a reference"""
-    if not (reference_interpolator.is_compatible(sampling_interpolator)):
-        raise ValueError("Interpolators are not compatible")
-    jitted_rfactor = jax.jit(pendry_R, static_argnames=(
-        'interpolator_2',
-        'interpolator_1',
-        'v0_real',
-        'v0_imag',
-        'energy_step',
-    ))
-    return partial(jitted_rfactor, reference_intensity, reference_interpolator,
-                   sampling_interpolator, v0_real, v0_imag, energy_step)
-
 def pendry_R_from_intensity_and_derivative(intens_deriv_1, intens_deriv_2,
                                       v0_real_steps, v0_imag, energy_step):
     intens_1, deriv_1 = intens_deriv_1
