@@ -65,6 +65,8 @@ class TensorLEEDCalculator:
         )
         self.parameter_transformer = self._get_parameter_transformer(slab, rparams)
 
+        # default R-factor is Pendry
+        self.rfactor_func = rfactor.pendry_R
 
     @property
     def unit_cell_area(self):
@@ -77,6 +79,15 @@ class TensorLEEDCalculator:
     @property
     def n_atoms(self):
         return len(self.ref_vibrational_amps)
+
+    def set_rfactor(self, rfactor_name):
+        _rfactor_name = rfactor_name.lower().strip()
+        for func, synonyms in _R_FACTOR_SYNONYMS.items():
+            if _rfactor_name in synonyms:
+                self.rfactor_func = func
+                # TODO: log rfactor change
+                return
+        raise ValueError(f"Unknown R-factor name: {rfactor_name}")
 
     def _get_parameter_transformer(self, slab, rparams):
         # find and enforce symmetry on slab
