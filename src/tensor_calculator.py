@@ -41,7 +41,6 @@ class TensorLEEDCalculator:
         self.phi = jnp.deg2rad(rparams.PHI)
 
         non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
-        self.n_atoms = len(non_bulk_atoms)
         # TODO check this
         self.is_surface_atom = jnp.array([at.layer.num == 0 for at in non_bulk_atoms])
 
@@ -62,6 +61,10 @@ class TensorLEEDCalculator:
     @property
     def reciprocal_unit_cell(self):
         return 2*jnp.pi*jnp.linalg.inv(self.unit_cell)
+
+    @property
+    def n_atoms(self):
+        return len(self.ref_vibrational_amps)
 
     def _get_parameter_transformer(self, slab, rparams):
         # find and enforce symmetry on slab
