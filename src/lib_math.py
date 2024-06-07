@@ -75,12 +75,20 @@ def HARMONY(C, LMAX):
 
 
 def cart_to_polar(c):
-    """Converts cartesian coordinates to polar coordinates."""
-    z, x, y = c
-    x_y_norm = jnp.sqrt(x**2 + y**2)
+    """Converts cartesian coordinates to polar coordinates.
+
+    Note, this function uses safe division to avoid division by zero errors, 
+    and gives defined results and gradients for all inputs, EXCEPT for
+    c = (0.0, 0.0, 0.0)."""
+    z, x, y = c  # LEED coordinates
+
+    x_y_norm = jnp.hypot(x, y)
     r = jnp.linalg.norm(c)
-    theta = jnp.arctan2(jnp.where(x_y_norm > EPS, x_y_norm, EPS),
-                        jnp.where(z**2 > EPS**2, z, EPS))
-    phi = jnp.arctan2(jnp.where(x_y_norm > EPS, y, EPS),
-                      jnp.where(x_y_norm > EPS, x, EPS))
+    theta = 2*jnp.arctan(
+        _divide_zero_safe(x_y_norm, (jnp.hypot(x_y_norm, z)+z), jnp.pi/2)
+    )
+    phi = 2*jnp.arctan(
+        _divide_zero_safe(y, (x_y_norm+x), jnp.pi/2)
+    )
+
     return r, theta, phi
