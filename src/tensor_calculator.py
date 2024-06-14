@@ -131,6 +131,14 @@ class TensorLEEDCalculator:
     def intensity(self, vib_amps, displacements):
         return self._intensity(vib_amps, displacements)
 
+    def _delta_amplitude_from_reduced(self, reduced_params):
+        _, vib_amps, displacements = self.parameter_transformer.unflatten_parameters(reduced_params)
+        return self._delta_amplitude(vib_amps, displacements)
+
+    def _intensity_from_reduced(self, reduced_params):
+        _, vib_amps, displacements = self.parameter_transformer.unflatten_parameters(reduced_params)
+        return self._intensity(vib_amps, displacements)
+
     def _intensity(self, vib_amps, displacements):
         delta_amps = self._delta_amplitude(vib_amps, displacements)
         refraction_prefactor = self._intensity_prefactor(displacements)
