@@ -17,9 +17,8 @@ _R_FACTOR_SYNONYMS = {
     rfactor.pendry_R: ('pendry', 'r_p', 'rp', 'pendry r-factor'),
     rfactor.R_1: ('r1', 'r_1', 'r1 factor'),
     rfactor.R_2: ('r2', 'r_2', 'r2 factor'),
-    # TODO: implement these
-    # rfactor.zannazi_jona: ('zj', 'zj factor', 'zannazi', 'zannazi jona', 'zannazi-jona'),
-    # rfactor.ms: ('ms', 'ms factor', 'schmid',),
+    rfactor.R_ms: ('ms', 'msr', 'rms', 'r_ms', 'r_ms factor'),
+    rfactor.R_zj: ('zj', 'zj factor', 'zannazi', 'zannazi jona', 'zannazi-jona'),
 }
 
 
