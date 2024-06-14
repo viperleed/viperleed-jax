@@ -120,9 +120,9 @@ geo_range = (-0.15, +0.15) # in A
 centered_reduced_vib_amps = np.array([0.089, 0.06, 0.141, 0.115])
 centered_reduced_displacements = np.array([[0.0],]*5).flatten()
 
-calculator.parameter_transformer.set_vib_amp_bounds(centered_reduced_vib_amps - 0.01, centered_reduced_vib_amps + 0.01)
+calculator.parameter_transformer.set_vib_amp_bounds(centered_reduced_vib_amps + vib_amp_range[0], centered_reduced_vib_amps + vib_amp_range[1])
 calculator.parameter_transformer.set_v0r_bounds(*v0r_range)
-calculator.parameter_transformer.set_displacement_bounds(centered_reduced_displacements - 0.01, centered_reduced_displacements + 0.01)
+calculator.parameter_transformer.set_displacement_bounds(centered_reduced_displacements + geo_range[0], centered_reduced_displacements + geo_range[1])
 
 # read tensor files for non-bulk atoms
 non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
