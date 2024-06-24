@@ -10,6 +10,13 @@ from jax import numpy as jnp
 from scipy import interpolate
 
 
+# Basis transformation from cradinal B-spline to cardinal piecewise polynomial
+# in the form as given by de Boor, A practical guide to splines 1978, p.324
+B_TO_PP_SPLINE_BASIS_TRANSFORMATION = np.array([[1/6, 2/3, 1/6, 0.0],
+                                                [-1/2, 0.0, 1/2, 0.0],
+                                                [1.0, -2.0, 1.0, 0.0],
+                                                [-1.0, 3.0, -3.0, 1.0]])
+
 def translate_cubic_pp_spline_coeffs(s):
     """Returns a transformation matrix that translates spline coeffiecients.
 
