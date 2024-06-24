@@ -10,6 +10,32 @@ from jax import numpy as jnp
 from scipy import interpolate
 
 
+def translate_cubic_pp_spline_coeffs(s):
+    """Returns a transformation matrix that translates spline coeffiecients.
+
+    The return transformation can be applied to the coefficients (a,b,c,d) of a
+    cubic (spline) in the piecewise-polynomial basis, i.e.:
+    f_i(x) = a*x**3 + b*x**2 + c*x + d
+    The resulting set of coefficients yields the coefficents for g(x) = f(x-s).
+    Note that for s->0, the transformation approaches unity.
+    Note also that for a piecewise polynomial splines, this shift in only valid
+    while x+s is in the same knot-interval as the x.
+
+    Parameters
+    ----------
+    d : float
+        The amount to translate the coefficients.
+
+    Returns
+    -------
+    ndarray
+        The transformation in the form of a (4x4) matrix.
+    """
+    return np.array([[1.0, 0.0, 0.0, 0.0],
+                     [3*s, 1.0, 0.0, 0.0],
+                     [3*s**2, 2*s, 1.0, 0.0],
+                     [s**3, s**2, s, 1.0]])
+
 @register_pytree_node_class
 class StaticGridSplineInterpolator(ABC):
 
