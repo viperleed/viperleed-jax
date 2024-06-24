@@ -59,6 +59,8 @@ class StaticGridSplineInterpolator(ABC):
 
     def __init__(self, origin_grid, target_grid, intpol_deg):
         self.origin_grid = origin_grid
+        self.intpol_step = target_grid[1] - target_grid[0]
+        self.orig_step = origin_grid[1] - origin_grid[0]
         self.target_grid = target_grid
         self.intpol_deg = intpol_deg
         self.knots = self._get_knots()
@@ -85,6 +87,11 @@ class StaticGridSplineInterpolator(ABC):
             return False
         return (jnp.all(self.target_grid == other.target_grid) and
                 self.intpol_deg == other.intpol_deg)
+
+    @property
+    def x_diffs(self):
+        x_diffs = self.knots[self.intervals+1] - self.target_grid
+        return [x_diffs**i for i in range(1, self.intpol_deg+1)]
 
     @abstractmethod
     def _get_knots(self):
