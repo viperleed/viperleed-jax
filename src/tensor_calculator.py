@@ -58,7 +58,7 @@ class TensorLEEDCalculator:
 
         self.ref_vibrational_amps = jnp.array(
             [at.site.vibamp[at.el] for at in non_bulk_atoms])
-        self.interpolator = StaticNotAKnotSplineInterpolator(
+        self.interpolator = CardinalNotAKnotSplineInterpolator(
             ref_data.incident_energy_ev,
             self.target_grid,
             self.interpolation_deg # TODO: take from rparams.INTPOL_DEG
@@ -106,7 +106,7 @@ class TensorLEEDCalculator:
         self.comp_intensity = comp_intensity
         self.comp_energies = comp_energies
         # set interpolator
-        self.exp_interpolator = StaticNotAKnotSplineInterpolator(
+        self.exp_interpolator = CardinalNotAKnotSplineInterpolator(
             comp_energies,
             self.target_grid,
             self.interpolation_deg

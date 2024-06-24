@@ -44,7 +44,7 @@ def translate_cubic_pp_spline_coeffs(s):
                      [s**3, s**2, s, 1.0]])
 
 @register_pytree_node_class
-class StaticGridSplineInterpolator(ABC):
+class CardinalSplineInterpolator(ABC):
 
     expected_kws = (
             'origin_grid',
@@ -147,7 +147,7 @@ class StaticGridSplineInterpolator(ABC):
         new_object._rebuild_from_dict(aux_data[1])
         return new_object
 
-class StaticNotAKnotSplineInterpolator(StaticGridSplineInterpolator):
+class CardinalNotAKnotSplineInterpolator(CardinalSplineInterpolator):
     def _get_knots(self):
         return interpolate._bsplines._not_a_knot(self.origin_grid, self.intpol_deg)
 
