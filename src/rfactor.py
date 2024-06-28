@@ -91,134 +91,84 @@ def integer_shift_v0r(array, n_steps):
 
 ### R2 ###
 
-def R_2(intensity_2,
-        interpolator_1, interpolator_2,
-        v0_real_steps, v0_imag, energy_step,
-        intensity_1):
-    
-    # calculate interpolation – no derivatives needed for R2
+def R_2(theo_spline,
+        v0_imag, energy_step, energy_grid,
+        exp_spline):
+    # calculate interpolation only – no derivatives needed for R2
 
-    b_spline_coeffs_1 = interpolation.get_bspline_coeffs(
-        interpolator_1,
-        interpolation.not_a_knot_rhs(intensity_1))
-    intens_1 = interpolation.evaluate_spline(
-        b_spline_coeffs_1,
-        interpolator_1,
-        0
-    )
+    # Experimental data
+    exp_deriv_spline = exp_spline.derivative()
 
-    b_spline_coeffs_2 = interpolation.get_bspline_coeffs(
-        interpolator_2,
-        interpolation.not_a_knot_rhs(intensity_2))
-    intens_2 = interpolation.evaluate_spline(
-        b_spline_coeffs_2,
-        interpolator_2,
-        0
-    )
+    exp_intensity = exp_spline(energy_grid)
 
-    # shift intens_1 by v0_real_steps
-    intens_1 = integer_shift_v0r(intens_1, v0_real_steps)
+    # Theory data
+    theo_deriv_spline = theo_spline.derivative()
+
+    theo_intensity = theo_spline(energy_grid)
 
     # calculate normalization for each beam
-    beam_normalization = (nansum_trapezoid(intens_1, energy_step, axis=0)
-              / nansum_trapezoid(intens_2, energy_step, axis=0))
+    beam_normalization = (nansum_trapezoid(exp_intensity, energy_step, axis=0)
+              / nansum_trapezoid(theo_intensity, energy_step, axis=0))
 
-    numerators = nansum_trapezoid((intens_1 - beam_normalization*intens_2)**2,
+    numerators = nansum_trapezoid((exp_intensity - beam_normalization*theo_intensity)**2,
                                   energy_step, axis=0)
-    denominators = nansum_trapezoid(intens_1**2, energy_step, axis=0)
+    denominators = nansum_trapezoid(exp_intensity**2, energy_step, axis=0)
     return jnp.sum(numerators) / jnp.sum(denominators)
 
 
-def R_1(intensity_2,
-        interpolator_1, interpolator_2,
-        v0_real_steps, v0_imag, energy_step,
-        intensity_1):
+def R_1(theo_spline,
+        v0_imag, energy_step, energy_grid,
+        exp_spline):
 
-    # calculate interpolation – no derivatives needed for R2
+    # Experimental data
+    exp_deriv_spline = exp_spline.derivative()
 
-    b_spline_coeffs_1 = interpolation.get_bspline_coeffs(
-        interpolator_1,
-        interpolation.not_a_knot_rhs(intensity_1))
-    intens_1 = interpolation.evaluate_spline(
-        b_spline_coeffs_1,
-        interpolator_1,
-        0
-    )
+    exp_intensity = exp_spline(energy_grid)
 
-    b_spline_coeffs_2 = interpolation.get_bspline_coeffs(
-        interpolator_2,
-        interpolation.not_a_knot_rhs(intensity_2))
-    intens_2 = interpolation.evaluate_spline(
-        b_spline_coeffs_2,
-        interpolator_2,
-        0
-    )
+    # Theory data
+    theo_deriv_spline = theo_spline.derivative()
 
-    # shift intens_1 by v0_real_steps
-    intens_1 = integer_shift_v0r(intens_1, v0_real_steps)
+    theo_intensity = theo_spline(energy_grid)
 
     # calculate normalization for each beam
-    beam_normalization = (nansum_trapezoid(intens_1, energy_step, axis=0)
-              / nansum_trapezoid(intens_2, energy_step, axis=0))
+    beam_normalization = (nansum_trapezoid(exp_intensity, energy_step, axis=0)
+              / nansum_trapezoid(theo_intensity, energy_step, axis=0))
 
-    numerators = nansum_trapezoid(abs((intens_1 - beam_normalization*intens_2)),
+    numerators = nansum_trapezoid(abs((exp_intensity - beam_normalization*theo_intensity)),
                                   energy_step, axis=0)
-    denominators = nansum_trapezoid(intens_1, energy_step, axis=0)
+    denominators = nansum_trapezoid(exp_intensity, energy_step, axis=0)
     return jnp.sum(numerators) / jnp.sum(denominators)
 
 ### RMS ###
 
-def R_ms(intensity_2,
-        interpolator_1, interpolator_2,
-        v0_real_steps, v0_imag, energy_step,
-        intensity_1):
+def R_ms(theo_spline,
+         v0_imag, energy_step, energy_grid,
+         exp_spline):
+
+    # Experimental data
+    exp_deriv_1_spline = exp_spline.derivative()
+    exp_deriv_2_spline = exp_deriv_1_spline.derivative()
+
+    exp_intensity = exp_spline(energy_grid)
+    exp_derivative_1 = exp_deriv_1_spline(energy_grid)
+    exp_derivative_2 = exp_deriv_2_spline(energy_grid)
+
+    # Theory data
+    theo_deriv_1_spline = theo_spline.derivative()
+    theo_deriv_2_spline = theo_deriv_1_spline.derivative()
+
+    theo_intensity = theo_spline(energy_grid)
+    theo_derivative_1 = theo_deriv_1_spline(energy_grid)
+    theo_derivative_2 = theo_deriv_2_spline(energy_grid)
 
 
-    b_spline_coeffs_1 = interpolation.get_bspline_coeffs(
-        interpolator_1,
-        interpolation.not_a_knot_rhs(intensity_1))
-    intens_1 = interpolation.evaluate_spline(
-        b_spline_coeffs_1,
-        interpolator_1,
-        0
-    )
-    first_deriv_1 = interpolation.evaluate_spline(
-        b_spline_coeffs_1,
-        interpolator_1,
-        1
-    )
-    second_deriv_1 = interpolation.evaluate_spline(
-        b_spline_coeffs_1,
-        interpolator_1,
-        2
-    )
-
-    b_spline_coeffs_2 = interpolation.get_bspline_coeffs(
-        interpolator_2,
-        interpolation.not_a_knot_rhs(intensity_2))
-    intens_2 = interpolation.evaluate_spline(
-        b_spline_coeffs_2,
-        interpolator_2,
-        0
-    )
-    first_deriv_2 = interpolation.evaluate_spline(
-        b_spline_coeffs_2,
-        interpolator_2,
-        1
-    )
-    second_deriv_2 = interpolation.evaluate_spline(
-        b_spline_coeffs_1,
-        interpolator_1,
-        2
-    )
-
-    y_1 = y_ms(intens_1, first_deriv_1, second_deriv_1, v0_imag, energy_step)
-    y_2 = y_ms(intens_2, first_deriv_2, second_deriv_2, v0_imag, energy_step)
+    y_exp = y_ms(exp_intensity, exp_derivative_1, exp_derivative_2, v0_imag, energy_step)
+    y_theo = y_ms(theo_intensity, theo_derivative_1, theo_derivative_2, v0_imag, energy_step)
 
     # shift intens_1 by v0_real_steps
-    y_1 = integer_shift_v0r(y_1, v0_real_steps)
+    y_exp = integer_shift_v0r(y_exp, v0_real_steps)
 
-    return pendry_R_from_y(y_1, y_2, energy_step)
+    return pendry_R_from_y(y_exp, y_theo, energy_step)
 
 
 def y_ms(intensity, first_derivative, second_derivative, v0_imag, e_step):
@@ -229,63 +179,39 @@ def y_ms(intensity, first_derivative, second_derivative, v0_imag, e_step):
     denominator = jnp.sqrt(denominator)
     return numerator / denominator
 
-def R_zj(intensity_calc,
-        interpolator_exp, interpolator_calc,
-        v0_real_steps, v0_imag, energy_step,
-        intensity_exp):
+def R_zj(theo_spline,
+         v0_imag, energy_step, energy_grid,
+         exp_spline):
 
-    # calculate interpolation – no derivatives needed for R2
+    # Experimental data
+    exp_deriv_1_spline = exp_spline.derivative()
+    exp_deriv_2_spline = exp_deriv_1_spline.derivative()
 
-    b_spline_coeffs_exp = interpolation.get_bspline_coeffs(
-        interpolator_exp,
-        interpolation.not_a_knot_rhs(intensity_exp))
-    intens_exp = interpolation.evaluate_spline(
-        b_spline_coeffs_exp,
-        interpolator_exp,
-        0
-    )
-    first_deriv_exp = interpolation.evaluate_spline(
-        b_spline_coeffs_exp,
-        interpolator_exp,
-        1
-    )
-    second_deriv_exp = interpolation.evaluate_spline(
-        b_spline_coeffs_exp,
-        interpolator_exp,
-        2
-    )
+    exp_intensity = exp_spline(energy_grid)
+    exp_derivative_1 = exp_deriv_1_spline(energy_grid)
+    exp_derivative_2 = exp_deriv_2_spline(energy_grid)
 
-    b_spline_coeffs_calc = interpolation.get_bspline_coeffs(
-        interpolator_calc,
-        interpolation.not_a_knot_rhs(intensity_calc))
-    intens_calc = interpolation.evaluate_spline(
-        b_spline_coeffs_calc,
-        interpolator_calc,
-        0
-    )
-    first_deriv_calc = interpolation.evaluate_spline(
-        b_spline_coeffs_calc,
-        interpolator_calc,
-        1
-    )
-    second_deriv_calc = interpolation.evaluate_spline(
-        b_spline_coeffs_calc,
-        interpolator_calc,
-        2
-    )
+    # Theory data
+    theo_deriv_1_spline = theo_spline.derivative()
+    theo_deriv_2_spline = theo_deriv_1_spline.derivative()
 
-    exp_energy_ranges = jnp.logical_not(jnp.isnan(intens_exp)).sum(axis=0) * energy_step
+    theo_intensity = theo_spline(energy_grid)
+    theo_derivative_1 = theo_deriv_1_spline(energy_grid)
+    theo_derivative_2 = theo_deriv_2_spline(energy_grid)
+
+
+    exp_energy_ranges = jnp.logical_not(jnp.isnan(exp_intensity)).sum(axis=0) * energy_step
 
     # Factor 0.027 for random correlation, Zannazi & Jona 1977
-    prefactors = 1/nansum_trapezoid(intens_exp, energy_step, axis=0) /0.027
+    prefactors = 1/nansum_trapezoid(exp_intensity, energy_step, axis=0) /0.027
 
     # # calculate normalization for each beam
-    beam_normalization = (nansum_trapezoid(intens_exp, dx=energy_step, axis=0)
-              / nansum_trapezoid(intens_calc, dx=energy_step, axis=0))
+    beam_normalization = (nansum_trapezoid(exp_intensity, dx=energy_step, axis=0)
+              / nansum_trapezoid(theo_intensity, dx=energy_step, axis=0))
 
-    numerators = (abs(beam_normalization*second_deriv_calc-second_deriv_exp)*
-                  abs(beam_normalization*first_deriv_calc-first_deriv_exp))
-    denominators = abs(first_deriv_exp) + jnp.nanmax(first_deriv_exp, axis=0)
+    numerators = (abs(beam_normalization*theo_derivative_2-exp_derivative_2)*
+                  abs(beam_normalization*theo_derivative_1-exp_derivative_1))
+    denominators = abs(exp_derivative_1) + jnp.nanmax(exp_derivative_1, axis=0)
 
     r_beams = prefactors*nansum_trapezoid(numerators/denominators, axis=0, dx=energy_step)
 
