@@ -4,7 +4,10 @@ This module is a reworking of scipy's and my Bspline interpolation methods.
 It can interpolate functions efficiently and in a JAX-compatible way."""
 from abc import ABC, abstractmethod
 
+from functools import partial
+
 import numpy as np
+import jax
 from jax.tree_util import register_pytree_node_class
 from jax import numpy as jnp
 from scipy import interpolate
@@ -91,7 +94,7 @@ class CardinalSplineInterpolator(ABC):
     @property
     def x_diffs(self):
         x_diffs = self.knots[self.intervals+1] - self.target_grid
-        return [x_diffs**i for i in range(1, self.intpol_deg+1)]
+        return jnp.array([x_diffs**i for i in range(1, self.intpol_deg+1)])
 
     @abstractmethod
     def _get_knots(self):
@@ -131,7 +134,6 @@ class CardinalSplineInterpolator(ABC):
             full_matrix += np.diag(banded_colloc_matrix[center_row-k,k:], k)
             full_matrix += np.diag(banded_colloc_matrix[center_row+k,:-k], -k)
         return full_matrix
-
 
     def tree_flatten(self):
         # build kw_dict to rebuild the object
@@ -192,38 +194,108 @@ class CardinalNotAKnotSplineInterpolator(CardinalSplineInterpolator):
 # TODO: The below functions could (and probably should be) interpolator class
 #       methods. However, we need to figure out how to make this work with JAX.
 
-def get_bspline_coeffs(interpolator, rhs):
-    """Return the coefficients of the B-spline interpolant.
+    def get_bspline_coeffs(self, rhs):
+        """Return the coefficients of the B-spline interpolant.
 
-    Solves the linear system lhs * coeffs = rhs for coeffs."""
-    # TODO: we could do this more efficiently. One easy improvement would be to
-    # pre-factorize lhs by splitting .solve() into .lu_factor() and .lu_solve()
-    # parts. Only the solve part depends on the right hand side.
+        Solves the linear system lhs * coeffs = rhs for coeffs."""
+        # TODO: we could do this more efficiently. One easy improvement would be to
+        # pre-factorize lhs by splitting .solve() into .lu_factor() and .lu_solve()
+        # parts. Only the solve part depends on the right hand side.
 
-    rhs_nan_mask = jnp.isnan(rhs) # get mask for NaN values
-    # solve the linear system
-    raw_spline_coeffs = interpolator.inv_colloc_matrix @ jnp.nan_to_num(rhs, 0)
-    # mask NaN values in the result such that they are not used in the interpolation
-    masked_spline_coeffs = jnp.where(rhs_nan_mask, jnp.nan, raw_spline_coeffs)
-    return masked_spline_coeffs
+        rhs_nan_mask = jnp.isnan(rhs) # get mask for NaN values
+        # solve the linear system
+        raw_spline_coeffs = self.inv_colloc_matrix @ jnp.nan_to_num(rhs, 0)
+        # mask NaN values in the result such that they are not used in the interpolation
+        masked_bspline_coeffs = jnp.where(rhs_nan_mask, jnp.nan, raw_spline_coeffs)
+        return masked_bspline_coeffs
 
+    @partial(jax.vmap, in_axes=(None, 1))
+    def convert_b_to_pp_spline_coeffs(self, bspline_coeffs):
+        """Converts B-spline to piecewise polynomial coefficents."""
+
+        a = jnp.convolve(bspline_coeffs,
+                        B_TO_PP_SPLINE_BASIS_TRANSFORMATION[3, :])/self.orig_step**3
+        a  =a/6
+
+        b = jnp.convolve(bspline_coeffs,
+                        B_TO_PP_SPLINE_BASIS_TRANSFORMATION[2, :])/self.orig_step**2
+        b = (b-6*a)/2
+
+        c = jnp.convolve(bspline_coeffs,
+                        B_TO_PP_SPLINE_BASIS_TRANSFORMATION[1, :])/self.orig_step
+        c = c- 3*a -2*b
+
+        d = jnp.convolve(bspline_coeffs,
+                        B_TO_PP_SPLINE_BASIS_TRANSFORMATION[0, :])
+        d = d - a - b- c
+        return jnp.array([a, b, c, d])#[:, :-3] # cut off last three coeffs from convolution
+
+    from functools import partial
+    @partial(jax.vmap, in_axes=(None, 0, None, None))
+    def evaluate_pp_spline_coeffs(self, pp_spline_coeffs, deriv=0, shift=0.0):
+
+        knot_shift, frac_shift = divmod(shift, self.intpol_step)
+        knot_shift = int(knot_shift)
+        print(knot_shift)
+
+        #a,b,c,d = pp_spline_coeffs
+        shift_matrix = translate_cubic_pp_spline_coeffs(-frac_shift)
+        a, b, c, d = shift_matrix@pp_spline_coeffs
+        # multiply wrapped coefficents by NaNs to remove them.
+        n_intervals = len(self.intervals)
+        invalid_ids = jnp.arange(n_intervals)
+        invalidation_mask = jnp.logical_or(invalid_ids < -knot_shift,
+                                        invalid_ids >= n_intervals - knot_shift)
+        invalidation_mask = jnp.where(invalidation_mask, jnp.nan, 1.0)
+
+        _intervals = jnp.roll(self.intervals, -knot_shift)
+        _x_diffs = jnp.roll(self.x_diffs, -knot_shift)
+        _x_diffs = invalidation_mask * _x_diffs
+        x, x2, x3 = _x_diffs
+
+        if deriv == 0:
+            return a[_intervals]*x3 + b[_intervals]*x2 + c[_intervals]*x + d[_intervals]*jnp.ones_like(x)
+        if deriv == 1:
+            return 3*a[_intervals]*x2 + 2*b[_intervals]*x + c[_intervals]
+        elif deriv == 2:
+            return 6*a[_intervals]*x + 2*b[_intervals]
+
+    def translate_bspline_coeffs(self, bspline_coeffs, shift):
+        """Somehow this doesn't work"""
+        piecewise_translator = translate_cubic_pp_spline_coeffs(shift)
+
+        transformation = (jnp.linalg.inv(B_TO_PP_SPLINE_BASIS_TRANSFORMATION)
+                            @piecewise_translator
+                            @B_TO_PP_SPLINE_BASIS_TRANSFORMATION)
+
+        #trafo_eigen_vec = jnp.linalg.eig(transformation)[1][0,:]
+        trafo_eigen_vec = transformation[1,:]
+        trafo_eigen_vec = trafo_eigen_vec
+
+        translated_bspline_coeffs = np.array(
+            [np.convolve(bspline_coeffs[:, beam], trafo_eigen_vec, 'full')
+            for beam in range(bspline_coeffs.shape[1])]
+        ).swapaxes(0,1)
+        # remove added dummy coeffs from convolution
+        translated_bspline_coeffs = translated_bspline_coeffs[1:-2]
+        return translated_bspline_coeffs
+
+    def evaluate_bspline_coeffs(self, bspline_coeffs, deriv_order=0):
+        """Evaluate spline using the De Boor and the B-spline coefficients"""
+        # Extract the relevant coefficients for each interval
+        lower_indices = self.intervals - self.intpol_deg
+        coeff_indices = lower_indices.reshape(-1,1) + jnp.arange(self.intpol_deg+1)
+        coeff_subarrays = bspline_coeffs[coeff_indices]
+
+        # Element-wise multiplication between coefficients and de_boor values
+        # then sum over basis functions
+        return jnp.einsum('ijb,ji->ib',
+                        coeff_subarrays,
+                        self.de_boor_coeffs[deriv_order])
 
 def not_a_knot_rhs(values):
     values = jnp.asarray(values)
     return values
-
-
-def evaluate_spline(spline_coeffs, interpolator, deriv_order=0):
-    """Evaluate the spline using the De Boor coefficients and the B-spline coefficients"""
-    # Extract the relevant coefficients for each interval
-    lower_indices = interpolator.intervals - interpolator.intpol_deg
-    coeff_indices = lower_indices.reshape(-1,1) + jnp.arange(interpolator.intpol_deg+1)
-    coeff_subarrays = spline_coeffs[coeff_indices]
-
-    # Element-wise multiplication between coefficients and de_boor values, sum over basis functions
-    return jnp.einsum('ijb,ji->ib',
-                      coeff_subarrays,
-                      interpolator.de_boor_coeffs[deriv_order])
 
 
 # TODO: implement natural knot interpolator
