@@ -12,7 +12,6 @@ from jax.tree_util import register_pytree_node_class
 from jax import numpy as jnp
 from scipy import interpolate
 
-
 # Basis transformation from cradinal B-spline to cardinal piecewise polynomial
 # in the form as given by de Boor, A practical guide to splines 1978, p.324
 B_TO_PP_SPLINE_BASIS_TRANSFORMATION = np.array([[1/6, 2/3, 1/6, 0.0],
@@ -213,22 +212,27 @@ class CardinalNotAKnotSplineInterpolator(CardinalSplineInterpolator):
     def convert_b_to_pp_spline_coeffs(self, bspline_coeffs):
         """Converts B-spline to piecewise polynomial coefficents."""
 
-        a = jnp.convolve(bspline_coeffs,
-                        B_TO_PP_SPLINE_BASIS_TRANSFORMATION[3, :])/self.orig_step**3
+        # pad with knot values
+        _bspline_coeffs = jnp.pad(bspline_coeffs[1:], (3,3), 'edge')
+
+        a = jnp.convolve(_bspline_coeffs,
+                        B_TO_PP_SPLINE_BASIS_TRANSFORMATION[3, :], 'same')/self.orig_step**3
         a  =a/6
 
-        b = jnp.convolve(bspline_coeffs,
-                        B_TO_PP_SPLINE_BASIS_TRANSFORMATION[2, :])/self.orig_step**2
+        b = jnp.convolve(_bspline_coeffs,
+                        B_TO_PP_SPLINE_BASIS_TRANSFORMATION[2, :], 'same')/self.orig_step**2
         b = (b-6*a)/2
 
-        c = jnp.convolve(bspline_coeffs,
-                        B_TO_PP_SPLINE_BASIS_TRANSFORMATION[1, :])/self.orig_step
-        c = c- 3*a -2*b
+        c = jnp.convolve(_bspline_coeffs,
+                        B_TO_PP_SPLINE_BASIS_TRANSFORMATION[1, :], 'same')/self.orig_step
+        c = c - 3*a -2*b
 
-        d = jnp.convolve(bspline_coeffs,
-                        B_TO_PP_SPLINE_BASIS_TRANSFORMATION[0, :])
+        d = jnp.convolve(_bspline_coeffs,
+                        B_TO_PP_SPLINE_BASIS_TRANSFORMATION[0, :], 'same')
         d = d - a - b- c
-        return jnp.array([a, b, c, d])#[:, :-3] # cut off last three coeffs from convolution
+        pp_spline_coeffs = jnp.array([a, b, c, d])[:, :] # cut off last three coeffs from convolution
+        #pp_spline_coeffs = jnp.pad(pp_spline_coeffs, ((0,0), (3,3)), 'edge')
+        return pp_spline_coeffs
 
     from functools import partial
     @partial(jax.vmap, in_axes=(None, 0, None, None))
@@ -248,7 +252,7 @@ class CardinalNotAKnotSplineInterpolator(CardinalSplineInterpolator):
                                         invalid_ids >= n_intervals - knot_shift)
         invalidation_mask = jnp.where(invalidation_mask, jnp.nan, 1.0)
 
-        _intervals = jnp.roll(self.intervals, -knot_shift)
+        _intervals = jnp.roll(self.intervals + 1, -knot_shift)
         _x_diffs = jnp.roll(self.x_diffs, -knot_shift)
         _x_diffs = invalidation_mask * _x_diffs
         x, x2, x3 = _x_diffs
@@ -314,14 +318,14 @@ def natural_derivative_bc(deg):
     if deg == 3:
         derivs_l_ord = np.array([2])
         derivs_l_val = np.array([0])
-        
+
         derivs_r_ord = np.array([2])
         derivs_r_val = np.array([0])
 
     elif deg == 5:
         derivs_l_ord = np.array([3, 4])
         derivs_l_val = np.array([0, 0])
-        
+
         derivs_r_ord = np.array([3, 4])
         derivs_r_val = np.array([0, 0])
 
