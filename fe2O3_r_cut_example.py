@@ -108,6 +108,7 @@ centered_vib_amps = calculator.ref_vibrational_amps
 centered_displacements = np.array([[0.0, 0.0, 0.0],]*30)
 
 # Set experimental intensities
+print('Setting experimental data...')
 aligned_exp_intensities = exp_intensities[:, corr]
 # set reference point
 calculator.set_experiment_intensity(aligned_exp_intensities,
