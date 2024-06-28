@@ -129,10 +129,9 @@ class TensorParameterTransformer:
         return v0r, vib_amps, displacements
 
     def _expand_v0r(self, v0r):
-        """V0r is given to the optimizer as a float, but needs to be rounded to an integer"""
+        """V0r is given to the optimizer normalized"""
         v0r_min, v0r_max = self.v0r_bounds
-        v0r = v0r_min + (v0r)*(v0r_max-v0r_min) # normalize 0..1
-        return jnp.array(jnp.rint(v0r/self.energy_step), dtype=jnp.int32)
+        return v0r_min + (v0r)*(v0r_max-v0r_min) # normalize 0..1
 
     def _expand_vib_amps(self, short_vib_amps):
         # undo normalization (0, 1)
