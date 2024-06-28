@@ -114,7 +114,7 @@ calculator.set_experiment_intensity(aligned_exp_intensities,
                                     exp_energies)
 
 v0r_range = (-3.5, +3.5) # in eV
-vib_amp_range = (-0.15, +0.15) # in A
+vib_amp_range = (-0.05, +0.05) # in A
 geo_range = (-0.15, +0.15) # in A
 
 centered_reduced_vib_amps = np.array([0.089, 0.06, 0.141, 0.115])
