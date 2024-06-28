@@ -13,6 +13,8 @@ from src.interpolation import *
 from src.lib_intensity import intensity_prefactor, sum_intensity
 from src.parameter_handler import TensorParameterTransformer
 
+import interpax
+
 _R_FACTOR_SYNONYMS = {
     rfactor.pendry_R: ('pendry', 'r_p', 'rp', 'pendry r-factor'),
     rfactor.R_1: ('r1', 'r_1', 'r1 factor'),
@@ -29,11 +31,13 @@ class TensorLEEDCalculator:
                  beam_indices,
                  interpolation_step=0.5,
                  interpolation_deg=3,
+                 bc_type='not-a-knot',
                  batch_lmax=False):
         self.ref_data = ref_data
         self.phaseshifts = phaseshifts
         self.batch_lmax = batch_lmax
         self.interpolation_deg = interpolation_deg
+        self.bc_type=bc_type
         self.beam_indices = jnp.array(beam_indices)
         # reading from IVBEAMS does not guarantee correct order!
         #self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
@@ -58,15 +62,16 @@ class TensorLEEDCalculator:
 
         self.ref_vibrational_amps = jnp.array(
             [at.site.vibamp[at.el] for at in non_bulk_atoms])
-        self.interpolator = CardinalNotAKnotSplineInterpolator(
-            ref_data.incident_energy_ev,
-            self.target_grid,
-            self.interpolation_deg # TODO: take from rparams.INTPOL_DEG
-        )
+        self.origin_grid = ref_data.incident_energy_ev
+
+        self.exp_spline = None
         self.parameter_transformer = self._get_parameter_transformer(slab, rparams)
 
         # default R-factor is Pendry
         self.rfactor_func = rfactor.pendry_R
+
+        if self.interpolation_deg != 3:
+            raise NotImplementedError
 
     @property
     def unit_cell_area(self):
@@ -105,11 +110,10 @@ class TensorLEEDCalculator:
     def set_experiment_intensity(self, comp_intensity, comp_energies):
         self.comp_intensity = comp_intensity
         self.comp_energies = comp_energies
-        # set interpolator
-        self.exp_interpolator = CardinalNotAKnotSplineInterpolator(
-            comp_energies,
-            self.target_grid,
-            self.interpolation_deg
+        self.exp_spline = interpolate_ragged_array(
+            self.comp_energies,
+            self.comp_intensity,
+            bc_type=self.bc_type,
         )
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
@@ -160,33 +164,42 @@ class TensorLEEDCalculator:
         return sum_intensity(refraction_prefactor, self.ref_data.ref_amps,
                              zero_deltas)
 
-    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
+    @partial(jax.jit, static_argnames=('self', 'deriv_deg'))
     def interpolated(self, vib_amps, displacements, deriv_deg=0):
         return self._interpolated(vib_amps, displacements, deriv_deg)
 
     def _interpolated(self, vib_amps, displacements, deriv_deg=0):
         non_interpolated_intensity = self._intensity(vib_amps, displacements)
-        rhs = not_a_knot_rhs(non_interpolated_intensity)
-        bspline_coeffs = get_bspline_coeffs(self.interpolator, rhs)
-        return evaluate_spline(bspline_coeffs, self.interpolator, deriv_deg)
+        spline =  interpax.CubicSpline(self.origin_grid,
+                                    non_interpolated_intensity,
+                                    bc_type=self.bc_type,
+                                    extrapolate=False,
+                                    check=False,                                # TODO: do check once in the object creation
+                                    )
+        for i in range(deriv_deg):
+            spline = spline.derivative()
+        return spline(self.target_grid)
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
-    def R(self, vib_amps, displacements, v0_real_steps=0):
-        return self._R(vib_amps, displacements, v0_real_steps)
+    def R(self, vib_amps, displacements, v0r_shift=0.):
+        return self._R(vib_amps, displacements, v0r_shift)
 
-    def _R(self, vib_amps, displacements, v0_real_steps=0):
+    def _R(self, vib_amps, displacements, v0r_shift=0.):
         if self.comp_intensity is None:
             raise ValueError("Comparison intensity not set.")
         v0i_electron_volt = -self.ref_data.v0i*HARTREE
         non_interpolated_intensity = self._intensity(vib_amps, displacements)
+        # apply v0r shift
+        theo_spline = interpax.CubicSpline(self.origin_grid + v0r_shift,
+                                           non_interpolated_intensity,
+                                           check=False,
+                                           extrapolate=False)
         return self.rfactor_func(
-            non_interpolated_intensity,
-            self.exp_interpolator,
-            self.interpolator,
-            v0_real_steps,
+            theo_spline,
             v0i_electron_volt,
             self.interpolation_step,
-            self.comp_intensity
+            self.target_grid,
+            self.exp_spline
         )
 
     @jax.jit
@@ -227,6 +240,7 @@ class TensorLEEDCalculator:
             'phaseshifts': self.phaseshifts,
             'batch_lmax': self.batch_lmax,
             'interpolation_deg': self.interpolation_deg,
+            'bc_type': self.bc_type,
             'interpolation_step': self.interpolation_step,
             'beam_indices': self.beam_indices,
             'ref_vibrational_amps': self.ref_vibrational_amps,
@@ -236,10 +250,10 @@ class TensorLEEDCalculator:
             'theta': self.theta,
             'is_surface_atom': self.is_surface_atom,
             'parameter_transformer': self.parameter_transformer,
-            'interpolator': self.interpolator,
-            'exp_interpolator': self.exp_interpolator,
+            'exp_spline': self.exp_spline,
             'comp_intensity': self.comp_intensity,
             'comp_energies': self.comp_energies,
+            'origin_grid': self.origin_grid,
         }
         aux_data = (dynamic_elements, simple_elements)
         children = ()
@@ -258,3 +272,26 @@ class TensorLEEDCalculator:
         calculator.set_rfactor(dynamic_elements['rfactor_name'])
 
         return calculator
+
+
+def make_1d_ragged_cubic_spline(x, y, axis=0, bc_type="not-a-knot", extrapolate=False):
+    """Construct a piecewise cubic spline interpolator with ragged edges.
+
+    The interpolator uses a cubic spline to interpolate data.
+    """
+    if x.ndim > 1 or y.ndim > 1:
+        raise ValueError("x and y must be 1-dimensional arrays.")
+    y_mask = jnp.isnan(y)
+    x_subarray, y_subarray = x[~y_mask], y[~y_mask]
+    start_index = jnp.where(~y_mask)[0][0]
+    subarray_spline = interpax.CubicSpline(x_subarray, y_subarray, axis, bc_type, extrapolate, check=False)
+
+    return subarray_spline, start_index
+
+def interpolate_ragged_array(x, y, axis=0, bc_type="not-a-knot", extrapolate=False):
+    all_coeffs = jnp.full((4, y.shape[0], y.shape[1]), fill_value=jnp.nan)
+    for dim in range(y.shape[1]):
+        spline, start_id = make_1d_ragged_cubic_spline(x, y[:, dim], axis=0, bc_type=bc_type, extrapolate=None)
+        all_coeffs = all_coeffs.at[:, start_id:start_id+spline.c.shape[1], dim].set(spline.c)
+    spline = interpax.PPoly.construct_fast(all_coeffs, x)
+    return spline
