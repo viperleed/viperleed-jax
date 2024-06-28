@@ -7,48 +7,27 @@ from jax import numpy as jnp
 from src import interpolation
 
 
-def pendry_R(intensity_2,
-             interpolator_1, interpolator_2,
-             v0_real_steps, v0_imag, energy_step,
-             intensity_1):
+def pendry_R(theo_spline,
+             v0_imag, energy_step, energy_grid,
+             exp_spline):
     """Calculate the R-factor for two beams"""
 
-    # calculate the interpolated intensities and derivatives
-    b_spline_coeffs_1 = interpolation.get_bspline_coeffs(
-        interpolator_1,
-        interpolation.not_a_knot_rhs(intensity_1))
-    intens_1 = interpolation.evaluate_spline(
-        b_spline_coeffs_1,
-        interpolator_1,
-        0
-    )
-    deriv_1 = interpolation.evaluate_spline(
-        b_spline_coeffs_1,
-        interpolator_1,
-        1
-    )
+    # Experimental data
+    exp_deriv_spline = exp_spline.derivative()
 
-    b_spline_coeffs_2 = interpolation.get_bspline_coeffs(
-        interpolator_2,
-        interpolation.not_a_knot_rhs(intensity_2))
-    intens_2 = interpolation.evaluate_spline(
-        b_spline_coeffs_2,
-        interpolator_2,
-        0
-    )
-    deriv_2 = interpolation.evaluate_spline(
-        b_spline_coeffs_2,
-        interpolator_2,
-        1
-    )
+    exp_intensity = exp_spline(energy_grid)
+    exp_derivative = exp_deriv_spline(energy_grid)
 
-    y_1 = pendry_y(intens_1, deriv_1, v0_imag)
-    y_2 = pendry_y(intens_2, deriv_2, v0_imag)
+    # Theory data
+    theo_deriv_spline = theo_spline.derivative()
 
-    # shift y_1 by v0_real_steps
-    y_1 = integer_shift_v0r(y_1, v0_real_steps)
+    theo_intensity = theo_spline(energy_grid)
+    theo_derivative = theo_deriv_spline(energy_grid)
 
-    return pendry_R_from_y(y_1, y_2, energy_step)
+    exp_y = pendry_y(exp_intensity, exp_derivative, v0_imag)
+    theo_y = pendry_y(theo_intensity, theo_derivative, v0_imag)
+
+    return pendry_R_from_y(exp_y, theo_y, energy_step)
 
 
 def pendry_R_from_intensity_and_derivative(intens_deriv_1, intens_deriv_2,
