@@ -163,7 +163,7 @@ def R_ms(theo_spline,
 
 
     y_exp = y_ms(exp_intensity, exp_derivative_1, exp_derivative_2, v0_imag, energy_step)
-    y_theo = y_ms(theo_intensity, theo_derivative_1, theo_derivative_2, v0_imag, energy_step
+    y_theo = y_ms(theo_intensity, theo_derivative_1, theo_derivative_2, v0_imag, energy_step)
 
     return pendry_R_from_y(y_exp, y_theo, energy_step)
 
