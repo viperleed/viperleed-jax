@@ -97,13 +97,9 @@ def R_2(theo_spline,
     # calculate interpolation only – no derivatives needed for R2
 
     # Experimental data
-    exp_deriv_spline = exp_spline.derivative()
-
     exp_intensity = exp_spline(energy_grid)
 
     # Theory data
-    theo_deriv_spline = theo_spline.derivative()
-
     theo_intensity = theo_spline(energy_grid)
 
     # calculate normalization for each beam
