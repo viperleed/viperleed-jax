@@ -71,7 +71,19 @@ def HARMONY(C, LMAX):
     TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
     equivalent results."""
     _, theta, phi = cart_to_polar(C)
-    return sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.asarray([phi]), jnp.asarray([theta]), n_max=2*LMAX)
+    l = DENSE_L[2*LMAX]
+    m = DENSE_M[2*LMAX]
+
+    is_on_pole_axis = theta==0
+    _theta = jnp.where(is_on_pole_axis, 0.1, theta)
+
+    # values at the poles(theta = 0) depend on l and m only
+    pole_values = (m == 0)*jnp.sqrt((2*l+1)/(4*jnp.pi))
+    non_pole_values = sph_harm(m, l,
+                               jnp.asarray([phi]), jnp.asarray([_theta]),
+                               n_max=2*LMAX)
+
+    return jnp.where(is_on_pole_axis, pole_values, non_pole_values)
 
 
 def cart_to_polar(c):
@@ -85,10 +97,12 @@ def cart_to_polar(c):
     x_y_norm = jnp.hypot(x, y)
     r = jnp.linalg.norm(c)
     theta = 2*jnp.arctan(
-        _divide_zero_safe(x_y_norm, (jnp.hypot(x_y_norm, z)+z), jnp.pi/2)
+        _divide_zero_safe(x_y_norm, (jnp.hypot(x_y_norm, z)+z)+EPS, 0.0)
     )
+
+    # forces phi to 0 on theta=0 axis (where phi is undefined)
     phi = 2*jnp.arctan(
-        _divide_zero_safe(y, (x_y_norm+x), jnp.pi/2)
+        _divide_zero_safe(y, (x_y_norm+x)+EPS, 0.0)
     )
 
     return r, theta, phi
