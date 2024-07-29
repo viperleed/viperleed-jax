@@ -170,7 +170,7 @@ def create_j_l(order: int, dtype: onp.dtype = onp.float32):
             minus_1 = (2 * (order - i) + 1) * temp / r - plus_1
             plus_1, temp = temp, minus_1
             unnormalized.append(minus_1)
-            unnormalized_derivative.append(order * minus_1 / r - plus_1)
+            unnormalized_derivative.append((order-i-1) * minus_1 / r - plus_1)
 
 
         # Generally speaking, we use the explicit form of j_0 to obtain the
