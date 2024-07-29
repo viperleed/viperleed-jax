@@ -201,7 +201,7 @@ def create_j_l(order: int, dtype: onp.dtype = onp.float32):
                 kind.
         """
         r = jnp.asarray(r)
-        condition = r < order
+        condition = abs(r) < order                                              # TODO: not clear if this should be abs(r) or r.real
         return (
             condition * j_l_Cai(jnp.clip(r, a_max=order))[0] +
             (1. - condition) * j_l_upward(r)[0]
