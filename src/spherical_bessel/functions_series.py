@@ -182,8 +182,8 @@ def create_j_l(order: int, dtype: onp.dtype = onp.float32):
             order_1[0] / jnp.asarray(minus_1),
             order_1[1] / jnp.asarray(plus_1)
         )
-        return (prefactor * jnp.asarray(unnormalized),
-                prefactor * jnp.asarray(unnormalized_derivative))
+        return (prefactor * jnp.flip(jnp.asarray(unnormalized)),
+                prefactor * jnp.flip(jnp.asarray(unnormalized_derivative)))
 
     @jax.custom_jvp
     def j_l(r: jnp.ndarray) -> jnp.ndarray:
