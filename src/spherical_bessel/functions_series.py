@@ -112,11 +112,13 @@ def create_j_l(order: int, dtype: onp.dtype = onp.float32):
             The values of the order-l spherical Bessel function of the first
                 kind and the values of its derivative, in a tuple.
         """
+        r = jnp.asarray(r, dtype=complex)
+
         orders, derivatives = [], []
         orders.append(_j_1(r)[0])
         orders.append(_j_1(r)[1])
-        derivatives.append(jax.grad(lambda x: _j_1(x)[0])(r))
-        derivatives.append(jax.grad(lambda x: _j_1(x)[1])(r))
+        derivatives.append(jax.grad(lambda x: _j_1(x)[0], holomorphic=True)(r))
+        derivatives.append(jax.grad(lambda x: _j_1(x)[1], holomorphic=True)(r))
 
         # TODO: replace with jax.lax.scan operation
         for i in range(order - 1):
