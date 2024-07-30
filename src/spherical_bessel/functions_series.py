@@ -47,7 +47,8 @@ def _j_1(r: jnp.ndarray) -> jnp.ndarray:
     Returns:
         The values of the order-1 spherical Bessel function of the first kind.
     """
-    return jnp.array([jnp.sinc(r / jnp.pi), (jnp.sinc(r / jnp.pi) - jnp.cos(r)) / r])
+    j_1 = (jnp.sinc(r / jnp.pi) - jnp.cos(r)) / r
+    return jnp.array([_j_0(r), j_1])
 
 
 def _calc_starting_order_Cai(order: int, r):
