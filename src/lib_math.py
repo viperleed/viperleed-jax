@@ -74,7 +74,7 @@ def HARMONY(C, LMAX):
     l = DENSE_L[2*LMAX]
     m = DENSE_M[2*LMAX]
 
-    is_on_pole_axis = theta==0
+    is_on_pole_axis = abs(theta)<=EPS
     _theta = jnp.where(is_on_pole_axis, 0.1, theta)
 
     # values at the poles(theta = 0) depend on l and m only
@@ -97,7 +97,7 @@ def cart_to_polar(c):
     x_y_norm = jnp.hypot(x, y)
     r = jnp.linalg.norm(c)
     theta = 2*jnp.arctan(
-        _divide_zero_safe(x_y_norm, (jnp.hypot(x_y_norm, z)+z)+EPS, 0.0)
+        _divide_zero_safe(x_y_norm, (jnp.hypot(x_y_norm, z)+z), (1/EPS) * (1 - jnp.sign(z)))
     )
 
     # forces phi to 0 on theta=0 axis (where phi is undefined)
