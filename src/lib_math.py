@@ -2,11 +2,10 @@ from jax.scipy.special import sph_harm
 import jax
 import jax.numpy as jnp
 
+from spbessax import functions
+
 from src.dense_quantum_numbers import DENSE_M, DENSE_L
 from src.dense_quantum_numbers import MAXIMUM_LMAX
-
-# Spherical Bessel functions from NeuralIL
-from src.spherical_bessel import functions
 
 # numerical epsilon to avoid division by zero
 EPS = 1e-8
@@ -45,7 +44,9 @@ def _generate_bessel_functions(l_max):
     """Generate a list of spherical Bessel functions up to order l_max"""
     bessel_functions = []
     for order in range(l_max+1):
-        bessel_functions.append(functions.create_j_l(order))
+        bessel_functions.append(functions.create_j_l(order,
+                                                     dtype=jnp.complex128,
+                                                     output_all=True))
     return bessel_functions
 
 
@@ -57,7 +58,7 @@ BESSEL_FUNCTIONS = _generate_bessel_functions(2*MAXIMUM_LMAX)
 @jax.named_scope("bessel")
 def bessel(z, n1):
     """Spherical Bessel functions. Evaluated at z, up to degree n1."""
-    return jnp.asarray([BESSEL_FUNCTIONS[n](z) for n in range(n1)])
+    return BESSEL_FUNCTIONS[n1](z)
 
 
 @jax.named_scope("HARMONY")
