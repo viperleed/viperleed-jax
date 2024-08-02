@@ -204,10 +204,8 @@ def TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v
 
     broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
 
-    DELTAT = (csum * 1j * broadcast_New_t_matrix) @ csum
-
-    # alternative einsum version:
-    # DELTAT = jnp.einsum('ji,j,lj->il', csum, 1j * broadcast_New_t_matrix, csum, optimize=True)
+    DELTAT = jnp.einsum('ji,j,lj->il',
+                        csum, 1j * broadcast_New_t_matrix, csum, optimize=True)
 
     mapped_t_matrix_ref = map_l_array_to_compressed_quantum_index(t_matrix_ref, LMAX)
     DELTAT = DELTAT - jnp.diag(1j*mapped_t_matrix_ref)
