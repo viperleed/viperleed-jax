@@ -205,7 +205,7 @@ def read_tensor(filename, n_beams=9, n_energies=100, l_max = 11, compare_with=No
         line = next(file_lines) # discard relative momenta vs. incident beam (==0)
 
         tens_amps_as_real = read_block(FF_READER_5E12_6, file_lines, shape=(
-        n_phaseshifts_per_energy[e_step]**2, 2))
+            n_phaseshifts_per_energy[e_step]**2, 2))
         tens_amps_as_complex = tens_amps_as_real.view(np.complex128)[..., 0]
         tensor_amps_in[e_step, :n_phaseshifts_per_energy[e_step]**2] = tens_amps_as_complex
 
