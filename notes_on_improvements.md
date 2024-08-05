@@ -11,7 +11,7 @@ fashion, we could potentially simplify the calculation during setup. One could,
 for example, use a linear combination of the tensors for changes that can only
 occur together. This may save significant amounts of computation and memory.
 
-## Full V0r support
+## Full V0r support – DONE
 Due to the implementation, the parameter v0r can currently only take values that
 are a multiple of the used energy step. The R-factor depends strongly on V0r, so
 this is a considerable restriction (that also exists in TensErLEED!).
@@ -32,3 +32,8 @@ possible to calculate only half as many qunatum number combinations as we
 currently do.
 The CSUM coeffs are symmetric (execpt for prefactors), and spherical harmonics
 follow Y_(l,-m) = (-1)^m Y_(l,m)^*.
+
+*Note:* we tried to look into this. Turns out the spherical harmonics are
+calculated in a very efficient manner in JAX and there is little to no
+overhead for calculating more combinations, as all possible l,m combinations
+up to the max used l,m are calculated and cached anyhow in an iterative scheme.
