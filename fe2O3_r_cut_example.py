@@ -9,7 +9,6 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 import numpy as np
 
-from src.constants import BOHR
 from src.lib_tensors import read_tensor
 from src.lib_phaseshifts import *
 from src.data_structures import ReferenceData
@@ -17,8 +16,6 @@ from src.tensor_calculator import TensorLEEDCalculator
 
 from tqdm import tqdm
 
-import viperleed
-from viperleed.calc import symmetry
 from viperleed.calc.files import poscar
 from viperleed.calc.files import parameters
 from viperleed.calc.classes.rparams import Rparams
@@ -26,7 +23,7 @@ from viperleed.calc.files.beams import readIVBEAMS, readOUTBEAMS
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from viperleed.calc.files.vibrocc import readVIBROCC
 from viperleed.calc.files.iorfactor import beamlist_to_array
-from viperleed.calc.lib.leedbase import getBeamCorrespondence
+
 
 # load input files
 data_path = Path('tests') / 'test_data' / 'Fe2O3_012'
