@@ -142,7 +142,7 @@ class ReferenceData:
             tmp_tensor_amps_in = [t.tensor_amps_in[en_id, :(lmax+1)**2]
                                   for t in tensors]
             # transpose to swap lm, and beams axis for tensor_amps_out
-            tmp_tensor_amps_out = [t.tensor_amps_out[en_id, :(lmax+1)**2, :].T
+            tmp_tensor_amps_out = [t.tensor_amps_out[en_id, :, :(lmax+1)**2].T
                                    for t in tensors]
 
             # One more conversion for usage in the delta amplitude calculation:
@@ -150,14 +150,14 @@ class ReferenceData:
             # m -> -m. To do this in the dense representation, we do the 
             # following:
             tmp_tensor_amps_out = [
-                amps[:, (DENSE_L[lmax]+1)**2 - DENSE_L[lmax] - DENSE_M[lmax] -1]
+                amps[(DENSE_L[lmax]+1)**2 - DENSE_L[lmax] - DENSE_M[lmax] -1]
                 for amps in tmp_tensor_amps_out
             ]
 
             # apply (-1)^m to tensor_amps_out - this factor is needed
             # in the calculation of the amplitude differences
             tmp_tensor_amps_out = [
-                jnp.einsum('l,bl->bl', MINUS_ONE_POW_M[lmax], amps)
+                jnp.einsum('l,lb->bl', MINUS_ONE_POW_M[lmax], amps)
                 for amps in tmp_tensor_amps_out
             ]
 
