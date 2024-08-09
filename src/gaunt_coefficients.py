@@ -10,8 +10,52 @@ from pathlib import Path
 from src.dense_quantum_numbers import MAXIMUM_LMAX
 from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 
-_REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__).parent / "gaunt_coefficients.npy",
+# load precalculated coefficients
+_REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__).parent / "compressed_gaunt.npy",
                                        allow_pickle=False)
+
+_DENSE_L_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 0]
+_DENSE_LP_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 1]
+_DENSE_M_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 2]
+_DENSE_MP_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 3]
+
+
+# TODO: @Paul add docstring with references to the storage scheme paper
+def find_index(l1: int, l2: int, l3: int,
+                m1: int, m2: int, m3: int) -> jnp.array:
+    selection_rule_m = (m1 + m2 + m3 == 0) & (abs(m3) <= l3) & (l3<= l1+l2) & (l3>=abs(l1-l2))
+    l_unsorted = jnp.array([l1,l2,l3])
+    m_unsorted = jnp.array([m1,m2,m3])
+    sorted_indices = jnp.argsort(l_unsorted)[::-1]
+    l = l_unsorted[sorted_indices]
+    m = m_unsorted[sorted_indices]
+    index = l[0]*(6+l[0]*(11+l[0]*(6+l[0])))/24 + l[1]*(2+l[1]*(3+l[1]))/6 + l[2]*(l[2]+1)/2 + abs(m[2]) + 1
+    index = index.astype(jnp.int64)
+    my_m = jax.lax.cond(m[2]>=0, (lambda m_1: m_1), lambda m_1: -m_1, m[1])
+    index2 = (jnp.size(_REDUCED_GAUNT_COEFFICIENTS[index-1])-1)/2 + my_m
+    index2 = index2.astype(jnp.int64)
+    return jax.lax.cond(
+        selection_rule_m,
+        (lambda index,index2: jnp.array([index,index2])),
+        lambda index,index2: jnp.array([0,0]),
+        index,index2
+    )
+
+
+def fetch_gaunt(index1: int, index2: int) -> float:
+    """
+    Fetches the Gaunt coefficient from the loaded file.
+
+    Parameters:
+        index1 (int): The first index of the Gaunt coefficient.
+        index2 (int): The second index of the Gaunt coefficient.
+
+    Returns:
+        float: The value of the Gaunt coefficient.
+
+    """
+    return _REDUCED_GAUNT_COEFFICIENTS[index1, index2]
+
 
 @jit
 def fetch_stored_gaunt_coeffs(l1: int, l2: int, l3: int,
@@ -48,23 +92,17 @@ def fetch_stored_gaunt_coeffs(l1: int, l2: int, l3: int,
     They satisfy the selection rule :math:`m_1 + m_2 + m_3 = 0` and
     :math:`|l_1-l_2| \le l_3 \le l_1+l_2`.
     """
-    selection_rule_m = m1 + m2 + m3 == 0
-    return jax.lax.cond(
-        selection_rule_m,
-        (lambda l1, l2, l3, m1, m2: 
-         _REDUCED_GAUNT_COEFFICIENTS[l1, l2, l3, m1, m2]),
-        lambda l1, l2, l3, m1, m2: 0.0,
-        l1, l2, l3, m1, m2,
-    )
+    reduced_indices = find_index(l1, l2, l3, m1, m2, m3)
+    return fetch_gaunt(reduced_indices[0], reduced_indices[1])
 
-# vectorize cppp in all arguments
+
+# vectorize integrate_legendre in all arguments
 # Clebsh-Gordon coefficients for computation of temperature-dependent phase shifts
 # used in tscatf; can be jitted
-# TODO: @ Paul: chose a better name for this function
 @partial(vmap, in_axes=(0, None, None))
 @partial(vmap, in_axes=(None, 0, None))
 @partial(vmap, in_axes=(None, None, 0))
-def cppp(l1: int, l2: int , l3: int) -> float:
+def integrate_legendre(l1: int, l2: int , l3: int) -> float:
     """Calculates integral over three associated Legendre polynomials.
 
     Parameters
@@ -74,7 +112,7 @@ def cppp(l1: int, l2: int , l3: int) -> float:
     Returns
     -------
     float
-        Value of the integral.
+        Value of the integral.b
 
     Notes
     -----
@@ -93,67 +131,27 @@ def cppp(l1: int, l2: int , l3: int) -> float:
     """
     pre_factor = 1/jnp.sqrt((2*l1+1)*(2*l2+1)*(2*l3+1))
     pre_factor *= jnp.sqrt(4*jnp.pi)
-    return pre_factor * _REDUCED_GAUNT_COEFFICIENTS[l1, l2, l3, 0, 0]
+    reduced_indices = find_index(l1, l2, l3, 0, 0, 0)
+    return pre_factor * fetch_gaunt(reduced_indices[0], reduced_indices[1])
 
 
 PRE_CALCULATED_CPPP = {
-    l: cppp(jnp.arange(0, 2*l+1), jnp.arange(0, l+1), jnp.arange(0, l+1))
+    l: integrate_legendre(jnp.arange(0, 2*l+1), jnp.arange(0, l+1), jnp.arange(0, l+1))
     for l in range(MAXIMUM_LMAX+1)
 }
-
-"""lpp_gaunt = jax.vmap(jax.vmap(fetch_stored_gaunt_coeffs,
-                    in_axes=(0, 0, None, 0, 0, 0),out_axes=0),
-                    in_axes=(0, 0, None, 0, 0, 0),out_axes=0)
-
-_DENSE_L_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 0]
-_DENSE_LP_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 1]
-_DENSE_M_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 2]
-_DENSE_MP_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 3]
-
-CSUM_COEFFS = jnp.array([lpp_gaunt(_DENSE_L_2D, _DENSE_LP_2D, lpp, _DENSE_M_2D, -_DENSE_MP_2D, -_DENSE_M_2D+_DENSE_MP_2D)
-                    *(-1)**(_DENSE_M_2D)
-                    *1j**(_DENSE_L_2D+_DENSE_LP_2D-lpp) #AI: I found we need this factor, but I still don't understand where it comes from
-                    for lpp in range(MAXIMUM_LMAX*2+1)])"""
-
-pauls_gaunt = jnp.load(Path(__file__).parent / "pauls_gaunt.npy",
-                                       allow_pickle=False)
-
-@jit
-def find_index(l1: int, l2: int, l3: int,
-                m1: int, m2: int, m3: int) -> jnp.array:
-    selection_rule_m = (m1 + m2 + m3 == 0) & (abs(m3) <= l3) & (l3<= l1+l2) & (l3>=abs(l1-l2))
-    l_unsorted = jnp.array([l1,l2,l3])
-    m_unsorted = jnp.array([m1,m2,m3])
-    sorted_indices = jnp.argsort(l_unsorted)[::-1]
-    l = l_unsorted[sorted_indices]
-    m = m_unsorted[sorted_indices]
-    index = l[0]*(6+l[0]*(11+l[0]*(6+l[0])))/24 + l[1]*(2+l[1]*(3+l[1]))/6 + l[2]*(l[2]+1)/2 + abs(m[2]) + 1
-    index = index.astype(jnp.int64)
-    my_m = jax.lax.cond(m[2]>=0, (lambda m_1: m_1), lambda m_1: -m_1, m[1])
-    index2 = (jnp.size(pauls_gaunt[index-1])-1)/2 + my_m
-    index2 = index2.astype(jnp.int64)
-    return jax.lax.cond(
-        selection_rule_m,
-        (lambda index,index2: jnp.array([index,index2])),
-        lambda index,index2: jnp.array([0,0]),
-        index,index2
-    )
-
-@jit
-def my_gaunt(index1:int,index2:int) -> float:
-     return pauls_gaunt[index1,index2]
 
 lpp_indices = jax.vmap(jax.vmap(find_index,
                     in_axes=(0, 0, None, 0, 0, 0),out_axes=0),
                     in_axes=(0, 0, None, 0, 0, 0),out_axes=0)
-lpp_my_gaunt = jax.vmap(jax.vmap(my_gaunt,in_axes=(0,0),out_axes=0),in_axes=(0,0),out_axes=0)
-_DENSE_L_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 0]
-_DENSE_LP_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 1]
-_DENSE_M_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 2]
-_DENSE_MP_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 3]
-my_array = jnp.array([lpp_indices(_DENSE_L_2D, _DENSE_LP_2D, lpp, _DENSE_M_2D, -_DENSE_MP_2D, -_DENSE_M_2D+_DENSE_MP_2D)
+
+lpp_gaunt = jax.vmap(jax.vmap(fetch_gaunt,in_axes=(0,0),out_axes=0),in_axes=(0,0),out_axes=0)
+
+gaunt_array = jnp.array([lpp_indices(_DENSE_L_2D, _DENSE_LP_2D, lpp, _DENSE_M_2D, -_DENSE_MP_2D, -_DENSE_M_2D+_DENSE_MP_2D)
                       for lpp in range(MAXIMUM_LMAX*2+1)])
-CSUM_COEFFS = jnp.array([lpp_my_gaunt(my_array[lpp,:,:,0], my_array[lpp,:,:,1])
-                   *(-1)**(_DENSE_M_2D)
-                    *1j**(_DENSE_L_2D+_DENSE_LP_2D-lpp) #AI: I found we need this factor, but I still don't understand where it comes from
-                    for lpp in range(MAXIMUM_LMAX*2+1)])
+
+CSUM_COEFFS = jnp.array(
+    [lpp_gaunt(gaunt_array[lpp,:,:,0], gaunt_array[lpp,:,:,1])
+     *(-1)**(_DENSE_M_2D)
+     *1j**(_DENSE_L_2D+_DENSE_LP_2D-lpp) #AI: I found we need this factor, but I still don't understand where it comes from
+     for lpp in range(MAXIMUM_LMAX*2+1)]
+)
