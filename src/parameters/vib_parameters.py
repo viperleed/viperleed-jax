@@ -1,15 +1,7 @@
-from src.parameters.base_parameters import BaseParam, DeltaParam, Params, ConstrainedDeltaParam
-
-class VibParam(DeltaParam):
-    
-    def __init__(self, atom_site_element):
-        self.atom_site_element = atom_site_element
-        self.site_element = atom_site_element.site_element
-        pass
+from src.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam
 
 
-
-class VibBaseParam(VibParam, BaseParam):
+class VibBaseParam(BaseParam):
     
     def __init__(self, atom_site_element):
         self.n_free_params = 1
@@ -20,11 +12,10 @@ class VibParams(Params):
     """
     Class to handle vibrational parameters for a slab.
     """
-    param_type = VibParam
     def __init__(self, delta_slab):
         # create a base parameter for every atom-site-element, then map them
         # to the site-elements
-        self.params = [VibParam(ase) for ase
+        self.params = [VibBaseParam(ase) for ase
                             in delta_slab.atom_site_elements]
         for site_el in delta_slab.site_elements:
             site_el_params = [p for p in self.base_params

@@ -19,6 +19,8 @@ class DeltaParam():
 class BaseParam(DeltaParam):
     # every base parameter is a leaf and has to have a parent
     def __init__(self, atom_site_element):
+        self.atom_site_element = atom_site_element
+        self.site_element = atom_site_element.site_element
         self.parent = None
         self.children = None
 

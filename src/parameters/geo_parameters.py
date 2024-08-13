@@ -3,11 +3,10 @@ from src.parameters.base_parameters import BaseParam, DeltaParam, Params, Constr
 
 class GeoBaseParam(BaseParam):
     def __init__(self, atom_site_element):
-        self.atom_site_element = atom_site_element
-        self.site_element = atom_site_element.site_element
         self.n_free_params = 3 # x, y, z
         self.symrefm = atom_site_element.atom.symrefm
         self.layer = atom_site_element.atom.layer.num
+        super().__init__(atom_site_element)
 
 class GeoParams(Params):
     

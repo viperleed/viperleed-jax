@@ -29,6 +29,9 @@ def get_atom_site_elements(slab):
                 atom_site_elements.append(AtomSiteElement(at, siteel))
     return tuple(atom_site_elements)
 
+class V0rParam():
+    def __init__(self, delta_slab):
+        self.n_free_params = 1
 
 class DeltaSlab():
 
@@ -40,5 +43,15 @@ class DeltaSlab():
         
         # apply base parameters
         self.vib_params = VibParams(self)
-        self.occ_params = GeoParams(self)
+        self.geo_params = GeoParams(self)
         self.chem_params = ChemParams(self)
+        self.v0r_param = V0rParam(self)
+
+    @property
+    def n_free_parameters(self):
+        return (
+            self.vib_params.n_free_params
+            + self.geo_params.n_free_params
+            + self.chem_params.n_free_params
+            + self.v0r_param.n_free_params
+        )

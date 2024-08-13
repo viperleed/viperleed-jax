@@ -2,12 +2,11 @@ from src.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaPa
 
 class ChemBaseParam(BaseParam):
     def __init__(self, atom_site_element):
-        self.atom_site_element = atom_site_element
-        self.site_element = atom_site_element.site_element
         self.atom = atom_site_element.atom
         self.n_free_params = 1
         self.elements = {atom_site_element.site_element.element:None,
                          'vac':None}
+        super().__init__(atom_site_element)
 
 
 class ChemParams(Params):
