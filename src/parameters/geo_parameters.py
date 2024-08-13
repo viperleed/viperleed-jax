@@ -1,5 +1,4 @@
-#from parameters import BaseParam, Params, ConstrainedDeltaParam
-
+from src.parameters.base_parameters import BaseParam, DeltaParam, Params, ConstrainedDeltaParam
 
 
 class GeoBaseParam(BaseParam):
