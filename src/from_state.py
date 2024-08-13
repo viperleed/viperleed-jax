@@ -11,8 +11,6 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 import numpy as np
 
-jax.devices()
-
 import tempfile
 import os, shutil
 import logging
@@ -74,7 +72,8 @@ def calculator_from_state(calc_path, tensor_path):
                             rpars.THEO_ENERGIES.step))
 
     logger.info(f'Starting to interpret tensor file {tensor_path.name}.')
-    logger.debug(f'Using lmax={lmax}, n_beams={n_beams}, n_energies={n_energies}.')
+    logger.debug(f'Using lmax={lmax}, n_beams={n_beams}, '
+                 f'n_energies={n_energies}.')
 
     # read tensor file
     tensors = read_tensor_zip(tensor_path, lmax, n_beams, n_energies)
@@ -89,7 +88,7 @@ def calculator_from_state(calc_path, tensor_path):
     logger.debug('Combining tensor data into ReferenceData object.')
     ref_data = ReferenceData(sorted_tensors, fix_lmax=lmax-2)
     logger.debug('ReferenceData object created successfully.')
-    
+
     # read Phaseshift data using existing phaseshift reader
     phaseshifts_path = calc_path / 'PHASESHIFTS'
     _, raw_phaseshifts, _, _ = readPHASESHIFTS(
@@ -122,5 +121,4 @@ def calculator_from_state(calc_path, tensor_path):
     logger.debug('Setting experimental intensities and initializing interpolators.')
     calculator.set_experiment_intensity(mapped_exp_intensities, exp_energies)
 
-    return calculator
-
+    return calculator, slab, rpars
