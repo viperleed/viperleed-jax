@@ -43,6 +43,7 @@ class ChemConstraint(ConstrainedDeltaParam):
         if not all(child.site_element.site == children[0].site_element.site
                    for child in children):
             raise ValueError("All children must be of the same site type.")
+        self.site_element = children[0].site_element
         super().__init__(children)
 
     @property
@@ -79,7 +80,6 @@ class FixedOccChemConstraint(ChemConstraint):
         if not isinstance(child, (ChemBaseParam, ChemConstraint)):
             raise ValueError("FixedOccChemConstraint can only take one child.")
         self.elements = child.elements
-        print(self.elements)
         for element, value in fixed_values.items():
             if element not in self.elements.keys():
                 raise ValueError(f"Element {element} not in elements.")
