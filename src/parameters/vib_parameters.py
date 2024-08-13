@@ -62,6 +62,24 @@ class VibParams(Params):
         maxs = [param.max for param in self.terminal_params]
         return np.diag(mins), np.diag(maxs)
 
+class ConstrainedVibParam(ConstrainedDeltaParam):
+    
+    def __init__(self, children):
+        super().__init__(children)
+
+# Constrained Vibrational Parameters
+
+class LinkVibParam(ConstrainedVibParam):
+    # links vibrational amplitude changes for children
+    def __init__(self, children):
+        self.n_free_params = 1
+        self._free = True
+        if not all([child.site_element == children[0].site_element for child in children]):
+            raise ValueError("All children must have the same site element")
+        self.site_element = children[0].site_element
+        super().__init__(children)
+
+
 
 class FixVibParam(ConstrainedVibParam):
     # sets a fixed value for the vibrational amplitude
