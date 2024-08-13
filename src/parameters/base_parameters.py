@@ -56,6 +56,7 @@ class ConstrainedDeltaParam():
     
     def __init__(self, children):
         self.parent = None
+        self.children = children
         for child in children:
             child.parent = self
 
