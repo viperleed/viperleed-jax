@@ -264,13 +264,35 @@ def regrid_phaseshifts(old_grid, new_grid, phaseshifts):
 
 @register_pytree_node_class
 class Phaseshifts:
-    def __init__(self, raw_phaseshifts, energies, l_max, site_indices):
+    def __init__(self, raw_phaseshifts, energies, l_max, phaseshift_map):
+        """
+        Initialize the Phaseshifts class.
+
+        Parameters:
+        -----------
+        raw_phaseshifts : numpy.ndarray
+            The raw phaseshifts data.
+        energies : numpy.ndarray
+            The energies data.
+        l_max : int
+            The maximum value of l.
+        phaseshift_map : dict
+            A dictionary that maps the SiteElement namedtuple to an int index.
+        """
+
         self.l_max = l_max
-        self.phaseshifts = self.interpolate(
+        self.phaseshift_map = phaseshift_map
+        self._phaseshifts = self.interpolate(
             raw_phaseshifts,
             energies
-        )[:, site_indices, :]
-        self.phaseshifts = jnp.asarray(self.phaseshifts)
+        )
+        self._phaseshifts = jnp.asarray(self._phaseshifts)
+        # move site indices to the front
+        self._phaseshifts = self._phaseshifts.swapaxes(0,1)
+
+    def __get__(self, site_el):
+        index = self.phaseshift_map[site_el]
+        return self._phaseshifts[index, ...]
 
     # TODO: We should consider a spline interpolation instead of a linear
     def interpolate(self, raw_phaseshifts, energies):
@@ -285,8 +307,8 @@ class Phaseshifts:
 
         if (min(energies) < min(stored_phaseshift_energies)
             or max(energies) > max(stored_phaseshift_energies)):
-            raise ValueError("Requested energies are out of range the range for the"
-                            "loaded phaseshifts.")
+            raise ValueError("Requested energies are out of range the range "
+                            "for the loaded phaseshifts.")
 
         n_sites = stored_phaseshifts.shape[1]
         # interpolate over energies for each l and site
@@ -304,10 +326,10 @@ class Phaseshifts:
 
     # PyTree methods
     def tree_flatten(self):
-        return (self.phaseshifts, self.l_max), None
+        return (self._phaseshifts, self.l_max), None
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         new_ps = cls.__new__(cls)
-        new_ps.phaseshifts, new_ps.l_max = children
+        new_ps._phaseshifts, new_ps.l_max = children
         return new_ps
