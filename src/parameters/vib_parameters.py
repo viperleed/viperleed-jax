@@ -36,7 +36,7 @@ class VibParams(Params):
 
     @property
     def static_site_elements(self):
-        return tuple(param.site_element for param in self.terminals_params
+        return tuple(param.site_element for param in self.terminal_params
                      if not param.is_free)
 
     def t_matrix_map(self):

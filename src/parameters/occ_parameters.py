@@ -2,6 +2,7 @@ from functools import partial
 
 from src.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam
 
+import numpy as np
 import jax
 from jax import numpy as jnp
 
