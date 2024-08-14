@@ -1,23 +1,57 @@
+from abc import ABC, abstractmethod
 import numpy as np
 
 class DeltaParam():
+    """
+    Represents a delta parameter.
+
+    Attributes:
+        parent: The parent of the delta parameter.
+        children: The children of the delta parameter.
+    """
 
     @property
     def has_parent(self):
+        """
+        Check if the delta parameter has a parent.
+
+        Returns:
+            bool: True if the delta parameter has a parent, False otherwise.
+        """
         return self.parent is not None
 
     @property
     def is_leaf(self):
+        """
+        Check if the delta parameter is a leaf.
+
+        Returns:
+            bool: True if the delta parameter is a leaf, False otherwise.
+        """
         pass
 
     @property
     def has_children(self):
+        """
+        Check if the delta parameter has children.
+
+        Returns:
+            bool: True if the delta parameter has children, False otherwise.
+        """
         return len(self.children) > 0
 
 
 
 class BaseParam(DeltaParam):
-    # every base parameter is a leaf and has to have a parent
+    """
+    Represents a base parameter.
+
+    Attributes:
+        atom_site_element (str): The atom site element.
+        site_element (str): The site element.
+        parent (object): The parent object.
+        children (list): The list of child objects.
+    """
     def __init__(self, atom_site_element):
         self.atom_site_element = atom_site_element
         self.site_element = atom_site_element.site_element
@@ -26,14 +60,26 @@ class BaseParam(DeltaParam):
 
     @property
     def min(self):
+        """
+        Get the minimum value from the parent object.
+
+        Returns:
+            The minimum value.
+        """
         return self.parent.min()
 
     @property
     def max(self):
+        """
+        Get the maximum value from the parent object.
+
+        Returns:
+            The maximum value.
+        """
         return self.parent.max()
 
 
-from abc import ABC, abstractmethod
+
 class Params(ABC):
     param_type = None
 
