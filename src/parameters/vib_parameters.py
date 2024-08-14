@@ -46,11 +46,6 @@ class VibParams(Params):
             param.set_bound(bound)
 
     @property
-    def free_params(self):
-        return [param for param in self.terminal_params
-                if param.n_free_params > 0]
-
-    @property
     def dynamic_site_elements(self):
         return tuple(param.site_element for param in self.free_params)
 

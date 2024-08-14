@@ -129,7 +129,26 @@ class Params():
         """
         return len(self.base_params)
 
-    pass
+    @property
+    def free_params(self):
+        return [param for param in self.terminal_params
+                if param.n_free_params > 0]
+
+    @property
+    def base_to_terminal_map(self):
+        """
+        Get the mapping from base parameters to terminal parameters.
+
+        Returns:
+            The mapping from base parameters to terminal parameters.
+        """
+        base_to_terminal_map = {}
+        for param in self.base_params:
+            top_level = param
+            while top_level not in self.terminal_params:
+                top_level = top_level.parent
+            base_to_terminal_map[param] = top_level
+        return base_to_terminal_map
 
 
 class ConstrainedDeltaParam():
@@ -175,7 +194,7 @@ class ConstrainedDeltaParam():
         bound : Bound
             The bound to be set.
         """
-        self._bound = bound
+        self.bound = bound
 
     @property
     def is_free(self):
@@ -190,9 +209,9 @@ class ConstrainedDeltaParam():
         Returns the minimum bound for the parameter.
         If the bound is not set, returns the parent parameter.
         """
-        if self._bound is None:
+        if self.bound is None:
             return self.parent
-        return self._bound.min
+        return self.bound.min
 
     @property
     def max(self):
@@ -200,9 +219,9 @@ class ConstrainedDeltaParam():
         Returns the maximum bound for the parameter.
         If the bound is not set, returns the parent parameter.
         """
-        if self._bound is None:
+        if self.bound is None:
             return self.parent
-        return self._bound.max
+        return self.bound.max
 
 
 # Bounds
