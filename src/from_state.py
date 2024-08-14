@@ -94,13 +94,6 @@ def calculator_from_state(calc_path, tensor_path):
     _, raw_phaseshifts, _, _ = readPHASESHIFTS(
         slab, rpars, readfile=phaseshifts_path, check=True, ignoreEnRange=False)
 
-    # TODO: site_indices needs a general solution once we implement chemical pertubations
-
-
-    #Determine site indices...
-    # TODO
-    site_indices = [0,0,1,1,1,1,1,1,1,1,1,1,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]
-
     # interpolate phaseshifts
     phaseshifts = Phaseshifts(raw_phaseshifts, ref_data.energies, lmax, site_indices)
 
