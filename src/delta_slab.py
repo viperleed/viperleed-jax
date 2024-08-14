@@ -31,7 +31,10 @@ def get_atom_site_elements(slab):
 
 class V0rParam():
     def __init__(self, delta_slab):
+        # TODO
         self.n_free_params = 1
+        self.n_base_params = 1
+        self.n_symmetry_constrained_params = 1
 
 class DeltaSlab():
 
@@ -44,14 +47,57 @@ class DeltaSlab():
         # apply base parameters
         self.vib_params = VibParams(self)
         self.geo_params = GeoParams(self)
-        self.chem_params = ChemParams(self)
+        self.occ_params = ChemParams(self)
         self.v0r_param = V0rParam(self)
 
     @property
-    def n_free_parameters(self):
+    def n_free_params(self):
         return (
             self.vib_params.n_free_params
             + self.geo_params.n_free_params
-            + self.chem_params.n_free_params
+            + self.occ_params.n_free_params
             + self.v0r_param.n_free_params
+        )
+
+    @property
+    def n_base_params(self):
+        return (
+            self.vib_params.n_base_params
+            + self.geo_params.n_base_params
+            + self.occ_params.n_base_params
+            + self.v0r_param.n_base_params
+        )
+
+    @property
+    def n_symmetry_constrained_params(self):
+        return (
+            self.vib_params.n_symmetry_constrained_params
+            + self.geo_params.n_symmetry_constrained_params
+            + self.occ_params.n_symmetry_constrained_params
+            + self.v0r_param.n_symmetry_constrained_params
+        )
+
+    @property
+    def info(self):
+        return (
+            "Free parameters:\n"
+            f"{self.n_free_params}\t"
+            f"({self.geo_params.n_free_params} geo, "
+            f"{self.vib_params.n_free_params} vib, "
+            f"{self.occ_params.n_free_params} occ, "
+            f"{self.v0r_param.n_free_params} V0r)\n"
+
+            "Symmetry constrained parameters:\n"
+            f"{self.n_symmetry_constrained_params}\t"
+            f"({self.geo_params.n_symmetry_constrained_params} geo, "
+            f"{self.vib_params.n_symmetry_constrained_params} vib, "
+            f"{self.occ_params.n_symmetry_constrained_params} occ, "
+            f"{self.v0r_param.n_symmetry_constrained_params} V0r)\n"
+
+            "Total parameters:\n"
+            f"{self.n_base_params}\t"
+            f"({self.geo_params.n_base_params} geo, "
+            f"{self.vib_params.n_base_params} vib, "
+            f"{self.occ_params.n_base_params} occ, "
+            f"{self.v0r_param.n_base_params} V0r)\n"
         )

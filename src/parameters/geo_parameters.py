@@ -38,6 +38,7 @@ class GeoParams(Params):
                 if params_to_link:
                     self.params.append(GeoSymmetryConstraint(
                         children=params_to_link))
+        super().__init__()
 
     @property
     def layers(self):
@@ -84,7 +85,7 @@ class GeoParams(Params):
         for the dynamic propagators ((3, self.n_dynamic_propagators) values).
         """
         if not all(param.bound is not None for param in self.terminal_params):
-            raise ValueError("Not all vibrational parameters have bounds")
+            raise ValueError("Not all geometric parameters have bounds.")
         # linear transformation
         # offset is 0 (# TODO: could implement that)
         # weights are given by the bounds and the constraint method
@@ -107,6 +108,7 @@ class GeoConstraint(ConstrainedDeltaParam):
         if not all(child.layer == children[0].layer for child in children):
             raise ValueError("All children must be in the same layer")
         self.layer = children[0].layer
+        self.bound = None
         super().__init__(children)
 
 
@@ -146,7 +148,6 @@ class GeoLayerConstraint(GeoConstraint):
     def free_param_map(self):
         # one free parameter is mapped to the z direction
         return np.array([0., 0., 1.]).T
-
 
 
 class GeoFixConstraint(GeoConstraint):

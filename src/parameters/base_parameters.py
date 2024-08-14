@@ -1,3 +1,4 @@
+from copy import deepcopy
 import numpy as np
 
 class DeltaParam():
@@ -86,6 +87,11 @@ class Params():
     Attributes:
         param_type: The type of the parameters.
     """
+    def __init__(self):
+        # symmetry and system constraints are applied during initialization,
+        # so the number of free parameters at the end of __init__ is the 
+        # number of symmetry constrained parameters.
+        self.n_symmetry_constrained_params = deepcopy(self.n_free_params)
 
     param_type = None
 
@@ -127,7 +133,7 @@ class Params():
         Returns:
             The number of base parameters.
         """
-        return len(self.base_params)
+        return sum(param.n_free_params for param in self.base_params)
 
     @property
     def free_params(self):

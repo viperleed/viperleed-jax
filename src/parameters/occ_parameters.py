@@ -33,6 +33,7 @@ class ChemParams(Params):
                 continue
             linked_param = SharedOccChemConstraint(children=atom_params)
             self.params.append(linked_param)
+        super().__init__()
 
     def remove_remaining_vacancies(self):
         # constrain all remaining free parameters, such that no vacancies are

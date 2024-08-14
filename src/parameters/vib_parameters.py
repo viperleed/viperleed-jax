@@ -40,6 +40,7 @@ class VibParams(Params):
             if not site_el_params:
                 continue
             self.params.append(LinkVibParam(children=site_el_params))
+        super().__init__()
 
     def set_bounds(self, bounds):
         for param, bound in zip(self.params, bounds):
