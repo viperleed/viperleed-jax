@@ -20,6 +20,7 @@ from src.data_structures import ReferenceData
 from src.tensor_calculator import TensorLEEDCalculator
 from src.lib_phaseshifts import Phaseshifts
 from src.lib_tensors import read_tensor_zip
+from src.delta_slab import DeltaSlab
 
 from viperleed.calc.run import run_calc
 from viperleed.calc.files.displacements import readDISPLACEMENTS
@@ -113,5 +114,9 @@ def calculator_from_state(calc_path, tensor_path):
     # set experimental intensities in calculator
     logger.debug('Setting experimental intensities and initializing interpolators.')
     calculator.set_experiment_intensity(mapped_exp_intensities, exp_energies)
+
+    # Create DeltaSlab object # TODO: move into calculator
+    delta_slab = DeltaSlab(slab)
+    calculator.delta_slab = delta_slab
 
     return calculator, slab, rpars
