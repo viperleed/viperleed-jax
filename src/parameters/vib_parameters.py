@@ -23,7 +23,6 @@ class VibParams(Params):
             if not site_el_params:
                 continue
             self.params.append(LinkVibParam(children=site_el_params))
-        
 
     def set_bounds(self, bounds):
         for param, bound in zip(self.params, bounds):
@@ -39,9 +38,11 @@ class VibParams(Params):
         return tuple(param.site_element for param in self.terminal_params
                      if not param.is_free)
 
+    @property
     def t_matrix_map(self):
-        
-        pass
+        # return a tuple with the site_elements for each base parameter
+        return tuple(param.site_element for param in self.base_params)
+
 
     @property
     def n_free_params(self)->int:
@@ -80,4 +81,3 @@ class FixVibParam(ConstrainedVibParam):
         self._free = False
         self.n_free_params = 0
         super().__init__(children)
-    
