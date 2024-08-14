@@ -39,7 +39,7 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     is an array of Bessel functions and contains all terms dependent on l'. The
     factor CTAB includes all other terms dependent on l''.
 
-    To compute the t-matrix, the resulting term is divided by 4ik_0 (eq. 22). 
+    To compute the t-matrix, the resulting term is divided by 4ik_0 (eq. 22).
     In the code SUM is only devided by 2i.
 
     Parameters
@@ -91,12 +91,14 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     temperature_independent_t_matrix = (
         jnp.exp(2j*phaseshifts)-1)*(2*jnp.arange(LMAX+1) + 1)
 
-    SUM = jnp.einsum('jki,i,j->k',
-                     PRE_CALCULATED_CPPP[LMAX],  # about 3/4 of these are zero. We could skip them
-                     temperature_independent_t_matrix,
-                     bessel_with_prefactor)
-    t_matrix = (SUM)/(2j) # temperature-dependent t-matrix.
-    # SUM is the factor exp(2*i*delta) -1
+    t_matrix_2j = jnp.einsum(
+        'jki,i,j->k',
+        PRE_CALCULATED_CPPP[LMAX],  # about 3/4 of these are zero. We could skip them
+        temperature_independent_t_matrix,
+        bessel_with_prefactor
+    )
+    t_matrix = (t_matrix_2j)/(2j) # temperature-dependent t-matrix.
+    # t_matrix_2j is the factor exp(2*i*delta) - 1
     # Equation (22), page 29 in Van Hove, Tong book from 1979
     # Unlike TensErLEED, we do not convert it to a phase shift, but keep it as a
     # t-matrix, which we use going forward.
