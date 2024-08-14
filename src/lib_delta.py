@@ -18,7 +18,7 @@ from src.gaunt_coefficients import PRE_CALCULATED_CPPP, CSUM_COEFFS
 
 @jax.named_scope("apply_vibrational_displacements")
 @partial(vmap, in_axes=(None, 0, None, 0))  # vmap over atoms
-def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
+def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, vib_amp):
     """Computes the temperature-dependent t-matrix elements.
 
     Takes the interpolated phase shifts and computes the atomic t-matrix
@@ -50,8 +50,8 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
         Interpolated phase shifts.
     e_inside : float
         Current energy (real number).
-    DR : float
-        Isotropic RMS vibration amplitude.
+    vib_amp : float
+        Isotropic RMS vibration amplitude (in Bohr radii).
 
     Returns
     -------
@@ -70,15 +70,14 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     (in the form of DRPER and DRPAR, perpendicular and parallel to the surface,
     respectively) as input. This functionality was also not implemented, with
     DR0 hardcoded to 0 and DRPER and DRPAR hardcoded to be equal. We thus only
-    implement the isotropic case here, with a single input parameter DR.
+    implement the isotropic case here, with a single input parameter vib_amp.
 
     Finally, the TensErLEED versions used allow a local variation of the of the
     muffin-tin constant, via a parameter VSITE that shifts the used energy in
     the crystal potential as E -> E - VSITE. This functionality was also not
-    included as VSITE was also hardcoded to 0 in the TensErLEED code.
+    included as VSITE was again hardcoded to 0 in the TensErLEED code.
     """
-    _DR = DR/BOHR
-    debye_waller_exponent = -2/3 * _DR**2 * e_inside
+    debye_waller_exponent = -2/3 * (vib_amp/BOHR)**2 * e_inside
 
     all_l = (2*jnp.arange(2*LMAX+1) + 1)
     bessel_with_prefactor = (
