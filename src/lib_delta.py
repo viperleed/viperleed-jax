@@ -184,7 +184,7 @@ def TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v
     # pre-computed coeffs, capped to LMAX
     capped_coeffs = CSUM_COEFFS[:2*LMAX+1, :(LMAX+1)**2, :(LMAX+1)**2]
 
-    def csum_element(lpp, running_sum):
+    def propagator_lpp_element(lpp, running_sum):
         bessel_values = BJ[lpp]
         ylm_values = YLM[lpp*lpp+lpp-dense_mpp]
         # Equation (34) from Rous, Pendry 1989
@@ -193,11 +193,12 @@ def TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v
     # we could skip some computations because some lpp are guaranteed to give
     # zero contributions, but this would need a way around the non-static array
     # sizes
-    csum = jax.lax.fori_loop(0, LMAX*2+1, csum_element,
+
+    # This is the propagator from the origin to C
+    propagator = jax.lax.fori_loop(0, LMAX*2+1, propagator_lpp_element,
                              jnp.zeros(shape=((LMAX+1)**2, (LMAX+1)**2),
                                        dtype=jnp.complex128))
-    csum *= 4*jnp.pi
-    # csum is the propagator from origin to C
+    propagator *= 4*jnp.pi
 
     broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
 
