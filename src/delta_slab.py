@@ -52,6 +52,11 @@ class DeltaSlab():
 
     @property
     def n_free_params(self):
+        """
+        Returns the total number of free parameters in the DeltaSlab object.
+        This includes the number of free parameters in the vibrational, geometric,
+        occupancy, and v0r parameters.
+        """
         return (
             self.vib_params.n_free_params
             + self.geo_params.n_free_params
@@ -61,6 +66,15 @@ class DeltaSlab():
 
     @property
     def n_base_params(self):
+        """
+        Returns the total number of base parameters.
+
+        This method calculates the sum of the number of base parameters from different parameter objects,
+        including `vib_params`, `geo_params`, `occ_params`, and `v0r_param`.
+
+        Returns:
+            int: The total number of base parameters.
+        """
         return (
             self.vib_params.n_base_params
             + self.geo_params.n_base_params
@@ -70,6 +84,16 @@ class DeltaSlab():
 
     @property
     def n_symmetry_constrained_params(self):
+        """
+        Returns the total number of symmetry constrained parameters.
+        
+        This method calculates the total number of symmetry constrained
+        parameters by summing up the number of symmetry constrained
+        parameters from different parameter groups.
+
+        Returns:
+            int: The total number of symmetry constrained parameters.
+        """
         return (
             self.vib_params.n_symmetry_constrained_params
             + self.geo_params.n_symmetry_constrained_params
@@ -79,6 +103,13 @@ class DeltaSlab():
 
     @property
     def info(self):
+        """
+        Returns a string containing information about the free parameters,
+        symmetry constrained parameters, and total parameters.
+
+        Returns:
+            str: Information about the parameters.
+        """
         return (
             "Free parameters:\n"
             f"{self.n_free_params}\t"
