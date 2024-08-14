@@ -27,7 +27,7 @@ def get_atom_site_elements(slab):
         for siteel in get_site_elements(slab):
             if siteel.site == at.site.label:
                 atom_site_elements.append(AtomSiteElement(at, siteel))
-    return tuple(atom_site_elements)
+    return tuple(atom_site_elements) # read only from here on out
 
 class V0rParam():
     def __init__(self, delta_slab):
@@ -40,7 +40,7 @@ class DeltaSlab():
         self.non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
         self.site_elements = get_site_elements(slab)
         self.atom_site_elements = get_atom_site_elements(slab)
-        
+
         # apply base parameters
         self.vib_params = VibParams(self)
         self.geo_params = GeoParams(self)
