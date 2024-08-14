@@ -49,6 +49,10 @@ class Params(ABC):
     def n_free_params(self):
         return sum(param.n_free_params for param in self.terminal_params)
 
+    @property
+    def n_base_params(self):
+        return len(self.base_params)
+
     pass
 
 

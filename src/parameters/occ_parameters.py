@@ -1,5 +1,8 @@
+from functools import partial
+
 from src.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam
 
+import jax
 from jax import numpy as jnp
 
 class ChemBaseParam(BaseParam):
@@ -47,12 +50,20 @@ class ChemParams(Params):
         # parameters that require a transformation
         free_top_level_params = [param for param in self.terminal_params
                                  if param.n_free_params > 0]
-        split_sections = jnp.cumsum(jnp.array([param.n_free_params
-                                     for param in free_top_level_params]))[:-1]
+        top_level_start_indices = np.cumsum(np.array([param.n_free_params
+                                     for param in free_top_level_params]))-1
 
-        # maping of top-level parameters to atom-site-elements
-        static_weights = jnp.full(len(self.base_params), 0.0)
-        dynamic_indices = {}
+        transform_biases = np.zeros((self.n_base_params))
+        transform_weights = np.zeros((self.n_base_params, self.n_free_params))
+        
+
+        sum_parameters = 0
+        for top_level_param in free_top_level_params:
+            n_params = top_level_param.n_free_params
+            block_matrix = np.full((n_params, n_params), -1/n_params)
+            np.fill_diagonal(block_matrix, 1)
+            sum_parameters += n_params
+
 
         weights = []
         for i, param in enumerate(self.base_params):
@@ -62,23 +73,31 @@ class ChemParams(Params):
                 if element in top_level.parent.elements.keys():
                     top_level = top_level.parent
             if top_level.elements[element] is None:
-                dynamic_indices[i] = (free_top_level_params.index(top_level),
-                                      list(top_level.elements.keys()).index(element))
-            else:
-                static_weights = static_weights.at[i].set(top_level.elements[element])
+                # zero bias, add weights to dynamic weights
+                # for the corresponding top-level parameter, add 1 for
+                # the corresponding element and -1/n for all others
+                n_params = top_level.n_free_params
+                top_level_index = free_top_level_params.index(top_level)
+                top_level_param_slice = slice(
+                    top_level_start_indices[top_level_index],
+                    top_level_start_indices[top_level_index] + n_params
+                )
+                transform_weights[i, top_level_param_slice] = np.full((n_params,), -1/n_params)
+                transform_weights[i, top_level_param_slice][list(top_level.elements.keys()).index(element)] = 1
 
+            else:
+                # keep weights as 0 and add fixed value to static weights
+                transform_biases[i] = top_level.elements[element]
+
+        if self.n_free_params == 0:
+            # no free parameters, return fixed weights # TODO: log debug
+            def transformer(free_params):
+                return transform_biases
+            return transformer
 
         def transformer(free_params):
-            if len(dynamic_indices) == 0:
-                return static_weights
-            splits = jnp.split(free_params, split_sections)
-            distribute_weights(splits[0])
-            split_weights = [distribute_weights(split) for split in splits]
+            return jnp.dot(free_params, transform_weights) + transform_biases
 
-            weights = static_weights
-            for weight_id, (split_id, split_n) in dynamic_indices.items():
-                weights = weights.at[weight_id].set(split_weights[split_id][split_n])
-            return weights
         return transformer
 
 
@@ -93,7 +112,7 @@ class ChemConstraint(ConstrainedDeltaParam):
 
     @property
     def n_free_params(self):
-        return len([el for el in self.elements.values() if el is None]) - 1
+        return len([el for el, val in self.elements.items() if val is None and el != 'vac'])
 
 class SharedOccChemConstraint(ChemConstraint):
     # link parameters of the same atom to ensure that the sum of their
@@ -138,6 +157,3 @@ class FixedOccChemConstraint(ChemConstraint):
             self.elements[free_elements[0]] = 1 - sum([el for el in self.elements.values() if el is not None])
         super().__init__([child])
 
-def distribute_weights(pi):
-    # calculate weight as per wi = pi * min(1, 1/sum(pi))
-    return pi * jnp.minimum(1, 1/jnp.sum(pi))
