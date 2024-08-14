@@ -1,10 +1,17 @@
 """Test Module R-factor"""
 import pytest
 
+from scipy.special import spherical_jn
+
 from jax import numpy as jnp
 from src.lib_math import _divide_zero_safe
 from src.lib_math import *
 
+def scipy_bessel(n, z):
+    scipy_results = [
+        spherical_jn(n, z) for n in range(n+1)
+    ]
+    return jnp.array(scipy_results).T
 
 class TestDivideZeroSafe:
     # Test case for basic functionality
@@ -62,7 +69,7 @@ class TestHARMONY:
         C = jnp.array([1.0, 2.0, 3.0])
         LMAX = 2
         # Compute expected output using sph_harm directly
-        expected_output = sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.array([np.arctan2(3.0+EPS, 2.0+EPS)]), jnp.array([np.arccos((1.0+EPS)/safe_norm(C))]), n_max=LMAX)
+        expected_output = sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.array([jnp.arctan2(3.0+EPS, 2.0+EPS)]), jnp.array([jnp.arccos((1.0+EPS)/safe_norm(C))]), n_max=LMAX)
         # Compare with the output of HARMONY function
         assert jnp.allclose(HARMONY(C, LMAX), expected_output)
 
@@ -71,54 +78,26 @@ class TestHARMONY:
         C = jnp.array([1.0, 0.0, 0.0])
         LMAX = 2
         # Compute expected output manually as sph_harm will raise errors
-        expected_output = sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], np.pi*0.25, 0, n_max=LMAX)
+        expected_output = sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.pi*0.25, 0, n_max=LMAX)
         # Compare with the output of HARMONY function
         assert jnp.allclose(HARMONY(C, LMAX), expected_output)
 
 class TestBessel:
-    def test_bessel_real_case(self):
+    # rudimentary tests for bessel functions only, since
+    # more detailed tests are present in the spbessax package
+    @pytest.mark.parametrize("n1", [5, 10, 15])
+    def test_bessel_real_case(self, n1):
         # Test case for normal scenario
-        z = 1.5
-        n1 = 3
-        expected_output = jax.vmap(custom_spherical_jn, (0, None))(jnp.arange(n1), z)
-        assert jnp.allclose(masked_bessel(z, n1), expected_output)
+        z = jnp.array([0.1, 1., 2., 3.])
+        assert bessel(z, n1) == pytest.approx(scipy_bessel(n1, z))
 
-    def test_bessel_imaginary_case(self):
+    @pytest.mark.parametrize("n1", [5, 10, 15])
+    def test_bessel_imaginary_case(self, n1):
         # Test case for edge case where z=0
-        z = -2.0j
-        n1 = 3
+        z = jnp.array([0.1, 1., 2., 3.]) - 2.0j
         # For z=0, the expression should be directly computed without vectorization
-        expected_output = jax.vmap(custom_spherical_jn, (0, None))(jnp.arange(n1), z)
-        assert jnp.allclose(bessel(z, n1), expected_output)
+        assert bessel(z, n1) == pytest.approx(scipy_bessel(n1, z))
 
-class TestMaskedBessel:
-    def test_masked_bessel_normal_case(self):
-        # Test case for normal scenario
-        z = 1.5
-        n1 = 3
-        result = masked_bessel(z, n1)
-        assert result.dtype == jnp.complex128
-        assert result.shape == (n1,)
-
-    def test_masked_bessel_small_z(self):
-        # Test case for small z
-        z = 1e-8j
-        n1 = 3
-        result = masked_bessel(z, n1)
-        assert result.dtype == jnp.complex128
-        assert result.shape == (n1,)
-        # The result should be close to [1.0, 0.0, 0.0] because bessel function is approximated as 1.0 for very small z
-        assert jnp.allclose(result, np.array([1.0, 0.0, 0.0]))
-
-    def test_masked_bessel_zero_z(self):
-        # Test case for z = 0
-        z = 0.0
-        n1 = 3
-        result = masked_bessel(z, n1)
-        assert result.dtype == jnp.complex128
-        assert result.shape == (n1,)
-        # The result should be [1.0, 0.0, 0.0] because bessel function is approximated as 1.0 for z = 0
-        assert jnp.allclose(result, np.array([1.0, 0.0, 0.0]))
 
 if __name__ == "__main__":
     pytest.main([__file__])
