@@ -2,16 +2,15 @@ from jax import config
 config.update("jax_enable_x64", True)
 import jax
 import jax.numpy as jnp
-from jax import jit, vmap
+from jax import vmap
 from functools import partial
 
 from src.lib_math import *
-from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS, DENSE_L, DENSE_M
-from src.dense_quantum_numbers import MINUS_ONE_POW_M
+from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 from src.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 
 # TODO: could we switch the entire calculation to use eV and Angstroms?
-from src.constants import BOHR, HARTREE
+from src.constants import BOHR
 
 from src.gaunt_coefficients import fetch_stored_gaunt_coeffs as fetch_gaunt
 from src.gaunt_coefficients import PRE_CALCULATED_CPPP, CSUM_COEFFS
@@ -40,7 +39,7 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     is an array of Bessel functions and contains all terms dependent on l'. The
     factor CTAB includes all other terms dependent on l''.
 
-    To compute the t-matrix, the resulting term is divided by 4ik_0 (eq. 22). 
+    To compute the t-matrix, the resulting term is divided by 4ik_0 (eq. 22).
     In the code SUM is only devided by 2i.
 
     Parameters
@@ -92,12 +91,14 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, DR):
     temperature_independent_t_matrix = (
         jnp.exp(2j*phaseshifts)-1)*(2*jnp.arange(LMAX+1) + 1)
 
-    SUM = jnp.einsum('jki,i,j->k',
-                     PRE_CALCULATED_CPPP[LMAX],  # about 3/4 of these are zero. We could skip them
-                     temperature_independent_t_matrix,
-                     bessel_with_prefactor)
-    t_matrix = (SUM)/(2j) # temperature-dependent t-matrix.
-    # SUM is the factor exp(2*i*delta) -1
+    t_matrix_2j = jnp.einsum(
+        'jki,i,j->k',
+        PRE_CALCULATED_CPPP[LMAX],  # about 3/4 of these are zero. We could skip them
+        temperature_independent_t_matrix,
+        bessel_with_prefactor
+    )
+    t_matrix = (t_matrix_2j)/(2j) # temperature-dependent t-matrix.
+    # t_matrix_2j is the factor exp(2*i*delta) - 1
     # Equation (22), page 29 in Van Hove, Tong book from 1979
     # Unlike TensErLEED, we do not convert it to a phase shift, but keep it as a
     # t-matrix, which we use going forward.
@@ -183,7 +184,7 @@ def TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v
     # pre-computed coeffs, capped to LMAX
     capped_coeffs = CSUM_COEFFS[:2*LMAX+1, :(LMAX+1)**2, :(LMAX+1)**2]
 
-    def csum_element(lpp, running_sum):
+    def propagator_lpp_element(lpp, running_sum):
         bessel_values = BJ[lpp]
         ylm_values = YLM[lpp*lpp+lpp-dense_mpp]
         # Equation (34) from Rous, Pendry 1989
@@ -192,11 +193,12 @@ def TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v
     # we could skip some computations because some lpp are guaranteed to give
     # zero contributions, but this would need a way around the non-static array
     # sizes
-    csum = jax.lax.fori_loop(0, LMAX*2+1, csum_element,
+
+    # This is the propagator from the origin to C
+    propagator = jax.lax.fori_loop(0, LMAX*2+1, propagator_lpp_element,
                              jnp.zeros(shape=((LMAX+1)**2, (LMAX+1)**2),
                                        dtype=jnp.complex128))
-    csum *= 4*jnp.pi
-    # csum is the propagator from origin to C
+    propagator *= 4*jnp.pi
 
     broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
 

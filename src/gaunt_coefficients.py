@@ -11,7 +11,7 @@ from src.dense_quantum_numbers import MAXIMUM_LMAX
 from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 
 # load precalculated coefficients
-_REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__).parent / "compressed_gaunt.npy",
+_REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__).parent / "gaunt_coefficients.npy",
                                        allow_pickle=False)
 
 _DENSE_L_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 0]
