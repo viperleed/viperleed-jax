@@ -2,16 +2,15 @@ from jax import config
 config.update("jax_enable_x64", True)
 import jax
 import jax.numpy as jnp
-from jax import jit, vmap
+from jax import vmap
 from functools import partial
 
 from src.lib_math import *
-from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS, DENSE_L, DENSE_M
-from src.dense_quantum_numbers import MINUS_ONE_POW_M
+from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 from src.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 
 # TODO: could we switch the entire calculation to use eV and Angstroms?
-from src.constants import BOHR, HARTREE
+from src.constants import BOHR
 
 from src.gaunt_coefficients import fetch_stored_gaunt_coeffs as fetch_gaunt
 from src.gaunt_coefficients import PRE_CALCULATED_CPPP, CSUM_COEFFS
