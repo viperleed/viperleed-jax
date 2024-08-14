@@ -36,7 +36,7 @@ def vib_dependent_tmatrix(LMAX, phaseshifts, e_inside, DR):
     is an array of Bessel functions and contains all terms dependent on l'. The
     factor CTAB includes all other terms dependent on l''.
 
-    To compute the t-matrix, the resulting term is divided by 4ik_0 (eq. 22). 
+    To compute the t-matrix, the resulting term is divided by 4ik_0 (eq. 22).
     In the code SUM is only devided by 2i.
 
     Parameters
@@ -47,8 +47,8 @@ def vib_dependent_tmatrix(LMAX, phaseshifts, e_inside, DR):
         Interpolated phase shifts.
     e_inside : float
         Current energy (real number).
-    DR : float
-        Isotropic RMS vibration amplitude.
+    vib_amp : float
+        Isotropic RMS vibration amplitude (in Bohr radii).
 
     Returns
     -------
@@ -67,15 +67,14 @@ def vib_dependent_tmatrix(LMAX, phaseshifts, e_inside, DR):
     (in the form of DRPER and DRPAR, perpendicular and parallel to the surface,
     respectively) as input. This functionality was also not implemented, with
     DR0 hardcoded to 0 and DRPER and DRPAR hardcoded to be equal. We thus only
-    implement the isotropic case here, with a single input parameter DR.
+    implement the isotropic case here, with a single input parameter vib_amp.
 
     Finally, the TensErLEED versions used allow a local variation of the of the
     muffin-tin constant, via a parameter VSITE that shifts the used energy in
     the crystal potential as E -> E - VSITE. This functionality was also not
-    included as VSITE was also hardcoded to 0 in the TensErLEED code.
+    included as VSITE was again hardcoded to 0 in the TensErLEED code.
     """
-    _DR = DR/BOHR
-    debye_waller_exponent = -2/3 * _DR**2 * e_inside
+    debye_waller_exponent = -2/3 * (vib_amp/BOHR)**2 * e_inside
 
     all_l = (2*jnp.arange(2*LMAX+1) + 1)
     bessel_with_prefactor = (
@@ -88,12 +87,14 @@ def vib_dependent_tmatrix(LMAX, phaseshifts, e_inside, DR):
     temperature_independent_t_matrix = (
         jnp.exp(2j*phaseshifts)-1)*(2*jnp.arange(LMAX+1) + 1)
 
-    SUM = jnp.einsum('jki,i,j->k',
-                     PRE_CALCULATED_CPPP[LMAX],  # about 3/4 of these are zero. We could skip them
-                     temperature_independent_t_matrix,
-                     bessel_with_prefactor)
-    t_matrix = (SUM)/(2j) # temperature-dependent t-matrix.
-    # SUM is the factor exp(2*i*delta) -1
+    t_matrix_2j = jnp.einsum(
+        'jki,i,j->k',
+        PRE_CALCULATED_CPPP[LMAX],  # about 3/4 of these are zero. We could skip them
+        temperature_independent_t_matrix,
+        bessel_with_prefactor
+    )
+    t_matrix = (t_matrix_2j)/(2j) # temperature-dependent t-matrix.
+    # t_matrix_2j is the factor exp(2*i*delta) - 1
     # Equation (22), page 29 in Van Hove, Tong book from 1979
     # Unlike TensErLEED, we do not convert it to a phase shift, but keep it as a
     # t-matrix, which we use going forward.
