@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 import numpy as np
 
 class DeltaParam():
@@ -80,30 +79,87 @@ class BaseParam(DeltaParam):
 
 
 
-class Params(ABC):
+class Params():
+    """
+    Class representing a set of parameters.
+
+    Attributes:
+        param_type: The type of the parameters.
+    """
+
     param_type = None
 
     @property
     def terminal_params(self):
+        """
+        Get a list of terminal parameters.
+
+        Returns:
+            A list of terminal parameters.
+        """
         return [param for param in self.params if param.parent is None]
 
     @property
     def base_params(self):
+        """
+        Get a list of base parameters.
+
+        Returns:
+            A list of base parameters.
+        """
         return [param for param in self.params if isinstance(param, BaseParam)]
 
     @property
     def n_free_params(self):
+        """
+        Get the total number of free parameters.
+
+        Returns:
+            The total number of free parameters.
+        """
         return sum(param.n_free_params for param in self.terminal_params)
 
     @property
     def n_base_params(self):
+        """
+        Get the number of base parameters.
+
+        Returns:
+            The number of base parameters.
+        """
         return len(self.base_params)
 
     pass
 
 
 class ConstrainedDeltaParam():
-    
+    """
+    A class representing a constrained delta parameter.
+
+    Parameters:
+    -----------
+    children : list
+        A list of child parameters.
+
+    Attributes:
+    -----------
+    parent : ConstrainedDeltaParam or None
+        The parent parameter.
+    children : list
+        The list of child parameters.
+    _bound : Bound or None
+        The bound for the parameter.
+
+    Properties:
+    -----------
+    is_free : bool
+        Returns True if the parameter is free, False otherwise.
+    min : ConstrainedDeltaParam or None
+        Returns the minimum bound for the parameter.
+    max : ConstrainedDeltaParam or None
+        Returns the maximum bound for the parameter.
+    """
+
     def __init__(self, children):
         self.parent = None
         self.children = children
@@ -111,20 +167,39 @@ class ConstrainedDeltaParam():
             child.parent = self
 
     def set_bound(self, bound):
+        """
+        Set the bound for the parameter.
+
+        Parameters:
+        -----------
+        bound : Bound
+            The bound to be set.
+        """
         self._bound = bound
 
     @property
     def is_free(self):
+        """
+        Returns True if the parameter is free, False otherwise.
+        """
         return self._free
 
     @property
     def min(self):
+        """
+        Returns the minimum bound for the parameter.
+        If the bound is not set, returns the parent parameter.
+        """
         if self._bound is None:
             return self.parent
         return self._bound.min
 
     @property
     def max(self):
+        """
+        Returns the maximum bound for the parameter.
+        If the bound is not set, returns the parent parameter.
+        """
         if self._bound is None:
             return self.parent
         return self._bound.max
