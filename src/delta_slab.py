@@ -121,11 +121,11 @@ class DeltaSlab():
 
     @property
     def n_dynamic_t_matrices(self):
-        pass #TODO
+        return len(self.vib_params.dynamic_site_elements)
 
     @property
     def n_static_t_matrices(self):
-        pass #TODO
+        return len(self.vib_params.static_site_elements)
 
     @property
     def n_dynamic_propagators(self):
@@ -180,16 +180,18 @@ class DeltaSlab():
 @register_pytree_node_class
 class FrozenParameterSpace():
     frozen_attributes = (
-        'site_elements',
         'geo_transformer',
-        'vib_transformer',
-        'occ_weight_transformer',
-        'n_free_params',
         'n_base_params',
-        'n_param_split',
         'n_dynamic_propagators',
+        'n_dynamic_t_matrices',
+        'n_free_params',
+        'n_param_split',
         'n_static_propagators',
+        'n_static_t_matrices',
         'n_symmetry_constrained_params',
+        'occ_weight_transformer',
+        'site_elements',
+        'vib_transformer',
     )
 
     def split_free_params(self, free_params):
