@@ -5,6 +5,7 @@ from src.lib_phaseshifts import *
 from src.lib_tensors import *
 from src.lib_delta import *
 from src.delta import *
+from src.dense_quantum_numbers import MINUS_ONE_POW_M
 
 #From "PARAM"
 LMAX = 14  # maximum angular momentum to be used in calculation
@@ -86,7 +87,7 @@ tensor_amps_out_with_prefactors = jnp.einsum('ealb,e,eb,->ealb',
 tensor_amps_out_with_prefactors = tensor_amps_out_with_prefactors.swapaxes(2,3)
 
 # Calculate the t-matrix with the vibrational displacements
-tscatf_vmap = jax.vmap(apply_vibrational_displacements, in_axes=(None, 0, 0, None), out_axes=1) # vmap over energy
+tscatf_vmap = jax.vmap(vib_dependent_tmatrix, in_axes=(None, 0, 0, None), out_axes=1) # vmap over energy
 tmatrix_vmap_energy = jax.vmap(TMATRIX_DWG, in_axes=(0, 0, None, 0, None, None))
 matel_dwg_vmap_energy = jax.vmap(apply_geometric_displacements, in_axes=(0, 0, 0, None, None, 0, 0, None))
 #with open('test_geo_disp_xyz_vib.npy','wb') as f:
