@@ -2,6 +2,7 @@
 import numpy as np
 from jax import numpy as jnp
 
+from src.base import LinearTransformer
 from src.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam, Bound
 
 
@@ -115,12 +116,7 @@ class VibParams(Params):
             col_id = self.free_params.index(param)
             weights[row_id, col_id] = param.bound.max - param.bound.min
 
-        def transformer(params):
-            params = jnp.array(params)
-            if params.shape != (self.n_free_params,):
-                raise ValueError("Invalid number of free parameters")
-            return weights@params + bias
-        return transformer
+        return LinearTransformer(weights, bias)
 
 
 class ConstrainedVibParam(ConstrainedDeltaParam):
