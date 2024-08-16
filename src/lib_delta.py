@@ -108,7 +108,7 @@ def calc_propagator(LMAX, C, energy, v_imag):
     kappa = 2*energy - 2j*v_imag
     Z = jnp.sqrt(kappa) * c_norm
     BJ = bessel(Z,2*LMAX)
-    YLM = HARMONY(C, LMAX)  # move outside since it's not energy dependent
+    YLM = HARMONY(C, LMAX)  # TODO: move outside since it's not energy dependent
 
     dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
     dense_mp_2d =  DENSE_QUANTUM_NUMBERS[LMAX][:, :, 3]
