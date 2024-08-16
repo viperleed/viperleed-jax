@@ -57,6 +57,19 @@ class VibParams(Params):
                      if param.n_free_params == 0)
 
     @property
+    def static_t_matrix_input(self):
+        # inputs (site-el and vib amp) for the calculation of the static
+        # t-matrices
+        inputs = []
+        for param in [p for p in self.terminal_params if p.n_free_params == 0]:
+            if param.bound is None:
+                raise ValueError("Vibrational amplitude bounds must be set.")
+            if not param.bound.fixed:
+                raise ValueError("Static vibrational amplitudes must be fixed.")
+            inputs.append((param.site_element, param.bound.min))
+        return tuple(inputs)
+
+    @property
     def t_matrix_map(self):
         # return a tuple with the site_elements for each base parameter
         return tuple(param.site_element for param in self.base_params)
