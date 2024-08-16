@@ -6,6 +6,7 @@ from jax.tree_util import register_pytree_node_class
 from src.parameters.occ_parameters import ChemParams
 from src.parameters.vib_parameters import VibParams
 from src.parameters.geo_parameters import GeoParams
+from src.parameters.v0r_parameters import V0rParam
 
 
 SiteEl = namedtuple('SiteEl', ['site', 'element'])
@@ -32,12 +33,6 @@ def get_atom_site_elements(slab):
                 atom_site_elements.append(AtomSiteElement(at, siteel))
     return tuple(atom_site_elements) # read only from here on out
 
-class V0rParam():
-    def __init__(self, delta_slab):
-        # TODO
-        self.n_free_params = 1
-        self.n_base_params = 1
-        self.n_symmetry_constrained_params = 1
 
 class DeltaSlab():
 
@@ -118,6 +113,10 @@ class DeltaSlab():
     @property
     def occ_weight_transformer(self):
         return self.occ_params.get_weight_transformer()
+
+    @property
+    def v0r_transformer(self):
+        return self.v0r_param.get_v0r_transformer()
 
     @property
     def n_dynamic_t_matrices(self):
@@ -202,6 +201,7 @@ class FrozenParameterSpace():
         'static_t_matrix_inputs',
         'static_propagator_inputs',
         'vib_transformer',
+        'v0r_transformer',
     )
 
     def split_free_params(self, free_params):
