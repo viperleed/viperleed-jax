@@ -290,7 +290,7 @@ class Phaseshifts:
         # move site indices to the front
         self._phaseshifts = self._phaseshifts.swapaxes(0,1)
 
-    def __get__(self, site_el):
+    def __getitem__(self, site_el):
         index = self.phaseshift_map[site_el]
         return self._phaseshifts[index, ...]
 
