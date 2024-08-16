@@ -239,7 +239,7 @@ class TestGeo:
                         LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
                         C)
         expected_output = np.zeros_like(output)
-        assert jnp.allclose(output, expected_output, atol=1e-04) # very big because of the differnce in LMAX to the recalc 
+        assert output == pytest.approx(expected_output, abs=1e-04) # very big because of the differnce in LMAX to the recalc 
                                                                  # mentioned in test_vibration_no_change
     
     def test_geo_no_displacement_own_ref_matrix(self):
@@ -252,7 +252,7 @@ class TestGeo:
                         LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
                         C)
         expected_output = np.zeros_like(output)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
     
     def test_geo_z_displacement(self):
         DR = 0.1908624 * BOHR
@@ -265,7 +265,7 @@ class TestGeo:
                         C)
         with open(cu111_dir + 'Premade_cases/test_geo_disp_z.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
     
     def test_geo_x_displacement(self):
         DR = 0.1908624 * BOHR
@@ -278,7 +278,7 @@ class TestGeo:
                         C)
         with open(cu111_dir + 'Premade_cases/test_geo_disp_x.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
     
     def test_geo_y_displacement(self):
         DR = 0.1908624 * BOHR
@@ -291,7 +291,7 @@ class TestGeo:
                         C)
         with open(cu111_dir + 'Premade_cases/test_geo_disp_y.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
     
     def test_geo_xyz_displacement(self):
         DR = 0.1908624 * BOHR
@@ -304,7 +304,7 @@ class TestGeo:
                         C)
         with open(cu111_dir + 'Premade_cases/test_geo_disp_xyz.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
     
     def test_geo_xyz_and_vibrational_displacement(self):
         DR = 0.1 * BOHR
@@ -317,7 +317,7 @@ class TestGeo:
                         C)
         with open(cu111_dir + 'Premade_cases/test_geo_disp_xyz_vib.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
 
 if __name__ == "__main__":
     pytest.main([__file__])
