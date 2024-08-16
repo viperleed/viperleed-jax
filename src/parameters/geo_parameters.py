@@ -1,3 +1,4 @@
+from src.base import LinearTransformer
 from src.parameters.base_parameters import BaseParam, DeltaParam, Params, ConstrainedDeltaParam, Bound
 
 import jax
@@ -98,19 +99,17 @@ class GeoParams(Params):
         """
         if not all(param.bound is not None for param in self.terminal_params):
             raise ValueError("Not all geometric parameters have bounds.")
-        # linear transformation
+
         # offset is 0 (# TODO: could implement that)
+        offsets = np.zeros((3*self.n_dynamic_propagators))
+
         # weights are given by the bounds and the constraint method
-    
         weights = [param.free_param_map * (param.bound.max - param.bound.min)
                    for param in self.dynamic_propagators]
         weights = jax.scipy.linalg.block_diag(*weights)
         assert weights.shape == (3*self.n_dynamic_propagators, self.n_free_params)
 
-        def transformer(free_params):
-            if len(free_params) != self.n_free_params:
-                raise ValueError("Free parameters have wrong shape")
-            return (weights @ jnp.asarray(free_params)).reshape(-1, 3)
+        transformer = LinearTransformer(weights, offsets, out_reshape=(-1, 3))
         return transformer
 
 
