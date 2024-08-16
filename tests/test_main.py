@@ -474,7 +474,7 @@ read_in_data = Transform(n_energies, cu111_dir + 'Deltas/',['DEL_1_Cu_1'])
 #which does not use the variable lmax, whereas this code does. Consequently, there are 
 #differences in the vibrationally displaced t_matrix for high energies and high lmax 
 #values, leading to differences in the delta amplitudes at high energies.
-class TestDelta: # if you try to make the atol/rtol smaller dont forgett to replace 2/3 with 0.166667*4 in lib_delta -> apply_vibrational_displacements -> debye_waller_exponent
+class TestDelta: # if you try to make the atol/rtol smaller dont forgett to replace 2/3 with 0.166667*4 in lib_delta -> vmap_vib_dependent_tmatrix -> debye_waller_exponent
     def test_delta_positive_displacement(self):
         expected_output = read_in_data['amplitudes_del'][0,:,0,0,:]
         output = delta_amp(np.array([[0.05, 0.0, 0.0],]))

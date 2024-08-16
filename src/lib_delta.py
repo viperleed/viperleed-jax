@@ -16,9 +16,9 @@ from src.gaunt_coefficients import fetch_stored_gaunt_coeffs as fetch_gaunt
 from src.gaunt_coefficients import PRE_CALCULATED_CPPP, CSUM_COEFFS
 
 
-@jax.named_scope("apply_vibrational_displacements")
-@partial(vmap, in_axes=(None, 0, None, 0))  # vmap over atoms
-def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, vib_amp):
+@jax.named_scope("vib_dependent_tmatrix")
+# vmap over sites for which to calculate the t-matrix
+def vib_dependent_tmatrix(LMAX, phaseshifts, e_inside, vib_amp):
     """Computes the temperature-dependent t-matrix elements.
 
     Takes the interpolated phase shifts and computes the atomic t-matrix
@@ -102,6 +102,12 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, vib_amp):
     # Unlike TensErLEED, we do not convert it to a phase shift, but keep it as a
     # t-matrix, which we use going forward.
     return t_matrix
+
+
+# vmap over sites for which to calculate the t-matrix
+vmap_vib_dependent_tmatrix = jax.vmap(vib_dependent_tmatrix,
+                                      in_axes=(None, 0, None, 0))
+
 
 @jax.named_scope("apply_geometric_displacements")
 def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,
