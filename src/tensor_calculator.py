@@ -4,6 +4,7 @@ from jax.tree_util import register_pytree_node_class
 import jax.numpy as jnp
 
 from viperleed.calc import symmetry
+from viperleed.calc import LOGGER as logger
 
 from functools import partial
 from src import delta
@@ -71,6 +72,7 @@ class TensorLEEDCalculator:
         self.comp_intensity = None
         self.comp_energies = None
         self.interpolation_step = interpolation_step
+        self._parameter_space = None
 
         self.target_grid = jnp.arange(rparams.THEO_ENERGIES.start,
                                       rparams.THEO_ENERGIES.stop,
@@ -112,6 +114,16 @@ class TensorLEEDCalculator:
     def n_atoms(self):
         return len(self.ref_vibrational_amps)
 
+    @property
+    def parameter_space(self):
+        if self._parameter_space is None:
+            raise ValueError("Parameter space not set.")
+        return self._parameter_space
+
+    @property
+    def n_free_parameters(self):
+        return self.parameter_space.n_free_parameters
+
     def set_rfactor(self, rfactor_name):
         _rfactor_name = rfactor_name.lower().strip()
         for func, synonyms in _R_FACTOR_SYNONYMS.items():
@@ -121,19 +133,6 @@ class TensorLEEDCalculator:
                 return
         raise ValueError(f"Unknown R-factor name: {rfactor_name}")
 
-    def _get_parameter_transformer(self, slab, rparams):
-        # find and enforce symmetry on slab
-        rparams.SYMMETRY_FIND_ORI = True
-        slab.full_update(rparams)
-
-        # find symmetry
-        plane_group = symmetry.findSymmetry(slab, rparams)
-        # enforce symmetry
-        symmetry.enforceSymmetry(slab, rparams, plane_group)
-
-        # make parameter transformer
-        return TensorParameterTransformer(slab, self.interpolation_step)
-
     def set_experiment_intensity(self, comp_intensity, comp_energies):
         self.comp_intensity = comp_intensity
         self.comp_energies = comp_energies
@@ -142,6 +141,15 @@ class TensorLEEDCalculator:
             self.comp_intensity,
             bc_type=self.bc_type,
         )
+
+    def set_parameter_space(self, delta_slab):
+        if self._parameter_space is not None:
+            logger.debug("Overwriting parameter space. New parameter space:\n"
+                         f"{delta_slab.parameter_space.info}")
+        # take delta_slab and set the parameter space
+        # TODO
+        
+
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def delta_amplitude(self, vib_amps, displacements):

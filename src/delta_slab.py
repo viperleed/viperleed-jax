@@ -1,5 +1,7 @@
 from collections import namedtuple
 
+from jax.tree_util import register_pytree_node_class
+
 from src.parameters.occ_parameters import ChemParams
 from src.parameters.vib_parameters import VibParams
 from src.parameters.geo_parameters import GeoParams
@@ -49,6 +51,9 @@ class DeltaSlab():
         self.geo_params = GeoParams(self)
         self.occ_params = ChemParams(self)
         self.v0r_param = V0rParam(self)
+
+    def freeze(self):
+        return FrozenParameterSpace(self)
 
     @property
     def n_free_params(self):
@@ -102,6 +107,18 @@ class DeltaSlab():
         )
 
     @property
+    def geo_transformer(self):
+        return self.geo_params.get_transformer()
+
+    @property
+    def vib_transformer(self):
+        return self.vib_params.get_transformer()
+
+    @property
+    def occ_weights(self):
+        return self.occ_params.get_transformer()
+
+    @property
     def info(self):
         """
         Returns a string containing information about the free parameters,
@@ -132,3 +149,30 @@ class DeltaSlab():
             f"{self.occ_params.n_base_params} occ, "
             f"{self.v0r_param.n_base_params} V0r)\n"
         )
+
+
+@register_pytree_node_class
+class FrozenParameterSpace():
+    frozen_attributes = (
+        'site_elements',
+        'n_free_params',
+        'n_base_params',
+        'n_symmetry_constrained_params',
+    )
+
+    def __init__(self, delta_slab):
+        for attr in self.frozen_attributes:
+            setattr(self, attr, getattr(delta_slab, attr))
+
+    def tree_flatten(self):
+        aux_data = {attr: getattr(self, attr)
+                    for attr in self.frozen_attributes}
+        children = None
+        return (children, aux_data)
+
+    @classmethod
+    def tree_unflatten(cls, children, aux_data):
+        frozen_parameter_space = cls.__new__
+        for kw, value in aux_data.items():
+            setattr(frozen_parameter_space, kw, value)
+        return frozen_parameter_space
