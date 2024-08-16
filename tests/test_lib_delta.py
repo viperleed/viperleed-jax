@@ -3,9 +3,10 @@ from pathlib import Path
 
 from src.lib_phaseshifts import *
 from src.lib_tensors import *
-from src.lib_delta import *
+from src.t_matrix import vmap_vib_dependent_tmatrix
+from src.lib_delta import apply_geometric_displacements, TMATRIX_DWG
 from src.delta import *
-from src.dense_quantum_numbers import MINUS_ONE_POW_M
+from src.dense_quantum_numbers import MINUS_ONE_POW_M, DENSE_L, DENSE_M
 
 #From "PARAM"
 LMAX = 14  # maximum angular momentum to be used in calculation

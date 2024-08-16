@@ -9,7 +9,7 @@ from jax import numpy as jnp
 from functools import partial
 
 from src.constants import BOHR
-from src.lib_delta import vmap_vib_dependent_tmatrix
+from src.t_matrix import vmap_vib_dependent_tmatrix
 from src.lib_delta import apply_geometric_displacements
 from src.lib_math import EPS
 
