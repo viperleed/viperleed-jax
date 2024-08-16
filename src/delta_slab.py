@@ -172,7 +172,7 @@ class FrozenParameterSpace():
 
     @classmethod
     def tree_unflatten(cls, children, aux_data):
-        frozen_parameter_space = cls.__new__
+        frozen_parameter_space = cls.__new__(cls)
         for kw, value in aux_data.items():
             setattr(frozen_parameter_space, kw, value)
         return frozen_parameter_space
