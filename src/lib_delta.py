@@ -50,6 +50,7 @@ def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,
 
     return AMAT
 
+
 @jax.named_scope("TMATRIX_DWG")
 @partial(vmap, in_axes=(0, 0, 0, None, None, None))  # vmap over atoms
 @partial(jax.jit, static_argnames=('v_imag', 'LMAX'))
@@ -76,13 +77,38 @@ def TMATRIX_DWG(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX):
 
     return DELTAT
 
+
 @jax.named_scope("TMATRIX_non_zero_displacement")
 def TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX):
+
+    propagator = calc_propagator(LMAX, C, energy, v_imag)
+
+    broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
+
+    DELTAT = jnp.einsum('ji,j,lj->il',
+                        propagator, 1j * broadcast_New_t_matrix, propagator, optimize=True)
+
+    mapped_t_matrix_ref = map_l_array_to_compressed_quantum_index(t_matrix_ref, LMAX)
+    DELTAT = DELTAT - jnp.diag(1j*mapped_t_matrix_ref)
+
+    return DELTAT
+
+
+@jax.named_scope("TMATRIX_non_zero_displacement")
+def TMATRIX_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX):
+    mapped_t_matrix_new = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
+    mapped_t_matrix_ref = map_l_array_to_compressed_quantum_index(t_matrix_ref, LMAX)
+    DELTAT = jnp.diag(1j*mapped_t_matrix_new) - jnp.diag(1j*mapped_t_matrix_ref)
+
+    return DELTAT
+
+
+def calc_propagator(LMAX, C, energy, v_imag):
     CL = safe_norm(C)
     CAPPA = 2*energy - 2j*v_imag
     Z = jnp.sqrt(CAPPA)*CL
     BJ = bessel(Z,2*LMAX)
-    YLM = HARMONY(C, LMAX)
+    YLM = HARMONY(C, LMAX)  # move outside since it's not energy dependent
 
     dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
     dense_mp_2d =  DENSE_QUANTUM_NUMBERS[LMAX][:, :, 3]
@@ -108,21 +134,4 @@ def TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v
                              jnp.zeros(shape=((LMAX+1)**2, (LMAX+1)**2),
                                        dtype=jnp.complex128))
     propagator *= 4*jnp.pi
-
-    broadcast_New_t_matrix = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
-
-    DELTAT = jnp.einsum('ji,j,lj->il',
-                        propagator, 1j * broadcast_New_t_matrix, propagator, optimize=True)
-
-    mapped_t_matrix_ref = map_l_array_to_compressed_quantum_index(t_matrix_ref, LMAX)
-    DELTAT = DELTAT - jnp.diag(1j*mapped_t_matrix_ref)
-
-    return DELTAT
-
-@jax.named_scope("TMATRIX_non_zero_displacement")
-def TMATRIX_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX):
-    mapped_t_matrix_new = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
-    mapped_t_matrix_ref = map_l_array_to_compressed_quantum_index(t_matrix_ref, LMAX)
-    DELTAT = jnp.diag(1j*mapped_t_matrix_new) - jnp.diag(1j*mapped_t_matrix_ref)
-
-    return DELTAT
+    return propagator
