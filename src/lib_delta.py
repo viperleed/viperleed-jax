@@ -31,7 +31,7 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, vib_amp):
     amplitudes are the sole temperature-dependent component. Therefore, 
     utilizing a temperature-independent vibration amplitude obviates the need 
     to explicitly include temperature, and the phaseshifts in (23) depend on
-    vibrations only. Up to and including the calculation of SUM, every
+    vibrations only. Up to and including the calculation of tmatrix_2j, every
     operation is derived from (23).
 
     The factor PRE_CALCULATED_CPPP is defined as 
@@ -40,7 +40,7 @@ def apply_vibrational_displacements(LMAX, phaseshifts, e_inside, vib_amp):
     factor CTAB includes all other terms dependent on l''.
 
     To compute the t-matrix, the resulting term is divided by 4ik_0 (eq. 22).
-    In the code SUM is only devided by 2i.
+    In the code tmatrix_2j is only devided by 2i.
 
     Parameters
     ----------
