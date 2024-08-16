@@ -1,6 +1,7 @@
 from functools import partial
 
 from src.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam
+from src.base import LinearTransformer
 
 import numpy as np
 import jax
@@ -91,14 +92,8 @@ class ChemParams(Params):
                 # keep weights as 0 and add fixed value to static weights
                 transform_biases[i] = top_level.elements[element]
 
-        if self.n_free_params == 0:
-            # no free parameters, return fixed weights # TODO: log debug
-            def transformer(free_params):
-                return transform_biases
-            return transformer
-
-        def transformer(free_params):
-            return jnp.dot(free_params, transform_weights) + transform_biases
+        transformer = LinearTransformer(transform_weights, transform_biases)
+        assert transformer.n_free_params == sum_parameters
 
         return transformer
 
