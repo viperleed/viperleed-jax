@@ -3,8 +3,10 @@ from pathlib import Path
 
 from src.lib_phaseshifts import *
 from src.lib_tensors import *
-from src.lib_delta import *
+from src.t_matrix import vmap_vib_dependent_tmatrix
+from src.lib_delta import apply_geometric_displacements, TMATRIX_DWG
 from src.delta import *
+from src.dense_quantum_numbers import MINUS_ONE_POW_M, DENSE_L, DENSE_M
 
 #From "PARAM"
 LMAX = 14  # maximum angular momentum to be used in calculation
@@ -86,7 +88,7 @@ tensor_amps_out_with_prefactors = jnp.einsum('ealb,e,eb,->ealb',
 tensor_amps_out_with_prefactors = tensor_amps_out_with_prefactors.swapaxes(2,3)
 
 # Calculate the t-matrix with the vibrational displacements
-tscatf_vmap = jax.vmap(apply_vibrational_displacements, in_axes=(None, 0, 0, None), out_axes=1) # vmap over energy
+tscatf_vmap = jax.vmap(vmap_vib_dependent_tmatrix, in_axes=(None, 0, 0, None), out_axes=1) # vmap over energy
 tmatrix_vmap_energy = jax.vmap(TMATRIX_DWG, in_axes=(0, 0, None, 0, None, None))
 matel_dwg_vmap_energy = jax.vmap(apply_geometric_displacements, in_axes=(0, 0, 0, None, None, 0, 0, None))
 #with open('test_geo_disp_xyz_vib.npy','wb') as f:
@@ -119,7 +121,7 @@ class TestVibration:
         output = t_matrix_new
         with open(cu111_dir + 'Premade_cases/test_vibration_positive_change.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
 
     def test_vibration_negative_change(self):
         DR = 0.1 * BOHR
@@ -129,7 +131,7 @@ class TestVibration:
         output = t_matrix_new
         with open(cu111_dir + 'Premade_cases/test_vibration_negative_change.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
     
     def test_vibration_zero_vibration(self): #with no vibration the t_matrix is the temperature independent
                                              #t_matrix, which can be calculated from the phaseshifts
@@ -139,7 +141,7 @@ class TestVibration:
         t_matrix_new = t_matrix_new.swapaxes(0, 1)  # swap energy and atom indices
         output = t_matrix_new
         expected_output = (np.exp(2j*_phaseshifts)-1)/2j
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
 
 
 class TestTMATRIX_DWG:
@@ -165,7 +167,7 @@ class TestTMATRIX_DWG:
         C = C * jnp.array([1, 1, -1])
         output = tmatrix_vmap_energy(t_matrix_new, t_matrix_new, C, _energies, v_imag, LMAX)
         expected_output = np.zeros_like(output)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
 
     def test_tmatrix_z_displacement(self):
         DR = 0.1908624 * BOHR
@@ -177,7 +179,7 @@ class TestTMATRIX_DWG:
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_z.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output, atol=1e-07)
+        assert output == pytest.approx(expected_output, abs=1e-07)
 
     def test_tmatrix_x_displacement(self):
         DR = 0.1908624 * BOHR
@@ -189,7 +191,7 @@ class TestTMATRIX_DWG:
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_x.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output, atol=1e-07)
+        assert output == pytest.approx(expected_output, abs=1e-07)
 
     def test_tmatrix_y_displacement(self):
         DR = 0.1908624 * BOHR
@@ -201,8 +203,8 @@ class TestTMATRIX_DWG:
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_y.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output, atol=1e-07)
-    
+        assert output == pytest.approx(expected_output, abs=1e-07)
+
     def test_tmatrix_xyz_displacement(self):
         DR = 0.1908624 * BOHR
         DR = np.array([DR,])
@@ -213,8 +215,8 @@ class TestTMATRIX_DWG:
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_xyz.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
-    
+        assert output == pytest.approx(expected_output)
+
     def test_tmatrix_xyz_and_vibrational_displacement(self):
         DR = 0.3* BOHR
         DR = np.array([DR,])
@@ -225,7 +227,7 @@ class TestTMATRIX_DWG:
         output = tmatrix_vmap_energy(t_matrix_ref, t_matrix_new, C, _energies, v_imag, LMAX)
         with open(cu111_dir + 'Premade_cases/test_tmatrix_dwg_disp_xyz_vib.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
 
 class TestGeo:
     def test_geo_no_displacement(self):
@@ -238,7 +240,7 @@ class TestGeo:
                         LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
                         C)
         expected_output = np.zeros_like(output)
-        assert jnp.allclose(output, expected_output, atol=1e-04) # very big because of the differnce in LMAX to the recalc 
+        assert output == pytest.approx(expected_output, abs=1e-04) # very big because of the differnce in LMAX to the recalc 
                                                                  # mentioned in test_vibration_no_change
     
     def test_geo_no_displacement_own_ref_matrix(self):
@@ -251,7 +253,7 @@ class TestGeo:
                         LMAX, tensor_amps_out_with_prefactors, tensor_amps_in,
                         C)
         expected_output = np.zeros_like(output)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
     
     def test_geo_z_displacement(self):
         DR = 0.1908624 * BOHR
@@ -264,7 +266,7 @@ class TestGeo:
                         C)
         with open(cu111_dir + 'Premade_cases/test_geo_disp_z.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
     
     def test_geo_x_displacement(self):
         DR = 0.1908624 * BOHR
@@ -277,7 +279,7 @@ class TestGeo:
                         C)
         with open(cu111_dir + 'Premade_cases/test_geo_disp_x.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
     
     def test_geo_y_displacement(self):
         DR = 0.1908624 * BOHR
@@ -290,7 +292,7 @@ class TestGeo:
                         C)
         with open(cu111_dir + 'Premade_cases/test_geo_disp_y.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
     
     def test_geo_xyz_displacement(self):
         DR = 0.1908624 * BOHR
@@ -303,7 +305,7 @@ class TestGeo:
                         C)
         with open(cu111_dir + 'Premade_cases/test_geo_disp_xyz.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
     
     def test_geo_xyz_and_vibrational_displacement(self):
         DR = 0.1 * BOHR
@@ -316,7 +318,7 @@ class TestGeo:
                         C)
         with open(cu111_dir + 'Premade_cases/test_geo_disp_xyz_vib.npy', 'rb') as f:
             expected_output = np.load(f)
-        assert jnp.allclose(output, expected_output)
+        assert output == pytest.approx(expected_output)
 
 if __name__ == "__main__":
     pytest.main([__file__])

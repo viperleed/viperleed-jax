@@ -9,7 +9,7 @@ from jax import numpy as jnp
 from functools import partial
 
 from src.constants import BOHR
-from src.lib_delta import apply_vibrational_displacements
+from src.t_matrix import vmap_vib_dependent_tmatrix
 from src.lib_delta import apply_geometric_displacements
 from src.lib_math import EPS
 
@@ -59,12 +59,12 @@ def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshif
 
         if batch_lmax:
             t_matrix_new = jax.vmap(
-                apply_vibrational_displacements,
+                vmap_vib_dependent_tmatrix,
                 in_axes=(None, 0, 0, None))(lmax, l_phaseshifts,
                                             l_energies, vib_amps)
         else:
             def _vib_disp_by_energy(id):
-                return apply_vibrational_displacements(
+                return vmap_vib_dependent_tmatrix(
                     lmax,
                     l_phaseshifts[id, ...],
                     l_energies[id],

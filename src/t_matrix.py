@@ -2,20 +2,16 @@ from jax import config
 config.update("jax_enable_x64", True)
 import jax
 import jax.numpy as jnp
-from jax import jit, vmap
-from functools import partial
 
-from src.lib_math import *
-from src.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
-
-# TODO: could we switch the entire calculation to use eV and Angstroms?
-from src.constants import BOHR, HARTREE
+from src.lib_math import bessel
+from src.constants import BOHR
 
 from src.gaunt_coefficients import PRE_CALCULATED_CPPP
 
+
 @jax.named_scope("vib_dependent_tmatrix")
-@partial(vmap, in_axes=(None, 0, None, 0))  # vmap over atoms
-def vib_dependent_tmatrix(LMAX, phaseshifts, e_inside, DR):
+# vmap over sites for which to calculate the t-matrix
+def vib_dependent_tmatrix(LMAX, phaseshifts, e_inside, vib_amp):
     """Computes the temperature-dependent t-matrix elements.
 
     Takes the interpolated phase shifts and computes the atomic t-matrix
@@ -28,7 +24,7 @@ def vib_dependent_tmatrix(LMAX, phaseshifts, e_inside, DR):
     amplitudes are the sole temperature-dependent component. Therefore, 
     utilizing a temperature-independent vibration amplitude obviates the need 
     to explicitly include temperature, and the phaseshifts in (23) depend on
-    vibrations only. Up to and including the calculation of SUM, every
+    vibrations only. Up to and including the calculation of tmatrix_2j, every
     operation is derived from (23).
 
     The factor PRE_CALCULATED_CPPP is defined as 
@@ -37,7 +33,7 @@ def vib_dependent_tmatrix(LMAX, phaseshifts, e_inside, DR):
     factor CTAB includes all other terms dependent on l''.
 
     To compute the t-matrix, the resulting term is divided by 4ik_0 (eq. 22).
-    In the code SUM is only devided by 2i.
+    In the code tmatrix_2j is only devided by 2i.
 
     Parameters
     ----------
@@ -99,3 +95,8 @@ def vib_dependent_tmatrix(LMAX, phaseshifts, e_inside, DR):
     # Unlike TensErLEED, we do not convert it to a phase shift, but keep it as a
     # t-matrix, which we use going forward.
     return t_matrix
+
+
+# vmap over sites for which to calculate the t-matrix
+vmap_vib_dependent_tmatrix = jax.vmap(vib_dependent_tmatrix,
+                                      in_axes=(None, 0, None, 0))
