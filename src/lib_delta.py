@@ -94,7 +94,7 @@ def TMATRIX_non_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v
     return DELTAT
 
 
-@jax.named_scope("TMATRIX_non_zero_displacement")
+@jax.named_scope("TMATRIX_zero_displacement")
 def TMATRIX_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_imag, LMAX):
     mapped_t_matrix_new = map_l_array_to_compressed_quantum_index(corrected_t_matrix, LMAX)
     mapped_t_matrix_ref = map_l_array_to_compressed_quantum_index(t_matrix_ref, LMAX)
