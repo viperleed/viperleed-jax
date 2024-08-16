@@ -144,11 +144,21 @@ class TensorLEEDCalculator:
 
     def set_parameter_space(self, delta_slab):
         if self._parameter_space is not None:
-            logger.debug("Overwriting parameter space. New parameter space:\n"
-                         f"{delta_slab.parameter_space.info}")
+            logger.debug("Overwriting parameter space.")
         # take delta_slab and set the parameter space
+        self._parameter_space = delta_slab.freeze()
+        logger.info("Parameter space set:\n"
+                    f"{delta_slab.parameter_space.info}")
+        logger.info(
+            "This parameter space requires dynamic calculation of "
+            f"{self._parameter_space.n_dynamic_t_matrices} t-matrices and "
+            f"{self._parameter_space.n_dynamic_propagators} propagators."
+        )
+        # pre-calculate the static t-matrices
         # TODO
-        
+
+        # pre-calculate the static propagators
+        # TODO
 
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
