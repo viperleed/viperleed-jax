@@ -1,4 +1,5 @@
 from collections import namedtuple
+from copy import deepcopy
 
 from jax.tree_util import register_pytree_node_class
 
@@ -108,15 +109,40 @@ class DeltaSlab():
 
     @property
     def geo_transformer(self):
-        return self.geo_params.get_transformer()
+        return self.geo_params.get_geo_transformer()
 
     @property
     def vib_transformer(self):
-        return self.vib_params.get_transformer()
+        return self.vib_params.get_vib_transformer()
 
     @property
-    def occ_weights(self):
-        return self.occ_params.get_transformer()
+    def occ_weight_transformer(self):
+        return self.occ_params.get_weight_transformer()
+
+    @property
+    def n_dynamic_t_matrices(self):
+        pass #TODO
+
+    @property
+    def n_static_t_matrices(self):
+        pass #TODO
+
+    @property
+    def n_dynamic_propagators(self):
+        return len(self.geo_params.dynamic_propagators)
+
+    @property
+    def n_static_propagators(self):
+        return len(self.geo_params.static_propagators)
+
+    @property
+    def n_param_split(self):
+        return (
+            self.v0r_param.n_free_params,
+            self.vib_params.n_free_params,
+            self.geo_params.n_free_params,
+            self.occ_params.n_free_params,
+        )
 
     @property
     def info(self):
@@ -130,24 +156,24 @@ class DeltaSlab():
         return (
             "Free parameters:\n"
             f"{self.n_free_params}\t"
-            f"({self.geo_params.n_free_params} geo, "
+            f"({self.v0r_param.n_free_params} V0r, "
+            f"{self.geo_params.n_free_params} geo, "
             f"{self.vib_params.n_free_params} vib, "
-            f"{self.occ_params.n_free_params} occ, "
-            f"{self.v0r_param.n_free_params} V0r)\n"
+            f"{self.occ_params.n_free_params} occ)\n"
 
             "Symmetry constrained parameters:\n"
             f"{self.n_symmetry_constrained_params}\t"
-            f"({self.geo_params.n_symmetry_constrained_params} geo, "
+            f"({self.v0r_param.n_symmetry_constrained_params} V0r, "
+            f"{self.geo_params.n_symmetry_constrained_params} geo, "
             f"{self.vib_params.n_symmetry_constrained_params} vib, "
-            f"{self.occ_params.n_symmetry_constrained_params} occ, "
-            f"{self.v0r_param.n_symmetry_constrained_params} V0r)\n"
+            f"{self.occ_params.n_symmetry_constrained_params} occ)\n"
 
             "Total parameters:\n"
             f"{self.n_base_params}\t"
-            f"({self.geo_params.n_base_params} geo, "
+            f"({self.v0r_param.n_base_params} V0r), "
+            f"{self.geo_params.n_base_params} geo, "
             f"{self.vib_params.n_base_params} vib, "
-            f"{self.occ_params.n_base_params} occ, "
-            f"{self.v0r_param.n_base_params} V0r)\n"
+            f"{self.occ_params.n_base_params} occ)\n"
         )
 
 
@@ -155,14 +181,29 @@ class DeltaSlab():
 class FrozenParameterSpace():
     frozen_attributes = (
         'site_elements',
+        'geo_transformer',
+        'vib_transformer',
+        'occ_weight_transformer',
         'n_free_params',
         'n_base_params',
+        'n_param_split',
+        'n_dynamic_propagators',
+        'n_static_propagators',
         'n_symmetry_constrained_params',
     )
 
+    def split_free_params(self, free_params):
+        if len(free_params) != self.n_free_params:
+            raise ValueError("Number of free parameters does not match.")
+        v0r_params = free_params[:self.n_param_split[0]]
+        geo_params = free_params[self.n_param_split[0]:sum(self.n_param_split[:2])]
+        vib_params = free_params[sum(self.n_param_split[:2]):sum(self.n_param_split[:3])]
+        occ_params = free_params[sum(self.n_param_split[:3]):]
+        return v0r_params, geo_params, vib_params, occ_params
+
     def __init__(self, delta_slab):
         for attr in self.frozen_attributes:
-            setattr(self, attr, getattr(delta_slab, attr))
+            setattr(self, attr, deepcopy(getattr(delta_slab, attr)))
 
     def tree_flatten(self):
         aux_data = {attr: getattr(self, attr)
