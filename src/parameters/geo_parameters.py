@@ -51,6 +51,18 @@ class GeoParams(Params):
         new_constraint = GeoLayerConstraint(children=layer_params)
         self.params.append(new_constraint)
 
+    def fix_layer(self, layer, z_offset=None):
+        layer_params = [param for param in self.terminal_params if param.layer == layer]
+        if not layer_params:
+            raise ValueError(f"No free params for layer {layer}")
+        z_constraint = GeoLayerConstraint(children=layer_params)
+        fix_constraint = GeoFixConstraint(children=[z_constraint])
+        if z_offset is not None:
+            fix_bound = GeoParamBound(z_offset, z_offset)
+        fix_constraint.set_bound(fix_bound)
+        self.params.append(z_constraint)
+        self.params.append(fix_constraint)
+
     def set_geo_bounds(self, geo_bounds):
         self.geo_bounds = tuple(geo_bounds)
         for bound, param in zip(geo_bounds, self.terminal_params):
@@ -151,10 +163,19 @@ class GeoLayerConstraint(GeoConstraint):
 
 
 class GeoFixConstraint(GeoConstraint):
-    pass
+    # constrain children to fixed values
+    def __init__(self, children):
+        self.n_free_params = 0
+        self.symmetry_operations = {
+            child: np.array([[1., 0.],
+                             [0., 1.]])
+            for child in children
+        }
+        super().__init__(children)
+
 
 def geo_sym_linking(atom):
     linking = np.zeros(shape=(3,3))
     linking[1:3, 1:3] = atom.symrefm  #TODO: round off the 1e-16 contributions
     linking[0,0] = 1.0 # all symmetry linked atoms move together is z directon
-    return linking#
+    return linking
