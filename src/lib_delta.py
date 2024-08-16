@@ -103,6 +103,7 @@ def TMATRIX_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_ima
     return DELTAT
 
 # TODO: move this to a separate file and write tests
+# TODO: replace energy, v_imag with a single arg kappa = 2*energy - 2j*v_imag
 def calc_propagator(LMAX, C, energy, v_imag):
     c_norm = safe_norm(C)
     kappa = 2*energy - 2j*v_imag
