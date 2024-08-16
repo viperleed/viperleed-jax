@@ -79,8 +79,17 @@ class GeoParams(Params):
                 if param not in self.free_params]
 
     @property
+    def static_propagator_inputs(self):
+        return tuple(param.get_static_displacement()
+                     for param in self.static_propagators)
+
+    @property
     def n_dynamic_propagators(self):
         return len(self.dynamic_propagators)
+
+    @property
+    def n_static_propagators(self):
+        return len(self.static_propagators)
 
     @property
     def propagator_map(self):
@@ -162,15 +171,28 @@ class GeoLayerConstraint(GeoConstraint):
 
 
 class GeoFixConstraint(GeoConstraint):
-    # constrain children to fixed values
+    # constrains childs to fixed values
     def __init__(self, children):
         self.n_free_params = 0
+        # only one child is allowed
+        if isinstance(children, GeoConstraint):
+            self.only_child = children
+        elif len(children) == 1:
+            self.only_child = children[0]
+        else:
+            raise ValueError("FixConstraint can only take one child.")
         self.symmetry_operations = {
-            child: np.array([[1., 0.],
+            self.only_child: np.array([[1., 0.],
                              [0., 1.]])
-            for child in children
         }
-        super().__init__(children)
+        super().__init__([self.only_child])
+
+    def get_static_displacement(self):
+        if self.bound is None:
+            raise ValueError("Bound not set for fix constraint.")
+        if not self.bound.fixed:
+            raise ValueError("Bound must be fixed for GeoFixConstraint.")
+        return jnp.dot(self.only_child.free_param_map, self.bound.min)
 
 
 def geo_sym_linking(atom):
