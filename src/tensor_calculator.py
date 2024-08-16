@@ -12,7 +12,9 @@ from src import rfactor
 from src.constants import BOHR, HARTREE
 from src.interpolation import *
 from src.lib_intensity import intensity_prefactor, sum_intensity
-from src.parameter_handler import TensorParameterTransformer
+
+from src.t_matrix import vib_dependent_tmatrix
+from src.lib_delta import calc_propagator
 
 import interpax
 
@@ -94,13 +96,16 @@ class TensorLEEDCalculator:
         self.origin_grid = ref_data.incident_energy_ev
 
         self.exp_spline = None
-        self.parameter_transformer = self._get_parameter_transformer(slab, rparams)
 
         # default R-factor is Pendry
         self.rfactor_func = rfactor.pendry_R
 
         if self.interpolation_deg != 3:
             raise NotImplementedError
+
+    @property
+    def energies(self):
+        return self.ref_data.energies
 
     @property
     def unit_cell_area(self):
@@ -147,18 +152,51 @@ class TensorLEEDCalculator:
             logger.debug("Overwriting parameter space.")
         # take delta_slab and set the parameter space
         self._parameter_space = delta_slab.freeze()
-        logger.info("Parameter space set:\n"
-                    f"{delta_slab.parameter_space.info}")
+        logger.info("Parameter space set.\n"
+                    f"{delta_slab.info}")
         logger.info(
             "This parameter space requires dynamic calculation of "
-            f"{self._parameter_space.n_dynamic_t_matrices} t-matrices and "
-            f"{self._parameter_space.n_dynamic_propagators} propagators."
+            f"{self._parameter_space.n_dynamic_t_matrices} t-matrice(s) and "
+            f"{self._parameter_space.n_dynamic_propagators} propagator(s)."
         )
         # pre-calculate the static t-matrices
-        # TODO
+        logger.debug(
+            f"Pre-calculating {self._parameter_space.n_static_t_matrices} "
+            "static t-matrice(s).")
+        self._calculate_static_t_matrices()
 
         # pre-calculate the static propagators
-        # TODO
+        logger.debug(
+            f"Pre-calculating {self._parameter_space.n_static_propagators} "
+            "static propagator(s).")
+        self._calculate_static_propagators()
+
+    def _calculate_static_t_matrices(self):
+        # this is only done once – perform for maximum lmax and crop later
+        t_matrix_vmap_en = jax.vmap(vib_dependent_tmatrix,
+                                   in_axes=(None, 0, 0, None))
+        self._static_t_matrices = [
+            t_matrix_vmap_en(
+                self.phaseshifts.l_max,
+                self.phaseshifts[site_el],
+                self.energies,
+                vib_amp
+            )
+            for site_el, vib_amp
+            in self._parameter_space.static_t_matrix_inputs]
+
+    def _calculate_static_propagators(self):
+        # this is only done once – perform for maximum lmax and crop later
+        propagator_vmap_en = jax.vmap(calc_propagator,
+                                      in_axes=(None, None, 0, None))
+        self._static_propagators = [
+            propagator_vmap_en(
+                self.phaseshifts.l_max,
+                displacement,
+                self.energies,
+                self.ref_data.v0i
+            )
+            for displacement in self._parameter_space.static_propagator_inputs]
 
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
