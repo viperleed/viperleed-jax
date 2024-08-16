@@ -102,11 +102,11 @@ def TMATRIX_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_ima
 
     return DELTAT
 
-
+# TODO: move this to a separate file and write tests
 def calc_propagator(LMAX, C, energy, v_imag):
-    CL = safe_norm(C)
-    CAPPA = 2*energy - 2j*v_imag
-    Z = jnp.sqrt(CAPPA)*CL
+    c_norm = safe_norm(C)
+    kappa = 2*energy - 2j*v_imag
+    Z = jnp.sqrt(kappa) * c_norm
     BJ = bessel(Z,2*LMAX)
     YLM = HARMONY(C, LMAX)  # move outside since it's not energy dependent
 
