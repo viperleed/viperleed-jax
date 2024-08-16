@@ -74,6 +74,27 @@ class VibParams(Params):
         for bound, param in zip(vib_bounds, self.terminal_params):
             param.set_bound(bound)
 
+    def fix_site_element(self, site_element, vib_amp):
+        """Fix the vibrational amplitude for a site element.
+
+        Parameters:
+        site_element (SiteEl): Site element to fix.
+        vib_amp (float): Fixed vibrational amplitude.
+
+        Returns:
+        None
+        """
+        vib_param = next((param for param in self.terminal_params
+                          if param.site_element == site_element), None)
+        if vib_param is None:
+            raise ValueError(f"No vibrational parameter for site element {site_element}")
+        fix_param = FixVibParam(children=[vib_param])
+        if vib_amp is None:
+            # fix to the reference vibrational amplitude
+            vib_amp = vib_param.ref_vib_amp
+        fix_param.set_bound(VibParamBound(vib_amp, vib_amp))
+        self.params.append(fix_param)
+
     def get_vib_transformer(self):
         # return a JAX function that transforms the free parameters
         # (self.n_free_params values normalized to [0, 1]) to the vibrational
@@ -114,7 +135,7 @@ class ConstrainedVibParam(ConstrainedDeltaParam):
                 f"Bounds ({bound.min}, {bound.max}) are invalid for vibrational"
                 f" amplitude {self.ref_vib_amp} (range must be positive).")
         self.bound = bound
-        
+
 
 # Constrained Vibrational Parameters
 
@@ -139,6 +160,10 @@ class FixVibParam(ConstrainedVibParam):
     # sets a fixed value for the vibrational amplitude
     def __init__(self, children):
         self.n_free_params = 0
+        if not all([child.site_element == children[0].site_element for child in children]):
+            raise ValueError("All children must have the same site element")
+        self.site_element = children[0].site_element
+        self.ref_vib_amp = children[0].ref_vib_amp
         super().__init__(children)
 
     def set_bound(self, bound):
