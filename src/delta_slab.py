@@ -136,6 +136,14 @@ class DeltaSlab():
         return len(self.geo_params.static_propagators)
 
     @property
+    def static_t_matrix_inputs(self):
+        return self.vib_params.static_t_matrix_input
+
+    @property
+    def static_propagator_inputs(self):
+        return self.geo_params.static_propagator_inputs
+
+    @property
     def n_param_split(self):
         return (
             self.v0r_param.n_free_params,
@@ -191,6 +199,8 @@ class FrozenParameterSpace():
         'n_symmetry_constrained_params',
         'occ_weight_transformer',
         'site_elements',
+        'static_t_matrix_inputs',
+        'static_propagator_inputs',
         'vib_transformer',
     )
 

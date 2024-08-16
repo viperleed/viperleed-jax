@@ -99,4 +99,4 @@ def vib_dependent_tmatrix(LMAX, phaseshifts, e_inside, vib_amp):
 
 # vmap over sites for which to calculate the t-matrix
 vmap_vib_dependent_tmatrix = jax.vmap(vib_dependent_tmatrix,
-                                      in_axes=(None, 0, None, 0))
+                                      in_axes=(None, 1, None, 0))
