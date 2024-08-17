@@ -143,6 +143,10 @@ class DeltaSlab():
         return self.geo_params.static_propagator_inputs
 
     @property
+    def dynamic_t_matrix_site_elements(self):
+        return self.vib_params.dynamic_site_elements
+
+    @property
     def n_param_split(self):
         return (
             self.v0r_param.n_free_params,
@@ -187,6 +191,7 @@ class DeltaSlab():
 @register_pytree_node_class
 class FrozenParameterSpace():
     frozen_attributes = (
+        'dynamic_t_matrix_site_elements',
         'geo_transformer',
         'n_base_params',
         'n_dynamic_propagators',
