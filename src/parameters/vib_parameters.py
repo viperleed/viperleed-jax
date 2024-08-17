@@ -120,10 +120,10 @@ class VibParams(Params):
             raise ValueError("Not all vibrational parameters have bounds")
         # linear transformation
         # bias is ref_vib_amps, weights are given by the bounds
-        weights = np.full((len(self.terminal_params), self.n_free_params), 0.)
-        bias = np.array([param.ref_vib_amp for param in self.terminal_params])
+        weights = np.full((len(self.free_params), self.n_free_params), 0.)
+        bias = np.array([param.ref_vib_amp for param in self.free_params])
 
-        for row_id, param in enumerate(self.terminal_params):
+        for row_id, param in enumerate(self.free_params):
             if param.bound.fixed:
                 continue
             col_id = self.free_params.index(param)
