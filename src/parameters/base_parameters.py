@@ -137,6 +137,9 @@ class Params():
 
     @property
     def free_params(self):
+        """
+        Returns a list of terminal parameters that have more than 0 free parameters.
+        """
         return [param for param in self.terminal_params
                 if param.n_free_params > 0]
 
@@ -186,6 +189,16 @@ class ConstrainedDeltaParam():
     """
 
     def __init__(self, children):
+        """
+        Initializes a BaseParameters object.
+
+        Args:
+            children (list): A list of child objects.
+
+        Attributes:
+            parent: The parent object of the current instance.
+            children: The list of child objects.
+        """
         self.parent = None
         self.children = children
         for child in children:
@@ -233,6 +246,13 @@ class ConstrainedDeltaParam():
 # Bounds
 
 class Bound():
+    """
+    Represents a range of values with a minimum and maximum bound.
+
+    Attributes:
+        min (float): The minimum value of the range.
+        max (float): The maximum value of the range.
+    """
     def __init__(self, min, max):
         self.min = min
         self.max = max
