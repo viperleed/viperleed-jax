@@ -198,6 +198,30 @@ class TensorLEEDCalculator:
             )
             for displacement in self._parameter_space.static_propagator_inputs]
 
+    def _calculate_dynamic_t_matrices(self, vib_amps):
+        t_matrix_vmap_en = jax.vmap(vib_dependent_tmatrix,
+                                   in_axes=(None, 0, 0, None))
+        return [
+            t_matrix_vmap_en(
+                self.phaseshifts.l_max,
+                self.phaseshifts[site_el],
+                self.energies,
+                vib_amp
+            )
+            for vib_amp, site_el
+            in zip(vib_amps, self.parameter_space.dynamic_t_matrix_site_elements)]
+
+    def _calculate_dynamic_propagators(self, displacements):
+        propagator_vmap_en = jax.vmap(calc_propagator,
+                                      in_axes=(None, None, 0, None))
+        return [
+            propagator_vmap_en(
+                self.phaseshifts.l_max,
+                displacement,
+                self.energies,
+                self.ref_data.v0i
+            )
+            for displacement in displacements]
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def delta_amplitude(self, vib_amps, displacements):
