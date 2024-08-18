@@ -223,6 +223,27 @@ class TensorLEEDCalculator:
             )
             for displacement in displacements]
 
+    def _calculate(self, free_params):
+        (v0r_param,
+         vib_params,
+         geo_parms,
+         occ_params) = self.parameter_space.split_free_params(jnp.asarray(free_params))
+
+        # V0r
+        v0r_shift = self.parameter_space.v0r_transformer(v0r_param)
+
+        # dynamic t-matrices
+        vib_amps = self.parameter_space.vib_transformer(vib_params)
+        dynamic_t_matrices = self._calculate_dynamic_t_matrices(vib_amps)
+
+        # dynamic propagators
+        displacements = self.parameter_space.geo_transformer(geo_parms)
+        dynamic_propagators = self._calculate_dynamic_propagators(displacements)
+
+        # weights
+        weights = self.parameter_space.occ_weight_transformer(occ_params)
+        return v0r_shift, dynamic_t_matrices, dynamic_propagators, weights
+
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def delta_amplitude(self, vib_amps, displacements):
         """TODO: docstring"""
