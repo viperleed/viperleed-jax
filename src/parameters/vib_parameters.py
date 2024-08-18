@@ -7,7 +7,22 @@ from src.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaPa
 
 
 class VibBaseParam(BaseParam):
-    
+    """Base class for vibrational parameters.
+
+    Parameters
+    ----------
+    atom_site_element : AtomSiteElement
+        The atom site element.
+
+    Attributes
+    ----------
+    n_free_params : int
+        The number of free parameters.
+    ref_vib_amp : float
+        The reference vibrational amplitude.
+    bound : Bound
+        The bound value.
+    """
     def __init__(self, atom_site_element):
         self.n_free_params = 1
         element = atom_site_element.site_element.element
@@ -16,16 +31,43 @@ class VibBaseParam(BaseParam):
         super().__init__(atom_site_element)
 
 class VibParamBound(Bound):
+    """Represents the bounds for a vibration parameter.
+
+    Parameters
+    ----------
+    min : float
+        The minimum value of the bound.
+    max : float
+        The maximum value of the bound.
+
+    Attributes
+    ----------
+    min : float
+        The minimum value of the bound.
+    max : float
+        The maximum value of the bound.
+    """
     def __init__(self, min, max):
         super().__init__(min, max)
 
     @property
     def fixed(self):
+        """Checks if the bound is fixed.
+
+        Returns
+        -------
+        bool
+            True if the bound is fixed, False otherwise.
+        """
         return abs(self.min - self.max) < 1e-6
 
 class VibParams(Params):
-    """
-    Class to handle vibrational parameters for a slab.
+    """Class to handle vibrational parameters for a slab.
+
+    Parameters
+    ----------
+    delta_slab : DeltaSlab
+        The delta slab for which to handle vibrational parameters.
     """
     def __init__(self, delta_slab):
         # create a base parameter for every atom-site-element, then map them
@@ -44,15 +86,29 @@ class VibParams(Params):
         super().__init__()
 
     def set_bounds(self, bounds):
+        """Set the bounds for each parameter.
+
+        Parameters
+        ----------
+        bounds : tuple or list
+            The bounds for each parameter. Each element of the tuple/list should
+            be a tuple containing the lower and upper bounds for a parameter.
+
+        Returns
+        -------
+        None
+        """
         for param, bound in zip(self.params, bounds):
             param.set_bound(bound)
 
     @property
     def dynamic_site_elements(self):
+        """Returns a tuple of site elements for the free parameters."""
         return tuple(param.site_element for param in self.free_params)
 
     @property
     def static_site_elements(self):
+        """Returns a tuple of site elements for the fixed parameters."""
         return tuple(param.site_element for param in self.terminal_params
                      if param.n_free_params == 0)
 
