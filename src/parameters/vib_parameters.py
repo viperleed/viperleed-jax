@@ -128,7 +128,11 @@ class VibParams(Params):
     @property
     def t_matrix_map(self):
         # return a tuple with the site_elements for each base parameter
-        return tuple(param.site_element for param in self.base_params)
+
+        return [('static', self.static_site_elements.index(terminal.site_element))
+            if terminal.site_element in self.static_site_elements else
+            ('dynamic', self.dynamic_site_elements.index(terminal.site_element))
+            for base, terminal in self.base_to_terminal_map.items()]
 
     def set_vib_bounds(self, vib_bounds):
         """Set bounds for vibrational amplitudes.
