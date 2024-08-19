@@ -94,11 +94,10 @@ class GeoParams(Params):
     @property
     def propagator_map(self):
         # map proagators to atom-site-elements
-
-        return tuple(
-            self.terminal_params.index(terminal)
-            for base, terminal in self.base_to_terminal_map.items()
-        )
+        return [('static', self.static_propagators.index(terminal))
+            if terminal in self.static_propagators else
+            ('dynamic', self.dynamic_propagators.index(terminal))
+            for base, terminal in self.base_to_terminal_map.items()]
 
 
     def get_geo_transformer(self):
