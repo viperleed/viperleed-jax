@@ -175,7 +175,7 @@ class TensorLEEDCalculator:
         # this is only done once – perform for maximum lmax and crop later
         t_matrix_vmap_en = jax.vmap(vib_dependent_tmatrix,
                                    in_axes=(None, 0, 0, None))
-        self._static_t_matrices = [
+        self._static_t_matrices = jnp.array([
             t_matrix_vmap_en(
                 self.phaseshifts.l_max,
                 self.phaseshifts[site_el],
@@ -183,25 +183,25 @@ class TensorLEEDCalculator:
                 vib_amp
             )
             for site_el, vib_amp
-            in self._parameter_space.static_t_matrix_inputs]
+            in self._parameter_space.static_t_matrix_inputs])
 
     def _calculate_static_propagators(self):
         # this is only done once – perform for maximum lmax and crop later
         propagator_vmap_en = jax.vmap(calc_propagator,
                                       in_axes=(None, None, 0, None))
-        self._static_propagators = [
+        self._static_propagators = jnp.array([
             propagator_vmap_en(
                 self.phaseshifts.l_max,
                 displacement,
                 self.energies,
                 self.ref_data.v0i
             )
-            for displacement in self._parameter_space.static_propagator_inputs]
+            for displacement in self._parameter_space.static_propagator_inputs])
 
     def _calculate_dynamic_t_matrices(self, vib_amps):
         t_matrix_vmap_en = jax.vmap(vib_dependent_tmatrix,
                                    in_axes=(None, 0, 0, None))
-        return [
+        return jnp.array([
             t_matrix_vmap_en(
                 self.phaseshifts.l_max,
                 self.phaseshifts[site_el],
@@ -209,19 +209,19 @@ class TensorLEEDCalculator:
                 vib_amp
             )
             for vib_amp, site_el
-            in zip(vib_amps, self.parameter_space.dynamic_t_matrix_site_elements)]
+            in zip(vib_amps, self.parameter_space.dynamic_t_matrix_site_elements)])
 
     def _calculate_dynamic_propagators(self, displacements):
         propagator_vmap_en = jax.vmap(calc_propagator,
                                       in_axes=(None, None, 0, None))
-        return [
+        return jnp.array([
             propagator_vmap_en(
                 self.phaseshifts.l_max,
                 displacement,
                 self.energies,
                 self.ref_data.v0i
             )
-            for displacement in displacements]
+            for displacement in displacements])
 
     def _calculate(self, free_params):
         (v0r_param,
