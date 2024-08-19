@@ -205,7 +205,21 @@ class ConstrainedVibParam(ConstrainedDeltaParam):
 # Constrained Vibrational Parameters
 
 class LinkVibParam(ConstrainedVibParam):
-    # links vibrational amplitude changes for children
+    """Represents a linked vibrational parameter that links vibrational
+    amplitude changes for children.
+
+    Args:
+        children (list): A list of child vibrational parameters.
+
+    Attributes:
+        n_free_params (int): The number of free parameters.
+        site_element (str): The site element of the children parameters.
+        ref_vib_amp (float): The reference vibrational amplitude of the first
+            child parameter.
+
+    Raises:
+        ValueError: If not all children have the same site element.
+    """
     def __init__(self, children):
         self.n_free_params = 1
         if not all([child.site_element == children[0].site_element for child in children]):
@@ -222,7 +236,10 @@ class LinkVibParam(ConstrainedVibParam):
         super().set_bound(bound)
 
 class FixVibParam(ConstrainedVibParam):
-    # sets a fixed value for the vibrational amplitude
+    """Represents a fixed vibrational parameter.
+
+    This class sets a fixed value for the vibrational amplitude.
+    """
     def __init__(self, children):
         self.n_free_params = 0
         if not all([child.site_element == children[0].site_element for child in children]):
