@@ -147,6 +147,11 @@ class DeltaSlab():
         return self.vib_params.dynamic_site_elements
 
     @property
+    def propagator_rotation_angles(self):
+        return jnp.array([jnp.arccos(arr[0,0]) for arr in
+                          self.geo_params.symmetry_operations])
+
+    @property
     def n_param_split(self):
         return (
             self.v0r_param.n_free_params,

@@ -12,6 +12,18 @@ class GeoBaseParam(BaseParam):
         self.layer = atom_site_element.atom.layer.num
         super().__init__(atom_site_element)
 
+    @property
+    def symmetry_linking(self):
+        if self.parent is None:
+            return self.symrefm
+        symmetry_op = np.array([[1.,0.],
+                                [0.,1.]])
+        up = self
+        while up.parent is not None:
+            symmetry_op = np.dot(symmetry_op, up.parent.symmetry_operations[up]) # TODO: left or right multiply?
+            up = up.parent
+        return symmetry_op
+
 # Isotropic geometric bound; could be extended to anisotropic
 class GeoParamBound(Bound):
     def __init__(self, min, max):
@@ -44,6 +56,10 @@ class GeoParams(Params):
     @property
     def layers(self):
         return tuple(sorted(set(param.layer for param in self.base_params)))
+
+    @property
+    def symmetry_operations(self):
+        return jnp.array([param.symmetry_linking for param in self.base_params])
 
     def constrain_layer(self, layer):
         layer_params = [param for param in self.terminal_params if param.layer == layer]
