@@ -277,7 +277,7 @@ class FrozenParameterSpace():
             setattr(frozen_parameter_space, kw, value)
         return frozen_parameter_space
 
-    def onset_height_change(self, geo_free_params):
+    def potential_onset_height_change(self, geo_free_params):
         dynamic_displacements = self.geo_transformer(geo_free_params)
         static_displacements = jnp.array(self.static_propagator_inputs)
 
