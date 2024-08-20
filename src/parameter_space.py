@@ -37,7 +37,7 @@ def get_atom_site_elements(slab):
     return tuple(atom_site_elements) # read only from here on out
 
 
-class DeltaSlab():
+class ParameterSpace():
 
     def __init__(self, slab):
         self.slab = slab
