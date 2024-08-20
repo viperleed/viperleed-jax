@@ -187,6 +187,7 @@ class VibParams(Params):
             if param.bound.fixed:
                 continue
             col_id = self.free_params.index(param)
+            bias[row_id] += param.bound.min
             weights[row_id, col_id] = param.bound.max - param.bound.min
 
         return LinearTransformer(weights, bias)

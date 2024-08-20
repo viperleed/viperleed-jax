@@ -112,6 +112,9 @@ class GeoParams(Params):
         offsets = np.zeros((3*self.n_dynamic_propagators))
 
         # weights are given by the bounds and the constraint method
+        mins = [param.free_param_map * (param.bound.min)
+                   for param in self.dynamic_propagators]
+        offsets += jax.scipy.linalg.block_diag(*mins) @ jnp.ones(self.n_free_params)
         weights = [param.free_param_map * (param.bound.max - param.bound.min)
                    for param in self.dynamic_propagators]
         weights = jax.scipy.linalg.block_diag(*weights)
