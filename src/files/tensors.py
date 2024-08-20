@@ -38,9 +38,8 @@ class TensorFileData:
 
     Tensor files are atom specific and generated in the reference-calculation
     for every non-bulk atom. They contain the atomic t-matrices and the
-    scattering amplitudes for the reference structure.
-    While the t-matrices are unique, every tensor file contains the same
-    reference-amplitudes.
+    scattering amplitudes for the reference structure. While the t-matrices are
+    unique, every tensor file contains the same reference-amplitudes.
 
     Attributes
     ----------
@@ -140,6 +139,25 @@ class TensorFileData:
 
 
 def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
+    """
+    Reads and interprets the contents of a tensor zip file.
+    
+    Due to the layout of the tensor files, the interpretation requires knowledge
+    of the maximum angular momentum quantum number, the number of beams, and the
+    number of energies. The interpretation is done in a way that is consistent
+    with the Fortran code that generates/reads the tensor files.
+
+    Args:
+        tensor_path (str): The path to the tensor zip file.
+        lmax (int): The maximum angular momentum quantum number.
+        n_beams (int): The number of beams.
+        n_energies (int): The number of energies.
+
+    Returns:
+        dict: A dictionary containing the interpreted tensor data.
+            The keys are the filenames of the tensor files and the values are
+            instances of TensorFileData.
+    """
 
     # set up number of expected floats and lines
     n_t_matrix_floats = 2*(lmax-1)
