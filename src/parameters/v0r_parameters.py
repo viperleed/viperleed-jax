@@ -29,7 +29,7 @@ class V0rParam():
         # v0r is a relative value, so there is no offset
         offset = jnp.array([0.0]).reshape(1, 1)
         weights = jnp.array(self.bound.max - self.bound.min).reshape(1, 1)
-        return LinearTransformer(offset, weights)
+        return LinearTransformer(weights, offset)
 
 
 class V0rParamBound(Bound):
