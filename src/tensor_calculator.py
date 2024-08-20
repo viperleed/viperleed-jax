@@ -16,6 +16,8 @@ from src.lib_math import EPS
 
 from src.t_matrix import vib_dependent_tmatrix
 from src.lib_delta import calc_propagator
+from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
+from src.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 
 import interpax
 
@@ -245,7 +247,79 @@ class TensorLEEDCalculator:
 
         # weights
         weights = self.parameter_space.occ_weight_transformer(occ_params)
-        return v0r_shift, dynamic_t_matrices, dynamic_propagators, weights
+
+        mapped_dynamic_t_matrices = dynamic_t_matrices[self.parameter_space.t_matrix_id] #TODO: clamp?
+        mapped_static_t_matrices = self._static_t_matrices[self.parameter_space.t_matrix_id]
+
+        vmap_where = jax.vmap(jax.vmap(jnp.where, in_axes=(None, 1, 1)), in_axes=(None, 1, 1))
+
+        t_matrices = vmap_where(self.parameter_space.is_dynamic_t_matrix,
+                               mapped_dynamic_t_matrices,
+                               mapped_static_t_matrices)
+
+        dense_m_2d = DENSE_QUANTUM_NUMBERS[self.phaseshifts.l_max][:, :, 2]
+        dense_mp_2d =  DENSE_QUANTUM_NUMBERS[self.phaseshifts.l_max][:, :, 3]
+
+        # AI: I don't fully understand this, technically it should be MPP = -M - MP
+        dense_mpp = dense_mp_2d - dense_m_2d
+
+        rotation_factors = jnp.array([jnp.exp(phi*1j*dense_mpp) 
+                                      for phi in self.parameter_space.propagator_rotation_angles])
+
+        energy_ids = jnp.arange(len(self.ref_data.energies))
+
+
+        # energy loop
+        def calc_energy(e_id):
+            e_t_matrices = t_matrices[e_id, ...]
+            e_dyn_propagators = dynamic_propagators[:, e_id, ...]
+            e_static_propagators = self._static_propagators[:, e_id, ...]
+
+            mapped_dynamic_propagators = e_dyn_propagators[self.parameter_space.propagator_id]
+            mapped_static_propagators = e_static_propagators[self.parameter_space.propagator_id]
+
+            e_propagators = vmap_where(self.parameter_space.is_dynamic_propagator,
+                                    mapped_dynamic_propagators,
+                                    mapped_static_propagators)
+
+            # rotate propagators
+            e_propagators = jnp.einsum('lma,alm->alm', e_propagators, rotation_factors)
+            # broadcast t-matrices
+            mapped_t_matrix_vib = jax.vmap(
+                map_l_array_to_compressed_quantum_index, in_axes=(1, None))(
+                e_t_matrices, self.phaseshifts.l_max)
+
+            mapped_t_matrix_ref = jax.vmap(
+                map_l_array_to_compressed_quantum_index, in_axes=(0, None))(
+                    self.ref_data.ref_t_matrix[12][e_id], self.phaseshifts.l_max)
+
+            # scan over atoms
+            atom_ids = jnp.arange(30)
+
+            def f_calc(carry, a):
+                deltat = jnp.einsum('ji, j, lj->il',
+                    e_propagators[a], 1j*mapped_t_matrix_vib[a], e_propagators[a])
+                deltat = deltat - jnp.diag(1j*mapped_t_matrix_ref[a])
+                deltat = deltat * weights[a] # apply weights
+                carry = carry + jnp.einsum('bl,lk,k->b',
+                                        self.ref_data.tensor_amps_out[12][e_id,a],
+                                        deltat[:169, :169],
+                                        self.ref_data.tensor_amps_in[12][e_id,a])
+                return carry, None
+
+            amp, _ = jax.lax.scan(f_calc, jnp.zeros((38,), dtype=jnp.complex128), atom_ids)
+            return amp
+
+        delta_amps = jax.lax.map(calc_energy, energy_ids)
+        delta_amps = delta_amps * self.delta_amp_prefactors
+
+        intensity_prefactors = jnp.ones((38,))
+        intensities = sum_intensity(intensity_prefactors,
+                                    self.ref_data.ref_amps,
+                                    delta_amps)
+
+        return intensities, t_matrices, delta_amps
+
 
     def _calc_delta_amp_prefactors(self):
         energies = self.ref_data.energies
