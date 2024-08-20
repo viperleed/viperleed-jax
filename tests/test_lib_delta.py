@@ -1,8 +1,8 @@
 import pytest
 from pathlib import Path
 
-from src.lib_phaseshifts import *
-from src.lib_tensors import *
+from src.files.phaseshifts import *
+from src.files.tensors import *
 from src.t_matrix import vmap_vib_dependent_tmatrix
 from src.lib_delta import apply_geometric_displacements, TMATRIX_DWG
 from src.delta import *

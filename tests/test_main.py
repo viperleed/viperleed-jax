@@ -7,8 +7,8 @@ import warnings
 import numpy as np
 
 from src.delta import *
-from src.lib_phaseshifts import *
-from src.lib_tensors import *
+from src.files.phaseshifts import *
+from src.files.tensors import *
 from src.data_structures import ReferenceData
 
 

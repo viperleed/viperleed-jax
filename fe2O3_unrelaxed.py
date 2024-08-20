@@ -9,8 +9,8 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 import numpy as np
 
-from src.lib_tensors import read_tensor
-from src.lib_phaseshifts import *
+from src.files.tensors import read_tensor
+from src.files.phaseshifts import *
 from src.data_structures import ReferenceData
 from src.tensor_calculator import TensorLEEDCalculator
 
