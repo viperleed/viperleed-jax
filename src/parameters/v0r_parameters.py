@@ -27,7 +27,7 @@ class V0rParam():
         if self.bound is None:
             raise ValueError("Bound must be set before transformation.")
         # v0r is a relative value, so there is no offset
-        offset = jnp.array([0.0]).reshape(1, 1)
+        offset = jnp.array([self.bound.min]).reshape(1, 1)
         weights = jnp.array(self.bound.max - self.bound.min).reshape(1, 1)
         return LinearTransformer(weights, offset)
 
