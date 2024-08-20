@@ -9,6 +9,8 @@ from src.parameters.vib_parameters import VibParams
 from src.parameters.geo_parameters import GeoParams
 from src.parameters.v0r_parameters import V0rParam
 
+_ATOM_Z_DIR_ID = 2
+_DISP_Z_DIR_ID = 0
 
 SiteEl = namedtuple('SiteEl', ['site', 'element'])
 AtomSiteElement = namedtuple('AtomSiteElement', ['atom', 'site_element'])
@@ -48,6 +50,12 @@ class DeltaSlab():
         self.geo_params = GeoParams(self)
         self.occ_params = ChemParams(self)
         self.v0r_param = V0rParam(self)
+
+        # atom-site-element reference z positions
+        self._ats_ref_z_pos = jnp.array(
+            [  ase.atom.cartpos[_ATOM_Z_DIR_ID]
+             for ase in self.atom_site_elements]
+        )
 
     def freeze(self):
         return FrozenParameterSpace(self)
@@ -224,6 +232,7 @@ class FrozenParameterSpace():
         't_matrix_map',
         'propagator_map',
         'propagator_rotation_angles',
+        '_ats_ref_z_pos',
     )
 
     def split_free_params(self, free_params):
@@ -267,3 +276,17 @@ class FrozenParameterSpace():
         for kw, value in aux_data.items():
             setattr(frozen_parameter_space, kw, value)
         return frozen_parameter_space
+
+    def onset_height_change(self, geo_free_params):
+        dynamic_displacements = self.geo_transformer(geo_free_params)
+        static_displacements = jnp.array(self.static_propagator_inputs)
+
+        mapped_dynamic_disp_z = [dynamic_displacements[id][_DISP_Z_DIR_ID] for id in self.propagator_id]
+        mapped_static_disp_z = [static_displacements[id][_DISP_Z_DIR_ID] for id in self.propagator_id]
+        z_changes = jnp.where(self.is_dynamic_propagator,
+                  jnp.array(mapped_dynamic_disp_z),
+                  jnp.array(mapped_static_disp_z))
+        new_z_pos = self._ats_ref_z_pos + z_changes
+        # find the difference between the new highest atom z position and the
+        # highest reference z position
+        return jnp.max(new_z_pos) - jnp.max(self._ats_ref_z_pos)
