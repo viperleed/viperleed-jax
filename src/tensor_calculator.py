@@ -12,6 +12,7 @@ from src import rfactor
 from src.constants import BOHR, HARTREE
 from src.interpolation import *
 from src.lib_intensity import intensity_prefactor, sum_intensity
+from src.lib_math import EPS
 
 from src.t_matrix import vib_dependent_tmatrix
 from src.lib_delta import calc_propagator
@@ -94,6 +95,8 @@ class TensorLEEDCalculator:
         self.ref_vibrational_amps = jnp.array(
             [at.site.vibamp[at.el] for at in non_bulk_atoms])
         self.origin_grid = ref_data.incident_energy_ev
+
+        self.delta_amp_prefactors = self._calc_delta_amp_prefactors()
 
         self.exp_spline = None
 
@@ -244,6 +247,33 @@ class TensorLEEDCalculator:
         weights = self.parameter_space.occ_weight_transformer(occ_params)
         return v0r_shift, dynamic_t_matrices, dynamic_propagators, weights
 
+    def _calc_delta_amp_prefactors(self):
+        energies = self.ref_data.energies
+        v_imag = self.ref_data.v0i
+
+        # energy dependent quantities
+        out_k_par2 = self.ref_data.kx_in
+        out_k_par3 = self.ref_data.ky_in
+
+        k_inside = jnp.sqrt(2*energies-2j*v_imag+1j*EPS)
+
+        # Propagator evaluated relative to the muffin tin zero i.e.
+        # it uses energy = incident electron energy + inner potential
+        out_k_par = out_k_par2**2 + out_k_par3**2
+        out_k_perp_inside = jnp.sqrt(
+            ((2*energies-2j*v_imag)[:, jnp.newaxis] - out_k_par)
+            + 1j*EPS
+        )
+
+        # Prefactors from Equation (41) from Rous, Pendry 1989
+        prefactors = jnp.einsum('e,eb,->eb',
+            1/k_inside,
+            1/out_k_perp_inside,
+            1/(2*(self.unit_cell_area))
+        )
+        return prefactors
+
+
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def delta_amplitude(self, vib_amps, displacements):
         """TODO: docstring"""
@@ -382,6 +412,7 @@ class TensorLEEDCalculator:
             'comp_intensity': self.comp_intensity,
             'comp_energies': self.comp_energies,
             'origin_grid': self.origin_grid,
+            'delta_amp_prefactors': self.delta_amp_prefactors,
         }
         aux_data = (dynamic_elements, simple_elements)
         children = ()
