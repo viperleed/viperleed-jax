@@ -1,6 +1,7 @@
 from collections import namedtuple
 from copy import deepcopy
 
+from jax import numpy as jnp
 from jax.tree_util import register_pytree_node_class
 
 from src.parameters.occ_parameters import ChemParams
@@ -147,6 +148,14 @@ class DeltaSlab():
         return self.vib_params.dynamic_site_elements
 
     @property
+    def t_matrix_map(self):
+        return self.vib_params.t_matrix_map
+
+    @property
+    def propagator_map(self):
+        return self.geo_params.propagator_map
+
+    @property
     def propagator_rotation_angles(self):
         return jnp.array([jnp.arccos(arr[0,0]) for arr in
                           self.geo_params.symmetry_operations])
@@ -212,6 +221,9 @@ class FrozenParameterSpace():
         'static_propagator_inputs',
         'vib_transformer',
         'v0r_transformer',
+        't_matrix_map',
+        'propagator_map',
+        'propagator_rotation_angles',
     )
 
     def split_free_params(self, free_params):
@@ -226,6 +238,22 @@ class FrozenParameterSpace():
     def __init__(self, delta_slab):
         for attr in self.frozen_attributes:
             setattr(self, attr, deepcopy(getattr(delta_slab, attr)))
+
+    @property
+    def is_dynamic_t_matrix(self):
+        return jnp.array([val=='dynamic' for (val, id) in self.t_matrix_map])
+
+    @property
+    def t_matrix_id(self):
+        return jnp.array([id for (val, id) in self.t_matrix_map])
+
+    @property
+    def is_dynamic_propagator(self):
+        return jnp.array([val=='dynamic' for (val, id) in self.propagator_map])
+
+    @property
+    def propagator_id(self):
+        return jnp.array([id for (val, id) in self.propagator_map])
 
     def tree_flatten(self):
         aux_data = {attr: getattr(self, attr)
