@@ -1,0 +1,17 @@
+RUN = 1-3
+LOG_DEBUG = debug
+N_CORES = 20
+
+THEO_ENERGIES = 30 650 3
+LMAX = 14
+
+SITE_DEF O = surf top(2)
+SITE_DEF Fe = surf top(2)
+
+BULK_REPEAT = [-2.51774 2.33620 3.68229] ! Automatically detected repeat vector
+LAYER_CUTS = 0.1250 0.2500 0.3750
+N_BULK_LAYERS = 1
+
+PLOT_RFACTOR perpage = 16
+PLOT_RFACTOR axes = bottom
+PLOT_RFACTOR legend = topright
