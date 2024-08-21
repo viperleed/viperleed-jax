@@ -303,13 +303,10 @@ class TensorLEEDCalculator:
 
 
     def delta_amplitude(self, free_params):
-        (v0r_param,
+        (_,
          vib_params,
          geo_parms,
          occ_params) = self.parameter_space.split_free_params(jnp.asarray(free_params))
-
-        # V0r
-        v0r_shift = self.parameter_space.v0r_transformer(v0r_param)
 
         # dynamic t-matrices
         vib_amps = self.parameter_space.vib_transformer(vib_params)
