@@ -296,6 +296,14 @@ class FrozenParameterSpace():
             setattr(frozen_parameter_space, kw, value)
         return frozen_parameter_space
 
+    def expand_params(self, free_params):
+        v0r_params, vib_params, geo_params, occ_params = self.split_free_params(free_params)
+        v0r_shift = self.v0r_transformer(v0r_params)
+        vib_amps = self.all_vib_amps(vib_params)
+        displacements = self.all_displacements(geo_params)
+        weights = self.occ_weight_transformer(occ_params)
+        return v0r_shift, vib_amps, displacements, weights
+
     def all_displacements(self, geo_free_params):
         """Calculate the displacements for all propagators.
 
