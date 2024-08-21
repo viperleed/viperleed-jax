@@ -135,4 +135,6 @@ def calc_propagator(LMAX, C, energy, v_imag):
                              jnp.zeros(shape=((LMAX+1)**2, (LMAX+1)**2),
                                        dtype=jnp.complex128))
     propagator *= 4*jnp.pi
-    return propagator
+    # TODO: verify that this where clause is equivalent to the previous way of handling it
+    # TODO: this needs a double where to avoid NaNs in the gradient
+    return jnp.where(c_norm >= EPS*100, propagator, jnp.identity((LMAX+1)**2))
