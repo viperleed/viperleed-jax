@@ -17,6 +17,14 @@ AtomSiteElement = namedtuple('AtomSiteElement', ['atom', 'site_element'])
 
 
 def get_site_elements(slab):
+    """Get the site elements from the slab.
+
+    Parameters:
+    slab (Slab): The slab object for which to retrieve the site-elements.
+
+    Returns:
+    tuple: A tuple of SiteEl namedtuples representing the site elements.
+    """
     site_elements = []
     for site in slab.sitelist:
         if site.mixedEls:
@@ -28,6 +36,16 @@ def get_site_elements(slab):
 
 
 def get_atom_site_elements(slab):
+    """Get the atom site elements for a given slab.
+
+    Parameters:
+    slab (Slab): The slab object for which to retrieve the
+        atom-site-elements.
+
+    Returns:
+    tuple: A tuple of AtomSiteElement objects representing the atom site
+        elements.
+    """
     atom_site_elements = []
     non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
     for at in non_bulk_atoms:
