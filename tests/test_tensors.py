@@ -1,22 +1,6 @@
 import pickle
 
 import pytest
-import numpy as np
-
-from src.files.tensors import read_tensor_zip
-
-# Reading the zipped tensors takes 5+ minutes
-@pytest.fixture(scope='session')
-def fe2o3_read_tensor_zip(fe2o3_unrelaxed_tensor_path):
-    tensors = read_tensor_zip(fe2o3_unrelaxed_tensor_path, lmax=14, n_beams=38, n_energies=208)
-    return tensors
-
-# Therefore, we have pickeled tensors for faster testing
-@pytest.fixture(scope='session')
-def fe2o3_pickled_tensor(fe2o3_unrelaxed_pickle_path):
-    with open(fe2o3_unrelaxed_pickle_path, 'rb') as f:
-        tensors = pickle.load(f)
-    return tensors
 
 # We can test that the read tensors are consistent with the pickled tensors
 # and then do the other tests (also in the other files) from the pickled version
