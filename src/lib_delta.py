@@ -104,15 +104,10 @@ def TMATRIX_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_ima
 
 # TODO: move this to a separate file and write tests
 # TODO: replace energy, v_imag with a single arg kappa = 2*energy - 2j*v_imag
-def calc_propagator(LMAX, C, energy, v_imag):
-    c_norm = safe_norm(C)
+def calc_propagator(LMAX, c, energy, v_imag):
+    c_norm = safe_norm(c)
     kappa = 2*energy - 2j*v_imag
-    
-    # double where to avoid NaNs in gradient
-    c_is_small = c_norm < EPS*100
-    c = jnp.where(c_is_small, jnp.array([1.0, 0., 0.]), C)
-    c_norm = jnp.where(c_is_small, 1.0, c_norm)
-    
+
     Z = jnp.sqrt(kappa) * c_norm
     BJ = bessel(Z,2*LMAX)
     YLM = HARMONY(c, LMAX)  # TODO: move outside since it's not energy dependent
