@@ -138,8 +138,4 @@ def calculator_from_state(calc_path, tensor_path):
     logger.debug('Setting experimental intensities and initializing interpolators.')
     calculator.set_experiment_intensity(mapped_exp_intensities, exp_energies)
 
-    # Create DeltaSlab object # TODO: move into calculator
-    delta_slab = DeltaSlab(slab)
-    calculator.delta_slab = delta_slab
-
     return calculator, slab, rpars
