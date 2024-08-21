@@ -15,6 +15,7 @@ class LinearTransformer():
             return self.biases
         if isinstance(free_params, float):
             free_params = jnp.array([free_params])
+        free_params = jnp.array(free_params)
         if len(free_params) != self.n_free_params:
             raise ValueError("Free parameters have wrong shape")
         result =  self.weights @ free_params + self.biases
