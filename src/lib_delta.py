@@ -110,7 +110,7 @@ def calc_propagator(LMAX, C, energy, v_imag):
     
     # double where to avoid NaNs in gradient
     c_is_small = c_norm < EPS*100
-    c = jnp.where(c_is_small, jnp.array([1.0, 0., 0.], dtype=C), C)
+    c = jnp.where(c_is_small, jnp.array([1.0, 0., 0.]), C)
     c_norm = jnp.where(c_is_small, 1.0, c_norm)
     
     Z = jnp.sqrt(kappa) * c_norm
@@ -142,5 +142,4 @@ def calc_propagator(LMAX, C, energy, v_imag):
                                        dtype=jnp.complex128))
     propagator *= 4*jnp.pi
     # TODO: verify that this where clause is equivalent to the previous way of handling it
-    # TODO: this needs a double where to avoid NaNs in the gradient
     return jnp.where(c_norm >= EPS*100, propagator, jnp.identity((LMAX+1)**2))
