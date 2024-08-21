@@ -317,6 +317,27 @@ class FrozenParameterSpace():
                           jnp.array(mapped_dynamic_disp),
                           jnp.array(mapped_static_disp))
 
+    def all_vib_amps(self, vib_free_params):
+        """Calculate the vibrational amplitudes for all t-matrices.
+
+        Parameters
+        ----------
+        vib_free_params: The vibrational free parameters.
+
+        Returns
+        -------
+        vib_amps: The vibrational amplitudes for all t-matrices.
+        """
+        dynamic_vib_amps = self.vib_transformer(vib_free_params)
+        static_vib_amps = jnp.array([va for se, va
+                                     in self.static_t_matrix_inputs])
+
+        mapped_dynamic_vib_amps = [dynamic_vib_amps[id] for id in self.t_matrix_id]
+        mapped_static_vib_amps = [static_vib_amps[id] for id in self.t_matrix_id]
+        return jnp.where(self.is_dynamic_t_matrix,
+                          jnp.array(mapped_dynamic_vib_amps),
+                          jnp.array(mapped_static_vib_amps))
+
     def potential_onset_height_change(self, geo_free_params):
         """Calculate the change in the highest atom z position.
 
