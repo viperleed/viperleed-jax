@@ -366,7 +366,7 @@ class TensorLEEDCalculator:
                     self.ref_data.ref_t_matrix[12][e_id], self.phaseshifts.l_max)
 
             # scan over atoms
-            atom_ids = jnp.arange(30)
+            atom_ids = jnp.arange(self.parameter_space.n_base_params)
 
             def f_calc(carry, a):
                 deltat = jnp.einsum('ji, j, lj->il',
@@ -379,7 +379,7 @@ class TensorLEEDCalculator:
                                         self.ref_data.tensor_amps_in[12][e_id,a])
                 return carry, None
 
-            amp, _ = jax.lax.scan(f_calc, jnp.zeros((38,), dtype=jnp.complex128), atom_ids)
+            amp, _ = jax.lax.scan(f_calc, jnp.zeros((self.n_beams,), dtype=jnp.complex128), atom_ids)
             return amp
 
         delta_amps = jax.lax.map(calc_energy, energy_ids)
