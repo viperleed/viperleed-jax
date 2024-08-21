@@ -321,7 +321,13 @@ class TensorLEEDCalculator:
         weights = self.parameter_space.occ_weight_transformer(occ_params)
 
         mapped_dynamic_t_matrices = dynamic_t_matrices[self.parameter_space.t_matrix_id] #TODO: clamp?
-        mapped_static_t_matrices = self._static_t_matrices[self.parameter_space.t_matrix_id]
+
+        # if there are 0 static t-matrices, indexing would raise Error
+        if len(self._static_t_matrices) == 0:
+            static_t_matrices = jnp.array([jnp.zeros_like(dynamic_t_matrices[0])])
+        else:
+            static_t_matrices = self._static_t_matrices
+        mapped_static_t_matrices = static_t_matrices[self.parameter_space.t_matrix_id]
 
         vmap_where = jax.vmap(jax.vmap(jnp.where, in_axes=(None, 1, 1)), in_axes=(None, 1, 1))
 
