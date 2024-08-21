@@ -20,7 +20,7 @@ from src.data_structures import ReferenceData
 from src.tensor_calculator import TensorLEEDCalculator
 from src.files.phaseshifts import Phaseshifts
 from src.files.tensors import read_tensor_zip
-from src.parameter_space import ParameterSpace, SiteEl
+from src.parameter_space import SiteEl
 
 from viperleed.calc.run import run_calc
 from viperleed.calc.files.displacements import readDISPLACEMENTS
