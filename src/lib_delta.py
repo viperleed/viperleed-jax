@@ -107,9 +107,15 @@ def TMATRIX_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_ima
 def calc_propagator(LMAX, C, energy, v_imag):
     c_norm = safe_norm(C)
     kappa = 2*energy - 2j*v_imag
+    
+    # double where to avoid NaNs in gradient
+    c_is_small = c_norm < EPS*100
+    c = jnp.where(c_is_small, jnp.array([1.0, 0., 0.], dtype=C), C)
+    c_norm = jnp.where(c_is_small, 1.0, c_norm)
+    
     Z = jnp.sqrt(kappa) * c_norm
     BJ = bessel(Z,2*LMAX)
-    YLM = HARMONY(C, LMAX)  # TODO: move outside since it's not energy dependent
+    YLM = HARMONY(c, LMAX)  # TODO: move outside since it's not energy dependent
 
     dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
     dense_mp_2d =  DENSE_QUANTUM_NUMBERS[LMAX][:, :, 3]
