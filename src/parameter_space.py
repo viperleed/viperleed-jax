@@ -317,7 +317,7 @@ class FrozenParameterSpace():
         """
         dynamic_displacements = self.geo_transformer(geo_free_params)
         static_displacements = jnp.array(self.static_propagator_inputs)
-        if not static_displacements:
+        if len(static_displacements) == 0:
             static_displacements = jnp.array([jnp.nan, jnp.nan, jnp.nan])
 
         mapped_dynamic_disp = [dynamic_displacements[id] for id in self.propagator_id]
@@ -341,7 +341,7 @@ class FrozenParameterSpace():
         dynamic_vib_amps = self.vib_transformer(vib_free_params)
         static_vib_amps = jnp.array([va for se, va
                                      in self.static_t_matrix_inputs])
-        if not static_vib_amps:
+        if len(static_vib_amps) == 0:
             static_vib_amps = jnp.array([jnp.nan])
 
         mapped_dynamic_vib_amps = [dynamic_vib_amps[id] for id in self.t_matrix_id]
