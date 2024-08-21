@@ -297,6 +297,16 @@ class FrozenParameterSpace():
         return frozen_parameter_space
 
     def all_displacements(self, geo_free_params):
+        """Calculate the displacements for all propagators.
+
+        Parameters
+        ----------
+        geo_free_params: The geometric free parameters.
+
+        Returns
+        -------
+        displacements: The displacements for all propagators.
+        """
         dynamic_displacements = self.geo_transformer(geo_free_params)
         static_displacements = jnp.array(self.static_propagator_inputs)
 
@@ -304,10 +314,26 @@ class FrozenParameterSpace():
         mapped_static_disp = [static_displacements[id] for id in self.propagator_id]
         vmap_where = jax.vmap(jnp.where, in_axes=(0, 0, 0))
         return vmap_where(self.is_dynamic_propagator,
-                  jnp.array(mapped_dynamic_disp),
-                  jnp.array(mapped_static_disp))
+                          jnp.array(mapped_dynamic_disp),
+                          jnp.array(mapped_static_disp))
 
     def potential_onset_height_change(self, geo_free_params):
+        """Calculate the change in the highest atom z position.
+
+        This is needed because the onset height of the inner potential is
+        defined as the z position of the highest atom in the slab.
+        Therefore, changes to this height may change refraction of the incoming
+        electron wave.
+
+        Parameters
+        ----------
+        geo_free_params: The geometric free parameters.
+
+        Returns
+        -------
+        float: The difference between the new highest atom z position and the
+            highest reference z position.
+        """
         z_changes = self.all_displacements(geo_free_params)[:, _DISP_Z_DIR_ID]
         new_z_pos = self._ats_ref_z_pos + z_changes
         # find the difference between the new highest atom z position and the
