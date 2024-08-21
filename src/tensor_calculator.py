@@ -72,6 +72,7 @@ class TensorLEEDCalculator:
         self.interpolation_deg = interpolation_deg
         self.bc_type=bc_type
         self.beam_indices = jnp.array(beam_indices)
+        self.n_beams = beam_indices.shape[0]
         # reading from IVBEAMS does not guarantee correct order!
         #self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
         self.comp_intensity = None
@@ -228,7 +229,80 @@ class TensorLEEDCalculator:
             )
             for displacement in displacements])
 
-    def _calculate(self, free_params):
+    def _calc_delta_amp_prefactors(self):
+        energies = self.ref_data.energies
+        v_imag = self.ref_data.v0i
+
+        # energy dependent quantities
+        out_k_par2 = self.ref_data.kx_in
+        out_k_par3 = self.ref_data.ky_in
+
+        k_inside = jnp.sqrt(2*energies-2j*v_imag+1j*EPS)
+
+        # Propagator evaluated relative to the muffin tin zero i.e.
+        # it uses energy = incident electron energy + inner potential
+        out_k_par = out_k_par2**2 + out_k_par3**2
+        out_k_perp_inside = jnp.sqrt(
+            ((2*energies-2j*v_imag)[:, jnp.newaxis] - out_k_par)
+            + 1j*EPS
+        )
+
+        # Prefactors from Equation (41) from Rous, Pendry 1989
+        prefactors = jnp.einsum('e,eb,->eb',
+            1/k_inside,
+            1/out_k_perp_inside,
+            1/(2*(self.unit_cell_area))
+        )
+        return prefactors
+
+
+    def _intensity_prefactors(self, onset_height_change):
+        # onset height change was called CXDisp in the original code
+        
+        # from lib_intensity
+        (in_k_vacuum, in_k_perp_vacuum,
+        out_k_perp, out_k_perp_vacuum) = self._wave_vectors()
+
+        a = out_k_perp_vacuum
+        c = in_k_vacuum * jnp.cos(self.theta)
+
+        prefactor = abs(jnp.exp(-1j * onset_height_change/BOHR * (jnp.outer(in_k_perp_vacuum, jnp.ones(shape=(self.n_beams,))) + out_k_perp
+                                                    ))) ** 2 * a.real / jnp.outer(c, jnp.ones(shape=(self.n_beams,))).real
+        return prefactor
+
+    def _wave_vectors(self):
+        e_kin = self.ref_data.energies
+        v_real = self.ref_data.v0r
+        v_imag = self.ref_data.v0i
+        n_energies = e_kin.shape[0]
+        n_beams = self.beam_indices.shape[0]
+        # incident wave vector
+        in_k_vacuum = jnp.sqrt(jnp.maximum(0, 2 * (e_kin - v_real)))
+        in_k_par = in_k_vacuum * jnp.sin(self.theta)  # parallel component
+        in_k_par_2 = in_k_par * jnp.cos(self.phi)  # shape =( n_energy )
+        in_k_par_3 = in_k_par * jnp.sin(self.phi)  # shape =( n_energy )
+        in_k_perp_vacuum = 2 * e_kin - in_k_par_2 ** 2 - in_k_par_3 ** 2 - 2 * 1j * v_imag
+        in_k_perp_vacuum = jnp.sqrt(in_k_perp_vacuum)
+
+        # outgoing wave vector components
+        in_k_par_components = jnp.stack((in_k_par_2, in_k_par_3))  # shape =(n_en, 2)
+        in_k_par_components = jnp.outer(in_k_par_components, jnp.ones(shape=(n_beams,))).reshape(
+        (n_energies, 2, n_beams))  # shape =(n_en ,2 ,n_beams)
+        out_wave_vec = jnp.dot(self.beam_indices, self.reciprocal_unit_cell)  # shape =(n_beams, 2)
+        out_wave_vec = jnp.outer(jnp.ones_like(e_kin), out_wave_vec.transpose()).reshape((n_energies, 2, n_beams))  # shape =(n_en , n_beams)
+        out_k_par_components = in_k_par_components + out_wave_vec
+
+        # out k vector
+        out_k_perp_vacuum = (2*jnp.outer(e_kin-v_real,jnp.ones(shape=(n_beams,)))
+                    - out_k_par_components[:, 0, :] ** 2
+                    - out_k_par_components[:, 1, :] ** 2).astype(dtype="complex64")
+        out_k_perp = jnp.sqrt(out_k_perp_vacuum + 2*jnp.outer(v_real-1j*v_imag, jnp.ones(shape=(n_beams,))))
+        out_k_perp_vacuum = jnp.sqrt(out_k_perp_vacuum)
+
+        return in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum
+
+
+    def delta_amplitude(self, free_params):
         (v0r_param,
          vib_params,
          geo_parms,
@@ -239,6 +313,7 @@ class TensorLEEDCalculator:
 
         # dynamic t-matrices
         vib_amps = self.parameter_space.vib_transformer(vib_params)
+
         dynamic_t_matrices = self._calculate_dynamic_t_matrices(vib_amps)
 
         # dynamic propagators
@@ -313,95 +388,36 @@ class TensorLEEDCalculator:
         delta_amps = jax.lax.map(calc_energy, energy_ids)
         delta_amps = delta_amps * self.delta_amp_prefactors
 
-        intensity_prefactors = jnp.ones((38,))
+        return delta_amps
+
+    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
+    def jit_delta_amplitude(self, free_params):
+        return self.delta_amplitude(free_params)
+
+    def intensity(self, free_params):
+        delta_amplitude = self.delta_amplitude(free_params)
+        _, _, geo_params, _ = self.parameter_space.split_free_params(jnp.asarray(free_params))
+        intensity_prefactors = self._intensity_prefactors(
+            self.parameter_space.potential_onset_height_change(geo_params)
+        )
         intensities = sum_intensity(intensity_prefactors,
                                     self.ref_data.ref_amps,
-                                    delta_amps)
+                                    delta_amplitude)
 
-        return intensities, t_matrices, delta_amps
-
-
-    def _calc_delta_amp_prefactors(self):
-        energies = self.ref_data.energies
-        v_imag = self.ref_data.v0i
-
-        # energy dependent quantities
-        out_k_par2 = self.ref_data.kx_in
-        out_k_par3 = self.ref_data.ky_in
-
-        k_inside = jnp.sqrt(2*energies-2j*v_imag+1j*EPS)
-
-        # Propagator evaluated relative to the muffin tin zero i.e.
-        # it uses energy = incident electron energy + inner potential
-        out_k_par = out_k_par2**2 + out_k_par3**2
-        out_k_perp_inside = jnp.sqrt(
-            ((2*energies-2j*v_imag)[:, jnp.newaxis] - out_k_par)
-            + 1j*EPS
-        )
-
-        # Prefactors from Equation (41) from Rous, Pendry 1989
-        prefactors = jnp.einsum('e,eb,->eb',
-            1/k_inside,
-            1/out_k_perp_inside,
-            1/(2*(self.unit_cell_area))
-        )
-        return prefactors
-
+        return intensities
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
-    def delta_amplitude(self, vib_amps, displacements):
-        """TODO: docstring"""
-        return self._delta_amplitude(vib_amps, displacements)
+    def jit_intensity(self, free_params):
+        return self.intensity(free_params)
 
-    def _delta_amplitude(self, vib_amps, displacements):
-        """Internal non-jitted version of delta_amplitude."""
-        return delta.delta_amplitude(vib_amps, displacements,
-                              ref_data=self.ref_data,
-                              unit_cell_area=self.unit_cell_area,
-                              phaseshifts=self.phaseshifts,
-                              batch_lmax=self.batch_lmax
-                              )
-
-    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
-    def intensity(self, vib_amps, displacements):
-        return self._intensity(vib_amps, displacements)
-
-    def delta_amplitude_from_reduced(self, reduced_params):
-        _, vib_amps, displacements = self.parameter_transformer.unflatten_parameters(reduced_params)
-        return self._delta_amplitude(vib_amps, displacements)
-
-    def intensity_from_reduced(self, reduced_params):
-        _, vib_amps, displacements = self.parameter_transformer.unflatten_parameters(reduced_params)
-        return self._intensity(vib_amps, displacements)
-
-    def _intensity(self, vib_amps, displacements):
-        delta_amps = self._delta_amplitude(vib_amps, displacements)
-        refraction_prefactor = self._intensity_prefactor(displacements)
-        return sum_intensity(refraction_prefactor, self.ref_data.ref_amps,
-                             delta_amps)
-
-    def _intensity_prefactor(self, displacements):
-        return intensity_prefactor(
-            displacements,
-            self.ref_data, self.beam_indices, self.theta, self.phi,
-            self.reciprocal_unit_cell, self.is_surface_atom)
 
     @property
     def unperturbed_intensity(self):
         """Return intensity from reference data without pertubation."""
-        zero_deltas = jnp.zeros(shape=(self.ref_data.n_energies,
-                                       self.ref_data.n_beams))
-        refraction_prefactor = self._intensity_prefactor(
-            jnp.array([[0.0, 0.0, 0.0],]*self.n_atoms))
-        return sum_intensity(refraction_prefactor, self.ref_data.ref_amps,
-                             zero_deltas)
+        raise NotImplementedError
 
-    @partial(jax.jit, static_argnames=('self', 'deriv_deg'))
-    def interpolated(self, vib_amps, displacements, deriv_deg=0):
-        return self._interpolated(vib_amps, displacements, deriv_deg)
-
-    def _interpolated(self, vib_amps, displacements, deriv_deg=0):
-        non_interpolated_intensity = self._intensity(vib_amps, displacements)
+    def interpolated(self, free_params, deriv_deg=0):
+        non_interpolated_intensity = self.intensity(free_params)
         spline =  interpax.CubicSpline(self.origin_grid,
                                     non_interpolated_intensity,
                                     bc_type=self.bc_type,
@@ -412,15 +428,18 @@ class TensorLEEDCalculator:
             spline = spline.derivative()
         return spline(self.target_grid)
 
-    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
-    def R(self, vib_amps, displacements, v0r_shift=0.):
-        return self._R(vib_amps, displacements, v0r_shift)
+    @partial(jax.jit, static_argnames=('self', 'deriv_deg'))
+    def jit_interpolated(self, free_params, deriv_deg=0):
+        return self.interpolated(free_params, deriv_deg)
 
-    def _R(self, vib_amps, displacements, v0r_shift=0.):
+    def R(self, free_params):
         if self.comp_intensity is None:
             raise ValueError("Comparison intensity not set.")
         v0i_electron_volt = -self.ref_data.v0i*HARTREE
-        non_interpolated_intensity = self._intensity(vib_amps, displacements)
+        non_interpolated_intensity = self.intensity(free_params)
+
+        v0r_shift, *_ = self.parameter_space.split_free_params(jnp.asarray(free_params))
+
         # apply v0r shift
         theo_spline = interpax.CubicSpline(self.origin_grid + v0r_shift,
                                            non_interpolated_intensity,
@@ -434,29 +453,13 @@ class TensorLEEDCalculator:
             self.exp_spline
         )
 
-    @jax.jit
-    def R_val_and_grad(self, vib_amps, displacements, v0_real_steps):
-        # TODO: urgent: currently only gives gradients for geo displacements
-        return jax.value_and_grad(self._R, argnums=(1))(vib_amps, displacements, v0_real_steps)
+    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
+    def jit_R(self, free_params):
+        return self.R(free_params)
 
-    @jax.jit
-    def R_from_reduced(self, reduced_params):
-        return self._R_from_reduced(reduced_params)
+    def R_val_and_grad(self, free_params):
+        return jax.value_and_grad(self.R, argnums=(1))(free_params)
 
-    def _R_from_reduced(self, reduced_params):
-        v0r_step, vib_amps, displacements = self.parameter_transformer.unflatten_parameters(reduced_params)
-        return self._R(vib_amps, displacements, v0r_step)
-
-    @jax.jit
-    def R_grad_from_reduced(self, reduced_params):
-        return self._R_grad_from_reduced(reduced_params)
-
-    def _R_grad_from_reduced(self, reduced_params):
-        return jax.grad(self._R_from_reduced)(reduced_params)
-
-    @jax.jit
-    def R_val_and_grad_from_reduced(self, reduced_params):
-        return jax.value_and_grad(self._R_from_reduced)(reduced_params)
 
     def _benchmark():
         pass
