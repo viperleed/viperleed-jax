@@ -222,7 +222,7 @@ class ParameterSpace():
 
             "Total parameters:\n"
             f"{self.n_base_params}\t"
-            f"({self.v0r_param.n_base_params} V0r), "
+            f"({self.v0r_param.n_base_params} V0r, "
             f"{self.geo_params.n_base_params} geo, "
             f"{self.vib_params.n_base_params} vib, "
             f"{self.occ_params.n_base_params} occ)\n"
