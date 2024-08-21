@@ -72,7 +72,7 @@ class TensorLEEDCalculator:
         self.interpolation_deg = interpolation_deg
         self.bc_type=bc_type
         self.beam_indices = jnp.array(beam_indices)
-        self.n_beams = beam_indices.shape[0]
+        self.n_beams = self.beam_indices.shape[0]
         # reading from IVBEAMS does not guarantee correct order!
         #self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
         self.comp_intensity = None
