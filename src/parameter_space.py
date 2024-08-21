@@ -258,10 +258,10 @@ class FrozenParameterSpace():
         if len(free_params) != self.n_free_params:
             raise ValueError("Number of free parameters does not match.")
         v0r_params = free_params[:self.n_param_split[0]]
-        geo_params = free_params[self.n_param_split[0]:sum(self.n_param_split[:2])]
-        vib_params = free_params[sum(self.n_param_split[:2]):sum(self.n_param_split[:3])]
+        vib_params = free_params[self.n_param_split[0]:sum(self.n_param_split[:2])]
+        geo_params = free_params[sum(self.n_param_split[:2]):sum(self.n_param_split[:3])]
         occ_params = free_params[sum(self.n_param_split[:3]):]
-        return v0r_params, geo_params, vib_params, occ_params
+        return v0r_params, vib_params, geo_params, occ_params
 
     def __init__(self, delta_slab):
         for attr in self.frozen_attributes:
