@@ -136,5 +136,10 @@ def calc_propagator(LMAX, c, energy, v_imag):
                              jnp.zeros(shape=((LMAX+1)**2, (LMAX+1)**2),
                                        dtype=jnp.complex128))
     propagator *= 4*jnp.pi
-    # TODO: verify that this where clause is equivalent to the previous way of handling it
     return jnp.where(c_norm >= EPS*100, propagator, jnp.identity((LMAX+1)**2))
+
+# Using equation (34) from Rous, Pendry 1989 it is easy to show that the
+# propagator for a vanishing displacement is the identity matrix.
+# (The Bessel functions for zero argument are zero for all non-zero orders, thus
+# l''=0 is the only non-zero term in the sum. If l'' is 0, m''=0 and l=l' are
+# necessary conditions.)
