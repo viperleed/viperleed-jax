@@ -217,6 +217,19 @@ class TensorLEEDCalculator:
             for vib_amp, site_el
             in zip(vib_amps, self.parameter_space.dynamic_t_matrix_site_elements)])
 
+    def _calculate_reference_t_matrices(self, ref_vib_amps, site_elements):
+        t_matrix_vmap_en = jax.vmap(vib_dependent_tmatrix,
+                                   in_axes=(None, 0, 0, None))
+        return jnp.array([
+            t_matrix_vmap_en(
+                self.phaseshifts.l_max,
+                self.phaseshifts[site_el],
+                self.energies,
+                vib_amp
+            )
+            for vib_amp, site_el
+            in zip(ref_vib_amps, site_elements)])
+
     def _calculate_dynamic_propagators(self, displacements):
         propagator_vmap_en = jax.vmap(calc_propagator,
                                       in_axes=(None, None, 0, None))
