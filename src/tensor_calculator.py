@@ -165,6 +165,15 @@ class TensorLEEDCalculator:
             f"{self._parameter_space.n_dynamic_t_matrices} t-matrice(s) and "
             f"{self._parameter_space.n_dynamic_propagators} propagator(s)."
         )
+
+        # calculate reference t-matrices for full LMAX
+        logger.debug(
+            f"Calculating reference t-matrices for LMAX={self.phaseshifts.l_max}.")
+        ref_vib_amps = [p.ref_vib_amp
+                        for p in delta_slab.vib_params.base_params]
+        site_elements = [p.site_element for p in delta_slab.vib_params.base_params]
+        self.ref_t_matrices = self._calculate_reference_t_matrices(ref_vib_amps, site_elements)
+
         # pre-calculate the static t-matrices
         logger.debug(
             f"Pre-calculating {self._parameter_space.n_static_t_matrices} "
@@ -382,7 +391,8 @@ class TensorLEEDCalculator:
 
             mapped_t_matrix_ref = jax.vmap(
                 map_l_array_to_compressed_quantum_index, in_axes=(0, None))(
-                    self.ref_data.ref_t_matrix[12][e_id], self.phaseshifts.l_max)
+                    self.ref_t_matrices[:,e_id], self.phaseshifts.l_max)
+
             # scan over atom site elements
             atom_ids = jnp.arange(self.parameter_space.n_atom_site_elements)
 
