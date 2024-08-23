@@ -351,7 +351,7 @@ class TensorLEEDCalculator:
         dynamic_propagators = self._calculate_dynamic_propagators(displacements)
 
         # weights
-        weights = self.parameter_space.occ_weight_transformer(occ_params)
+        chem_weights = self.parameter_space.occ_weight_transformer(occ_params)
 
         # map t-matrices to atom-site-element basis
         mapped_dynamic_t_matrices = dynamic_t_matrices[self.parameter_space.t_matrix_id] #TODO: clamp?
@@ -406,10 +406,10 @@ class TensorLEEDCalculator:
                 deltat = jnp.einsum('ji, j, lj->il',
                     e_propagators[a], 1j*mapped_t_matrix_vib[a], e_propagators[a])
                 deltat = deltat - jnp.diag(1j*mapped_t_matrix_ref[a])
-                deltat = deltat * weights[a] # apply weights
+                deltat = deltat * chem_weights[a] # apply weights
                 carry = carry + jnp.einsum('bl,lk,k->b',
                                         self.ref_data.tensor_amps_out[12][e_id,a],
-                                        deltat[:169, :169],
+                                        deltat,
                                         self.ref_data.tensor_amps_in[12][e_id,a])
                 return carry, None
 
