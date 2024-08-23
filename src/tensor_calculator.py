@@ -323,6 +323,17 @@ class TensorLEEDCalculator:
 
         return in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum
 
+    @property
+    def _propagator_rotation_factors(self):
+        dense_m_2d = DENSE_QUANTUM_NUMBERS[self.phaseshifts.l_max][:, :, 2]
+        dense_mp_2d =  DENSE_QUANTUM_NUMBERS[self.phaseshifts.l_max][:, :, 3]
+
+        # AI: I don't fully understand this, technically it should be MPP = -M - MP
+        dense_mpp = dense_mp_2d - dense_m_2d
+
+        rotation_factors = jnp.array([jnp.exp(phi*1j*dense_mpp) 
+                                      for phi in self.parameter_space.propagator_rotation_angles])
+        return rotation_factors
 
     def delta_amplitude(self, free_params):
         (_,
@@ -357,15 +368,6 @@ class TensorLEEDCalculator:
                                mapped_dynamic_t_matrices,
                                mapped_static_t_matrices)
 
-        dense_m_2d = DENSE_QUANTUM_NUMBERS[self.phaseshifts.l_max][:, :, 2]
-        dense_mp_2d =  DENSE_QUANTUM_NUMBERS[self.phaseshifts.l_max][:, :, 3]
-
-        # AI: I don't fully understand this, technically it should be MPP = -M - MP
-        dense_mpp = dense_mp_2d - dense_m_2d
-
-        rotation_factors = jnp.array([jnp.exp(phi*1j*dense_mpp) 
-                                      for phi in self.parameter_space.propagator_rotation_angles])
-
         energy_ids = jnp.arange(len(self.ref_data.energies))
 
 
@@ -383,7 +385,9 @@ class TensorLEEDCalculator:
                                     mapped_static_propagators)
 
             # rotate propagators
-            e_propagators = jnp.einsum('lma,alm->alm', e_propagators, rotation_factors)
+            e_propagators = jnp.einsum('lma,alm->alm',
+                                       e_propagators,
+                                       self._propagator_rotation_factors)
             # broadcast t-matrices
             mapped_t_matrix_vib = jax.vmap(
                 map_l_array_to_compressed_quantum_index, in_axes=(1, None))(
