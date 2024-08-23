@@ -370,9 +370,9 @@ class TensorLEEDCalculator:
             mapped_t_matrix_ref = jax.vmap(
                 map_l_array_to_compressed_quantum_index, in_axes=(0, None))(
                     self.ref_data.ref_t_matrix[12][e_id], self.phaseshifts.l_max)
+            # scan over atom site elements
+            atom_ids = jnp.arange(self.parameter_space.n_atom_site_elements)
 
-            # scan over atoms
-            atom_ids = jnp.arange(self.parameter_space.n_base_params)
 
             def f_calc(carry, a):
                 deltat = jnp.einsum('ji, j, lj->il',

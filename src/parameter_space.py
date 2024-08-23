@@ -94,6 +94,10 @@ class ParameterSpace():
         )
 
     @property
+    def n_atom_site_elements(self):
+        return len(self.atom_site_elements)
+
+    @property
     def n_base_params(self):
         """
         Returns the total number of base parameters.
@@ -234,6 +238,7 @@ class FrozenParameterSpace():
     frozen_attributes = (
         'dynamic_t_matrix_site_elements',
         'geo_transformer',
+        'n_atom_site_elements',
         'n_base_params',
         'n_dynamic_propagators',
         'n_dynamic_t_matrices',
