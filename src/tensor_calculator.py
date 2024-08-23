@@ -353,6 +353,7 @@ class TensorLEEDCalculator:
         # weights
         weights = self.parameter_space.occ_weight_transformer(occ_params)
 
+        # map t-matrices to atom-site-element basis
         mapped_dynamic_t_matrices = dynamic_t_matrices[self.parameter_space.t_matrix_id] #TODO: clamp?
 
         # if there are 0 static t-matrices, indexing would raise Error
@@ -363,11 +364,11 @@ class TensorLEEDCalculator:
         mapped_static_t_matrices = static_t_matrices[self.parameter_space.t_matrix_id]
 
         vmap_where = jax.vmap(jax.vmap(jnp.where, in_axes=(None, 1, 1)), in_axes=(None, 1, 1))
-
         t_matrices = vmap_where(self.parameter_space.is_dynamic_t_matrix,
                                mapped_dynamic_t_matrices,
                                mapped_static_t_matrices)
 
+        # indices for energy loop
         energy_ids = jnp.arange(len(self.ref_data.energies))
 
 
@@ -415,6 +416,7 @@ class TensorLEEDCalculator:
             amp, _ = jax.lax.scan(f_calc, jnp.zeros((self.n_beams,), dtype=jnp.complex128), atom_ids)
             return amp
 
+        # map over energies
         delta_amps = jax.lax.map(calc_energy, energy_ids)
         delta_amps = delta_amps * self.delta_amp_prefactors
 
