@@ -406,7 +406,15 @@ class TensorLEEDCalculator:
         intensities = sum_intensity(intensity_prefactors,
                                     self.ref_data.ref_amps,
                                     delta_amplitude)
+        return intensities
 
+    @property
+    def reference_intensity(self):
+        dummy_delta_amps = jnp.zeros((len(self.energies), self.n_beams,), dtype=jnp.complex128)
+        intensity_prefactors = self._intensity_prefactors(jnp.array(0.))
+        intensities = sum_intensity(intensity_prefactors,
+                                    self.ref_data.ref_amps,
+                                    dummy_delta_amps)
         return intensities
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
