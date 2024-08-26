@@ -126,6 +126,10 @@ class TensorLEEDCalculator:
         return len(self.ref_vibrational_amps)
 
     @property
+    def max_l_max(self):
+        return max(self.ref_data.needed_lmax)
+
+    @property
     def parameter_space(self):
         if self._parameter_space is None:
             raise ValueError("Parameter space not set.")
