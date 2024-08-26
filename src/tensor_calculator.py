@@ -18,6 +18,7 @@ from src.t_matrix import vib_dependent_tmatrix
 from src.lib_delta import calc_propagator
 from src.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 from src.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
+from src.batching import Batching
 
 import interpax
 
@@ -65,10 +66,9 @@ class TensorLEEDCalculator:
                  interpolation_step=0.5,
                  interpolation_deg=3,
                  bc_type='not-a-knot',
-                 batch_lmax=False):
+                 batch=True):
         self.ref_data = ref_data
         self.phaseshifts = phaseshifts
-        self.batch_lmax = batch_lmax
         self.interpolation_deg = interpolation_deg
         self.bc_type=bc_type
         self.beam_indices = jnp.array(beam_indices)
@@ -108,6 +108,23 @@ class TensorLEEDCalculator:
 
         if self.interpolation_deg != 3:
             raise NotImplementedError
+
+        # work out the energy batching
+        if batch is False:
+            # do not perform batching other than the requested lmax-batching
+            self.batching = Batching(self.energies,
+                                     self.ref_data.lmax,
+                                     None)
+        elif batch is True:
+            self.batching = Batching(self.energies,
+                                     self.ref_data.lmax,
+                                     8)
+        elif isinstance(batch, int):
+            self.batching = Batching(self.energies,
+                                     self.ref_data.lmax,
+                                     batch)
+        else:
+            raise ValueError("batch_lmax must be bool or int.")
 
     @property
     def energies(self):
