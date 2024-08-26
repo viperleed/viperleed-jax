@@ -485,11 +485,16 @@ class TensorLEEDCalculator:
                                             tensor_amps_out[e_id,a],
                                             deltat,
                                             tensor_amps_in[e_id,a])
+                    del deltat
                     return carry, None
 
                 # scan over atom site elements
                 atom_ids = jnp.arange(self.parameter_space.n_atom_site_elements)
                 amps, _ = jax.lax.scan(f_calc, jnp.zeros((self.n_beams,), dtype=jnp.complex128), atom_ids)
+
+                del en_propagators
+                del en_t_matrix_vib
+                del en_t_matrix_ref
                 return amps
 
             # map over energies
