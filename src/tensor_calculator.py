@@ -406,7 +406,6 @@ class TensorLEEDCalculator:
         displacements = self.parameter_space.geo_transformer(geo_parms)
         propagators = self._calculate_propagators(displacements)
         propagators = jnp.einsum('aelk->ealk', propagators)
-        print('propagators', propagators.shape)
 
         # dynamic t-matrices
         vib_amps = self.parameter_space.vib_transformer(vib_params)
@@ -439,7 +438,6 @@ class TensorLEEDCalculator:
             l_rotation_factors = self._propagator_rotation_factors[:, :(l_max+1)**2, :(l_max+1)**2]
 
             # map t-matrices to compressed quantum index
-            print(l_max)
             mapped_t_matrix_vib = jax.vmap(jax.vmap(
                 map_l_array_to_compressed_quantum_index,
                 in_axes=(0, None)), in_axes=(0, None))(l_t_matrices_vib, l_max)
@@ -471,12 +469,12 @@ class TensorLEEDCalculator:
                                             deltat,
                                             tensor_amps_in[e_id,a])
                     return carry, None
-            
+
                 # scan over atom site elements
                 atom_ids = jnp.arange(self.parameter_space.n_atom_site_elements)
                 amps, _ = jax.lax.scan(f_calc, jnp.zeros((self.n_beams,), dtype=jnp.complex128), atom_ids)
                 return amps
-            
+
             # map over energies
             l_delta_amps = jax.lax.map(calc_energy, energy_ids)
 
