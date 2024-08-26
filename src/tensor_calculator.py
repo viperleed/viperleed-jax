@@ -475,6 +475,110 @@ class TensorLEEDCalculator:
 
         return delta_amps
 
+    def new_delta_amplitude(self, free_params):
+
+        # split free parameters
+        (_,
+         vib_params,
+         geo_parms,
+         occ_params) = self.parameter_space.split_free_params(jnp.asarray(free_params))
+
+        # LMAX independent quantities
+        # ---------------------------
+
+        # chemical weights
+        chem_weights = self.parameter_space.occ_weight_transformer(occ_params)
+
+        # propagators - already rotated
+        displacements = self.parameter_space.geo_transformer(geo_parms)
+        propagators = self._calculate_propagators(displacements)
+        propagators = jnp.einsum('aelk->ealk', propagators)
+        print('propagators', propagators.shape)
+
+        # dynamic t-matrices
+        vib_amps = self.parameter_space.vib_transformer(vib_params)
+        t_matrices = self._calculate_t_matrices(vib_amps)
+        t_matrices = jnp.einsum('ael->eal', t_matrices)
+
+        # indices for energy loop
+        energy_ids = jnp.arange(len(self.ref_data.energies))
+
+        # LMAX dependent quantities
+        # -------------------------
+
+        # loop over the required L_MAX values
+        delta_amps_by_lmax = []
+        for l_max in self.ref_data.needed_lmax:
+
+            # reference t-matrices and tensor amplitudes
+            ref_t_matrices = self.ref_t_matrices[:, :, :l_max+1] # CROP
+            tensor_amps_in = self.ref_data.tensor_amps_in[l_max]
+            tensor_amps_out = self.ref_data.tensor_amps_out[l_max]
+
+            # crop t-matrices
+            l_t_matrices_vib = t_matrices[:, :, :l_max+1]
+            l_t_matrices_ref = jnp.einsum('ael->eal', ref_t_matrices)
+
+            # crop propagators
+            l_propagators = propagators[:, :, :(l_max+1)**2, :(l_max+1)**2]
+
+            # crop rotation factors
+            l_rotation_factors = self._propagator_rotation_factors[:, :(l_max+1)**2, :(l_max+1)**2]
+
+            # map t-matrices to compressed quantum index
+            print(l_max)
+            mapped_t_matrix_vib = jax.vmap(jax.vmap(
+                map_l_array_to_compressed_quantum_index,
+                in_axes=(0, None)), in_axes=(0, None))(l_t_matrices_vib, l_max)
+            mapped_t_matrix_ref = jax.vmap(jax.vmap(
+                map_l_array_to_compressed_quantum_index,
+                in_axes=(0, None)), in_axes=(0, None))(l_t_matrices_ref, l_max)
+
+            # energy loop
+            def calc_energy(e_id):
+                en_propagators = l_propagators[e_id, :, ...]
+                # apply rotations
+                en_propagators = jnp.einsum('alm,alm->alm',
+                                            en_propagators,
+                                            l_rotation_factors)
+                en_t_matrix_vib = mapped_t_matrix_vib[e_id]
+                en_t_matrix_ref = mapped_t_matrix_ref[e_id]
+
+                # TODO: replace this whole thing with a big einsum
+                def f_calc(carry, a):
+                    deltat = jnp.einsum('ji, j, lj->il',
+                        en_propagators[a, :, :],
+                        1j*en_t_matrix_vib[a],
+                        en_propagators[a, :, :])
+                    deltat = deltat - jnp.diag(1j*en_t_matrix_ref[a])
+                    deltat = deltat * chem_weights[a] # apply weights
+
+                    carry = carry + jnp.einsum('bl,lk,k->b',
+                                            tensor_amps_out[e_id,a],
+                                            deltat,
+                                            tensor_amps_in[e_id,a])
+                    return carry, None
+            
+                # scan over atom site elements
+                atom_ids = jnp.arange(self.parameter_space.n_atom_site_elements)
+                amps, _ = jax.lax.scan(f_calc, jnp.zeros((self.n_beams,), dtype=jnp.complex128), atom_ids)
+                return amps
+            
+            # map over energies
+            l_delta_amps = jax.lax.map(calc_energy, energy_ids)
+
+            delta_amps_by_lmax.append(l_delta_amps)
+
+        # now re-sort the delta_amps to the original order
+        delta_amps = jnp.concatenate(delta_amps_by_lmax, axis=0)
+        delta_amps = delta_amps[self.ref_data.energy_sorting]
+
+        # Finally apply the prefactors calculated earlier to the result
+        delta_amps = delta_amps * self.delta_amp_prefactors
+
+        return delta_amps
+
+
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def jit_delta_amplitude(self, free_params):
         return self.delta_amplitude(free_params)
