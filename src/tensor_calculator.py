@@ -294,14 +294,12 @@ class TensorLEEDCalculator:
             mapped_static_propagators)
         del mapped_dynamic_propagators
         del mapped_static_propagators
-        
-        #propagators = jnp.einsum()
 
-        # # apply rotations
-        # propagators = jnp.einsum('aelm,alm->aelm',
-        #                         propagators,
-        #                         self._propagator_rotation_factors,
-        #                         optimize='optimal')
+        # apply rotations and rearrange to make energy the first axis
+        propagators = jnp.einsum('aelm,alm->ealm',
+                                propagators,
+                                self._propagator_rotation_factors,
+                                optimize='optimal')
         return propagators
 
     def _calc_delta_amp_prefactors(self):
@@ -405,7 +403,6 @@ class TensorLEEDCalculator:
         # propagators - already rotated
         displacements = self.parameter_space.geo_transformer(geo_parms)
         propagators = self._calculate_propagators(displacements)
-        propagators = jnp.einsum('aelk->ealk', propagators)
 
         # dynamic t-matrices
         vib_amps = self.parameter_space.vib_transformer(vib_params)
@@ -448,10 +445,7 @@ class TensorLEEDCalculator:
             # energy loop
             def calc_energy(e_id):
                 en_propagators = l_propagators[e_id, :, ...]
-                # apply rotations
-                en_propagators = jnp.einsum('alm,alm->alm',
-                                            en_propagators,
-                                            l_rotation_factors)
+
                 en_t_matrix_vib = mapped_t_matrix_vib[e_id]
                 en_t_matrix_ref = mapped_t_matrix_ref[e_id]
 
