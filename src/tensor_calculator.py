@@ -167,8 +167,10 @@ class TensorLEEDCalculator:
         )
 
         # calculate reference t-matrices for full LMAX
+        n_ref_vib_amps = len(delta_slab.vib_params.base_params)
         logger.debug(
-            f"Calculating reference t-matrices for LMAX={self.phaseshifts.l_max}.")
+            f"Calculating {n_ref_vib_amps} reference t-matrices for "
+            f"LMAX={self.phaseshifts.l_max}.")
         ref_vib_amps = [p.ref_vib_amp
                         for p in delta_slab.vib_params.base_params]
         site_elements = [p.site_element for p in delta_slab.vib_params.base_params]
