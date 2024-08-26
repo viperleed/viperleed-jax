@@ -271,6 +271,39 @@ class TensorLEEDCalculator:
             )
             for displacement in displacements])
 
+    @partial(jax.jit, static_argnums=(0,))
+    def _calculate_propagators(self, displacements):
+        # return propagators indexed as (atom_site_elements, energies, lm, l'm')
+
+        dynamic_propagators = self._calculate_dynamic_propagators(displacements)
+
+        # if there are 0 static propagators, indexing would raise Error
+        if len(self._static_propagators) == 0:
+            static_propagators = jnp.array([jnp.zeros_like(dynamic_propagators[0])])
+        else:
+            static_propagators = self._static_propagators
+
+        mapped_dynamic_propagators = dynamic_propagators[self.parameter_space.propagator_id]
+        del dynamic_propagators
+        mapped_static_propagators = static_propagators[self.parameter_space.propagator_id]
+        del static_propagators
+
+        propagators = jnp.where(
+            self.parameter_space.is_dynamic_propagator[:, jnp.newaxis, jnp.newaxis, jnp.newaxis],
+            mapped_dynamic_propagators,
+            mapped_static_propagators)
+        del mapped_dynamic_propagators
+        del mapped_static_propagators
+        
+        #propagators = jnp.einsum()
+
+        # # apply rotations
+        # propagators = jnp.einsum('aelm,alm->aelm',
+        #                         propagators,
+        #                         self._propagator_rotation_factors,
+        #                         optimize='optimal')
+        return propagators
+
     def _calc_delta_amp_prefactors(self):
         energies = self.ref_data.energies
         v_imag = self.ref_data.v0i
