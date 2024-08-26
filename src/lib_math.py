@@ -58,7 +58,7 @@ BESSEL_FUNCTIONS = _generate_bessel_functions(2*MAXIMUM_LMAX)
 @jax.named_scope("bessel")
 def bessel(z, n1):
     """Spherical Bessel functions. Evaluated at z, up to degree n1."""
-    return BESSEL_FUNCTIONS[n1](z)
+    return BESSEL_FUNCTIONS[n1](z+EPS)
 
 
 @jax.named_scope("HARMONY")
