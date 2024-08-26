@@ -462,7 +462,7 @@ class TensorLEEDCalculator:
                 deltat = deltat * chem_weights[a] # apply weights
                 carry = carry + jnp.einsum('bl,lk,k->b',
                                         self.ref_data.tensor_amps_out[12][e_id,a],
-                                        deltat,
+                                        deltat[:169, :169],
                                         self.ref_data.tensor_amps_in[12][e_id,a])
                 return carry, None
 
