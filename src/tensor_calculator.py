@@ -239,6 +239,26 @@ class TensorLEEDCalculator:
             for vib_amp, site_el
             in zip(ref_vib_amps, site_elements)])
 
+    def _calculate_t_matrices(self, vib_amps):
+        # return t-matrices indexed as (atom-site-elements, energies, lm)
+
+        dynamic_t_matrices = self._calculate_dynamic_t_matrices(vib_amps)
+        # map t-matrices to atom-site-element basis
+        mapped_dynamic_t_matrices = dynamic_t_matrices[self.parameter_space.t_matrix_id] #TODO: clamp?
+
+        # if there are 0 static t-matrices, indexing would raise Error
+        if len(self._static_t_matrices) == 0:
+            static_t_matrices = jnp.array([jnp.zeros_like(dynamic_t_matrices[0])])
+        else:
+            static_t_matrices = self._static_t_matrices
+        mapped_static_t_matrices = static_t_matrices[self.parameter_space.t_matrix_id]
+
+        t_matrices = jnp.where(
+            self.parameter_space.is_dynamic_t_matrix[:, jnp.newaxis, jnp.newaxis],
+            mapped_dynamic_t_matrices,
+            mapped_static_t_matrices)
+        return t_matrices
+
     def _calculate_dynamic_propagators(self, displacements):
         propagator_vmap_en = jax.vmap(calc_propagator,
                                       in_axes=(None, None, 0, None))
