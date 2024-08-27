@@ -480,12 +480,12 @@ class TensorLEEDCalculator:
 
                 # TODO: replace this whole thing with a big einsum
                 def f_calc(carry, a):
-                    deltat = jnp.einsum('ji, j, lj->il',
+                    deltat = jnp.einsum('ji, j, lj,->il',
                         en_propagators[a, :, :],
                         1j*en_t_matrix_vib[a],
-                        en_propagators[a, :, :])
+                        en_propagators[a, :, :],
+                        chem_weights[a])
                     deltat = deltat - jnp.diag(1j*en_t_matrix_ref[a])
-                    deltat = deltat * chem_weights[a] # apply weights
 
                     carry = carry + jnp.einsum('bl,lk,k->b',
                                             tensor_amps_out[e_id,a],
