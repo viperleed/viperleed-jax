@@ -16,11 +16,11 @@ import os, shutil
 import logging
 import zipfile
 
-from src.data_structures import ReferenceData
-from src.tensor_calculator import TensorLEEDCalculator
-from src.files.phaseshifts import Phaseshifts
-from src.files.tensors import read_tensor_zip
-from src.parameter_space import SiteEl
+from otftleed.data_structures import ReferenceData
+from otftleed.tensor_calculator import TensorLEEDCalculator
+from otftleed.files.phaseshifts import Phaseshifts
+from otftleed.files.tensors import read_tensor_zip
+from otftleed.parameter_space import SiteEl
 
 from viperleed.calc.run import run_calc
 from viperleed.calc.files.displacements import readDISPLACEMENTS

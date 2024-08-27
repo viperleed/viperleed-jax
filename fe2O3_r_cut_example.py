@@ -9,10 +9,10 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 import numpy as np
 
-from src.files.tensors import read_tensor
-from src.files.phaseshifts import *
-from src.data_structures import ReferenceData
-from src.tensor_calculator import TensorLEEDCalculator
+from otftleed.lib_tensors import read_tensor
+from otftleed.lib_phaseshifts import *
+from otftleed.data_structures import ReferenceData
+from otftleed.tensor_calculator import TensorLEEDCalculator
 
 from tqdm import tqdm
 
