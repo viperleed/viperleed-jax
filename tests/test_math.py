@@ -4,9 +4,9 @@ import pytest
 from scipy.special import spherical_jn, sph_harm
 
 from jax import numpy as jnp
-from otftleed.lib_math import _divide_zero_safe
-from otftleed.dense_quantum_numbers import DENSE_M, DENSE_L
-from otftleed.lib_math import bessel, HARMONY, _divide_zero_safe, EPS, safe_norm
+from viperleed_jax.lib_math import _divide_zero_safe
+from viperleed_jax.dense_quantum_numbers import DENSE_M, DENSE_L
+from viperleed_jax.lib_math import bessel, HARMONY, _divide_zero_safe, EPS, safe_norm
 
 def scipy_bessel(n, z):
     scipy_results = [
