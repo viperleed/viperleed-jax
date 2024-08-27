@@ -55,8 +55,8 @@ class Batching:
                 batches.append(
                     Batch(current_l_max, batch_energies, batch_indices)
                 )
-                batch_energies = []
-                batch_indices = []
+                batch_energies = [energy,]
+                batch_indices = [en_id]
             else:
                 batch_energies.append(energy)
                 batch_indices.append(en_id)
