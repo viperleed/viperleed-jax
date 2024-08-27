@@ -195,7 +195,7 @@ class TensorLEEDCalculator:
         n_ref_vib_amps = len(delta_slab.vib_params.base_params)
         logger.debug(
             f"Calculating {n_ref_vib_amps} reference t-matrices for "
-            f"LMAX={self.phaseshifts.l_max}.")
+            f"LMAX={self.max_l_max}.")
         ref_vib_amps = [p.ref_vib_amp
                         for p in delta_slab.vib_params.base_params]
         site_elements = [p.site_element for p in delta_slab.vib_params.base_params]
@@ -219,8 +219,8 @@ class TensorLEEDCalculator:
                                    in_axes=(None, 0, 0, None))
         self._static_t_matrices = jnp.array([
             t_matrix_vmap_en(
-                self.phaseshifts.l_max,
                 self.phaseshifts[site_el],
+                self.max_l_max,
                 self.energies,
                 vib_amp
             )
@@ -233,7 +233,7 @@ class TensorLEEDCalculator:
                                       in_axes=(None, None, 0, None))
         self._static_propagators = jnp.array([
             propagator_vmap_en(
-                self.phaseshifts.l_max,
+                self.max_l_max,
                 displacement,
                 self.energies,
                 self.ref_data.v0i
@@ -245,9 +245,9 @@ class TensorLEEDCalculator:
                                    in_axes=(None, 0, 0, None))
         return jnp.array([
             t_matrix_vmap_en(
-                self.phaseshifts.l_max,
                 self.phaseshifts[site_el],
                 self.energies,
+                self.max_l_max,
                 vib_amp
             )
             for vib_amp, site_el
@@ -258,8 +258,8 @@ class TensorLEEDCalculator:
                                    in_axes=(None, 0, 0, None))
         return jnp.array([
             t_matrix_vmap_en(
-                self.phaseshifts.l_max,
                 self.phaseshifts[site_el],
+                self.max_l_max,
                 self.energies,
                 vib_amp
             )
@@ -291,7 +291,7 @@ class TensorLEEDCalculator:
                                       in_axes=(None, None, 0, None))
         return jnp.array([
             propagator_vmap_en(
-                self.phaseshifts.l_max,
+                self.max_l_max,
                 displacement,
                 self.energies,
                 self.ref_data.v0i
@@ -403,8 +403,8 @@ class TensorLEEDCalculator:
 
     @property
     def _propagator_rotation_factors(self):
-        dense_m_2d = DENSE_QUANTUM_NUMBERS[self.phaseshifts.l_max][:, :, 2]
-        dense_mp_2d =  DENSE_QUANTUM_NUMBERS[self.phaseshifts.l_max][:, :, 3]
+        dense_m_2d = DENSE_QUANTUM_NUMBERS[self.max_l_max][:, :, 2]
+        dense_mp_2d =  DENSE_QUANTUM_NUMBERS[self.max_l_max][:, :, 3]
 
         # AI: I don't fully understand this, technically it should be MPP = -M - MP
         dense_mpp = dense_mp_2d - dense_m_2d
