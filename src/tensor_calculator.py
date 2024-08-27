@@ -64,7 +64,6 @@ class TensorLEEDCalculator:
     """
 
     def __init__(self, ref_data, phaseshifts, slab, rparams,
-                 beam_indices,
                  interpolation_step=0.5,
                  interpolation_deg=3,
                  bc_type='not-a-knot',
