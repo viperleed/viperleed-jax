@@ -69,6 +69,7 @@ class TensorLEEDCalculator:
                  batch=True):
         self.ref_data = ref_data
         self.phaseshifts = phaseshifts
+
         self.interpolation_deg = interpolation_deg
         self.bc_type=bc_type
         self.beam_indices = jnp.array(beam_indices)
@@ -219,8 +220,8 @@ class TensorLEEDCalculator:
                                    in_axes=(None, 0, 0, None))
         self._static_t_matrices = jnp.array([
             t_matrix_vmap_en(
-                self.phaseshifts[site_el],
                 self.max_l_max,
+                self.phaseshifts[site_el][:, :self.max_l_max+1],
                 self.energies,
                 vib_amp
             )
@@ -240,14 +241,14 @@ class TensorLEEDCalculator:
             )
             for displacement in self._parameter_space.static_propagator_inputs])
 
-    def _calculate_dynamic_t_matrices(self, vib_amps):
+    def _calculate_dynamic_t_matrices(self, vib_amps, energy_indices):
         t_matrix_vmap_en = jax.vmap(vib_dependent_tmatrix,
                                    in_axes=(None, 0, 0, None))
         return jnp.array([
             t_matrix_vmap_en(
-                self.phaseshifts[site_el],
-                self.energies,
                 self.max_l_max,
+                self.phaseshifts[site_el][energy_indices, :self.max_l_max+1],
+                self.energies[energy_indices],
                 vib_amp
             )
             for vib_amp, site_el
@@ -258,18 +259,18 @@ class TensorLEEDCalculator:
                                    in_axes=(None, 0, 0, None))
         return jnp.array([
             t_matrix_vmap_en(
-                self.phaseshifts[site_el],
                 self.max_l_max,
+                self.phaseshifts[site_el][:, :self.max_l_max+1],
                 self.energies,
                 vib_amp
             )
             for vib_amp, site_el
             in zip(ref_vib_amps, site_elements)])
 
-    def _calculate_t_matrices(self, vib_amps):
+    def _calculate_t_matrices(self, vib_amps, energy_indices):
         # return t-matrices indexed as (atom-site-elements, energies, lm)
 
-        dynamic_t_matrices = self._calculate_dynamic_t_matrices(vib_amps)
+        dynamic_t_matrices = self._calculate_dynamic_t_matrices(vib_amps, energy_indices)
         # map t-matrices to atom-site-element basis
         mapped_dynamic_t_matrices = dynamic_t_matrices[self.parameter_space.t_matrix_id] #TODO: clamp?
 
@@ -277,7 +278,7 @@ class TensorLEEDCalculator:
         if len(self._static_t_matrices) == 0:
             static_t_matrices = jnp.array([jnp.zeros_like(dynamic_t_matrices[0])])
         else:
-            static_t_matrices = self._static_t_matrices
+            static_t_matrices = self._static_t_matrices[:, energy_indices, :]
         mapped_static_t_matrices = static_t_matrices[self.parameter_space.t_matrix_id]
 
         t_matrices = jnp.where(
@@ -286,29 +287,29 @@ class TensorLEEDCalculator:
             mapped_static_t_matrices)
         return t_matrices
 
-    def _calculate_dynamic_propagators(self, displacements):
+    def _calculate_dynamic_propagators(self, displacements, energy_indices):
         propagator_vmap_en = jax.vmap(calc_propagator,
                                       in_axes=(None, None, 0, None))
         return jnp.array([
             propagator_vmap_en(
                 self.max_l_max,
                 displacement,
-                self.energies,
+                self.energies[energy_indices],
                 self.ref_data.v0i
             )
             for displacement in displacements])
 
     @partial(jax.jit, static_argnums=(0,))
-    def _calculate_propagators(self, displacements):
+    def _calculate_propagators(self, displacements, energy_indices):
         # return propagators indexed as (atom_site_elements, energies, lm, l'm')
 
-        dynamic_propagators = self._calculate_dynamic_propagators(displacements)
+        dynamic_propagators = self._calculate_dynamic_propagators(displacements, energy_indices)
 
         # if there are 0 static propagators, indexing would raise Error
         if len(self._static_propagators) == 0:
             static_propagators = jnp.array([jnp.zeros_like(dynamic_propagators[0])])
         else:
-            static_propagators = self._static_propagators
+            static_propagators = self._static_propagators[:, energy_indices, :, :]
 
         mapped_dynamic_propagators = dynamic_propagators[self.parameter_space.propagator_id]
         del dynamic_propagators
@@ -427,39 +428,40 @@ class TensorLEEDCalculator:
         # chemical weights
         chem_weights = self.parameter_space.occ_weight_transformer(occ_params)
 
-        # propagators - already rotated
-        displacements = self.parameter_space.geo_transformer(geo_parms)
-        propagators = self._calculate_propagators(displacements)
-
-        # dynamic t-matrices
-        vib_amps = self.parameter_space.vib_transformer(vib_params)
-        t_matrices = self._calculate_t_matrices(vib_amps)
-        t_matrices = jnp.einsum('ael->eal', t_matrices)
-
-        # indices for energy loop
-        energy_ids = jnp.arange(len(self.ref_data.energies))
-
         # LMAX dependent quantities
         # -------------------------
 
         # loop over the required L_MAX values
-        delta_amps_by_lmax = []
-        for l_max in self.ref_data.needed_lmax:
+        batched_delta_amps = []
+        for batch in self.batching.batches:
+            l_max = batch.l_max
+            energy_ids = batch.energy_indices
+
+            # propagators - already rotated
+            displacements = self.parameter_space.geo_transformer(geo_parms)
+            propagators = self._calculate_propagators(displacements, energy_ids)
+
+            # dynamic t-matrices
+            vib_amps = self.parameter_space.vib_transformer(vib_params)
+            t_matrices = self._calculate_t_matrices(vib_amps, energy_ids)
+            t_matrices = jnp.einsum('ael->eal', t_matrices)
 
             # reference t-matrices and tensor amplitudes
-            ref_t_matrices = self.ref_t_matrices[:, :, :l_max+1] # CROP
-            tensor_amps_in = self.ref_data.tensor_amps_in[l_max]
-            tensor_amps_out = self.ref_data.tensor_amps_out[l_max]
+            ref_t_matrices = self.ref_t_matrices[:, energy_ids, :l_max+1] # CROP
+            tensor_amps_in = self.ref_data.tensor_amps_in[l_max][energy_ids]
+            tensor_amps_out = self.ref_data.tensor_amps_out[l_max][energy_ids]
 
             # crop t-matrices
             l_t_matrices_vib = t_matrices[:, :, :l_max+1]
-            l_t_matrices_ref = jnp.einsum('ael->eal', ref_t_matrices)
+            l_t_matrices_ref = jnp.einsum('ael->eal', ref_t_matrices)           # TODO: do this earlier
+            
+            del t_matrices
+            del ref_t_matrices
 
             # crop propagators
             l_propagators = propagators[:, :, :(l_max+1)**2, :(l_max+1)**2]
 
-            # crop rotation factors
-            l_rotation_factors = self._propagator_rotation_factors[:, :(l_max+1)**2, :(l_max+1)**2]
+            del propagators
 
             # map t-matrices to compressed quantum index
             mapped_t_matrix_vib = jax.vmap(jax.vmap(
@@ -504,11 +506,11 @@ class TensorLEEDCalculator:
             # map over energies
             l_delta_amps = jax.lax.map(calc_energy, energy_ids)
 
-            delta_amps_by_lmax.append(l_delta_amps)
+            batched_delta_amps.append(l_delta_amps)
 
         # now re-sort the delta_amps to the original order
-        delta_amps = jnp.concatenate(delta_amps_by_lmax, axis=0)
-        delta_amps = delta_amps[self.ref_data.energy_sorting]
+        delta_amps = jnp.concatenate(batched_delta_amps, axis=0)
+        delta_amps = delta_amps[self.batching.restore_sorting]
 
         # Finally apply the prefactors calculated earlier to the result
         delta_amps = delta_amps * self.delta_amp_prefactors
