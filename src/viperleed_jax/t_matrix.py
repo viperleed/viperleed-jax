@@ -3,10 +3,10 @@ config.update("jax_enable_x64", True)
 import jax
 import jax.numpy as jnp
 
-from otftleed.lib_math import bessel
-from otftleed.constants import BOHR
+from viperleed_jax.lib_math import bessel
+from viperleed_jax.constants import BOHR
 
-from otftleed.gaunt_coefficients import PRE_CALCULATED_CPPP
+from viperleed_jax.gaunt_coefficients import PRE_CALCULATED_CPPP
 
 
 @jax.named_scope("vib_dependent_tmatrix")

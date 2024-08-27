@@ -8,10 +8,10 @@ from jax import jit
 from jax import numpy as jnp
 from functools import partial
 
-from otftleed.constants import BOHR
-from otftleed.t_matrix import vmap_vib_dependent_tmatrix
-from otftleed.lib_delta import apply_geometric_displacements
-from otftleed.lib_math import EPS
+from viperleed_jax.constants import BOHR
+from viperleed_jax.t_matrix import vmap_vib_dependent_tmatrix
+from viperleed_jax.lib_delta import apply_geometric_displacements
+from viperleed_jax.lib_math import EPS
 
 @jax.named_scope("delta_amplitude")
 def delta_amplitude(vib_amps, displacements, ref_data, unit_cell_area, phaseshifts,

@@ -7,8 +7,8 @@ from jax import jit, vmap
 import jax
 from pathlib import Path
 
-from otftleed.dense_quantum_numbers import MAXIMUM_LMAX
-from otftleed.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
+from viperleed_jax.dense_quantum_numbers import MAXIMUM_LMAX
+from viperleed_jax.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 
 # load precalculated coefficients
 _REDUCED_GAUNT_COEFFICIENTS = jnp.load(Path(__file__).parent / "gaunt_coefficients.npy",

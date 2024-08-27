@@ -5,13 +5,13 @@ import jax.numpy as jnp
 from jax import vmap
 from functools import partial
 
-from otftleed.lib_math import *
-from otftleed.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
-from otftleed.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
+from viperleed_jax.lib_math import *
+from viperleed_jax.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
+from viperleed_jax.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 
-from otftleed.constants import BOHR
+from viperleed_jax.constants import BOHR
 
-from otftleed.gaunt_coefficients import CSUM_COEFFS
+from viperleed_jax.gaunt_coefficients import CSUM_COEFFS
 
 @jax.named_scope("apply_geometric_displacements")
 def apply_geometric_displacements(t_matrix_ref,t_matrix_new,e_inside,v_imag,

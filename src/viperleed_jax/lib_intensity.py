@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from otftleed.constants import BOHR
+from viperleed_jax.constants import BOHR
 
 @jax.named_scope("sum_intensity")
 def sum_intensity(prefactors, reference_amplitudes, delta_amplitudes):
