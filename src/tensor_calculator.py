@@ -125,6 +125,10 @@ class TensorLEEDCalculator:
                                      batch)
         else:
             raise ValueError("batch_lmax must be bool or int.")
+        logger.info(
+            f'Batching initialized with {len(self.batching.batches)} batches '
+            f'and a maximum batch size of {self.batching.max_batch_size}.'
+        )
 
     @property
     def energies(self):
