@@ -565,13 +565,12 @@ class TensorLEEDCalculator:
         raise NotImplementedError
 
     def interpolated(self, free_params, deriv_deg=0):
-        non_interpolated_intensity = self.intensity(free_params)
-        spline =  interpax.CubicSpline(self.origin_grid,
-                                    non_interpolated_intensity,
-                                    bc_type=self.bc_type,
-                                    extrapolate=False,
-                                    check=False,                                # TODO: do check once in the object creation
-                                    )
+        spline = interpax.CubicSpline(self.origin_grid,
+                                      self.intensity(free_params),
+                                      bc_type=self.bc_type,
+                                      extrapolate=False,
+                                      check=False,                              # TODO: do check once in the object creation
+        )
         for i in range(deriv_deg):
             spline = spline.derivative()
         return spline(self.target_grid)
