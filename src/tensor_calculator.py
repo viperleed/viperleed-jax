@@ -440,16 +440,15 @@ class TensorLEEDCalculator:
          geo_parms,
          occ_params) = self.parameter_space.split_free_params(jnp.asarray(free_params))
 
-        # LMAX independent quantities
-        # ---------------------------
-
         # chemical weights
         chem_weights = self.parameter_space.occ_weight_transformer(occ_params)
 
-        # LMAX dependent quantities
-        # -------------------------
+        # atom ids that will be batched over
+        atom_ids = jnp.arange(self.parameter_space.n_atom_site_elements)
 
-        # loop over the required L_MAX values
+        # Loop over batches
+        # -----------------
+
         batched_delta_amps = []
         for batch in self.batching.batches:
             l_max = batch.l_max
@@ -482,7 +481,7 @@ class TensorLEEDCalculator:
                 map_l_array_to_compressed_quantum_index,
                 in_axes=(0, None)), in_axes=(0, None))(ref_t_matrices, l_max)
 
-            # energy loop
+            # for every energy
             def calc_energy(e_id):
                 en_propagators = propagators[e_id, :, ...]
 
@@ -508,10 +507,6 @@ class TensorLEEDCalculator:
                         tensor_amps_in[e_id,a],
                         optimize='optimal')
 
-
-                # scan over atom site elements
-                atom_ids = jnp.arange(self.parameter_space.n_atom_site_elements)
-                #amps, _ = jax.lax.scan(f_calc, jnp.zeros((self.n_beams,), dtype=jnp.complex128), atom_ids)
                 batch_amps = jax.vmap(f_calc, in_axes=(0,), out_axes=0)(atom_ids)
                 amps = jnp.sum(batch_amps, axis=0)
 
