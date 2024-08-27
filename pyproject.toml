@@ -1,0 +1,31 @@
+[build-system]
+requires = ['setuptools']
+build-backend = 'setuptools.build_meta'
+
+
+[project]
+name = 'otftleed'
+description = 'on the fly tensor LEED'
+requires-python = '>=3.7'
+version = '0.2.0'
+license = {file = 'LICENSE.md'}
+
+dependencies = [
+    'jax',
+    'numpy',
+    'viperleed'
+    ]
+
+keywords = [
+    'LEED',
+    'Tensor LEED',
+    'ViPErLEED',
+    'JAX',
+    ]
+
+[project.optional-dependencies]
+dev = [
+    'pytest',
+    'scipy',
+    'matplotlib',
+    ]
