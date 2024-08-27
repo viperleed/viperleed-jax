@@ -1,5 +1,9 @@
 # Batching module
 
+import numpy as np
+
+#TODO: make into pytree
+
 # The calculation of delta-amplitudes is a computationally expensive operation
 # that can be well parallelized. However, the computation involves operations
 # with large input-, output- and intermediate arrays which can lead to memory
@@ -19,8 +23,8 @@
 class Batch:
     def __init__(self, l_max, energies, energy_indices):
         self.l_max = l_max
-        self.energies = energies
-        self.energy_indices = energy_indices
+        self.energies = np.array(energies)
+        self.energy_indices = np.array(energy_indices)
 
     def __len__(self):
         return len(self.energies)
