@@ -47,7 +47,7 @@ def phaseshift_site_el_order(slab, rpars):
     return ps_site_el_map
 
 
-def calculator_from_state(calc_path, tensor_path):
+def calculator_from_state(calc_path, tensor_path, l_max:int):
 
     with tempfile.TemporaryDirectory() as tmp_calc_dir:
         tmp_calc_path = Path(tmp_calc_dir)
@@ -85,28 +85,27 @@ def calculator_from_state(calc_path, tensor_path):
         logger.debug('DISPLACEMENTS file loaded')
 
     # parameters needed to interpret the tensor data
-    lmax = rpars.LMAX.max
+    ref_calc_lmax = rpars.LMAX.max
     n_beams = len(rpars.ivbeams)
     n_energies = len(np.arange(rpars.THEO_ENERGIES.start,                           # TODO: would be good to make this a property of the EnergyRange class
                             rpars.THEO_ENERGIES.stop+0.01,
                             rpars.THEO_ENERGIES.step))
 
     logger.info(f'Starting to interpret tensor file {tensor_path.name}.')
-    logger.debug(f'Using lmax={lmax}, n_beams={n_beams}, '
+    logger.debug(f'Using lmax={ref_calc_lmax}, n_beams={n_beams}, '
                  f'n_energies={n_energies}.')
 
     # read tensor file
-    tensors = read_tensor_zip(tensor_path, lmax, n_beams, n_energies)
+    tensors = read_tensor_zip(tensor_path, ref_calc_lmax, n_beams, n_energies)
 
     logger.debug(f'Finished reading tensor file.')
-
 
     non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
     sorted_tensors = [tensors[f'T_{at.num}'] for at in non_bulk_atoms]
 
     # Combine data into a ReferenceData object
     logger.debug('Combining tensor data into ReferenceData object.')
-    ref_data = ReferenceData(sorted_tensors, fix_lmax=lmax-2)
+    ref_data = ReferenceData(sorted_tensors, fix_lmax=l_max)
     logger.debug('ReferenceData object created successfully.')
 
     # read Phaseshift data using existing phaseshift reader
@@ -118,7 +117,7 @@ def calculator_from_state(calc_path, tensor_path):
     site_el_map = phaseshift_site_el_order(slab, rpars)
 
     # interpolate phaseshifts
-    phaseshifts = Phaseshifts(raw_phaseshifts, ref_data.energies, lmax,
+    phaseshifts = Phaseshifts(raw_phaseshifts, ref_data.energies, l_max,
                               phaseshift_map=site_el_map)
 
     iv_beam_indices = [beam.hk for beam in rpars.ivbeams]
@@ -138,9 +137,9 @@ def calculator_from_state(calc_path, tensor_path):
     logger.debug('Setting experimental intensities and initializing interpolators.')
     calculator.set_experiment_intensity(mapped_exp_intensities, exp_energies)
 
-    return calculator, slab, rpars
     # free up memory for large objects that are no longer needed
     del sorted_tensors
     del tensors
     del raw_phaseshifts
 
+    return calculator, slab, rpars, ref_data, phaseshifts
