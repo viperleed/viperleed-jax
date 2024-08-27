@@ -124,7 +124,7 @@ def calculator_from_state(calc_path, tensor_path, l_max:int):
 
     logger.debug('Initializing Tensor LEED calculator.')
     calculator = TensorLEEDCalculator(ref_data, phaseshifts, slab,
-                                      rpars, iv_beam_indices)
+                                      rpars)
 
     # Find mapping between experimental and theoretical beams
     exp_beam_mapping = [int(np.argmax([b == t.hk for t in rpars.expbeams]))

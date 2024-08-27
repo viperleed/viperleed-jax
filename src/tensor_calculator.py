@@ -5,6 +5,7 @@ import jax.numpy as jnp
 
 from viperleed.calc import symmetry
 from viperleed.calc import LOGGER as logger
+from viperleed.calc.files.iorfactor import beamlist_to_array
 
 from functools import partial
 from src import delta
@@ -72,10 +73,12 @@ class TensorLEEDCalculator:
 
         self.interpolation_deg = interpolation_deg
         self.bc_type=bc_type
-        self.beam_indices = jnp.array(beam_indices)
+
+        # beam indices
+        beam_indices = [beam.hk for beam in rparams.ivbeams]
+        self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
         self.n_beams = self.beam_indices.shape[0]
-        # reading from IVBEAMS does not guarantee correct order!
-        #self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
+
         self.comp_intensity = None
         self.comp_energies = None
         self.interpolation_step = interpolation_step
@@ -130,6 +133,14 @@ class TensorLEEDCalculator:
             f'Batching initialized with {len(self.batching.batches)} batches '
             f'and a maximum batch size of {self.batching.max_batch_size}.'
         )
+
+        # set experimental intensities
+        exp_beam_mapping = [int(np.argmax([b == t.hk for t in rparams.expbeams]))
+                            for b in beam_indices]
+
+        exp_energies, _, _, exp_intensities = beamlist_to_array(rparams.expbeams)
+        mapped_exp_intensities = exp_intensities[:,exp_beam_mapping]
+        self.set_experiment_intensity(mapped_exp_intensities, exp_energies)
 
     @property
     def energies(self):
