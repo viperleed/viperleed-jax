@@ -618,8 +618,6 @@ class TensorLEEDCalculator:
     # def jit_R_val_and_grad(self, free_params):
     #     return jax.value_and_grad(self.R)(free_params)
 
-    def _benchmark():
-        pass
 
     # JAX PyTree methods
 
