@@ -139,3 +139,8 @@ def calculator_from_state(calc_path, tensor_path):
     calculator.set_experiment_intensity(mapped_exp_intensities, exp_energies)
 
     return calculator, slab, rpars
+    # free up memory for large objects that are no longer needed
+    del sorted_tensors
+    del tensors
+    del raw_phaseshifts
+
