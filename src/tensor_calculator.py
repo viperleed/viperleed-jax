@@ -1,3 +1,4 @@
+import time
 
 import jax
 from jax.tree_util import register_pytree_node_class
@@ -683,3 +684,39 @@ def interpolate_ragged_array(x, y, axis=0, bc_type="not-a-knot", extrapolate=Fal
         all_coeffs = all_coeffs.at[:, start_id:start_id+spline.c.shape[1], dim].set(spline.c)
     spline = interpax.PPoly.construct_fast(all_coeffs, x)
     return spline
+
+
+def benchmark_calculator(calculator, free_params, n_repeats=10):
+    if n_repeats < 1:
+        raise ValueError("Number of repeats must be greater than 0.")
+
+    # R factor
+    start_time = time.time()
+    calculator.jit_R(free_params).block_until_ready()
+    r_fac_compile_time = time.time() - start_time
+
+    start_time = time.time()
+    for _ in range(n_repeats):
+        start_time = time.time()
+        calculator.jit_R(free_params).block_until_ready()
+    r_fac_time = (time.time() - start_time)/n_repeats
+
+    if r_fac_compile_time < 3*r_fac_time:
+        # function was most likely already jit compiled
+        r_fac_compile_time = None
+
+    # gradients
+    start_time = time.time()
+    calculator.jit_grad_R(free_params).block_until_ready()
+    grad_compile_time = time.time() - start_time
+
+    start_time = time.time()
+    for _ in range(n_repeats):
+        calculator.jit_grad_R(free_params).block_until_ready()
+    grad_time = (time.time() - start_time)/n_repeats
+
+    if grad_compile_time < 3*grad_time:
+        # function was most likely already jit compiled
+        grad_compile_time = None
+
+    return r_fac_compile_time, r_fac_time, grad_compile_time, grad_time
