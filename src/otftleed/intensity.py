@@ -2,7 +2,7 @@ import numpy as np
 import scipy
 import matplotlib.pyplot as plt
 
-from src.files.tensors import *
+from otftleed.files.tensors import *
 from lib_intensity import *
 
 HARTREE = 27.211396

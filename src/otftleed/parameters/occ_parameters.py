@@ -1,7 +1,7 @@
 from functools import partial
 
-from src.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam
-from src.base import LinearTransformer
+from otftleed.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam
+from otftleed.base import LinearTransformer
 
 import numpy as np
 import jax

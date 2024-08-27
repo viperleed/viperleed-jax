@@ -4,7 +4,7 @@ import pickle
 
 import pytest
 
-from src.files.tensors import read_tensor_zip
+from otftleed.files.tensors import read_tensor_zip
 
 if 'VIPERLEED_ON_THE_FLY_TESTS_LARGE_FILE_PATH' not in os.environ:
     raise ValueError('VIPERLEED_ON_THE_FLY_TESTS_LARGE_FILE_PATH not set')

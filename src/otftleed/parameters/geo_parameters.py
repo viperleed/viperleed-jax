@@ -1,5 +1,5 @@
-from src.base import LinearTransformer
-from src.parameters.base_parameters import BaseParam, DeltaParam, Params, ConstrainedDeltaParam, Bound
+from otftleed.base import LinearTransformer
+from otftleed.parameters.base_parameters import BaseParam, DeltaParam, Params, ConstrainedDeltaParam, Bound
 
 import jax
 from jax import numpy as jnp

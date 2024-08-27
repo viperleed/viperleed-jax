@@ -1,12 +1,12 @@
 import pytest
 from pathlib import Path
 
-from src.files.phaseshifts import *
-from src.files.tensors import read_tensor_zip
-from src.t_matrix import vmap_vib_dependent_tmatrix
-from src.lib_delta import apply_geometric_displacements, TMATRIX_DWG
-from src.delta import *
-from src.dense_quantum_numbers import MINUS_ONE_POW_M, DENSE_L, DENSE_M
+from otftleed.files.phaseshifts import *
+from otftleed.files.tensors import read_tensor_zip
+from otftleed.t_matrix import vmap_vib_dependent_tmatrix
+from otftleed.lib_delta import apply_geometric_displacements, TMATRIX_DWG
+from otftleed.delta import *
+from otftleed.dense_quantum_numbers import MINUS_ONE_POW_M, DENSE_L, DENSE_M
 
 # #From "PARAM"
 # LMAX = 14  # maximum angular momentum to be used in calculation

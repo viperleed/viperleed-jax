@@ -2,8 +2,8 @@
 import numpy as np
 from jax import numpy as jnp
 
-from src.base import LinearTransformer
-from src.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam, Bound
+from otftleed.base import LinearTransformer
+from otftleed.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam, Bound
 
 
 class VibBaseParam(BaseParam):

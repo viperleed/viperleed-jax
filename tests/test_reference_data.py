@@ -4,7 +4,7 @@ import pickle
 import pytest
 import numpy as np
 
-from src.data_structures import ReferenceData
+from otftleed.data_structures import ReferenceData
 
 def test_create_fixed_lmax_ref_data(fe2o3_pickled_tensor):
     fixed_lmax = 12

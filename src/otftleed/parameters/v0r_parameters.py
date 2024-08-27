@@ -1,7 +1,7 @@
 from jax import numpy as jnp
 
-from src.base import LinearTransformer
-from src.parameters.base_parameters import Bound
+from otftleed.base import LinearTransformer
+from otftleed.parameters.base_parameters import Bound
 
 
 class V0rParam():

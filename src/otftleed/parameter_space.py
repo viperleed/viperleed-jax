@@ -5,10 +5,10 @@ import jax
 from jax import numpy as jnp
 from jax.tree_util import register_pytree_node_class
 
-from src.parameters.occ_parameters import ChemParams
-from src.parameters.vib_parameters import VibParams
-from src.parameters.geo_parameters import GeoParams
-from src.parameters.v0r_parameters import V0rParam
+from otftleed.parameters.occ_parameters import ChemParams
+from otftleed.parameters.vib_parameters import VibParams
+from otftleed.parameters.geo_parameters import GeoParams
+from otftleed.parameters.v0r_parameters import V0rParam
 
 _ATOM_Z_DIR_ID = 2
 _DISP_Z_DIR_ID = 0
