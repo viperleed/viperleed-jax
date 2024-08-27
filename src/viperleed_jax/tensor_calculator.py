@@ -35,11 +35,7 @@ _R_FACTOR_SYNONYMS = {
 
 @register_pytree_node_class
 class TensorLEEDCalculator:
-    """
-    Main class for calculating tensor LEED intensities and R-factors.
-    
-    The experimental intensities are not required during initialization, but
-    they are needed to calculate R-factors.
+    """Main class for calculating tensor LEED intensities and R-factors.
 
     Parameters:
     -----------
@@ -51,16 +47,14 @@ class TensorLEEDCalculator:
         The slab object representing the crystal structure.
     rparams : Rparams
         The parameters for LEED calculations.
-    beam_indices : list
-        The indices of the beams used in the LEED calculations.
     interpolation_step : float, optional
         The step size for interpolation, by default 0.5.
     interpolation_deg : int, optional
         The degree of interpolation, by default 3.
     bc_type : str, optional
         The boundary condition type for interpolation, by default 'not-a-knot'.
-    batch_lmax : bool, optional
-        Whether to use batched calculation for lmax, by default False.
+    batch_lmax : bool or int, optional
+        Whether to use batched calculation. By default True.
     """
 
     def __init__(self, ref_data, phaseshifts, slab, rparams,
