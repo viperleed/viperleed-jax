@@ -6,10 +6,10 @@ from tqdm import tqdm
 import warnings
 import numpy as np
 
-from src.delta import *
-from src.lib_phaseshifts import *
-from src.lib_tensors import *
-from src.data_structures import ReferenceData
+from otftleed.delta import *
+from otftleed.lib_phaseshifts import *
+from otftleed.lib_tensors import *
+from otftleed.data_structures import ReferenceData
 
 
 
