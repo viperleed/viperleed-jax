@@ -217,8 +217,9 @@ class TensorLEEDCalculator:
     def _calculate_static_t_matrices(self):
         # this is only done once – perform for maximum lmax and crop later
         t_matrix_vmap_en = jax.vmap(vib_dependent_tmatrix,
-                                   in_axes=(None, 0, 0, None))
-        self._static_t_matrices = jnp.array([
+                                   in_axes=(None, 0, 0, None),
+                                   out_axes=0)
+        static_t_matrices = jnp.array([
             t_matrix_vmap_en(
                 self.max_l_max,
                 self.phaseshifts[site_el][:, :self.max_l_max+1],
@@ -227,6 +228,7 @@ class TensorLEEDCalculator:
             )
             for site_el, vib_amp
             in self._parameter_space.static_t_matrix_inputs])
+        self._static_t_matrices = jnp.einsum('ael->eal', static_t_matrices)
 
     def _calculate_static_propagators(self):
         # this is only done once – perform for maximum lmax and crop later
@@ -243,8 +245,9 @@ class TensorLEEDCalculator:
 
     def _calculate_dynamic_t_matrices(self, vib_amps, energy_indices):
         t_matrix_vmap_en = jax.vmap(vib_dependent_tmatrix,
-                                   in_axes=(None, 0, 0, None))
-        return jnp.array([
+                                   in_axes=(None, 0, 0, None),
+                                   out_axes=0)
+        dynamic_t_matrices = jnp.array([
             t_matrix_vmap_en(
                 self.max_l_max,
                 self.phaseshifts[site_el][energy_indices, :self.max_l_max+1],
@@ -253,11 +256,13 @@ class TensorLEEDCalculator:
             )
             for vib_amp, site_el
             in zip(vib_amps, self.parameter_space.dynamic_t_matrix_site_elements)])
+        return jnp.einsum('ael->eal', dynamic_t_matrices)
 
     def _calculate_reference_t_matrices(self, ref_vib_amps, site_elements):
         t_matrix_vmap_en = jax.vmap(vib_dependent_tmatrix,
-                                   in_axes=(None, 0, 0, None))
-        return jnp.array([
+                                   in_axes=(None, 0, 0, None),
+                                   out_axes=0)
+        ref_t_matrices =  jnp.array([
             t_matrix_vmap_en(
                 self.max_l_max,
                 self.phaseshifts[site_el][:, :self.max_l_max+1],
@@ -266,23 +271,24 @@ class TensorLEEDCalculator:
             )
             for vib_amp, site_el
             in zip(ref_vib_amps, site_elements)])
+        return jnp.einsum('ael->eal', ref_t_matrices)
 
     def _calculate_t_matrices(self, vib_amps, energy_indices):
-        # return t-matrices indexed as (atom-site-elements, energies, lm)
+        # return t-matrices indexed as (energies, atom-site-elements, lm)
 
         dynamic_t_matrices = self._calculate_dynamic_t_matrices(vib_amps, energy_indices)
         # map t-matrices to atom-site-element basis
-        mapped_dynamic_t_matrices = dynamic_t_matrices[self.parameter_space.t_matrix_id] #TODO: clamp?
+        mapped_dynamic_t_matrices = dynamic_t_matrices[:, self.parameter_space.t_matrix_id] #TODO: clamp?
 
         # if there are 0 static t-matrices, indexing would raise Error
         if len(self._static_t_matrices) == 0:
             static_t_matrices = jnp.array([jnp.zeros_like(dynamic_t_matrices[0])])
         else:
-            static_t_matrices = self._static_t_matrices[:, energy_indices, :]
-        mapped_static_t_matrices = static_t_matrices[self.parameter_space.t_matrix_id]
+            static_t_matrices = self._static_t_matrices[energy_indices, :, :]
+        mapped_static_t_matrices = static_t_matrices[:, self.parameter_space.t_matrix_id, :]
 
         t_matrices = jnp.where(
-            self.parameter_space.is_dynamic_t_matrix[:, jnp.newaxis, jnp.newaxis],
+            self.parameter_space.is_dynamic_t_matrix[jnp.newaxis, :, jnp.newaxis],
             mapped_dynamic_t_matrices,
             mapped_static_t_matrices)
         return t_matrices
@@ -441,39 +447,32 @@ class TensorLEEDCalculator:
             displacements = self.parameter_space.geo_transformer(geo_parms)
             propagators = self._calculate_propagators(displacements, energy_ids)
 
+            # crop propagators
+            propagators = propagators[:, :, :(l_max+1)**2, :(l_max+1)**2]
+
             # dynamic t-matrices
             vib_amps = self.parameter_space.vib_transformer(vib_params)
             t_matrices = self._calculate_t_matrices(vib_amps, energy_ids)
-            t_matrices = jnp.einsum('ael->eal', t_matrices)
-
-            # reference t-matrices and tensor amplitudes
-            ref_t_matrices = self.ref_t_matrices[:, energy_ids, :l_max+1] # CROP
-            tensor_amps_in = self.ref_data.tensor_amps_in[l_max][energy_ids]
-            tensor_amps_out = self.ref_data.tensor_amps_out[l_max][energy_ids]
 
             # crop t-matrices
-            l_t_matrices_vib = t_matrices[:, :, :l_max+1]
-            l_t_matrices_ref = jnp.einsum('ael->eal', ref_t_matrices)           # TODO: do this earlier
-            
-            del t_matrices
-            del ref_t_matrices
+            ref_t_matrices = self.ref_t_matrices[energy_ids, :, :l_max+1]
+            t_matrices = t_matrices[:, :, :l_max+1]
 
-            # crop propagators
-            l_propagators = propagators[:, :, :(l_max+1)**2, :(l_max+1)**2]
-
-            del propagators
+            # tensor amplitudes
+            tensor_amps_in = self.ref_data.tensor_amps_in[l_max][energy_ids]
+            tensor_amps_out = self.ref_data.tensor_amps_out[l_max][energy_ids]
 
             # map t-matrices to compressed quantum index
             mapped_t_matrix_vib = jax.vmap(jax.vmap(
                 map_l_array_to_compressed_quantum_index,
-                in_axes=(0, None)), in_axes=(0, None))(l_t_matrices_vib, l_max)
+                in_axes=(0, None)), in_axes=(0, None))(t_matrices, l_max)
             mapped_t_matrix_ref = jax.vmap(jax.vmap(
                 map_l_array_to_compressed_quantum_index,
-                in_axes=(0, None)), in_axes=(0, None))(l_t_matrices_ref, l_max)
+                in_axes=(0, None)), in_axes=(0, None))(ref_t_matrices, l_max)
 
             # energy loop
             def calc_energy(e_id):
-                en_propagators = l_propagators[e_id, :, ...]
+                en_propagators = propagators[e_id, :, ...]
 
                 en_t_matrix_vib = mapped_t_matrix_vib[e_id]
                 en_t_matrix_ref = mapped_t_matrix_ref[e_id]
