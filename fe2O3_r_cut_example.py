@@ -9,10 +9,10 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 import numpy as np
 
-from otftleed.lib_tensors import read_tensor
-from otftleed.lib_phaseshifts import *
-from otftleed.data_structures import ReferenceData
-from otftleed.tensor_calculator import TensorLEEDCalculator
+from viperleed_jax.lib_tensors import read_tensor
+from viperleed_jax.lib_phaseshifts import *
+from viperleed_jax.data_structures import ReferenceData
+from viperleed_jax.tensor_calculator import TensorLEEDCalculator
 
 from tqdm import tqdm
 

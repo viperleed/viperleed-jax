@@ -6,10 +6,10 @@ from tqdm import tqdm
 import warnings
 import numpy as np
 
-from otftleed.delta import *
-from otftleed.lib_phaseshifts import *
-from otftleed.lib_tensors import *
-from otftleed.data_structures import ReferenceData
+from viperleed_jax.delta import *
+from viperleed_jax.lib_phaseshifts import *
+from viperleed_jax.lib_tensors import *
+from viperleed_jax.data_structures import ReferenceData
 
 
 
