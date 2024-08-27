@@ -477,26 +477,31 @@ class TensorLEEDCalculator:
                 en_t_matrix_vib = mapped_t_matrix_vib[e_id]
                 en_t_matrix_ref = mapped_t_matrix_ref[e_id]
 
-                # TODO: replace this whole thing with a big einsum
-                def f_calc(carry, a):
-                    deltat = jnp.einsum('mi, mn, ln,->il',
+                def f_calc(a):
+                    deltat = jnp.einsum(
+                        'mi, mn, ln-> il',
                         en_propagators[a, :, :],
                         jnp.diag(1j*en_t_matrix_vib[a]),
                         en_propagators[a, :, :],
-                        chem_weights[a])
+                        optimize='optimal'
+                        )
 
                     deltat = deltat - jnp.diag(1j*en_t_matrix_ref[a])
+                    deltat = deltat*chem_weights[a]
 
-                    carry = carry + jnp.einsum('bl,lk,k->b',
-                                            tensor_amps_out[e_id,a],
-                                            deltat,
-                                            tensor_amps_in[e_id,a])
-                    del deltat
-                    return carry, None
+                    return jnp.einsum(
+                        'bl,lk,k->b',
+                        tensor_amps_out[e_id,a],
+                        deltat,
+                        tensor_amps_in[e_id,a],
+                        optimize='optimal')
+
 
                 # scan over atom site elements
                 atom_ids = jnp.arange(self.parameter_space.n_atom_site_elements)
-                amps, _ = jax.lax.scan(f_calc, jnp.zeros((self.n_beams,), dtype=jnp.complex128), atom_ids)
+                #amps, _ = jax.lax.scan(f_calc, jnp.zeros((self.n_beams,), dtype=jnp.complex128), atom_ids)
+                batch_amps = jax.vmap(f_calc, in_axes=(0,), out_axes=0)(atom_ids)
+                amps = jnp.sum(batch_amps, axis=0)
 
                 del en_propagators
                 del en_t_matrix_vib
