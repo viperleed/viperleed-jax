@@ -605,9 +605,18 @@ class TensorLEEDCalculator:
     def jit_R(self, free_params):
         return self.R(free_params)
 
-    def R_val_and_grad(self, free_params):
-        return jax.value_and_grad(self.R, argnums=(1))(free_params)
+    @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
+    def jit_grad_R(self, free_params):
+        # TODO, FIXME:
+        # For some reason, the gradient calculation is currently not working
+        # properly with the reverse mode differentiation (wich is used by
+        # jax.grad). The forward mode differentiation works fine.
+        return jax.jacfwd(self.R)(free_params)
 
+
+    # @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
+    # def jit_R_val_and_grad(self, free_params):
+    #     return jax.value_and_grad(self.R)(free_params)
 
     def _benchmark():
         pass
