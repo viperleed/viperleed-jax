@@ -164,7 +164,7 @@ class TensorLEEDCalculator:
 
     @property
     def n_free_parameters(self):
-        return self.parameter_space.n_free_parameters
+        return self.parameter_space.n_free_params
 
     def set_rfactor(self, rfactor_name):
         _rfactor_name = rfactor_name.lower().strip()
