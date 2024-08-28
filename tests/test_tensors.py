@@ -4,7 +4,6 @@ import pytest
 
 # We can test that the read tensors are consistent with the pickled tensors
 # and then do the other tests (also in the other files) from the pickled version
-from viperleed_jax.lib_tensors import read_tensor
 
 class TestReadTensors:
     # Test read_tensor_zip and check consistency vs. pickled tensors
