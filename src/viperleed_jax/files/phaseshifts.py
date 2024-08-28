@@ -13,6 +13,25 @@ from jax.tree_util import register_pytree_node_class
 logger = logging.getLogger(__name__)
 
 
+# TODO: probably this should move into the main viperleed package
+def phaseshift_site_el_order(slab, rpars):
+    # this reproduces the order of blocks contained in PHASESHIFTS:
+    ps_site_el_order = []
+    for el in slab.elements:
+        if el in rpars.ELEMENT_MIX:
+            chem_el_list = rpars.ELEMENT_MIX[el]
+        elif el in rpars.ELEMENT_RENAME:
+            chem_el_list = [rpars.ELEMENT_RENAME[el]]
+        else:
+            chem_el_list = [el]
+        ps_site_el_order.extend([SiteEl(site=s.label, element=cel)
+                                for cel in chem_el_list
+                                for s in slab.sitelist if s.el == el])
+    # make into a dict that maps site element to int index
+    ps_site_el_map = {site_el: i for i, site_el in enumerate(ps_site_el_order)}
+    return ps_site_el_map
+
+
 def ps_list_to_array(ps_list):
     n_energies = len(ps_list)
     ps_energy_values = np.array([ps_list[ii][0] for ii in range(n_energies)])

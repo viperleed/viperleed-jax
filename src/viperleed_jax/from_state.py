@@ -18,7 +18,7 @@ import zipfile
 
 from viperleed_jax.data_structures import ReferenceData
 from viperleed_jax.tensor_calculator import TensorLEEDCalculator
-from viperleed_jax.files.phaseshifts import Phaseshifts
+from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.parameter_space import SiteEl
 
@@ -27,24 +27,6 @@ from viperleed.calc.files.displacements import readDISPLACEMENTS
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from viperleed.calc.files.iorfactor import beamlist_to_array
-
-
-def phaseshift_site_el_order(slab, rpars):
-    # this reproduces the order of blocks contained in PHASESHIFTS:
-    ps_site_el_order = []
-    for el in slab.elements:
-        if el in rpars.ELEMENT_MIX:
-            chem_el_list = rpars.ELEMENT_MIX[el]
-        elif el in rpars.ELEMENT_RENAME:
-            chem_el_list = [rpars.ELEMENT_RENAME[el]]
-        else:
-            chem_el_list = [el]
-        ps_site_el_order.extend([SiteEl(site=s.label, element=cel)
-                                for cel in chem_el_list
-                                for s in slab.sitelist if s.el == el])
-    # make into a dict that maps site element to int index
-    ps_site_el_map = {site_el: i for i, site_el in enumerate(ps_site_el_order)}
-    return ps_site_el_map
 
 
 def calculator_from_state(calc_path, tensor_path, l_max:int):
@@ -92,11 +74,11 @@ def calculator_from_state(calc_path, tensor_path, l_max:int):
         slab, rpars, readfile=phaseshifts_path, check=True, ignoreEnRange=False)
 
     # get site element order
-    site_el_map = phaseshift_site_el_order(slab, rpars)
+    site_el_map = ps.phaseshift_site_el_order(slab, rpars)
 
     # interpolate phaseshifts
-    phaseshifts = Phaseshifts(raw_phaseshifts, ref_data.energies, l_max,
-                              phaseshift_map=site_el_map)
+    phaseshifts = ps.Phaseshifts(raw_phaseshifts, ref_data.energies, l_max,
+                                 phaseshift_map=site_el_map)
 
     iv_beam_indices = [beam.hk for beam in rpars.ivbeams]
 
