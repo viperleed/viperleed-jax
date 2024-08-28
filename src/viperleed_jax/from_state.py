@@ -123,6 +123,11 @@ def calculator_from_state(calc_path, tensor_path, l_max:int):
     return calculator, slab, rpars, ref_data, phaseshifts
 
 def run_viperleed_initialization(calc_path):
+    """Runs ViPErLEED initialization with the input data in calc_path.
+
+    The calculation runs in a temporary directory, so the input data is not
+    modified.
+    """
     with tempfile.TemporaryDirectory() as tmp_calc_dir:
         tmp_calc_path = Path(tmp_calc_dir)
         # copy all files from calc_path to tmp_calc_path
