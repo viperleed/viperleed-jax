@@ -1,0 +1,26 @@
+RUN = 1-2
+LOG_DEBUG = debug
+N_CORES = 48
+
+THEO_ENERGIES = 30 650 3
+LMAX = 14
+
+!OPTIMIZE theta = step 0.1, minpoints 5
+
+BEAM_INCIDENCE = THETA 0.8939, PHI 90.0000 ! Found by full-dynamic optimization
+V0_IMAG = 4.4403                    ! Found by full-dynamic optimization
+
+SITE_DEF O = surf top(2)
+SITE_DEF Fe = surf top(2)
+
+BULK_REPEAT = [-2.51774 2.33620 3.68229] ! Automatically detected repeat vector
+LAYER_CUTS = 0.1250 0.2500 0.3750
+N_BULK_LAYERS = 1
+
+!PLOT_RFACTOR perpage = 16
+!PLOT_RFACTOR axes = bottom
+!PLOT_RFACTOR legend = topright
+
+PLOT_IV font_size = 12.5
+PLOT_IV line_width = 2
+PLOT_IV perpage = 4 9
