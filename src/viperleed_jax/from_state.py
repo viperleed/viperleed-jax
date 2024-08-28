@@ -49,29 +49,7 @@ def phaseshift_site_el_order(slab, rpars):
 
 def calculator_from_state(calc_path, tensor_path, l_max:int):
 
-    with tempfile.TemporaryDirectory() as tmp_calc_dir:
-        tmp_calc_path = Path(tmp_calc_dir)
-        # copy all files from calc_path to tmp_calc_path
-        shutil.copytree(calc_path, tmp_calc_path, dirs_exist_ok=True)
-
-        home = Path.cwd()
-        # run viperleed.calc with the test data, but only intialization
-        os.chdir(tmp_calc_path)
-        try:
-            exit_code, state_recorder = run_calc('test_unrelaxed', preset_params={'RUN':[0]})
-        finally: # always change back to the original directory
-            os.chdir(home)
-
-    if exit_code != 0:
-        raise RuntimeError(f'ViPErLEED Initialization failed with exit code {exit_code}')
-
-    consoleHandler = logging.StreamHandler()
-
-    logger.addHandler(consoleHandler)
-    logger.info('ViPErLEED initialization successful')
-
-    # get slab and rparams from state
-    last_state = state_recorder.last_state
+    last_state = run_viperleed_initialization(calc_path)
     slab, rpars = last_state.slab, last_state.rpars
 
     if not rpars.expbeams:
@@ -143,3 +121,29 @@ def calculator_from_state(calc_path, tensor_path, l_max:int):
     del raw_phaseshifts
 
     return calculator, slab, rpars, ref_data, phaseshifts
+
+def run_viperleed_initialization(calc_path):
+    with tempfile.TemporaryDirectory() as tmp_calc_dir:
+        tmp_calc_path = Path(tmp_calc_dir)
+        # copy all files from calc_path to tmp_calc_path
+        shutil.copytree(calc_path, tmp_calc_path, dirs_exist_ok=True)
+
+        home = Path.cwd()
+        # run viperleed.calc with the test data, but only intialization
+        os.chdir(tmp_calc_path)
+        try:
+            exit_code, state_recorder = run_calc('test_unrelaxed', preset_params={'RUN':[0]})
+        finally: # always change back to the original directory
+            os.chdir(home)
+
+    if exit_code != 0:
+        raise RuntimeError(f'ViPErLEED Initialization failed with exit code {exit_code}')
+
+    consoleHandler = logging.StreamHandler()
+
+    logger.addHandler(consoleHandler)
+    logger.info('ViPErLEED initialization successful')
+
+    # get slab and rparams from state
+    last_state = state_recorder.last_state
+    return last_state
