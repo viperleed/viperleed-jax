@@ -12,8 +12,6 @@ from jax.tree_util import register_pytree_node_class
 
 logger = logging.getLogger(__name__)
 
-# TODO: make phaseshifts class with easier indexing (bound method?, pytree)
-
 def readPHASESHIFTS(sl, rp, readfile='PHASESHIFTS', check=True,
                     ignoreEnRange=False):
     """Reads from a PHASESHIFTS file, returns the data as a list of tuples
