@@ -106,15 +106,15 @@ class ReferenceData:
         self.v0i = v0i_per_energy[0]     # in Hartree
 
         # Energy Dependent Data
-        self.energies = jnp.asarray(tensors[0].e_kin) # in Hartree
-        self.v0r = jnp.asarray(tensors[0].v0r)        # in Hartree
+        self.energies = np.asarray(tensors[0].e_kin) # in Hartree
+        self.v0r = np.asarray(tensors[0].v0r)        # in Hartree
 
-        self.ref_amps = jnp.asarray(tensors[0].ref_amps)
+        self.ref_amps = np.asarray(tensors[0].ref_amps)
 
         # Note: kx and ky maybe could be simplified as well
         # TODO: pack into a single array (maybe already in read_tensor)
-        self.kx_in = jnp.asarray(tensors[0].kx_in)
-        self.ky_in = jnp.asarray(tensors[0].ky_in)
+        self.kx_in = np.asarray(tensors[0].kx_in)
+        self.ky_in = np.asarray(tensors[0].ky_in)
 
         # energy dependent LMAX – NB: 1 smaller than number of phaseshifts
         dynamic_lmax = tensors[0].n_phaseshifts_per_energy - 1
@@ -128,7 +128,7 @@ class ReferenceData:
             self.lmax = dynamic_lmax
 
         self.energy_ids_for_lmax = {int(l):
-            jnp.where(jnp.array(self.lmax) == l)[0] for l in self.lmax}
+            np.where(np.array(self.lmax) == l)[0] for l in self.lmax}
 
         # LMAX dependent quantities – crop to max needed shape
         ref_t_matrix = defaultdict(list)
@@ -162,16 +162,17 @@ class ReferenceData:
             ]
 
             # append to dict
-            ref_t_matrix[lmax].append(jnp.asarray(tmp_ref_t_matrix))
-            tensor_amps_in[lmax].append(jnp.asarray(tmp_tensor_amps_in))
-            tensor_amps_out[lmax].append(jnp.asarray(tmp_tensor_amps_out))
+            ref_t_matrix[lmax].append(np.asarray(tmp_ref_t_matrix))
+            tensor_amps_in[lmax].append(np.asarray(tmp_tensor_amps_in))
+            tensor_amps_out[lmax].append(np.asarray(tmp_tensor_amps_out))
+        del tmp_ref_t_matrix, tmp_tensor_amps_in, tmp_tensor_amps_out
 
         # convert to arrays
-        self.ref_t_matrix = {l:jnp.asarray(ref_t_matrix[l])
+        self.ref_t_matrix = {l:np.asarray(ref_t_matrix[l])
                              for l in self.lmax}
-        self.tensor_amps_in = {l:jnp.asarray(tensor_amps_in[l])
+        self.tensor_amps_in = {l:np.asarray(tensor_amps_in[l])
                                for l in self.lmax}
-        self.tensor_amps_out = {l:jnp.asarray(tensor_amps_out[l])
+        self.tensor_amps_out = {l:np.asarray(tensor_amps_out[l])
                                 for l in self.lmax}
 
     @property
@@ -184,11 +185,11 @@ class ReferenceData:
         energy_ids = []
         for lmax in self.needed_lmax:
             energy_ids.append(self.energy_ids_for_lmax[lmax])
-        energy_ids = jnp.concatenate(energy_ids)
-        return jnp.argsort(energy_ids)
+        energy_ids = np.concatenate(energy_ids)
+        return np.argsort(energy_ids)
 
     def energy_ids_for_lmax(self, l):
-        return jnp.where(self.lmax == l)[0]
+        return np.where(self.lmax == l)[0]
 
 
     def _rebuild_from_dict(self, kw_dict):
