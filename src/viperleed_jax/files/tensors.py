@@ -1,8 +1,9 @@
 from dataclasses import dataclass
+import zipfile
 
 import numpy as np
 import fortranformat as ff
-import zipfile
+import tqdm
 
 ENERGY_BLOCK_SEPARATOR = '\n   -1\n'
 FF_READER_4E12_6 = ff.FortranRecordReader("4E12.6")
@@ -292,7 +293,7 @@ def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
     # process the contents
     tensors = {
         f: file_reader(content)
-        for f, content in tensor_raw_contents.items()
+        for f, content in tqdm.tqdm(tensor_raw_contents.items())
     }
 
     return tensors
