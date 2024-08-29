@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 import zipfile
+from io import StringIO
+import re
+
 
 import numpy as np
 import fortranformat as ff
@@ -153,6 +156,10 @@ def prepare_tensor_file_reader(max_l_max, n_beams, n_energies):
     FF_REF_AMPS_READERS = {}
     FF_OUTGOING_TENSOR_AMPS_READERS = {}
 
+    re_12_char_no_whitespace = re.compile(r'([^\s]{12})')
+    re_4x12_char_no_whitespace = re.compile(r'([^\s]{12})([^\s]{12})([^\s]{12})([^\s]{12})')
+    re_16_char_no_whitespace = re.compile(r'([^\s]{16})')
+
     for l_max in range(1, max_l_max+1):
         # set up number of expected floats and lines
         n_t_matrix_floats = 2*(l_max+1)
@@ -165,17 +172,24 @@ def prepare_tensor_file_reader(max_l_max, n_beams, n_energies):
         # set up Fortran record readers
         FF_T_MATRIX_READERS[l_max] = ff.FortranRecordReader(f"{n_t_matrix_floats}E16.12")
         FF_REF_AMPS_READERS[l_max] = ff.FortranRecordReader(f"{n_ref_amps_floats}E16.12")
+
         FF_OUTGOING_TENSOR_AMPS_READERS[l_max] = ff.FortranRecordReader(f"{n_outgoing_tensor_amps_floats}E12.6")
 
     # set up subblock interpretation functions
-    def interpret_exit_amps_subblock(split_subblock, l_max):
+    def interpret_exit_amps_subblock(split_subblock):
         try:
             beam_id, momentum_line, *amp_lines = split_subblock  # no extra .split()
         except ValueError:
             return None, None, None, None
-        _, _, k_in_x, k_in_y = FF_READER_4E12_6.read(momentum_line)
+        momentum = np.fromregex(StringIO(momentum_line), re_4x12_char_no_whitespace, dtype=[('c1', 'f8'), ('c2', 'f8'), ('k_in_x', 'f8'), ('k_in_y', 'f8')])
+        #_, _, k_in_x, k_in_y = FF_READER_4E12_6.read(momentum_line)
+        k_in_x = momentum['k_in_x'][0]
+        k_in_y = momentum['k_in_y'][0]
 
-        amps = FF_OUTGOING_TENSOR_AMPS_READERS[l_max].read(''.join(amp_lines))
+        joined = ''.join(amp_lines)
+        stringio = StringIO(joined)
+        amps = np.fromregex(stringio, re_12_char_no_whitespace, dtype=[('c1', 'f8')])
+        amps = amps['c1']
         amps = np.array(amps, np.float64).view(np.complex128)
 
         return int(beam_id), k_in_x, k_in_y, amps
@@ -219,18 +233,21 @@ def prepare_tensor_file_reader(max_l_max, n_beams, n_energies):
 
             *ref_amps_lines, the_rest = the_rest.split('\n', maxsplit=n_ref_amps_lines)
             ref_amps_block = ''.join(ref_amps_lines)
-            ref_amps_block = FF_REF_AMPS_READERS[l_max-1].read(ref_amps_block)
-            ref_amps_block = np.array(ref_amps_block, np.float64).view(np.complex128)
+            ref_amps_block = np.fromregex(StringIO(ref_amps_block),
+                                          re_16_char_no_whitespace,
+                                          dtype=[('c1', 'f8')])
+            ref_amps_block = ref_amps_block['c1'].view(np.complex128)
             ref_amps[en_id] = ref_amps_block
 
-
-            outgoing_tensor_amp_blocks = [
-                interpret_exit_amps_subblock(
-                    the_rest.split('\n')[
-                        n_outgoing_tensor_amp_block_lines[l_max]*i:n_outgoing_tensor_amp_block_lines[l_max]*(i+1)],
-                    l_max)
-                for i in range(n_beams+1)
-            ]
+            outgoing_tensor_amp_blocks = []
+            split_rest = the_rest.split('\n')
+            for i in range(n_beams+1):
+                indices = slice(
+                    n_outgoing_tensor_amp_block_lines[l_max]*i,
+                    n_outgoing_tensor_amp_block_lines[l_max]*(i+1)
+                )
+                input = split_rest[indices]
+                outgoing_tensor_amp_blocks.append(interpret_exit_amps_subblock(input))
 
             for beam_id, k_in_x, k_in_y, amps in outgoing_tensor_amp_blocks:
                 if beam_id is None:
