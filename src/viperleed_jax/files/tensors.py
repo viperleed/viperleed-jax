@@ -137,6 +137,8 @@ class TensorFileData:
             and np.allclose(self.ky_in, other.ky_in)
         )
 
+def number_of_lines(n_floats):
+    return n_floats // NUMBERS_PER_LINE + bool(n_floats % NUMBERS_PER_LINE)
 
 def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
     """
