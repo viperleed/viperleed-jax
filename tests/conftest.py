@@ -28,11 +28,11 @@ def fe2o3_unrelaxed_input_path():
 
 @pytest.fixture(scope='session')
 def fe2o3_unrelaxed_tensor_path():
-    return LARGE_FILE_PATH / 'unrelaxed_frozen_for_testing' / 'Tensors_001.zip'
+    return LARGE_FILE_PATH / 'Fe2O3_012' / 'unrelaxed' / 'Tensors_001.zip'
 
 @pytest.fixture(scope='session')
 def fe2o3_unrelaxed_pickle_path():
-    return LARGE_FILE_PATH / 'unrelaxed_frozen_for_testing' / 'tensor.pckl'
+    return LARGE_FILE_PATH / 'Fe2O3_012' / 'unrelaxed' / 'tensor.pckl'
 
 
 # Reading the zipped tensors takes 5+ minutes
