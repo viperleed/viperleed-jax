@@ -140,51 +140,43 @@ class TensorFileData:
 def number_of_lines(n_floats):
     return n_floats // NUMBERS_PER_LINE + bool(n_floats % NUMBERS_PER_LINE)
 
-def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
-    """
-    Reads and interprets the contents of a tensor zip file.
-    
-    Due to the layout of the tensor files, the interpretation requires knowledge
-    of the maximum angular momentum quantum number, the number of beams, and the
-    number of energies. The interpretation is done in a way that is consistent
-    with the Fortran code that generates/reads the tensor files.
 
-    Args:
-        tensor_path (str): The path to the tensor zip file.
-        lmax (int): The maximum angular momentum quantum number.
-        n_beams (int): The number of beams.
-        n_energies (int): The number of energies.
-
-    Returns:
-        dict: A dictionary containing the interpreted tensor data.
-            The keys are the filenames of the tensor files and the values are
-            instances of TensorFileData.
-    """
-
-    # set up number of expected floats and lines
-    n_t_matrix_floats = 2*(lmax-1)
+def prepare_tensor_file_reader(max_l_max, n_beams, n_energies):
     n_ref_amps_floats = 2*n_beams
-    n_outgoing_tensor_amps_floats = 2*(lmax-1)**2
+    n_ref_amps_lines= number_of_lines(n_ref_amps_floats)
 
-    n_t_matrix_lines = n_t_matrix_floats // NUMBERS_PER_LINE + 1
-    n_ref_amps_lines = n_ref_amps_floats // NUMBERS_PER_LINE + 1
-    n_outgoing_tensor_amp_block_lines = 2 + n_outgoing_tensor_amps_floats // NUMBERS_PER_LINE + 1
-    n_outgoing_tensor_amp_lines = (n_outgoing_tensor_amp_block_lines+1)*n_beams
+    n_t_matrix_lines = {}
+    n_outgoing_tensor_amp_block_lines = {}
 
-    # set up Fortran record readers
-    FF_T_MATRIX_READER = ff.FortranRecordReader(f"{n_t_matrix_floats}E16.12")
-    FF_REF_AMPS_READER = ff.FortranRecordReader(f"{n_ref_amps_floats}E16.12")
-    FF_OUTGOING_TENSOR_AMPS_READER = ff.FortranRecordReader(f"{n_outgoing_tensor_amps_floats}E12.6")
+    FF_T_MATRIX_READERS = {}
+    FF_REF_AMPS_READERS = {}
+    FF_OUTGOING_TENSOR_AMPS_READERS = {}
+
+    for l_max in range(1, max_l_max+1):
+        # set up number of expected floats and lines
+        n_t_matrix_floats = 2*(l_max+1)
+        
+        n_outgoing_tensor_amps_floats = 2*(l_max+1)**2
+
+        n_t_matrix_lines[l_max] = number_of_lines(n_t_matrix_floats)
+        n_outgoing_tensor_amp_block_lines[l_max] = 2 + number_of_lines(n_outgoing_tensor_amps_floats)
+
+        # set up Fortran record readers
+        FF_T_MATRIX_READERS[l_max] = ff.FortranRecordReader(f"{n_t_matrix_floats}E16.12")
+        FF_REF_AMPS_READERS[l_max] = ff.FortranRecordReader(f"{n_ref_amps_floats}E16.12")
+        FF_OUTGOING_TENSOR_AMPS_READERS[l_max] = ff.FortranRecordReader(f"{n_outgoing_tensor_amps_floats}E12.6")
 
     # set up subblock interpretation functions
-    def interpret_exit_amps_subblock(split_subblock):
+    def interpret_exit_amps_subblock(split_subblock, l_max):
         try:
             beam_id, momentum_line, *amp_lines = split_subblock  # no extra .split()
         except ValueError:
             return None, None, None, None
         _, _, k_in_x, k_in_y = FF_READER_4E12_6.read(momentum_line)
-        amps = FF_OUTGOING_TENSOR_AMPS_READER.read(''.join(amp_lines))
+
+        amps = FF_OUTGOING_TENSOR_AMPS_READERS[l_max].read(''.join(amp_lines))
         amps = np.array(amps, np.float64).view(np.complex128)
+
         return int(beam_id), k_in_x, k_in_y, amps
 
     # set up main interpretation function
@@ -195,10 +187,10 @@ def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
         v0i_overlayer = np.full((n_energies,), fill_value=np.nan, dtype=np.float64)
         v0r_arr = np.full((n_energies,), fill_value=np.nan, dtype=np.float64)
         n_phaseshifts_per_energy = np.full((n_energies,), fill_value=0, dtype=np.int_)
-        t_matrix = np.full((n_energies, int(n_t_matrix_floats/2)), fill_value=np.nan, dtype=np.complex128)
+        t_matrix = np.full((n_energies, (max_l_max+1)), fill_value=np.nan, dtype=np.complex128)
         ref_amps = np.full((n_energies, n_beams), fill_value=np.nan, dtype=np.complex128)
-        incident_tensor_amps = np.full((n_energies, (lmax-1)**2), fill_value=0.0, dtype=np.complex128)
-        outgoing_tensor_amp = np.full((n_energies, n_beams, (lmax-1)**2), fill_value=0.0, dtype=np.complex128)
+        incident_tensor_amps = np.full((n_energies, (max_l_max+1)**2), fill_value=0.0, dtype=np.complex128)
+        outgoing_tensor_amp = np.full((n_energies, n_beams, (max_l_max+1)**2), fill_value=0.0, dtype=np.complex128)
         k_in_x_arr = np.full((n_energies, n_beams), fill_value=1.0E+10, dtype=np.float64)
         k_in_y_arr = np.full((n_energies, n_beams), fill_value=1.0E+10, dtype=np.float64)
 
@@ -216,22 +208,26 @@ def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
             v0i_overlayer[en_id] = v0i_ovl
             v0r_arr[en_id] = v0r
             n_phaseshifts_per_energy[en_id] = int(lmax_line)
+            l_max = n_phaseshifts_per_energy[en_id] - 1  # current l_max
 
-            *t_matrix_lines, the_rest = the_rest.split('\n', maxsplit=n_t_matrix_lines)
+            *t_matrix_lines, the_rest = the_rest.split('\n', maxsplit=n_t_matrix_lines[l_max])
             t_matrix_block = ''.join(t_matrix_lines)
-            t_matrix_block = FF_T_MATRIX_READER.read(t_matrix_block)
+            t_matrix_block = FF_T_MATRIX_READERS[l_max-1].read(t_matrix_block)
             t_matrix_block = np.array(t_matrix_block, np.float64).view(np.complex128)
-            t_matrix[en_id] = t_matrix_block
+            t_matrix[en_id, :l_max] = t_matrix_block
 
             *ref_amps_lines, the_rest = the_rest.split('\n', maxsplit=n_ref_amps_lines)
             ref_amps_block = ''.join(ref_amps_lines)
-            ref_amps_block = FF_REF_AMPS_READER.read(ref_amps_block)
+            ref_amps_block = FF_REF_AMPS_READERS[l_max-1].read(ref_amps_block)
             ref_amps_block = np.array(ref_amps_block, np.float64).view(np.complex128)
             ref_amps[en_id] = ref_amps_block
 
 
             outgoing_tensor_amp_blocks = [
-                interpret_exit_amps_subblock(the_rest.split('\n')[n_outgoing_tensor_amp_block_lines*i:n_outgoing_tensor_amp_block_lines*(i+1)])
+                interpret_exit_amps_subblock(
+                    the_rest.split('\n')[
+                        n_outgoing_tensor_amp_block_lines[l_max]*i:n_outgoing_tensor_amp_block_lines[l_max]*(i+1)],
+                    l_max)
                 for i in range(n_beams+1)
             ]
 
@@ -239,9 +235,9 @@ def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
                 if beam_id is None:
                     continue
                 if beam_id == 0:
-                    incident_tensor_amps[en_id] = amps
+                    incident_tensor_amps[en_id, :(l_max+1)**2] = amps
                 else:
-                    outgoing_tensor_amp[en_id,beam_id-1] = amps
+                    outgoing_tensor_amp[en_id,beam_id-1, :(l_max+1)**2] = amps
                     k_in_x_arr[en_id,beam_id-1] = k_in_x
                     k_in_y_arr[en_id,beam_id-1] = k_in_y
 
@@ -259,6 +255,29 @@ def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
             kx_in=k_in_x_arr,
             ky_in=k_in_y_arr,
         )
+    return interpret_file
+
+def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
+    """
+    Reads and interprets the contents of a tensor zip file.
+
+    Due to the layout of the tensor files, the interpretation requires knowledge
+    of the maximum angular momentum quantum number, the number of beams, and the
+    number of energies. The interpretation is done in a way that is consistent
+    with the Fortran code that generates/reads the tensor files.
+
+    Args:
+        tensor_path (str): The path to the tensor zip file.
+        lmax (int): The maximum angular momentum quantum number.
+        n_beams (int): The number of beams.
+        n_energies (int): The number of energies.
+
+    Returns:
+        dict: A dictionary containing the interpreted tensor data.
+            The keys are the filenames of the tensor files and the values are
+            instances of TensorFileData.
+    """
+    file_reader = prepare_tensor_file_reader(lmax, n_beams, n_energies)
 
     # read the contents of the zip file
     tensor_zip_path = zipfile.Path(tensor_path)
@@ -272,7 +291,7 @@ def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
 
     # process the contents
     tensors = {
-        f: interpret_file(content)
+        f: file_reader(content)
         for f, content in tensor_raw_contents.items()
     }
 
