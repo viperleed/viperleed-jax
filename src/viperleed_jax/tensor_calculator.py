@@ -236,6 +236,9 @@ class TensorLEEDCalculator:
             "static t-matrice(s).")
         self._calculate_static_t_matrices()
 
+        # rotation angles
+        self.propagator_rotation_factors = self._propagator_rotation_factors()
+
         # pre-calculate the static propagators
         logger.debug(
             f"Pre-calculating {self._parameter_space.n_static_propagators} "
@@ -359,7 +362,7 @@ class TensorLEEDCalculator:
         # apply rotations and rearrange to make energy the first axis
         propagators = jnp.einsum('aelm,alm->ealm',
                                 propagators,
-                                self._propagator_rotation_factors,
+                                self.propagator_rotation_factors,
                                 optimize='optimal')
         return propagators
 
@@ -405,7 +408,7 @@ class TensorLEEDCalculator:
             'aelm,aelm,alm->ealm',
             static_propagators,                                  # aelm
             dynamic_propagators,                                 # aelm
-            self._propagator_rotation_factors,                   # alm
+            self.propagator_rotation_factors,                    # alm
             optimize='optimal',
         )
 
@@ -452,7 +455,7 @@ class TensorLEEDCalculator:
         return prefactor
 
     def _wave_vectors(self):
-        e_kin = self.ref_data.energies
+        e_kin = self.energies
         v_real = self.ref_data.v0r
         v_imag = self.v0i
         n_energies = e_kin.shape[0]
@@ -482,7 +485,6 @@ class TensorLEEDCalculator:
 
         return in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum
 
-    @property
     def _propagator_rotation_factors(self):
         dense_m_2d = DENSE_QUANTUM_NUMBERS[self.max_l_max][:, :, 2]
         dense_mp_2d =  DENSE_QUANTUM_NUMBERS[self.max_l_max][:, :, 3]
