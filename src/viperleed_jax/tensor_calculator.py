@@ -116,15 +116,15 @@ class TensorLEEDCalculator:
         if batch is False:
             # do not perform batching other than the requested lmax-batching
             self.batching = Batching(self.energies,
-                                     self.ref_data.lmax,
+                                     ref_data.lmax,
                                      None)
         elif batch is True:
             self.batching = Batching(self.energies,
-                                     self.ref_data.lmax,
+                                     ref_data.lmax,
                                      8)
         elif isinstance(batch, int):
             self.batching = Batching(self.energies,
-                                     self.ref_data.lmax,
+                                     ref_data.lmax,
                                      batch)
         else:
             raise ValueError("batch_lmax must be bool or int.")
