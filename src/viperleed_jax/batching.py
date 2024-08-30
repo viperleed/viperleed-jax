@@ -97,9 +97,10 @@ class Batching:
 
     @property
     def max_batch_size(self):
+        """Returns the maximum size of the batches"""
         return max(len(batch) for batch in self.batches)
 
     @property
     def restore_sorting(self):
-        # create a mapping to restore the original order
+        """Returns the indices to restore the original order of the energies."""
         return np.concatenate([batch.energy_indices for batch in self.batches])
