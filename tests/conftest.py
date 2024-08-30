@@ -7,6 +7,7 @@ import pytest
 
 from viperleed_jax.from_state import run_viperleed_initialization
 from viperleed_jax.files.tensors import read_tensor_zip
+from viperleed_jax.data_structures import ReferenceData
 
 if 'VIPERLEED_ON_THE_FLY_TESTS_LARGE_FILE_PATH' not in os.environ:
     raise ValueError('VIPERLEED_ON_THE_FLY_TESTS_LARGE_FILE_PATH not set')
@@ -54,3 +55,9 @@ def fe2o3_unrelaxed_state_after_init():
     state_after_init = run_viperleed_initialization(FE2O3_UNRELAXED_INPUT_PATH)
     slab, rpars = state_after_init.slab, state_after_init.rpars
     return slab, rpars
+
+@pytest.fixture(scope='session')
+def fe2o3_ref_data_fixed_lmax_12(fe2o3_pickled_tensor):
+    fixed_lmax = 12
+    tensor_tuple = tuple(fe2o3_pickled_tensor.values())
+    return ReferenceData(tensor_tuple, fix_lmax=fixed_lmax)
