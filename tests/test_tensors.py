@@ -8,6 +8,9 @@ import pytest
 class TestReadTensors:
     # Test read_tensor_zip and check consistency vs. pickled tensors
 
+    def test_read_tensor_without_fail(self, fe2o3_read_tensor_zip):
+        assert fe2o3_read_tensor_zip is not None
+
     def test_read_tensor_length(self, fe2o3_read_tensor_zip, fe2o3_pickled_tensor):
         assert len(fe2o3_read_tensor_zip) == 30
         assert len(fe2o3_read_tensor_zip) == len(fe2o3_pickled_tensor)
