@@ -330,7 +330,6 @@ class TensorLEEDCalculator:
             )
             for displacement in displacements])
 
-    @partial(jax.jit, static_argnums=(0,))
     def _calculate_propagators(self, displacements, energy_indices):
         # return propagators indexed as (atom_site_elements, energies, lm, l'm')
 
