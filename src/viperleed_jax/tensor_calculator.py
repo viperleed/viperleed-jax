@@ -130,6 +130,8 @@ class TensorLEEDCalculator:
             f'and a maximum batch size of {self.batching.max_batch_size}.'
         )
 
+        self.tensor_amps_in, self.tensor_amps_out = self._batch_tensor_amps()
+
         # set experimental intensities
         exp_beam_mapping = [int(np.argmax([b == t.hk for t in rparams.expbeams]))
                             for b in beam_indices]
@@ -188,6 +190,16 @@ class TensorLEEDCalculator:
             self.comp_intensity,
             bc_type=self.bc_type,
         )
+
+    def _batch_tensor_amps(self):
+        tensor_amps_in = []
+        tensor_amps_out = []
+        for batch in self.batching.batches:
+            tensor_amps_in.append(
+                self.ref_data.tensor_amps_in[batch.l_max][batch.energy_indices])
+            tensor_amps_out.append(
+                self.ref_data.tensor_amps_out[batch.l_max][batch.energy_indices])
+        return tensor_amps_in, tensor_amps_out
 
     def set_parameter_space(self, delta_slab):
         if self._parameter_space is not None:
@@ -500,6 +512,7 @@ class TensorLEEDCalculator:
         batched_delta_amps = []
         for batch in self.batching.batches:
             l_max = batch.l_max
+            batch_id = batch.batch_id
             energy_ids = jnp.asarray(batch.energy_indices)
 
             # propagators - already rotated
@@ -518,8 +531,8 @@ class TensorLEEDCalculator:
             t_matrices = t_matrices[:, :, :l_max+1]
 
             # tensor amplitudes
-            tensor_amps_in = self.ref_data.tensor_amps_in[l_max][energy_ids]
-            tensor_amps_out = self.ref_data.tensor_amps_out[l_max][energy_ids]
+            tensor_amps_in = self.tensor_amps_in[batch_id]
+            tensor_amps_out = self.tensor_amps_in[batch_id]
 
             # map t-matrices to compressed quantum index
             mapped_t_matrix_vib = jax.vmap(jax.vmap(
