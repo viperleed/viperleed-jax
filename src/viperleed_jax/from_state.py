@@ -86,17 +86,6 @@ def calculator_from_state(calc_path, tensor_path, l_max:int):
     calculator = TensorLEEDCalculator(ref_data, phaseshifts, slab,
                                       rpars)
 
-    # Find mapping between experimental and theoretical beams
-    exp_beam_mapping = [int(np.argmax([b == t.hk for t in rpars.expbeams]))
-                        for b in iv_beam_indices]
-
-    exp_energies, _, _, exp_intensities = beamlist_to_array(rpars.expbeams)
-    mapped_exp_intensities = exp_intensities[:,exp_beam_mapping]
-
-    # set experimental intensities in calculator
-    logger.debug('Setting experimental intensities and initializing interpolators.')
-    calculator.set_experiment_intensity(mapped_exp_intensities, exp_energies)
-
     # free up memory for large objects that are no longer needed
     del sorted_tensors
     del tensors

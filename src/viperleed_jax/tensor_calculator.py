@@ -178,6 +178,9 @@ class TensorLEEDCalculator:
         raise ValueError(f"Unknown R-factor name: {rfactor_name}")
 
     def set_experiment_intensity(self, comp_intensity, comp_energies):
+        logger.debug(
+            'Setting experimental intensities and initializing interpolators.')
+
         self.comp_intensity = comp_intensity
         self.comp_energies = comp_energies
         self.exp_spline = interpolate_ragged_array(
