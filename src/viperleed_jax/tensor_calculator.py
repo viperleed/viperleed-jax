@@ -533,8 +533,8 @@ class TensorLEEDCalculator:
             t_matrices = t_matrices[:, :, :l_max+1]
 
             # tensor amplitudes
-            tensor_amps_in = self.tensor_amps_in[batch_id]
-            tensor_amps_out = self.tensor_amps_in[batch_id]
+            tensor_amps_in = jnp.asarray(self.tensor_amps_in[batch_id])
+            tensor_amps_out = jnp.asarray(self.tensor_amps_out[batch_id])
 
             # map t-matrices to compressed quantum index
             mapped_t_matrix_vib = jax.vmap(jax.vmap(
@@ -565,9 +565,9 @@ class TensorLEEDCalculator:
 
                     return jnp.einsum(
                         'bl,lk,k->b',
-                        tensor_amps_out[e_id,a],
+                        tensor_amps_out[e_id, a],
                         deltat,
-                        tensor_amps_in[e_id,a],
+                        tensor_amps_in[e_id, a],
                         optimize='optimal')
 
                 batch_amps = jax.vmap(f_calc, in_axes=(0,), out_axes=0)(atom_ids)
@@ -579,7 +579,7 @@ class TensorLEEDCalculator:
                 return amps
 
             # map over energies
-            l_delta_amps = jax.lax.map(calc_energy, energy_ids)
+            l_delta_amps = jax.lax.map(calc_energy, jnp.arange(len(batch)))
 
             batched_delta_amps.append(l_delta_amps)
 
