@@ -74,7 +74,7 @@ class Batching:
         batch_indices = []
 
         for en_id, energy in enumerate(energies):
-            next_batch_id = len(batches) + 1
+            next_batch_id = len(batches)
             if (self.l_max_per_energy[en_id] != current_l_max
                 or len(batch_energies) == max_energies_per_batch):
                 # finish the batch and start a new one
