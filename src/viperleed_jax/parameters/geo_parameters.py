@@ -46,11 +46,14 @@ class GeoParams(Params):
                                 if param.site_element == siteel]
             for linklist in delta_slab.slab.linklists:
                 ref_atom = linklist[0]
+                # put all linked atoms in the same symmetry group
                 params_to_link = [param for param in site_el_params
                               if param.atom_site_element.atom in linklist]
-                if params_to_link:
-                    self.params.append(GeoSymmetryConstraint(
-                        children=params_to_link))
+                # NB: if an atom is not linked to any others, it will be placed
+                #     into a symmetry constraint with a single child. No
+                #     GepBaseParams should remain.
+                self.params.append(GeoSymmetryConstraint(
+                    children=params_to_link))
         super().__init__()
 
     @property
