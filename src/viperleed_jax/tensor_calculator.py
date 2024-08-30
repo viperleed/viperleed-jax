@@ -527,7 +527,7 @@ class TensorLEEDCalculator:
             t_matrices = self._calculate_t_matrices(vib_amps, energy_ids)
 
             # crop t-matrices
-            ref_t_matrices = self.ref_t_matrices[energy_ids, :, :l_max+1]
+            ref_t_matrices = jnp.asarray(self.ref_t_matrices)[energy_ids, :, :l_max+1]
             t_matrices = t_matrices[:, :, :l_max+1]
 
             # tensor amplitudes
