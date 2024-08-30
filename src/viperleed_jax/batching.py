@@ -21,12 +21,32 @@ import numpy as np
 #    splitting the energy dimension.
 
 class Batch:
+    """Represents a batch of energies with the same l_max.
+
+    Batches are used to split the computation of delta-amplitudes into smaller
+    chunks that can be processed in parallel.
+
+    Parameters:
+    -----------
+    l_max : int
+        The maximum value of l.
+    energies : list or array-like
+        The energies associated with the batch.
+    energy_indices : list or array-like
+        The indices of the energies in the original dataset.
+
+    Methods:
+    --------
+    __len__():
+        Returns the length of the batch.
+    """
     def __init__(self, l_max, energies, energy_indices):
         self.l_max = l_max
         self.energies = np.array(energies)
         self.energy_indices = np.array(energy_indices)
 
     def __len__(self):
+        """Returns the length of the batch."""
         return len(self.energies)
 
 
@@ -37,7 +57,7 @@ class Batching:
                    for i in range(len(l_max_per_energy)-1)):
             raise ValueError("l_max_per_energy must be in ascending order")
         self.l_max_per_energy = l_max_per_energy
-        
+
         if (not isinstance(max_energies_per_batch, int )
             or max_energies_per_batch <= 0):
             raise ValueError("max_energies_per_batch must be a positive integer")
