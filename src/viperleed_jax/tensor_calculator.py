@@ -91,6 +91,9 @@ class TensorLEEDCalculator:
         self.theta = jnp.deg2rad(rparams.THETA)
         self.phi = jnp.deg2rad(rparams.PHI)
 
+        # inner potential
+        self.v0i = ref_data.v0i
+
         non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
         # TODO check this
         self.is_surface_atom = jnp.array([at.layer.num == 0 for at in non_bulk_atoms])
@@ -264,7 +267,7 @@ class TensorLEEDCalculator:
                 self.max_l_max,
                 displacement,
                 self.energies,
-                self.ref_data.v0i
+                self.v0i
             )
             for displacement in self._parameter_space.static_propagator_inputs])
 
@@ -326,7 +329,7 @@ class TensorLEEDCalculator:
                 self.max_l_max,
                 displacement,
                 self.energies[energy_indices],
-                self.ref_data.v0i
+                self.v0i
             )
             for displacement in displacements])
 
@@ -409,7 +412,7 @@ class TensorLEEDCalculator:
 
     def _calc_delta_amp_prefactors(self):
         energies = self.ref_data.energies
-        v_imag = self.ref_data.v0i
+        v_imag = self.v0i
 
         # energy dependent quantities
         out_k_par2 = self.ref_data.kx_in
@@ -451,7 +454,7 @@ class TensorLEEDCalculator:
     def _wave_vectors(self):
         e_kin = self.ref_data.energies
         v_real = self.ref_data.v0r
-        v_imag = self.ref_data.v0i
+        v_imag = self.v0i
         n_energies = e_kin.shape[0]
         n_beams = self.beam_indices.shape[0]
         # incident wave vector
@@ -642,7 +645,7 @@ class TensorLEEDCalculator:
     def R(self, free_params):
         if self.comp_intensity is None:
             raise ValueError("Comparison intensity not set.")
-        v0i_electron_volt = -self.ref_data.v0i*HARTREE
+        v0i_electron_volt = -self.v0i*HARTREE
         non_interpolated_intensity = self.intensity(free_params)
 
         v0r_shift, *_ = self.parameter_space.split_free_params(jnp.asarray(free_params))
