@@ -40,10 +40,11 @@ class Batch:
     __len__():
         Returns the length of the batch.
     """
-    def __init__(self, l_max, energies, energy_indices):
+    def __init__(self, l_max, energies, energy_indices, batch_id):
         self.l_max = l_max
         self.energies = np.array(energies)
         self.energy_indices = np.array(energy_indices)
+        self.batch_id = batch_id
 
     def __len__(self):
         """Returns the length of the batch."""
@@ -73,11 +74,12 @@ class Batching:
         batch_indices = []
 
         for en_id, energy in enumerate(energies):
+            next_batch_id = len(batches) + 1
             if (self.l_max_per_energy[en_id] != current_l_max
                 or len(batch_energies) == max_energies_per_batch):
                 # finish the batch and start a new one
                 batches.append(
-                    Batch(current_l_max, batch_energies, batch_indices)
+                    Batch(current_l_max, batch_energies, batch_indices, next_batch_id)
                 )
                 batch_energies = [energy,]
                 batch_indices = [en_id]
@@ -89,7 +91,7 @@ class Batching:
         # finish the last batch if there are any energies left
         if batch_energies:
             batches.append(
-                Batch(current_l_max, batch_energies, batch_indices)
+                Batch(current_l_max, batch_energies, batch_indices, next_batch_id)
             )
 
         # return as a tuple
