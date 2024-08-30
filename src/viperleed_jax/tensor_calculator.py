@@ -554,7 +554,10 @@ class TensorLEEDCalculator:
                 en_t_matrix_ref = mapped_t_matrix_ref[e_id]
 
                 def f_calc(a):
-                    deltat = jnp.einsum(
+                    # delta_t_matrix is the change in the t-matrix with new
+                    # vibrational amplitudes and after applying the displacement
+                    # Equation (33) in Rous, Pendry 1989
+                    delta_t_matrix = jnp.einsum(
                         'mi, mn, ln-> il',
                         en_propagators[a, :, :],
                         jnp.diag(1j*en_t_matrix_vib[a]),
@@ -562,13 +565,14 @@ class TensorLEEDCalculator:
                         optimize='optimal'
                         )
 
-                    deltat = deltat - jnp.diag(1j*en_t_matrix_ref[a])
-                    deltat = deltat*chem_weights[a]
+                    delta_t_matrix = delta_t_matrix - jnp.diag(1j*en_t_matrix_ref[a])
+                    delta_t_matrix = delta_t_matrix*chem_weights[a]
 
+                    # Sum from equation (41) in Rous, Pendry 1989
                     return jnp.einsum(
                         'bl,lk,k->b',
                         tensor_amps_out[e_id, a],
-                        deltat,
+                        delta_t_matrix,
                         tensor_amps_in[e_id, a],
                         optimize='optimal')
 
