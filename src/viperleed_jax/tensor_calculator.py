@@ -554,19 +554,13 @@ class TensorLEEDCalculator:
                 en_t_matrix_ref = mapped_t_matrix_ref[e_id]
 
                 def f_calc(a):
-                    # delta_t_matrix is the change in the t-matrix with new
-                    # vibrational amplitudes and after applying the displacement
-                    # Equation (33) in Rous, Pendry 1989
-                    delta_t_matrix = jnp.einsum(
-                        'mi, mn, ln-> il',
+                    # calculate delta t matrix which contains all perturbations
+                    delta_t_matrix = calculate_delta_t_matrix(
                         en_propagators[a, :, :],
-                        jnp.diag(1j*en_t_matrix_vib[a]),
-                        en_propagators[a, :, :],
-                        optimize='optimal'
-                        )
-
-                    delta_t_matrix = delta_t_matrix - jnp.diag(1j*en_t_matrix_ref[a])
-                    delta_t_matrix = delta_t_matrix*chem_weights[a]
+                        en_t_matrix_vib[a],
+                        en_t_matrix_ref[a],
+                        chem_weights[a]
+                    )
 
                     # Sum from equation (41) in Rous, Pendry 1989
                     return jnp.einsum(
@@ -790,3 +784,19 @@ def benchmark_calculator(calculator, free_params, n_repeats=10):
         grad_compile_time = None
 
     return r_fac_compile_time, r_fac_time, grad_compile_time, grad_time
+
+
+def calculate_delta_t_matrix(propagator, t_matrix_vib, t_matrix_ref, chem_weight):
+    # delta_t_matrix is the change of the atomic t-matrix with new
+    # vibrational amplitudes and after applying the displacement
+    # Equation (33) in Rous, Pendry 1989
+    delta_t_matrix = jnp.einsum(
+        'mi, mn, ln-> il',
+        propagator,
+        jnp.diag(1j*t_matrix_vib),
+        propagator,
+        optimize='optimal'
+    )
+    delta_t_matrix = delta_t_matrix - jnp.diag(1j*t_matrix_ref)
+    delta_t_matrix = delta_t_matrix*chem_weight
+    return delta_t_matrix
