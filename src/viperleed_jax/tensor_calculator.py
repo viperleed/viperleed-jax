@@ -414,7 +414,7 @@ class TensorLEEDCalculator:
 
 
     def _calc_delta_amp_prefactors(self):
-        energies = self.ref_data.energies
+        energies = self.energies
         v_imag = self.v0i
 
         # energy dependent quantities
