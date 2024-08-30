@@ -61,9 +61,11 @@ class TensorLEEDCalculator:
                  interpolation_step=0.5,
                  interpolation_deg=3,
                  bc_type='not-a-knot',
-                 batch=True):
+                 batch=True,
+                 recalculate_ref_t_matrices=False):
         self.ref_data = ref_data
         self.phaseshifts = phaseshifts
+        self.recalculate_ref_t_matrices = recalculate_ref_t_matrices
 
         self.interpolation_deg = interpolation_deg
         self.bc_type=bc_type
@@ -197,15 +199,18 @@ class TensorLEEDCalculator:
             f"{self._parameter_space.n_dynamic_propagators} propagator(s)."
         )
 
-        # calculate reference t-matrices for full LMAX
-        n_ref_vib_amps = len(delta_slab.vib_params.base_params)
-        logger.debug(
-            f"Calculating {n_ref_vib_amps} reference t-matrices for "
-            f"LMAX={self.max_l_max}.")
-        ref_vib_amps = [p.ref_vib_amp
-                        for p in delta_slab.vib_params.base_params]
-        site_elements = [p.site_element for p in delta_slab.vib_params.base_params]
-        self.ref_t_matrices = self._calculate_reference_t_matrices(ref_vib_amps, site_elements)
+        if self.recalculate_ref_t_matrices:
+            # calculate reference t-matrices for full LMAX
+            n_ref_vib_amps = len(delta_slab.vib_params.base_params)
+            logger.debug(
+                f"Calculating {n_ref_vib_amps} reference t-matrices for "
+                f"LMAX={self.max_l_max}.")
+            ref_vib_amps = [p.ref_vib_amp
+                            for p in delta_slab.vib_params.base_params]
+            site_elements = [p.site_element for p in delta_slab.vib_params.base_params]
+            self.ref_t_matrices = self._calculate_reference_t_matrices(ref_vib_amps, site_elements)
+        else:
+            self.ref_t_matrices = self.ref_data.ref_t_matrix[self.max_l_max]
 
         # pre-calculate the static t-matrices
         logger.debug(
