@@ -202,7 +202,7 @@ def prepare_tensor_file_reader(max_l_max, n_beams, n_energies):
         v0i_overlayer = np.full((n_energies,), fill_value=np.nan, dtype=np.float64)
         v0r_arr = np.full((n_energies,), fill_value=np.nan, dtype=np.float64)
         n_phaseshifts_per_energy = np.full((n_energies,), fill_value=0, dtype=np.int_)
-        t_matrix = np.full((n_energies, (max_l_max+1)), fill_value=np.nan, dtype=np.complex128)
+        t_matrix = np.zeros((n_energies, (max_l_max+1)), dtype=np.complex128)
         ref_amps = np.full((n_energies, n_beams), fill_value=np.nan, dtype=np.complex128)
         incident_tensor_amps = np.full((n_energies, (max_l_max+1)**2), fill_value=0.0, dtype=np.complex128)
         outgoing_tensor_amp = np.full((n_energies, n_beams, (max_l_max+1)**2), fill_value=0.0, dtype=np.complex128)
