@@ -140,7 +140,7 @@ class TensorLEEDCalculator:
 
     @property
     def energies(self):
-        return self.ref_data.energies
+        return jnp.asarray(self.ref_data.energies)
 
     @property
     def unit_cell_area(self):
@@ -497,7 +497,7 @@ class TensorLEEDCalculator:
         batched_delta_amps = []
         for batch in self.batching.batches:
             l_max = batch.l_max
-            energy_ids = batch.energy_indices
+            energy_ids = jnp.asarray(batch.energy_indices)
 
             # propagators - already rotated
             displacements = self.parameter_space.geo_transformer(geo_parms)
