@@ -288,6 +288,36 @@ class FrozenParameterSpace():
     def propagator_id(self):
         return jnp.array([id for (val, id) in self.propagator_map])
 
+    @property
+    def is_dynamic_ase(self):
+        return jnp.logical_or(
+            self.is_dynamic_t_matrix, self.is_dynamic_propagator
+        )
+
+    @property
+    def dynamic_ase_id(self):
+        return jnp.arange(self.n_atom_site_elements)[self.is_dynamic_ase]
+
+    @property
+    def static_ase_id(self):
+        return jnp.arange(self.n_atom_site_elements)[~self.is_dynamic_ase]
+
+    @property
+    def n_dynamic_ase(self):
+        return jnp.sum(self.is_dynamic_ase)
+
+    @property
+    def n_static_ase(self):
+        return jnp.sum(~self.is_dynamic_ase)
+
+    @property
+    def dynamic_ase_propagator_id(self):
+        return self.propagator_id[self.is_dynamic_ase]
+
+    @property
+    def dynamic_ase_t_matrix_id(self):
+        return self.t_matrix_id[self.is_dynamic_ase]
+
     def tree_flatten(self):
         aux_data = {attr: getattr(self, attr)
                     for attr in self.frozen_attributes}
