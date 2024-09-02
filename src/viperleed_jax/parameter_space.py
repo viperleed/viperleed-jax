@@ -192,6 +192,53 @@ class ParameterSpace():
                           self.geo_params.symmetry_operations])
 
     @property
+    def is_dynamic_t_matrix(self):
+        return jnp.array([val=='dynamic' for (val, id) in self.t_matrix_map])
+
+    @property
+    def is_dynamic_propagator(self):
+        return jnp.array([val=='dynamic' for (val, id) in self.propagator_map])
+
+    @property
+    def is_dynamic_ase(self):
+        return jnp.logical_or(
+            self.is_dynamic_t_matrix, self.is_dynamic_propagator
+        )
+
+    @property
+    def t_matrix_id(self):
+        return jnp.array([id for (val, id) in self.t_matrix_map])
+
+    @property
+    def propagator_id(self):
+        return jnp.array([id for (val, id) in self.propagator_map])
+
+    @property
+    def dynamic_ase_id(self):
+        return jnp.arange(self.n_atom_site_elements)[self.is_dynamic_ase]
+
+    @property
+    def static_ase_id(self):
+        return jnp.arange(self.n_atom_site_elements)[~self.is_dynamic_ase]
+
+    @property
+    def dynamic_ase_propagator_id(self):
+        return self.propagator_id[self.is_dynamic_ase]
+
+    @property
+    def dynamic_ase_t_matrix_id(self):
+        return self.t_matrix_id[self.is_dynamic_ase]
+
+    @property
+    def n_dynamic_ase(self):
+        return jnp.sum(self.is_dynamic_ase)
+
+    @property
+    def n_static_ase(self):
+        return jnp.sum(~self.is_dynamic_ase)
+
+
+    @property
     def n_param_split(self):
         return (
             self.v0r_param.n_free_params,
@@ -257,6 +304,18 @@ class FrozenParameterSpace():
         'propagator_map',
         'propagator_rotation_angles',
         '_ats_ref_z_pos',
+        'is_dynamic_t_matrix',
+        'is_dynamic_propagator',
+        'is_dynamic_ase',
+        'dynamic_ase_id',
+        'propagator_id',
+        'dynamic_ase_id',
+        'static_ase_id',
+        'dynamic_ase_propagator_id',
+        'dynamic_ase_t_matrix_id',
+        't_matrix_id',
+        'n_dynamic_ase',
+        'n_static_ase',
     )
 
     def split_free_params(self, free_params):
@@ -271,52 +330,6 @@ class FrozenParameterSpace():
     def __init__(self, delta_slab):
         for attr in self.frozen_attributes:
             setattr(self, attr, deepcopy(getattr(delta_slab, attr)))
-
-    @property
-    def is_dynamic_t_matrix(self):
-        return jnp.array([val=='dynamic' for (val, id) in self.t_matrix_map])
-
-    @property
-    def t_matrix_id(self):
-        return jnp.array([id for (val, id) in self.t_matrix_map])
-
-    @property
-    def is_dynamic_propagator(self):
-        return jnp.array([val=='dynamic' for (val, id) in self.propagator_map])
-
-    @property
-    def propagator_id(self):
-        return jnp.array([id for (val, id) in self.propagator_map])
-
-    @property
-    def is_dynamic_ase(self):
-        return jnp.logical_or(
-            self.is_dynamic_t_matrix, self.is_dynamic_propagator
-        )
-
-    @property
-    def dynamic_ase_id(self):
-        return jnp.arange(self.n_atom_site_elements)[self.is_dynamic_ase]
-
-    @property
-    def static_ase_id(self):
-        return jnp.arange(self.n_atom_site_elements)[~self.is_dynamic_ase]
-
-    @property
-    def n_dynamic_ase(self):
-        return jnp.sum(self.is_dynamic_ase)
-
-    @property
-    def n_static_ase(self):
-        return jnp.sum(~self.is_dynamic_ase)
-
-    @property
-    def dynamic_ase_propagator_id(self):
-        return self.propagator_id[self.is_dynamic_ase]
-
-    @property
-    def dynamic_ase_t_matrix_id(self):
-        return self.t_matrix_id[self.is_dynamic_ase]
 
     def tree_flatten(self):
         aux_data = {attr: getattr(self, attr)
