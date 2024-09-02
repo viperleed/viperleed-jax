@@ -21,7 +21,6 @@ def t_matrix_cu111_surf_vib_amp_0_1A():
     return t_matrix
 
 class TestTMatrix:
-
     def test_t_matrix_cu111_surf_vib_amp_0_3A(self,
                                               cu111_phaseshifts,
                                               t_matrix_cu111_surf_vib_amp_0_3A):
@@ -32,6 +31,17 @@ class TestTMatrix:
             e_inside=energy,
             vib_amp=0.3*BOHR)
         assert result == pytest.approx(t_matrix_cu111_surf_vib_amp_0_3A[0,0], rel=1e-5)
+
+    def test_t_matrix_cu111_surf_vib_amp_0_3A_vmap_energy(self,
+                                              cu111_phaseshifts,
+                                              cu111_energies,
+                                              t_matrix_cu111_surf_vib_amp_0_3A):
+        result = t_matrix.vmap_energy_vib_dependent_tmatrix(
+            14,
+            cu111_phaseshifts._phaseshifts[0,:,:],
+            cu111_energies,
+            0.3*BOHR)
+        assert result == pytest.approx(t_matrix_cu111_surf_vib_amp_0_3A[:,0], rel=1e-5)
 
     def test_t_matrix_cu111_surf_vib_amp_0_1A(self,
                                               cu111_phaseshifts,
@@ -44,3 +54,13 @@ class TestTMatrix:
             vib_amp=0.1*BOHR)
         assert result == pytest.approx(t_matrix_cu111_surf_vib_amp_0_1A[0,0], rel=1e-5)
 
+    def test_t_matrix_cu111_surf_vib_amp_0_1A_vmap_energy(self,
+                                              cu111_phaseshifts,
+                                              cu111_energies,
+                                              t_matrix_cu111_surf_vib_amp_0_1A):
+        result = t_matrix.vmap_energy_vib_dependent_tmatrix(
+            14,
+            cu111_phaseshifts._phaseshifts[0,:,:],
+            cu111_energies,
+            0.1*BOHR)
+        assert result == pytest.approx(t_matrix_cu111_surf_vib_amp_0_1A[:,0], rel=1e-5)
