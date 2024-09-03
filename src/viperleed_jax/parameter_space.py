@@ -64,6 +64,7 @@ class ParameterSpace():
         self.site_elements = get_site_elements(slab)
         self.atom_site_elements = get_atom_site_elements(slab)
 
+        # TODO: handle "trees" in a more general manner that allows further parameters inter-linking (e.g. domains, incidence, linking geometry&vib, geo&occ etc.)
         # apply base parameters
         self.vib_params = VibParams(self)
         self.geo_params = GeoParams(self)
