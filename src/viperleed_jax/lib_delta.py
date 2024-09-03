@@ -6,7 +6,8 @@ from jax import vmap
 from functools import partial
 
 from viperleed_jax.lib_math import *
-from viperleed_jax.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
+from viperleed_jax.propagator import calc_propagator
+
 from viperleed_jax.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 
 from viperleed_jax.constants import BOHR
@@ -101,45 +102,3 @@ def TMATRIX_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_ima
     DELTAT = jnp.diag(1j*mapped_t_matrix_new) - jnp.diag(1j*mapped_t_matrix_ref)
 
     return DELTAT
-
-# TODO: move this to a separate file and write tests
-# TODO: replace energy, v_imag with a single arg kappa = 2*energy - 2j*v_imag
-def calc_propagator(LMAX, c, energy, v_imag):
-    c_norm = safe_norm(c)
-    kappa = 2*energy - 2j*v_imag
-
-    Z = jnp.sqrt(kappa) * c_norm
-    BJ = bessel(Z,2*LMAX)
-    YLM = HARMONY(c, LMAX)  # TODO: move outside since it's not energy dependent
-
-    dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
-    dense_mp_2d =  DENSE_QUANTUM_NUMBERS[LMAX][:, :, 3]
-
-    # AI: I don't fully understand this, technically it should be MPP = -M - MP
-    dense_mpp = dense_mp_2d - dense_m_2d
-
-    # pre-computed coeffs, capped to LMAX
-    capped_coeffs = CSUM_COEFFS[:2*LMAX+1, :(LMAX+1)**2, :(LMAX+1)**2]
-
-    def propagator_lpp_element(lpp, running_sum):
-        bessel_values = BJ[lpp]
-        ylm_values = YLM[lpp*lpp+lpp-dense_mpp]
-        # Equation (34) from Rous, Pendry 1989
-        return running_sum + bessel_values * ylm_values * capped_coeffs[lpp,:,:]
-
-    # we could skip some computations because some lpp are guaranteed to give
-    # zero contributions, but this would need a way around the non-static array
-    # sizes
-
-    # This is the propagator from the origin to C
-    propagator = jax.lax.fori_loop(0, LMAX*2+1, propagator_lpp_element,
-                             jnp.zeros(shape=((LMAX+1)**2, (LMAX+1)**2),
-                                       dtype=jnp.complex128))
-    propagator *= 4*jnp.pi
-    return jnp.where(c_norm >= EPS*100, propagator, jnp.identity((LMAX+1)**2))
-
-# Using equation (34) from Rous, Pendry 1989 it is easy to show that the
-# propagator for a vanishing displacement is the identity matrix.
-# (The Bessel functions for zero argument are zero for all non-zero orders, thus
-# l''=0 is the only non-zero term in the sum. If l'' is 0, m''=0 and l=l' are
-# necessary conditions.)
