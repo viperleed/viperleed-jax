@@ -24,3 +24,15 @@ def test_phaseshift_site_el_order(fe2o3_unrelaxed_state_after_init):
     }
     assert phaseshift_site_el_order(*fe2o3_unrelaxed_state_after_init) == expected_site_el_order
 
+class TestPhaseshifts:
+    """Tests for the Phaseshifts class."""
+    def test_build_phaseshifts(self,
+                               fe2o3_unrelaxed_raw_phaseshifts,
+                               fe2o3_ref_data_fixed_lmax_12):
+        raw_phaseshifts, ps_site_el_map = fe2o3_unrelaxed_raw_phaseshifts
+        ref_data = fe2o3_ref_data_fixed_lmax_12
+        phaseshifts, ps_site_el_map = Phaseshifts(raw_phaseshifts,
+                                                  ref_data.energies,
+                                                  12,
+                                  phaseshift_map=ps_site_el_map)
+        assert phaseshifts is not None
