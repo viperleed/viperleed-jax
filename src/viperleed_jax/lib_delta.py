@@ -6,8 +6,7 @@ from jax import vmap
 from functools import partial
 
 from viperleed_jax.lib_math import *
-from viperleed_jax.propagator import calc_propagator
-
+from viperleed_jax.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 from viperleed_jax.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 
 from viperleed_jax.constants import BOHR
