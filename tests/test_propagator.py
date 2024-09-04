@@ -35,9 +35,7 @@ def stored_propagator_energy_jacobians():
         / "propagator_reference_values.npz"
     )
     return (
-        np.load(file)[
-            "reference_energy_jac_values_l_max_8_e_1e0j_v_imag_1e0"
-        ],
+        np.load(file)["reference_energy_jac_values_l_max_8_e_1e0j_v_imag_1e0"],
         8,
         1.0 + 0.0j,
         1.0,
