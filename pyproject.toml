@@ -14,6 +14,7 @@ dependencies = [
     'jax',
     'numpy',
     'viperleed'
+    'spbessax'
     ]
 
 keywords = [
