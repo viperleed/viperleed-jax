@@ -9,10 +9,10 @@ from viperleed.calc.files.beams import readOUTBEAMS
 
 import jax.numpy as jnp
 from jax.tree_util import register_pytree_node_class
-from otftleed.dense_quantum_numbers import DENSE_L, DENSE_M, MINUS_ONE_POW_M
+from viperleed_jax.dense_quantum_numbers import DENSE_L, DENSE_M, MINUS_ONE_POW_M
 
-from otftleed.hashable_array import HashableArray
-from otftleed.constants import HARTREE
+from viperleed_jax.hashable_array import HashableArray
+from viperleed_jax.constants import HARTREE
 
 
 # TODO: keep everything in atomic units (Hartree, Bohr) internally

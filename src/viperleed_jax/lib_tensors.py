@@ -3,8 +3,8 @@ from dataclasses import dataclass
 import numpy as np
 import fortranformat as ff
 
-from otftleed.hashable_array import HashableArray
-from otftleed.constants import HARTREE
+from viperleed_jax.hashable_array import HashableArray
+from viperleed_jax.constants import HARTREE
 
 FF_READER_5E16_12 = ff.FortranRecordReader("5E16.12")
 FF_READER_4E16_12 = ff.FortranRecordReader("4E16.12")

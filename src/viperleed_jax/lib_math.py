@@ -4,8 +4,8 @@ import jax.numpy as jnp
 
 from spbessax import functions
 
-from otftleed.dense_quantum_numbers import DENSE_M, DENSE_L
-from otftleed.dense_quantum_numbers import MAXIMUM_LMAX
+from viperleed_jax.dense_quantum_numbers import DENSE_M, DENSE_L
+from viperleed_jax.dense_quantum_numbers import MAXIMUM_LMAX
 
 # numerical epsilon to avoid division by zero
 EPS = 1e-8
