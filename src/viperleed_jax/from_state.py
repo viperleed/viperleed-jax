@@ -38,11 +38,11 @@ def calculator_from_state(calc_path, tensor_path, l_max:int):
         raise RuntimeError('No (pseudo)experimental beams loaded. This is required '
                         'for the structure optimization.')
 
-    # read DISPLACEMENTS if not yet loaded
-    if not rpars.fileLoaded['DISPLACEMENTS']:
-        readDISPLACEMENTS(rpars, calc_path/'DISPLACEMENTS')
-        rpars.fileLoaded['DISPLACEMENTS'] = True
-        logger.debug('DISPLACEMENTS file loaded')
+    # # read DISPLACEMENTS if not yet loaded
+    # if not rpars.fileLoaded['DISPLACEMENTS']:
+    #     readDISPLACEMENTS(rpars, calc_path/'DISPLACEMENTS')
+    #     rpars.fileLoaded['DISPLACEMENTS'] = True
+    #     logger.debug('DISPLACEMENTS file loaded')
 
     # parameters needed to interpret the tensor data
     ref_calc_lmax = rpars.LMAX.max
