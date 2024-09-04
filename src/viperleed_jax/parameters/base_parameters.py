@@ -80,7 +80,7 @@ class BaseParam(DeltaParam):
 
 
 
-class Params():
+class Params():  # This is the tree
     """
     Class representing a set of parameters.
 
