@@ -51,7 +51,10 @@ TEST_DISP_VECTORS = (
     np.array([0.0, -0.1, 0.1]),
     np.array([1.0, 0.0, 0.0]),
     np.array([1.0, 2.0, 3.0]),
+    np.array([1e-3, 1e-3, 1e-3]),
     np.array([1e-4, 1e-4, 1e-4]),
+    np.array([1e-5, 1e-5, 1e-5]),
+    np.array([1e-6, 1e-6, 1e-6]),
 )
 
 class TestPropagator:
