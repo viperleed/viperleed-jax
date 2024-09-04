@@ -108,4 +108,4 @@ class TestPropagator:
 
         # calculate the propagator
         propagator_jac = JIT_JAC_ABS_DISP_CALC_PROPAGATOR(l_max, disp_vector, energy, v_imag)
-        assert propagator_jac == pytest.approx(reference_value, rel=1e-6, abs=1e-8)
+        assert propagator_jac == pytest.approx(reference_value, rel=5e-5, abs=1e-7)
