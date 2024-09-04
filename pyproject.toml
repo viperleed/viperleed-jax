@@ -30,5 +30,7 @@ dev = [
     'matplotlib',
     ]
 
-[tool.setuptools]
-packages = ["viperleed_jax"]
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["viperleed_jax"]
+namespaces = false
