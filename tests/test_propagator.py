@@ -15,7 +15,18 @@ def stored_propagator_reference_values():
     file = Path(__file__).parent / 'test_data' / 'reference_values' / 'propagator_reference_values.npz'
     return np.load(file)['propagator_reference_values_l_max_18_e_1e0_v_imag_1e0'], 18, 1.0, 1.0
 
+
+@pytest.fixture(scope='session')
+def stored_propagator_energy_jacobians():
+    file = Path(__file__).parent / 'test_data' / 'reference_values' / 'propagator_reference_values.npz'
+    return np.load(file)['propagator_reference_energy_jac_values_l_max_8_e_1e0j_v_imag_1e0'], 8, 1.0+.0j, 1.0
+
+
 JIT_CALC_PROPAGATOR = jax.jit(calc_propagator, static_argnums=(0,))
+JIT_JAC_ENERGY_JIT_CALC_PROPAGATOR = jax.jit(
+    jax.jacrev(calc_propagator, argnums=2, holomorphic=True),
+    static_argnums=(0,)
+)
 
 TEST_DISP_VECTORS = (
     np.array([0.1, 0.0, 0.0]),
@@ -58,8 +69,19 @@ class TestPropagator:
         n_vector, disp_vector = disp_vector
         stored_propagators, l_max, energy, v_imag = stored_propagator_reference_values
         reference_value = stored_propagators[n_vector]
-        # jit compile
 
         # calculate the propagator
         propagator = JIT_CALC_PROPAGATOR(l_max, disp_vector, energy, v_imag)
         assert propagator == pytest.approx(reference_value, rel=1e-6, abs=1e-8)
+
+    @pytest.mark.parametrize("disp_vector", list(enumerate(TEST_DISP_VECTORS)))
+    def test_propagator_energy_jacobian(self, disp_vector, stored_propagator_energy_jacobians):
+        """Check if the jit compiled function gives the same result."""
+        n_vector, disp_vector = disp_vector
+        stored_propagators, l_max, energy, v_imag = stored_propagator_energy_jacobians
+        reference_value = stored_propagators[n_vector]
+
+        # calculate the propagator
+        propagator_jac = JIT_JAC_ENERGY_JIT_CALC_PROPAGATOR(l_max, disp_vector, energy, v_imag)
+        assert propagator_jac == pytest.approx(reference_value, rel=1e-6, abs=1e-8)
+
