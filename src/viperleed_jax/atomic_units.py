@@ -5,7 +5,7 @@ import jax.numpy as jnp
 
 from viperleed_jax.constants import BOHR, HARTREE
 
-def to_internal_displacement_vector(displacement_vector):
+def to_internal_displacement_vector(displacement_vector_ang):
     """Convert from Angstrom to atomic units and left handed coordinate system.
 
     Internal representation of displacement vector is in Bohr and left handed
@@ -22,7 +22,7 @@ def to_internal_displacement_vector(displacement_vector):
         Displacement vector in Bohr and left handed coordinate system.
     """
     # make sure it's the correct shape vector
-    vector = displacement_vector.reshape((3,))
+    vector = displacement_vector_ang.reshape((3,))
     # convert from Angstrom to Bohr
     vector = vector / BOHR
     # and change into left handed coordinate system by flipping y
