@@ -4,14 +4,13 @@ import jax.numpy as jnp
 from viperleed_jax.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 from viperleed_jax.gaunt_coefficients import CSUM_COEFFS
 from viperleed_jax.lib_math import bessel, HARMONY, safe_norm, EPS
+from viperleed_jax.atomic_units import kappa
 
 # TODO: replace energy, v_imag with a single arg kappa = 2*energy - 2j*v_imag
 def calc_propagator(LMAX, c, energy, v_imag):
     c_norm = safe_norm(c)
-    kappa = 2*energy - 2j*v_imag
 
-    Z = jnp.sqrt(kappa) * c_norm
-    BJ = bessel(Z,2*LMAX)
+    BJ = bessel(kappa(energy, v_imag) * c_norm, 2*LMAX)
     YLM = HARMONY(c, LMAX)  # TODO: move outside since it's not energy dependent
 
     dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
