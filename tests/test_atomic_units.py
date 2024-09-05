@@ -14,10 +14,10 @@ def test_to_internal_displacement_vector(displacement_vector_ang, expected_vecto
     assert result == pytest.approx(expected_vector)
 
 @pytest.mark.parametrize("energy_eV, expected_au", [
-    (1*HARTREE, 1.0),  # 1 Hartree in eV is exactly 1 atomic unit of energy
-    (2*HARTREE, 2.0),  # 2 Hartrees in eV
-    (0.0, 0.0),          # 0 eV should be 0 atomic units
-    (0.5*HARTREE, 0.5),  # 0.5 Hartree in eV
+    (1*HARTREE, 1.0),
+    (2*HARTREE, 2.0),
+    (0.0, 0.0),          # 0 eV should be 0 Hartree
+    (0.5*HARTREE, 0.5),
 ])
 def test_to_atomic_unit_energy(energy_eV, expected_au):
     assert atomic_units.to_atomic_unit_energy(energy_eV) == pytest.approx(expected_au)
