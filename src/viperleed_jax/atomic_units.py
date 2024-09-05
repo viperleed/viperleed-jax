@@ -1,3 +1,6 @@
+"""Module atom_units.
+
+We use Angstrom and eV as inputs, but use atomic units internally."""
 import jax.numpy as jnp
 
 from viperleed_jax.constants import BOHR, HARTREE
