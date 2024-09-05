@@ -1,7 +1,7 @@
 import pytest
 import jax.numpy as jnp
 
-from viperleed_jax.unit_conversion import kappa
+from viperleed_jax.atomic_units import kappa
 
 @pytest.mark.parametrize("energy, v_imag, expected", [
     (1.0, 0.5, jnp.sqrt(2.0 + 1.0j)),
