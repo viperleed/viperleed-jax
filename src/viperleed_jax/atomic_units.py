@@ -22,7 +22,7 @@ def to_internal_displacement_vector(displacement_vector_ang):
         Displacement vector in Bohr and left handed coordinate system.
     """
     # make sure it's the correct shape vector
-    vector = displacement_vector_ang.reshape((3,))
+    vector = jnp.array(displacement_vector_ang).reshape((3,))
     # convert from Angstrom to Bohr
     vector = vector / BOHR
     # and change into left handed coordinate system by flipping y
