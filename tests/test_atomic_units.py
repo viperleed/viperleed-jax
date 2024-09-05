@@ -1,9 +1,17 @@
 import pytest
 import jax.numpy as jnp
 
-from viperleed_jax.atomic_units import kappa
+from viperleed_jax.constants import BOHR
 from viperleed_jax import atomic_units
 
+@pytest.mark.parametrize("displacement_vector_ang, expected_vector", [
+    ([1.0, 2.0, 3.0], jnp.array([1/BOHR, 2/BOHR, -3/BOHR])),
+    ([0.0, 0.0, 0.0], jnp.array([0.0, 0.0, 0.0])),
+    ([-1.0, -2.0, -3.0], jnp.array([-1/BOHR, -2/BOHR, 3/BOHR])),
+])
+def test_to_internal_displacement_vector(displacement_vector_ang, expected_vector):
+    result = atomic_units.to_internal_displacement_vector(displacement_vector_ang)
+    assert result == pytest.approx(expected_vector)
 
 @pytest.mark.parametrize("energy_eV, expected_au", [
     (27.21138602, 1.0),  # 1 Hartree in eV is exactly 1 atomic unit of energy
