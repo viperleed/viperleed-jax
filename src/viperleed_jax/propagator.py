@@ -44,3 +44,32 @@ def calc_propagator(LMAX, c, energy, v_imag):
 # (The Bessel functions for zero argument are zero for all non-zero orders, thus
 # l''=0 is the only non-zero term in the sum. If l'' is 0, m''=0 and l=l' are
 # necessary conditions.)
+
+
+def symmetry_tensor(l_max, plane_symmetry_operation):
+    """_summary_
+
+    Parameters
+    ----------
+    l_max : int
+        Maximum angular momentum quantum number. Compiled as static argument.
+    plane_symmetry_operation : 2x2 array
+        The in-plane symmetry operation matrix.
+
+    Returns
+    -------
+    jax.numpy.ndarray, shape=((l_max+1)**2, (l_max+1)**2)
+        Tensor that can be applied element-wise to the propagator to apply the
+        symmetry operation.
+    """
+
+    dense_m_2d = DENSE_QUANTUM_NUMBERS[l_max][:, :, 2]
+    dense_mp_2d =  DENSE_QUANTUM_NUMBERS[l_max][:, :, 3]
+
+    # AI: I don't fully understand this, technically it should be MPP = -M - MP
+    dense_mpp = dense_mp_2d - dense_m_2d
+
+    plane_rotation_angle = jnp.arccos(plane_symmetry_operation[0,0])
+
+    symmetry_tensor = jnp.array(jnp.exp(plane_rotation_angle*1j*(dense_mpp))).T
+    return symmetry_tensor
