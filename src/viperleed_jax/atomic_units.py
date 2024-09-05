@@ -29,6 +29,20 @@ def to_internal_displacement_vector(displacement_vector):
     vector = vector * jnp.array([1, 1, -1])
     return vector
 
+def to_atomic_unit_energy(energy_eV):
+    """Convert energy from eV to atomic units.
+
+    Parameters
+    ----------
+    energy : float, array_like
+        Energy in eV.
+
+    Returns
+    -------
+    jnp.array
+        Energy in atomic units.
+    """
+    return energy_eV / HARTREE
 
 
 def kappa(energy, v_imag):
