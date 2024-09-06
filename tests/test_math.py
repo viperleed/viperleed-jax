@@ -63,6 +63,42 @@ class TestDivideZeroSafe:
         expected_result = jnp.array([0.5, 0.5, 0.6])
         jnp.allclose(result, expected_result)
 
+class TestSafeNorm:
+    # Test case for basic functionality
+    def test_safe_norm_basic(self):
+        vector = jnp.array([1.0, 2.0, 3.0])
+        result = safe_norm(vector)
+        expected_result = jnp.sqrt(14.0 + EPS**2)
+        assert result == pytest.approx(expected_result)
+
+    # Test case for handling zero vector
+    def test_safe_norm_zero_vector(self):
+        vector = jnp.array([0.0, 0.0, 0.0])
+        result = safe_norm(vector)
+        expected_result = EPS*1e-2
+        assert result == pytest.approx(expected_result)
+
+    # Test case for handling small vector
+    def test_safe_norm_small_vector(self):
+        vector = jnp.array([1e-6, 1e-6, 1e-6])
+        result = safe_norm(vector)
+        expected_result = jnp.sqrt(3e-12 + (EPS/100)**2)
+        assert result == pytest.approx(expected_result)
+
+    # Test case for handling large vector
+    def test_safe_norm_large_vector(self):
+        vector = jnp.array([1e6, 1e6, 1e6])
+        result = safe_norm(vector)
+        expected_result = jnp.sqrt(3e12 + EPS**2)
+        assert result == pytest.approx(expected_result)
+
+    # Test case for handling large vector
+    def test_safe_norm_negative(self):
+        vector = jnp.array([-1., -1., 0.])
+        result = safe_norm(vector)
+        expected_result = jnp.sqrt(2 + EPS**2)
+        assert result == pytest.approx(expected_result)
+
 class TestHARMONY:
     # Testcase for basic functionality by comparing it with scipy
     @pytest.mark.parametrize("C", [jnp.array([1.0, 2.0, 3.0]), jnp.array([0.1, -0.3, -0.4]), jnp.array([-0.1, 1.0, 1.0])])
