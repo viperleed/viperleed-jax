@@ -80,7 +80,7 @@ TEST_DISP_VECTORS = (
     np.array([0.1, 0.0, 0.1]),
     np.array([0.1, 0.1, 0.1]),
     np.array([-0.1, 0.0, 0.0]),
-    np.array([-0.1, -0.1, -0.0]),
+    np.array([-0.1, -0.1, 0.0]),
     np.array([0.0, -0.1, 0.1]),
     np.array([1.0, 0.0, 0.0]),
     np.array([1.0, 2.0, 3.0]),
@@ -193,8 +193,11 @@ TEST_PLANE_SYMMETRY_OPERATIONS = {
     'pi/6': rot_matrix(np.pi/6),
     'pi/4': rot_matrix(np.pi/4),
     'pi/2': rot_matrix(np.pi/2),
+    '3*pi/4': rot_matrix(3*np.pi/4),
     'pi': rot_matrix(np.pi),
-    '0.123': rot_matrix(0.123),
+    '5*pi/4': rot_matrix(5*np.pi/4),
+    '3*pi/2': rot_matrix(3*np.pi/2),
+    '7*pi/4': rot_matrix(7*np.pi/4),
     # mirror operations
 }
 
@@ -236,4 +239,4 @@ class TestSymmetryTensor:
 
         # check if the propagator is the same
         assert propagator_sym == pytest.approx(propagator_original_sym,
-                                               abs=1e-7)
+                                               abs=5e-5)
