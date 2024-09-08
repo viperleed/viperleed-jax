@@ -1,12 +1,15 @@
 """Test Module R-factor"""
 import pytest
+import numpy as np
 
 from scipy.special import spherical_jn, sph_harm
 
+import jax
 from jax import numpy as jnp
 from viperleed_jax.lib_math import _divide_zero_safe
 from viperleed_jax.dense_quantum_numbers import DENSE_M, DENSE_L
-from viperleed_jax.lib_math import bessel, HARMONY, _divide_zero_safe, EPS, safe_norm
+from viperleed_jax.lib_math import bessel, HARMONY, _divide_zero_safe, EPS
+from viperleed_jax.lib_math import safe_norm, cart_to_polar, spherical_to_cart
 
 def scipy_bessel(n, z):
     scipy_results = [
@@ -98,6 +101,54 @@ class TestSafeNorm:
         result = safe_norm(vector)
         expected_result = jnp.sqrt(2 + EPS**2)
         assert result == pytest.approx(expected_result)
+
+
+# todo
+KNOW_CART_TO_POLAR = {
+    'basic case': (np.array([1.0, 2.0, 3.0]), np.array([3.741657, 1.300247, 0.982794])),
+    'positive x axis': (np.array([0., 1., 0.]), np.array([1., np.pi/2, 0.])),
+    'positive y axis': (np.array([0., 0., 1.]), np.array([1., np.pi/2, np.pi/2])),
+    'positive z axis': (np.array([1., 0., 0.]), np.array([1., 0., 0.])),
+    'negative x axis': (np.array([0., -1., 0.]), np.array([1., np.pi/2, np.pi])),
+    'negative y axis': (np.array([0., 0., -1.]), np.array([1., np.pi/2, -np.pi/2])),
+    'negative z axis': (np.array([-1., 0., 0.]), np.array([1., np.pi, 0.])),
+}
+
+RETURN_TRANSFORM_VALUES = (
+    
+)
+
+
+class TestCartToPolar:
+
+    @pytest.mark.parametrize("known_value", list(KNOW_CART_TO_POLAR.values()), ids=list(KNOW_CART_TO_POLAR.keys()))
+    def test_known_values(self, known_value):
+        cart_value, polar_value = known_value
+        assert np.array(cart_to_polar(cart_value)) == pytest.approx(polar_value)
+
+    @pytest.mark.parametrize("cart_value", list(KNOW_CART_TO_POLAR.values()), ids=list(KNOW_CART_TO_POLAR.keys()))
+    def test_return_transform(self, cart_value):
+        cart_value, _ = cart_value
+        assert np.array(spherical_to_cart(cart_to_polar(cart_value))) == pytest.approx(cart_value, abs=2e-8)
+
+    @pytest.mark.parametrize("cart_value", list(KNOW_CART_TO_POLAR.values()), ids=list(KNOW_CART_TO_POLAR.keys()))
+    def test_finite_jacobians(self, cart_value):
+        cart_value, _ = cart_value
+        reverse_jacobian = jax.jacrev(cart_to_polar)(cart_value)
+        forward_jacobian = jax.jacfwd(cart_to_polar)(cart_value)
+        assert np.all(np.isfinite(reverse_jacobian))
+        assert np.all(np.isfinite(forward_jacobian))
+
+    @pytest.mark.parametrize("cart_value", list(KNOW_CART_TO_POLAR.values()), ids=list(KNOW_CART_TO_POLAR.keys()))
+    def test_composition_jacobians(self, cart_value):
+        cart_value, _ = cart_value
+        composition = lambda x: spherical_to_cart(cart_to_polar(x))
+        reverse_jacobian = jax.jacrev(composition)(cart_value)
+        forward_jacobian = jax.jacfwd(composition)(cart_value)
+        assert np.array(reverse_jacobian) == pytest.approx(np.identity(3), abs=1e-8)
+        assert np.array(forward_jacobian) == pytest.approx(np.identity(3), abs=1e-8)
+
+
 
 class TestHARMONY:
     # Testcase for basic functionality by comparing it with scipy
