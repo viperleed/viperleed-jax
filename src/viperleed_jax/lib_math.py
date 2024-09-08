@@ -104,3 +104,12 @@ def cart_to_polar(c):
     )
 
     return r, theta, phi
+    
+def spherical_to_cart(spherical_coordinates):
+
+    r, theta, phi = spherical_coordinates
+    x = r * jnp.sin(theta) * jnp.cos(phi)
+    y = r * jnp.sin(theta) * jnp.sin(phi)
+    z = r * jnp.cos(theta)
+
+    return jnp.array([z, x, y])
