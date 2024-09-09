@@ -95,12 +95,4 @@ def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
     float
         Rotation angle in radians.
     """
-    full_rot_mat = np.identity(3)
-    full_rot_mat[1:, 1:] = plane_symmetry_operation
-    # x vector (NB: vectors are [z,x,y])
-    x_vec = np.array([0., 1., 0.])
-    # apply rotation
-    test_vec = full_rot_mat @ x_vec
-    # calculate rotation angle
-    return np.arccos(np.dot(test_vec, x_vec)
-                     /(np.linalg.norm(test_vec)*np.linalg.norm(x_vec)))
+    return (np.log(plane_symmetry_op[1,1] + 1j*plane_symmetry_op[1, 0])/1j).real
