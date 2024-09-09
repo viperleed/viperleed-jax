@@ -80,10 +80,9 @@ def symmetry_tensor(l_max, plane_symmetry_operation):
 def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
     """Return the rotation angle for a plane symmetry operation.
 
-    NB: The rotation angle is calculated for the plane symmetry operation by
-    embedding it in 3D space. In-plane symmetry operations (even mirror
-    operations) can be converted into a rotation operation in 3D space, as the
-    z-movement of linked atoms is equal.
+    The rotation angle is calculated for the plane symmetry operation by
+    embedding it in 3D space. Note that for non-rotation matrices, a rotation
+    will still be calculated, but it will be meaningless.
 
     Parameters
     ----------
