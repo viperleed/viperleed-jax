@@ -19,7 +19,7 @@ def stored_propagator_reference_values():
         / "propagator_reference_values.npz"
     )
     return (
-        np.load(file)["reference_values_l_max_18_e_1e0_v_imag_1e0"],
+        np.load(file)["values_l_max_18_e_1e0_v_imag_1e0"],
         18,
         1.0,
         1.0,
@@ -35,7 +35,7 @@ def stored_propagator_energy_jacobians():
         / "propagator_reference_values.npz"
     )
     return (
-        np.load(file)["reference_energy_jac_values_l_max_8_e_1e0j_v_imag_1e0"],
+        np.load(file)["energy_jac_values_l_max_8_e_1e0j_v_imag_1e0"],
         8,
         1.0 + 0.0j,
         1.0,
@@ -52,7 +52,7 @@ def stored_propagator_disp_jacobians():
     )
     return (
         np.load(file)[
-            "reference_displacement_jac_values_l_max_8_e_1e0_v_imag_1e0"
+            "displacement_jac_values_l_max_8_e_1e0_v_imag_1e0"
         ],
         8,
         1.0 + 0.0j,
