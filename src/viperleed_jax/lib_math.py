@@ -113,3 +113,4 @@ def spherical_to_cart(spherical_coordinates):
     z = r * jnp.cos(theta)
 
     return jnp.array([z, x, y])
+
