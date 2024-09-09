@@ -29,6 +29,21 @@ def to_internal_displacement_vector(displacement_vector_ang):
     vector = vector * jnp.array([1, 1, -1])
     return vector
 
+def to_internal_vib_amps(vib_amps_ang):
+    """Convert from Angstrom to atomic units.
+
+    Parameters
+    ----------
+    vib_amps : array_like
+        Vibrational amplitudes in Angstrom.
+
+    Returns
+    -------
+    jnp.array
+        Vibrational amplitudes in Bohr.
+    """
+    return vib_amps_ang / BOHR
+
 def to_atomic_unit_energy(energy_eV):
     """Convert energy from eV to atomic units.
 
