@@ -188,9 +188,8 @@ class ParameterSpace():
         return self.geo_params.propagator_map
 
     @property
-    def propagator_rotation_angles(self):
-        return jnp.array([jnp.arccos(arr[0,0]) for arr in
-                          self.geo_params.symmetry_operations])
+    def propagator_plane_symmetry_operations(self):
+        return jnp.array(self.geo_params.symmetry_operations)
 
     @property
     def is_dynamic_t_matrix(self):
@@ -303,7 +302,7 @@ class FrozenParameterSpace():
         'v0r_transformer',
         't_matrix_map',
         'propagator_map',
-        'propagator_rotation_angles',
+        'propagator_plane_symmetry_operations',
         '_ats_ref_z_pos',
         'is_dynamic_t_matrix',
         'is_dynamic_propagator',
