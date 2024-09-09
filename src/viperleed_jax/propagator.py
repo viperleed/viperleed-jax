@@ -26,7 +26,7 @@ def calc_propagator(LMAX, c, energy, v_imag):
         bessel_values = BJ[lpp]
         ylm_values = YLM[lpp*lpp+lpp-dense_mpp]
         # Equation (34) from Rous, Pendry 1989
-        return running_sum + bessel_values * ylm_values * capped_coeffs[lpp,:,:]
+        return running_sum + bessel_values * ylm_values * capped_coeffs[lpp,:,:] #* (abs(dense_mpp) <= lpp)
 
     # we could skip some computations because some lpp are guaranteed to give
     # zero contributions, but this would need a way around the non-static array
@@ -69,7 +69,7 @@ def symmetry_tensor(l_max, plane_symmetry_operation):
     # AI: I don't fully understand this, technically it should be MPP = -M - MP
     dense_mpp = dense_mp_2d - dense_m_2d
 
-    plane_rotation_angle = jnp.arccos(plane_symmetry_operation[0,0])
+    plane_rotation_angle = (jnp.log(plane_symmetry_operation[1,1] + 1j*plane_symmetry_operation[1, 0])/1j).real
 
-    symmetry_tensor = jnp.array(jnp.exp(plane_rotation_angle*1j*(dense_mpp))).T
+    symmetry_tensor = jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T
     return symmetry_tensor
