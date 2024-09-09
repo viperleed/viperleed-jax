@@ -83,7 +83,6 @@ def HARMONY(C, LMAX):
 
     return jnp.where(is_on_pole_axis, pole_values, non_pole_values)
 
-
 def cart_to_polar(c):
     """Converts cartesian coordinates to polar coordinates.
 
@@ -98,13 +97,53 @@ def cart_to_polar(c):
         _divide_zero_safe(x_y_norm, (jnp.hypot(x_y_norm, z)+z), (1/EPS) * (1 - jnp.sign(z)))
     )
 
-    # forces phi to 0 on theta=0 axis (where phi is undefined)
-    phi = 2*jnp.arctan(
-        _divide_zero_safe(y, (x_y_norm+x)+EPS, 0.0)
-    )
+    #forces phi to 0 on theta=0 axis (where phi is undefined)
+    # phi = 2*jnp.arctan(
+    #     _divide_zero_safe(y, (x_y_norm+x)+EPS, 0.0)
+    # )
+    phi =  jnp.sign(y) * jnp.arccos(_divide_zero_safe(x, (x_y_norm)+EPS, 0.0))
+    phi = jnp.where(y != 0.0, phi, jnp.heaviside(-x, 0)*jnp.pi)
 
     return r, theta, phi
-    
+
+@jax.custom_jvp
+def cart_to_polar_2(c):
+    """Converts cartesian coordinates to polar coordinates.
+
+    Note, this function uses safe division to avoid division by zero errors, 
+    and gives defined results and gradients for all inputs, EXCEPT for
+    c = (0.0, 0.0, 0.0)."""
+    z, x, y = c  # LEED coordinates
+
+    x_y_norm = jnp.hypot(x, y)
+    r = jnp.linalg.norm(c)
+    theta = 2*jnp.arctan(
+        _divide_zero_safe(x_y_norm, (jnp.hypot(x_y_norm, z)+z), (1/EPS) * (1 - jnp.sign(z)))
+    )
+
+    #forces phi to 0 on theta=0 axis (where phi is undefined)
+    # phi = 2*jnp.arctan(
+    #     _divide_zero_safe(y, (x_y_norm+x)+EPS, 0.0)
+    # )
+    phi =  jnp.sign(y) * jnp.arccos(_divide_zero_safe(x, (x_y_norm)+EPS, 0.0))
+    phi = jnp.where(y != 0.0, phi, jnp.heaviside(-x, 0)*jnp.pi)
+
+    return r, theta, phi
+
+
+@cart_to_polar_2.defjvp
+def cart_to_polar_jacobian(primals, tangents):
+    (z, x, y) = primals
+    (dz, dx, dy) = tangents
+    r, theta, phi = cart_to_polar(primals)
+    x_y_norm = jnp.hypot(x, y)
+    jacobian = jnp.array(
+        [[z/r*dz, x/r*dx, y/r*dy],
+         [-x_y_norm/r**2*dz, x*z/(r**2 * x_y_norm)*dx, y*z/(r**2 * x_y_norm)*dy],
+         [0, -y/(x_y_norm**2)*dx, x/(x_y_norm**2)*dy]],
+        
+    )
+
 def spherical_to_cart(spherical_coordinates):
 
     r, theta, phi = spherical_coordinates
