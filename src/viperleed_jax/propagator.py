@@ -1,5 +1,6 @@
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 from viperleed_jax.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 from viperleed_jax.gaunt_coefficients import CSUM_COEFFS
@@ -69,7 +70,37 @@ def symmetry_tensor(l_max, plane_symmetry_operation):
     # AI: I don't fully understand this, technically it should be MPP = -M - MP
     dense_mpp = dense_mp_2d - dense_m_2d
 
-    plane_rotation_angle = (jnp.log(plane_symmetry_operation[1,1] + 1j*plane_symmetry_operation[1, 0])/1j).real
+    plane_rotation_angle = get_plane_symmetry_operation_rotation_angle(
+        plane_symmetry_operation)
 
     symmetry_tensor = jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T
     return symmetry_tensor
+
+
+def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
+    """Return the rotation angle for a plane symmetry operation.
+
+    NB: The rotation angle is calculated for the plane symmetry operation by
+    embedding it in 3D space. In-plane symmetry operations (even mirror
+    operations) can be converted into a rotation operation in 3D space, as the
+    z-movement of linked atoms is equal.
+
+    Parameters
+    ----------
+    plane_symmetry_operation : ndarray (2,2)
+        In plane symmetry operation matrix.
+
+    Returns
+    -------
+    float
+        Rotation angle in radians.
+    """
+    full_rot_mat = np.identity(3)
+    full_rot_mat[1:, 1:] = plane_symmetry_operation
+    # x vector (NB: vectors are [z,x,y])
+    x_vec = np.array([0., 1., 0.])
+    # apply rotation
+    test_vec = full_rot_mat @ x_vec
+    # calculate rotation angle
+    return np.arccos(np.dot(test_vec, x_vec)
+                     /(np.linalg.norm(test_vec)*np.linalg.norm(x_vec)))
