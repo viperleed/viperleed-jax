@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 
-from viperleed_jax.lib_phaseshifts import *
+#from viperleed_jax.lib_phaseshifts import *
 from viperleed_jax.lib_tensors import *
 from viperleed_jax.t_matrix import vmap_vib_dependent_tmatrix
 from viperleed_jax.lib_delta import apply_geometric_displacements, TMATRIX_DWG

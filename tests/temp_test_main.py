@@ -7,7 +7,7 @@ import warnings
 import numpy as np
 
 from viperleed_jax.delta import *
-from viperleed_jax.lib_phaseshifts import *
+#from viperleed_jax.lib_phaseshifts import *
 from viperleed_jax.lib_tensors import *
 from viperleed_jax.data_structures import ReferenceData
 
