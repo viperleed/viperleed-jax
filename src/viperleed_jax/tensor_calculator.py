@@ -15,6 +15,7 @@ from viperleed_jax.constants import BOHR, HARTREE
 from viperleed_jax.interpolation import *
 from viperleed_jax.lib_intensity import intensity_prefactor, sum_intensity
 from viperleed_jax.lib_math import EPS
+from viperleed_jax import atomic_units
 
 from viperleed_jax.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.propagator import calc_propagator
@@ -255,7 +256,7 @@ class TensorLEEDCalculator:
                 self.max_l_max,
                 self.phaseshifts[site_el][:, :self.max_l_max+1],
                 self.energies,
-                vib_amp
+                atomic_units.to_internal_vib_amps(vib_amp)
             )
             for site_el, vib_amp
             in self._parameter_space.static_t_matrix_inputs])
@@ -265,6 +266,10 @@ class TensorLEEDCalculator:
         # this is only done once – perform for maximum lmax and crop later
         propagator_vmap_en = jax.vmap(calc_propagator,
                                       in_axes=(None, None, 0, None))
+        displacements_ang = jnp.asarray(self._parameter_space.static_propagator_inputs)
+        displacements_au = jax.vmap(
+            atomic_units.to_internal_displacement_vector,
+            in_axes=0)(displacements_ang)
         self._static_propagators = jnp.array([
             propagator_vmap_en(
                 self.max_l_max,
@@ -272,7 +277,7 @@ class TensorLEEDCalculator:
                 self.energies,
                 self.v0i
             )
-            for displacement in self._parameter_space.static_propagator_inputs])
+            for displacement in displacements_au])
 
     def _calculate_dynamic_t_matrices(self, vib_amps, energy_indices):
         t_matrix_vmap_en = jax.vmap(vib_dependent_tmatrix,
@@ -578,6 +583,18 @@ class TensorLEEDCalculator:
          geo_parms,
          occ_params) = self.parameter_space.split_free_params(jnp.asarray(free_params))
 
+        # displacements, converted to atomic units
+        displacements_ang = jnp.asarray(self.parameter_space.geo_transformer(geo_parms))
+        displacements_au = (
+            jax.vmap(atomic_units.to_internal_displacement_vector,
+                        in_axes=0)(displacements_ang)
+        )
+
+        # vibrational amplitudes, converted to atomic units
+        vib_amps_ang = self.parameter_space.vib_transformer(vib_params)
+        vib_amps_au = jax.vmap(atomic_units.to_internal_vib_amps,
+                                in_axes=0)(vib_amps_ang)
+
         # chemical weights
         chem_weights = self.parameter_space.occ_weight_transformer(occ_params)
 
@@ -594,15 +611,13 @@ class TensorLEEDCalculator:
             energy_ids = jnp.asarray(batch.energy_indices)
 
             # propagators - already rotated
-            displacements = self.parameter_space.geo_transformer(geo_parms)
-            propagators = self._calculate_propagators(displacements, energy_ids)
+            propagators = self._calculate_propagators(displacements_au, energy_ids)
 
             # crop propagators
             propagators = propagators[:, :, :(l_max+1)**2, :(l_max+1)**2]
 
             # dynamic t-matrices
-            vib_amps = self.parameter_space.vib_transformer(vib_params)
-            t_matrices = self._calculate_t_matrices(vib_amps, energy_ids)
+            t_matrices = self._calculate_t_matrices(vib_amps_au, energy_ids)
 
             # crop t-matrices
             ref_t_matrices = jnp.asarray(self.ref_t_matrices)[energy_ids, :, :l_max+1]
