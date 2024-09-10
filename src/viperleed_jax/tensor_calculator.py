@@ -18,7 +18,7 @@ from viperleed_jax.lib_math import EPS
 from viperleed_jax import atomic_units
 
 from viperleed_jax.t_matrix import vib_dependent_tmatrix
-from viperleed_jax.propagator import calc_propagator
+from viperleed_jax.propagator import calc_propagator, symmetry_operations
 from viperleed_jax.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 from viperleed_jax.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 from viperleed_jax.batching import Batching
@@ -238,7 +238,7 @@ class TensorLEEDCalculator:
         self._calculate_static_t_matrices()
 
         # rotation angles
-        self.propagator_rotation_factors = self._propagator_rotation_factors()
+        self.propagator_symmetry_operations, self.propagator_transpose = self._propagator_rotation_factors()
 
         # pre-calculate the static propagators
         logger.debug(
@@ -364,10 +364,15 @@ class TensorLEEDCalculator:
         del mapped_dynamic_propagators
         del mapped_static_propagators
 
+        # selective transpositions
+        propagators = (
+            (1-self.propagator_transpose)[:, np.newaxis, np.newaxis, np.newaxis ]*propagators +
+            self.propagator_transpose[:, np.newaxis, np.newaxis, np.newaxis ]*jnp.transpose(propagators, (0, 1, 3, 2))
+        )
         # apply rotations and rearrange to make energy the first axis
         propagators = jnp.einsum('aelm,alm->ealm',
                                 propagators,
-                                self.propagator_rotation_factors,
+                                self.propagator_symmetry_operations,
                                 optimize='optimal')
         return propagators
 
@@ -409,11 +414,13 @@ class TensorLEEDCalculator:
             optimize='optimal',
         )
 
+        # TODO: transpositoin
+
         return jnp.einsum(
             'aelm,aelm,alm->ealm',
             static_propagators,                                  # aelm
             dynamic_propagators,                                 # aelm
-            self.propagator_rotation_factors,                    # alm
+            self.propagator_symmetry_operations,                 # alm
             optimize='optimal',
         )
 
@@ -448,7 +455,7 @@ class TensorLEEDCalculator:
             static_propagators = jnp.einsum(
                 'aelm,alm->aelm',
                 static_propagators,
-                self.propagator_rotation_factors,
+                self.propagator_symmetry_operations,
                 optimize='optimal',
             )
             # broadcast down to static axes
@@ -565,15 +572,14 @@ class TensorLEEDCalculator:
         return in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum
 
     def _propagator_rotation_factors(self):
-        dense_m_2d = DENSE_QUANTUM_NUMBERS[self.max_l_max][:, :, 2]
-        dense_mp_2d =  DENSE_QUANTUM_NUMBERS[self.max_l_max][:, :, 3]
 
-        # AI: I don't fully understand this, technically it should be MPP = -M - MP
-        dense_mpp = dense_mp_2d - dense_m_2d
+        ops =[symmetry_operations(self.max_l_max, plane_sym_op) for plane_sym_op
+            in self.parameter_space.propagator_plane_symmetry_operations
+        ]
+        symmetry_tensors = np.array([op[0] for op in ops])
+        mirror_propagators = np.array([op[1] for op in ops])
 
-        rotation_factors = jnp.array([jnp.exp(phi*1j*dense_mpp) 
-                                      for phi in self.parameter_space.propagator_rotation_angles])
-        return rotation_factors
+        return symmetry_tensors, mirror_propagators
 
     def delta_amplitude(self, free_params):
 
@@ -680,7 +686,6 @@ class TensorLEEDCalculator:
         delta_amps = delta_amps * self.delta_amp_prefactors
 
         return delta_amps
-
 
     @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     def jit_delta_amplitude(self, free_params):

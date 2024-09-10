@@ -47,7 +47,7 @@ def calc_propagator(LMAX, c, energy, v_imag):
 # necessary conditions.)
 
 
-def symmetry_tensor(l_max, plane_symmetry_operation):
+def symmetry_operations(l_max, plane_symmetry_operation):
     """_summary_
 
     Parameters
@@ -62,8 +62,10 @@ def symmetry_tensor(l_max, plane_symmetry_operation):
     jax.numpy.ndarray, shape=((l_max+1)**2, (l_max+1)**2)
         Tensor that can be applied element-wise to the propagator to apply the
         symmetry operation.
+    bool
+        Whether the symmetry operation is a mirror operation. If True, the
+        propagator should be transposed.
     """
-
     dense_m_2d = DENSE_QUANTUM_NUMBERS[l_max][:, :, 2]
     dense_mp_2d =  DENSE_QUANTUM_NUMBERS[l_max][:, :, 3]
 
@@ -72,9 +74,15 @@ def symmetry_tensor(l_max, plane_symmetry_operation):
 
     plane_rotation_angle = get_plane_symmetry_operation_rotation_angle(
         plane_symmetry_operation)
+    plane_symmetry_det = np.linalg.det(plane_symmetry_operation)
+    if abs(plane_symmetry_det) -1 > 1e-8:
+        raise ValueError("The determinant of the plane symmetry operation "
+                         "matrix must be 1 or -1.")
 
-    symmetry_tensor = jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T
-    return symmetry_tensor
+    mirror_propagator = plane_symmetry_det < 0
+    symmetry_tensor = (-1)**dense_mpp if mirror_propagator else jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T
+
+    return symmetry_tensor, mirror_propagator
 
 
 def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
@@ -94,4 +102,5 @@ def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
     float
         Rotation angle in radians.
     """
-    return (np.log(plane_symmetry_op[1,1] + 1j*plane_symmetry_op[1, 0])/1j).real
+    return (np.log(plane_symmetry_operation[1,1] +
+                   1j*plane_symmetry_operation[1, 0])/1j).real
