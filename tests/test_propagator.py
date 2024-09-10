@@ -5,7 +5,9 @@ import jax
 
 import pytest
 
-from viperleed_jax.propagator import calc_propagator, symmetry_tensor
+from viperleed.calc.lib.matrix import rotation_matrix_order
+
+from viperleed_jax.propagator import calc_propagator, symmetry_operations
 from viperleed_jax.constants import BOHR
 from viperleed_jax.lib_math import EPS
 
@@ -186,19 +188,27 @@ def rot_matrix(theta):
         [np.sin(theta), np.cos(theta)]
     ])
 
+# TODO: eventually replace these with imports from Michele's guilib PlaneGroup class
 TEST_PLANE_SYMMETRY_OPERATIONS = {
     # identity
     'identity': np.identity(2),
     # rotations
-    'pi/6': rot_matrix(np.pi/6),
-    'pi/4': rot_matrix(np.pi/4),
-    'pi/2': rot_matrix(np.pi/2),
-    '3*pi/4': rot_matrix(3*np.pi/4),
-    'pi': rot_matrix(np.pi),
-    '5*pi/4': rot_matrix(5*np.pi/4),
-    '3*pi/2': rot_matrix(3*np.pi/2),
-    '7*pi/4': rot_matrix(7*np.pi/4),
+    'order 1': rotation_matrix_order(1),
+    'order 2': rotation_matrix_order(2),
+    'order -2': rotation_matrix_order(-2),
+    'order 3': rotation_matrix_order(3),
+    'order -3': rotation_matrix_order(-3),
+    'order 4': rotation_matrix_order(4),
+    'order -4': rotation_matrix_order(-4),
+    'order 6': rotation_matrix_order(6),
+    'order -6': rotation_matrix_order(-6),
     # mirror operations
+    'mirror_Mx' : np.array([[-1., 0.], [0., 1.]]),
+    'mirror_My' : np.array([[1., 0.], [0., -1.]]),
+    'mirror_M45' : np.array([[0., 1.], [1., 0.]]),
+    'mirror_Mm45' : np.array([[0., -1.], [-1., 0.]]),
+    'mirror_M01' : np.array([[-1., -1.], [0., 1.]]),
+    'mirror_M10' : np.array([[1., 0.], [-1., -1.]]),
 }
 
 class TestSymmetryTensor:
@@ -208,7 +218,9 @@ class TestSymmetryTensor:
 
     def test_symmetry_tensor_identity(self):
         """Check that the symmetry tensor for the identity is ones."""
-        assert symmetry_tensor(self.L_MAX, np.identity(2)) == pytest.approx(
+        symmetry_tensor, mirror_propagator = symmetry_operations(self.L_MAX, np.identity(2))
+        assert not mirror_propagator
+        assert symmetry_tensor == pytest.approx(
             np.ones(((self.L_MAX + 1) ** 2, (self.L_MAX + 1) ** 2)), abs=1e-8
         )
 
@@ -232,10 +244,17 @@ class TestSymmetryTensor:
         propagator_sym = calc_propagator(self.L_MAX, disp_vector_sym,
                                          self.ENERGY, self.V_IMAG)
 
+        # get symmetry operations
+        symmetry_tensor, mirror_propagator = symmetry_operations(self.L_MAX,
+                                                            plane_symmetry_operation)
+
         # apply the symmetry operation to the propagator
         # (element-wise multiplication)
-        propagator_original_sym = propagator_original * symmetry_tensor(self.L_MAX,
-                                                                       plane_symmetry_operation)
+        mirrored_propagator = (
+            propagator_original*(1-mirror_propagator) +
+            propagator_original.T*mirror_propagator
+        )
+        propagator_original_sym = mirrored_propagator*symmetry_tensor
 
         # check if the propagator is the same
         assert propagator_sym == pytest.approx(propagator_original_sym,
