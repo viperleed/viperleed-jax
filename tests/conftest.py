@@ -66,6 +66,9 @@ def fe2o3_ref_data_fixed_lmax_12(fe2o3_pickled_tensor):
     tensor_tuple = tuple(fe2o3_pickled_tensor.values())
     return ReferenceData(tensor_tuple, fix_lmax=fixed_lmax)
 
+@pytest.fixture(scope='session')
+def fe2o3_tensor_calculator(fe2o3_ref_data_fixed_lmax_12):
+    ref_data = fe2o3_ref_data_fixed_lmax_12
 
 ########
 # Cu111#
@@ -116,3 +119,8 @@ def cu111_phaseshifts(cu111_state_after_init, cu111_raw_phaseshifts, cu111_energ
                                 cu111_energies,
                                 l_max=14,
                                 phaseshift_map=phaseshift_map)
+
+@pytest.fixture(scope='session')
+def cu111_read_tensor_zip(cu111_tensor_path):
+    tensors = read_tensor_zip(cu111_tensor_path, lmax=10, n_beams=38, n_energies=208)
+    return tensors
