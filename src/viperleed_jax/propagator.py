@@ -68,21 +68,27 @@ def symmetry_operations(l_max, plane_symmetry_operation):
     """
     dense_m_2d = DENSE_QUANTUM_NUMBERS[l_max][:, :, 2]
     dense_mp_2d =  DENSE_QUANTUM_NUMBERS[l_max][:, :, 3]
-
     # AI: I don't fully understand this, technically it should be MPP = -M - MP
     dense_mpp = dense_mp_2d - dense_m_2d
 
-    plane_rotation_angle = get_plane_symmetry_operation_rotation_angle(
-        plane_symmetry_operation)
     plane_symmetry_det = np.linalg.det(plane_symmetry_operation)
     if abs(plane_symmetry_det) -1 > 1e-8:
         raise ValueError("The determinant of the plane symmetry operation "
                          "matrix must be 1 or -1.")
+    contains_mirror = plane_symmetry_det < 0
+    mirror_x = np.array([[-1., 0.], [0., 1.]])
+    if contains_mirror:
+        sym_op = plane_symmetry_operation @ mirror_x
+    else:
+        sym_op = plane_symmetry_operation
 
-    mirror_propagator = plane_symmetry_det < 0
-    symmetry_tensor = (-1)**dense_mpp if mirror_propagator else jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T
+    plane_rotation_angle = get_plane_symmetry_operation_rotation_angle(sym_op)
 
-    return symmetry_tensor, mirror_propagator
+    symmetry_tensor = jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T
+    if contains_mirror:
+        symmetry_tensor = (-1)**dense_mpp * symmetry_tensor
+
+    return symmetry_tensor, contains_mirror
 
 
 def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
