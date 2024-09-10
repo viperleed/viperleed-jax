@@ -16,4 +16,4 @@ from viperleed_jax.lib_math import EPS
 def test_cu111_tensor_calculator_creation(cu111_tensor_calculator):
     assert cu111_tensor_calculator is not None
     assert cu111_tensor_calculator.n_beams == 9
-    assert len(cu111_tensor_calculator) == 51
+    assert len(cu111_tensor_calculator.energies) == 51

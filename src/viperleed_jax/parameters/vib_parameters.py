@@ -4,7 +4,6 @@ from jax import numpy as jnp
 
 from viperleed_jax.base import LinearTransformer
 from viperleed_jax.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam, Bound
-from viperleed_jax.constants import BOHR
 
 
 class VibBaseParam(BaseParam):
@@ -166,7 +165,7 @@ class VibParams(Params):
         fix_param = FixVibParam(children=[vib_param])
         if vib_amp is None:
             # fix to the reference vibrational amplitude
-            vib_amp = vib_param.ref_vib_amp*BOHR
+            vib_amp = vib_param.ref_vib_amp
         fix_param.set_bound(VibParamBound(vib_amp, vib_amp))
         self.params.append(fix_param)
 
@@ -182,7 +181,7 @@ class VibParams(Params):
         # linear transformation
         # bias is ref_vib_amps, weights are given by the bounds
         weights = np.full((len(self.free_params), self.n_free_params), 0.)
-        bias = np.array([param.ref_vib_amp for param in self.free_params])*BOHR
+        bias = np.array([param.ref_vib_amp for param in self.free_params])
 
         for row_id, param in enumerate(self.free_params):
             if param.bound.fixed:
