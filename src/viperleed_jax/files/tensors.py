@@ -227,9 +227,9 @@ def prepare_tensor_file_reader(max_l_max, n_beams, n_energies):
 
             *t_matrix_lines, the_rest = the_rest.split('\n', maxsplit=n_t_matrix_lines[l_max])
             t_matrix_block = ''.join(t_matrix_lines)
-            t_matrix_block = FF_T_MATRIX_READERS[l_max-1].read(t_matrix_block)
+            t_matrix_block = FF_T_MATRIX_READERS[l_max].read(t_matrix_block)
             t_matrix_block = np.array(t_matrix_block, np.float64).view(np.complex128)
-            t_matrix[en_id, :l_max] = t_matrix_block
+            t_matrix[en_id, :l_max+1] = t_matrix_block
 
             *ref_amps_lines, the_rest = the_rest.split('\n', maxsplit=n_ref_amps_lines)
             ref_amps_block = ''.join(ref_amps_lines)
