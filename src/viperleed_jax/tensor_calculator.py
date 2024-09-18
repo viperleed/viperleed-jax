@@ -257,6 +257,7 @@ class TensorLEEDCalculator:
                 self.phaseshifts[site_el][:, :self.max_l_max+1],
                 self.energies,
                 atomic_units.to_internal_vib_amps(vib_amp)
+                vib_amp,
             )
             for site_el, vib_amp
             in self._parameter_space.static_t_matrix_inputs])
@@ -597,9 +598,9 @@ class TensorLEEDCalculator:
         )
 
         # vibrational amplitudes, converted to atomic units
-        vib_amps_ang = self.parameter_space.vib_transformer(vib_params)
-        vib_amps_au = jax.vmap(atomic_units.to_internal_vib_amps,
-                                in_axes=0)(vib_amps_ang)
+        vib_amps_au = self.parameter_space.vib_transformer(vib_params)
+        # vib_amps_au = jax.vmap(atomic_units.to_internal_vib_amps,
+        #                         in_axes=0)(vib_amps_ang)
 
         # chemical weights
         chem_weights = self.parameter_space.occ_weight_transformer(occ_params)
