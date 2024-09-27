@@ -368,8 +368,8 @@ class FrozenParameterSpace():
         if len(static_displacements) == 0:
             static_displacements = jnp.array([jnp.nan, jnp.nan, jnp.nan])
 
-        mapped_dynamic_disp = [dynamic_displacements[id] for id in self.propagator_id]
-        mapped_static_disp = [static_displacements[id] for id in self.propagator_id]
+        mapped_dynamic_disp = [dynamic_displacements[id] for id in jnp.array(self.propagator_id)]
+        mapped_static_disp = [static_displacements[id] for id in jnp.array(self.propagator_id)]
         vmap_where = jax.vmap(jnp.where, in_axes=(0, 0, 0))
         return vmap_where(self.is_dynamic_propagator,
                           jnp.array(mapped_dynamic_disp),
