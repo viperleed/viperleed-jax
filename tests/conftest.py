@@ -1,10 +1,12 @@
 import os
 from pathlib import Path
 import pickle
+
 import numpy as np
 
 import pytest
 
+from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo, DeltaAmplitudeReferenceData
 
 from viperleed_jax.from_state import run_viperleed_initialization
 from viperleed_jax.files.tensors import read_tensor_zip

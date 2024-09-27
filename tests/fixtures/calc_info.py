@@ -11,7 +11,6 @@ class DeltaAmplitudeCalcInfo:
     energies: np.ndarray
     n_beams: int
     max_l_max: int
-    reference_delta_amps: None
 
     @property
     def n_energies(self):
@@ -21,11 +20,18 @@ class DeltaAmplitudeCalcInfo:
     def has_reference_delta_amps(self):
         return self.reference_delta_amps is not None
 
+    def check_reference_delta_amps_consistency(self):
+        assert self.has_reference_delta_amps
+        assert self.reference_delta_amps.energies == pytest.approx(self.energies)
+        assert self.reference_delta_amps.n_beams == self.n_beams
+
 
 
 class DeltaAmplitudeReferenceData:
     pass
 
-class TensErLEEDReferenceData:
-    data: dict
-    geo_disp: dict
+class TensErLEEDDeltaReferenceData:
+    def __init__(self, raw_data):
+        self.raw_data = raw_data
+        self.energies = raw_data['energies']
+        self.n_beam = raw_data['n_beam']
