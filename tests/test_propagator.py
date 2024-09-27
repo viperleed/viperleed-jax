@@ -188,6 +188,13 @@ def rot_matrix(theta):
         [np.sin(theta), np.cos(theta)]
     ])
 
+def mirror_matrix(theta):
+    """Return a 2D rotation matrix."""
+    return np.array([
+        [np.cos(theta), np.sin(theta)],
+        [np.sin(theta), -np.cos(theta)]
+    ])
+
 # TODO: eventually replace these with imports from Michele's guilib PlaneGroup class
 TEST_PLANE_SYMMETRY_OPERATIONS = {
     # identity
@@ -207,8 +214,11 @@ TEST_PLANE_SYMMETRY_OPERATIONS = {
     'mirror_My' : np.array([[1., 0.], [0., -1.]]),
     'mirror_M45' : np.array([[0., 1.], [1., 0.]]),
     'mirror_Mm45' : np.array([[0., -1.], [-1., 0.]]),
-    'mirror_M01' : np.array([[-1., -1.], [0., 1.]]),
-    'mirror_M10' : np.array([[1., 0.], [-1., -1.]]),
+    #'mirror_M01' : np.array([[-1., -1.], [0., 1.]]),
+    #'mirror_M10' : np.array([[1., 0.], [-1., -1.]]),
+    'mirror_30': mirror_matrix(np.pi/6),
+    'mirror_60': mirror_matrix(np.pi/3),
+    'mirror_90': mirror_matrix(np.pi/2),
 }
 
 class TestSymmetryTensor:
