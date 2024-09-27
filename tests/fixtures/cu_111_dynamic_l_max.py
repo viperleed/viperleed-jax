@@ -19,6 +19,7 @@ from viperleed_jax.parameter_space import ParameterSpace
 from viperleed_jax.parameters.geo_parameters import GeoParamBound
 from viperleed_jax.parameters.vib_parameters import VibParamBound
 from viperleed_jax.parameters.v0r_parameters import V0rParamBound
+from viperleed_jax.files.deltas import Transform as delta_transform
 
 
 ######################
@@ -33,7 +34,7 @@ def cu_111_dynamic_l_max_info():
         input_path=input_path,
         tensor_path=tensor_path,
         n_beams=9,
-        max_l_max=14,
+        max_l_max=10,
         energies = np.array([
             2.28680897,  2.4583211 ,  2.63103557,  2.80476761,  2.97936988,
             3.15472341,  3.33073044,  3.50731039,  3.68439579,  3.86193037,
@@ -93,9 +94,14 @@ def cu_111_dynamic_l_max_read_tensor_zip(cu_111_dynamic_l_max_info):
 
 
 @pytest.fixture(scope='session')
-def cu_111_dynamic_l_max_read_ref_data(cu_111_dynamic_l_max_read_tensor_zip):
-    tensor_tuple = tuple(cu_111_dynamic_l_max_read_tensor_zip.values())
-    return ReferenceData(tensor_tuple, fix_lmax=10) # TODO: fix!!
+def cu_111_dynamic_l_max_read_ref_data(cu_111_dynamic_l_max_read_tensor_zip,
+                                       cu_111_dynamic_l_max_state_after_init):
+    slab, _ = cu_111_dynamic_l_max_state_after_init
+    non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
+    sorted_tensors = [cu_111_dynamic_l_max_read_tensor_zip[f'T_{at.num}']
+                      for at in non_bulk_atoms]
+
+    return ReferenceData(sorted_tensors, fix_lmax=10) # TODO: fix!!
 
 @pytest.fixture(scope='session')
 def cu_111_dynamic_l_max_tensor_calculator(cu_111_dynamic_l_max_state_after_init, cu_111_dynamic_l_max_phaseshifts, cu_111_dynamic_l_max_read_ref_data):
@@ -103,7 +109,8 @@ def cu_111_dynamic_l_max_tensor_calculator(cu_111_dynamic_l_max_state_after_init
     calculator = TensorLEEDCalculator(cu_111_dynamic_l_max_read_ref_data,
                                 cu_111_dynamic_l_max_phaseshifts,
                                 slab,
-                                rpars)
+                                rpars,
+                                recalculate_ref_t_matrices=False)
     return calculator
 
 @pytest.fixture(scope='session')
@@ -133,7 +140,6 @@ def cu_111_dynamic_l_max_parameter_space(cu_111_dynamic_l_max_state_after_init):
     for param in [p for p in parameter_space.vib_params.terminal_params if p.site_element.site.endswith('_surf')]:
         param.set_bound(VibParamBound(-0.05, + 0.05))
 
-
     ## CHEMISTRY
     # no free parameters
     parameter_space.occ_params.remove_remaining_vacancies()
@@ -142,3 +148,16 @@ def cu_111_dynamic_l_max_parameter_space(cu_111_dynamic_l_max_state_after_init):
     # set ± 2 eV
     parameter_space.v0r_param.set_bound(V0rParamBound(-2., +2.))
     return parameter_space
+
+@pytest.fixture(scope='session')
+def cu_111_dynamic_l_max_calculator_with_parameter_space(cu_111_dynamic_l_max_tensor_calculator, cu_111_dynamic_l_max_parameter_space):
+    calculator = cu_111_dynamic_l_max_tensor_calculator
+    calculator.set_parameter_space(cu_111_dynamic_l_max_parameter_space)
+    return calculator
+
+@pytest.fixture(scope='session')
+def cu_111_dynamic_l_max_parameter_delta_file(cu_111_dynamic_l_max_info):
+    delta_path = str(cu_111_dynamic_l_max_info.inputs_path / 'Deltas') + '/'
+    return delta_transform(cu_111_dynamic_l_max_info.n_energies,
+                            delta_path,
+                            ['DEL_1_Cu_1', 'DEL_2_Cu_1', 'DEL_3_Cu_1', 'DEL_4_Cu_1', 'DEL_5_Cu_1'])
