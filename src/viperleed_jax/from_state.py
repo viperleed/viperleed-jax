@@ -29,7 +29,7 @@ from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from viperleed.calc.files.iorfactor import beamlist_to_array
 
 
-def calculator_from_state(calc_path, tensor_path, l_max:int):
+def calculator_from_state(calc_path, tensor_path, l_max:int, **kwargs):
 
     last_state = run_viperleed_initialization(calc_path)
     slab, rpars = last_state.slab, last_state.rpars
@@ -84,7 +84,7 @@ def calculator_from_state(calc_path, tensor_path, l_max:int):
 
     logger.debug('Initializing Tensor LEED calculator.')
     calculator = TensorLEEDCalculator(ref_data, phaseshifts, slab,
-                                      rpars)
+                                      rpars, **kwargs)
 
     # free up memory for large objects that are no longer needed
     del sorted_tensors
