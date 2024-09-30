@@ -123,6 +123,16 @@ def cu_111_dynamic_l_max_tensor_calculator(cu_111_dynamic_l_max_state_after_init
     return calculator
 
 @pytest.fixture(scope='session')
+def cu_111_dynamic_l_max_tensor_calculator_recalc_t_matrices(cu_111_dynamic_l_max_state_after_init, cu_111_dynamic_l_max_phaseshifts, cu_111_dynamic_l_max_read_ref_data):
+    slab, rpars = cu_111_dynamic_l_max_state_after_init
+    calculator = TensorLEEDCalculator(cu_111_dynamic_l_max_read_ref_data,
+                                cu_111_dynamic_l_max_phaseshifts,
+                                slab,
+                                rpars,
+                                recalculate_ref_t_matrices=True)
+    return calculator
+
+@pytest.fixture(scope='session')
 def cu_111_dynamic_l_max_parameter_space(cu_111_dynamic_l_max_state_after_init):
     slab, _ = cu_111_dynamic_l_max_state_after_init
     parameter_space = ParameterSpace(slab)
@@ -161,6 +171,13 @@ def cu_111_dynamic_l_max_parameter_space(cu_111_dynamic_l_max_state_after_init):
 @fixture(scope='session')
 def cu_111_dynamic_l_max_calculator_with_parameter_space(cu_111_dynamic_l_max_tensor_calculator, cu_111_dynamic_l_max_parameter_space):
     calculator = cu_111_dynamic_l_max_tensor_calculator
+    calculator.set_parameter_space(cu_111_dynamic_l_max_parameter_space)
+    return calculator
+
+@fixture(scope='session')
+def cu_111_dynamic_l_max_calculator_with_parameter_space_recalc_t_matrices(cu_111_dynamic_l_max_tensor_calculator_recalc_t_matrices,
+                                                                           cu_111_dynamic_l_max_parameter_space):
+    calculator = cu_111_dynamic_l_max_tensor_calculator_recalc_t_matrices
     calculator.set_parameter_space(cu_111_dynamic_l_max_parameter_space)
     return calculator
 
