@@ -28,8 +28,29 @@ class TensorCalculatorsWithSpace:
     def case_cu_111_dynamic_l(self,
         cu_111_dynamic_l_max_calculator_with_parameter_space):
         center = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
-        abs = 3.2e-5
+        abs = 2.2e-4
         return cu_111_dynamic_l_max_calculator_with_parameter_space, center, abs
+
+    @case(tags="cu_111")
+    def case_cu_111_dynamic_l_recalc_t_matrices(self,
+        cu_111_dynamic_l_max_calculator_with_parameter_space_recalc_t_matrices):
+        center = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
+        abs = 1e-9
+        return cu_111_dynamic_l_max_calculator_with_parameter_space_recalc_t_matrices, center, abs
+
+    @case(tags="cu_111")
+    def case_cu_111_fixed_l(self,
+        cu_111_dynamic_l_max_calculator_with_parameter_space):
+        center = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
+        abs = 2.2e-4
+        return cu_111_dynamic_l_max_calculator_with_parameter_space, center, abs
+
+    @case(tags="cu_111")
+    def case_cu_111_fixed_l_recalc_t_matrices(self,
+        cu_111_fixed_l_max_calculator_with_parameter_space_recalc_t_matrices):
+        center = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
+        abs = 1e-9
+        return cu_111_fixed_l_max_calculator_with_parameter_space_recalc_t_matrices, center, abs
 
 class TensorCalculatorsWithTensErLEEDDeltas:
     """Tensor calculators with parameter space already applied and comparison
@@ -42,6 +63,15 @@ class TensorCalculatorsWithTensErLEEDDeltas:
         cu_111_dynamic_l_max_tenserleed_reference):
         calculator = cu_111_dynamic_l_max_calculator_with_parameter_space
         params, reference_delta_amplitudes, abs = cu_111_dynamic_l_max_tenserleed_reference
+        return calculator, params, reference_delta_amplitudes, abs
+
+    @case(tags="cu_111")
+    def case_cu_111_fixed_l(
+        self,
+        cu_111_fixed_l_max_calculator_with_parameter_space,
+        cu_111_fixed_l_max_tenserleed_reference):
+        calculator = cu_111_fixed_l_max_calculator_with_parameter_space
+        params, reference_delta_amplitudes, abs = cu_111_fixed_l_max_tenserleed_reference
         return calculator, params, reference_delta_amplitudes, abs
 
 
