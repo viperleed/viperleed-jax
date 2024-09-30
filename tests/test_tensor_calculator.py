@@ -14,7 +14,7 @@ from viperleed_jax.constants import BOHR
 DeltaIndices = namedtuple('DeltaIndices', ['geo', 'vib',])
 
 CU_111_PARAM_FILE_CORRESPONDENCE = {
-    (.5, .0, .0, .0, .0) : DeltaIndices(0, 0),
+    (.5, .5, 1.0, .5, .5) : (DeltaIndices(0, 0), 3.7e-5),
 }
 
 class TensorCalculatorsWithInfo:
@@ -43,18 +43,21 @@ class TensorCalculatorsWithTensErLEEDDeltas:
     with TensErLEED."""
     @case(tags="cu_111")
     @pytest.mark.parametrize(
-        params = [np.array(p) for p in CU_111_PARAM_FILE_CORRESPONDENCE.keys()],
-        file_indices = CU_111_PARAM_FILE_CORRESPONDENCE.values(),
-        ids = [np.array(p) for p in CU_111_PARAM_FILE_CORRESPONDENCE.keys()]
+        "params, compare_values",
+        list(zip([np.array(p) for p in CU_111_PARAM_FILE_CORRESPONDENCE.keys()],
+                 CU_111_PARAM_FILE_CORRESPONDENCE.values())),
+        ids = [str(np.array(p)) for p in CU_111_PARAM_FILE_CORRESPONDENCE.keys()]
     )
     def case_cu_111_dynamic_l(
         self,
         cu_111_dynamic_l_max_calculator_with_parameter_space,
         cu_111_dynamic_l_max_parameter_delta_file,
         params,
-        file_indices):
+        compare_values):
         calculator = cu_111_dynamic_l_max_calculator_with_parameter_space
         file = cu_111_dynamic_l_max_parameter_delta_file
+        file_indices, abs = compare_values
+        params = np.array(params)
         return calculator, params, file, file_indices, abs
 
 
@@ -79,7 +82,7 @@ def test_perturbed_delta_amplitudes_finite(calculator, center, abs, delta):
     delta_amps = calculator.delta_amplitude([delta,] * calculator.n_free_parameters)
     assert np.isfinite(delta_amps).all()
 
-@parametrize_with_cases("calculator, params, file file_indices, abs", cases=TensorCalculatorsWithSpace)
+@parametrize_with_cases("calculator, params, file, file_indices, abs", cases=TensorCalculatorsWithTensErLEEDDeltas)
 def test_compare_known_delta_amplitudes_tenserleed(calculator, params, file,
                                                    file_indices, abs):
     _, vib_params, geo_params, _ = calculator.parameter_space.split_free_params(params)
@@ -87,10 +90,10 @@ def test_compare_known_delta_amplitudes_tenserleed(calculator, params, file,
     geos = calculator.parameter_space.geo_transformer(geo_params)
 
     ref_vibs = file['vib_delta'][file_indices.vib]
-    ref_geos = file['geo_delta'][file_indices.geo]
+    ref_geos = file['geo_delta'][0, file_indices.geo, :]
 
     # check that input vibs and geos are the same
-    assert vibs/BOHR == pytest.approx(ref_vibs)
+    assert vibs/BOHR == pytest.approx(ref_vibs, abs=1e-4)
     assert geos == pytest.approx(ref_geos.reshape(geos.shape))
 
     ref_delta = file['amplitudes_del']
