@@ -108,5 +108,5 @@ def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
     float
         Rotation angle in radians.
     """
-    return (np.log(plane_symmetry_operation[1,1] +
+    return (np.log(plane_symmetry_operation[0,0] +
                    1j*plane_symmetry_operation[1, 0])/1j).real
