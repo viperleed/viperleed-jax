@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 
 import pytest
+from pytest_cases import fixture, case
 
 from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo, DeltaAmplitudeReferenceData
 
@@ -13,8 +14,12 @@ from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.data_structures import ReferenceData
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.tensor_calculator import TensorLEEDCalculator
+from viperleed_jax.files.deltas import Transform as delta_transform
 
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
+
+from tests.fixtures.cu_111_dynamic_l_max import *
+from tests.fixtures.cu_111_fixed_l_max import *
 
 if 'VIPERLEED_ON_THE_FLY_TESTS_LARGE_FILE_PATH' not in os.environ:
     raise ValueError('VIPERLEED_ON_THE_FLY_TESTS_LARGE_FILE_PATH not set')
