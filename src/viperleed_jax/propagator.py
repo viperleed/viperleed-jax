@@ -86,7 +86,7 @@ def symmetry_operations(l_max, plane_symmetry_operation):
 
     symmetry_tensor = jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T
     if contains_mirror:
-        symmetry_tensor = (-1)**dense_mpp * symmetry_tensor
+        symmetry_tensor = (-1)**(-dense_mpp)* jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T
 
     return symmetry_tensor, contains_mirror
 

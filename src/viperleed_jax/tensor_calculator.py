@@ -652,7 +652,7 @@ class TensorLEEDCalculator:
                 def f_calc(a):
                     # calculate delta t matrix which contains all perturbations
                     delta_t_matrix = calculate_delta_t_matrix(
-                        en_propagators[a, :, :],
+                        en_propagators[a, :, :].conj(),
                         en_t_matrix_vib[a],
                         en_t_matrix_ref[a],
                         chem_weights[a]
