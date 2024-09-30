@@ -7,14 +7,11 @@ import numpy as np
 import pytest
 from pytest_cases import fixture, case
 
-from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo, DeltaAmplitudeReferenceData
-
 from viperleed_jax.from_state import run_viperleed_initialization
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.data_structures import ReferenceData
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.tensor_calculator import TensorLEEDCalculator
-from viperleed_jax.files.deltas import Transform as delta_transform
 
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
