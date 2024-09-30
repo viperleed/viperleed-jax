@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 
 import pytest
+from pytest_cases import fixture
 
 from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo, DeltaAmplitudeReferenceData
 
@@ -21,6 +22,15 @@ from viperleed_jax.parameters.vib_parameters import VibParamBound
 from viperleed_jax.parameters.v0r_parameters import V0rParamBound
 from viperleed_jax.files.deltas import Transform as delta_transform
 
+_DATA_PATH = Path(__file__).parent.parent / 'test_data' / 'Cu_111' /'dynamic_l_max'
+_REFERENCE_FILE_PATH = _DATA_PATH / 'Cu_111_dynamic_l_max_TensErLEED_reference.npz'
+_REFERENCE_DATA = np.load(_REFERENCE_FILE_PATH)
+
+_COMPARE_PARAMS = _REFERENCE_DATA['parameters']
+_COMPARE_DELTA_AMPLITUDES = _REFERENCE_DATA['tenserleed_delta_amplitudes']
+_COMPARE_PARAMS_AMPS = [(_COMPARE_PARAMS[i,:], _COMPARE_DELTA_AMPLITUDES[i,:])
+                        for i in range(len(_COMPARE_PARAMS))]
+_COMPARE_ABS = 8.8e-5
 
 ######################
 # Cu111 dynamic LMAX #
@@ -28,34 +38,33 @@ from viperleed_jax.files.deltas import Transform as delta_transform
 
 @pytest.fixture(scope='session')
 def cu_111_dynamic_l_max_info():
-    input_path=Path(__file__).parent.parent / 'test_data' / 'Cu_111_dynamic_lmax'
-    tensor_path=input_path / 'Tensors' / 'Tensors_001.zip'
+    input_path = _DATA_PATH
+    tensor_path = input_path / 'Tensors' / 'Tensors_001.zip'
     return DeltaAmplitudeCalcInfo(
         input_path=input_path,
         tensor_path=tensor_path,
         n_beams=9,
         max_l_max=10,
         energies = np.array([
-            2.28680897,  2.4583211 ,  2.63103557,  2.80476761,  2.97936988,
-            3.15472341,  3.33073044,  3.50731039,  3.68439579,  3.86193037,
-            4.03986502,  4.2181592 ,  4.39677715,  4.57568788,  4.75486517,
-            4.93428421,  5.11392546,  5.29376984,  5.47380161,  5.65400648,
-            5.83437061,  6.01488304,  6.1955328 ,  6.37631083,  6.55720854,
-            6.73821783,  6.91933107,  7.10054302,  7.281847  ,  7.46323729,
-            7.64471006,  7.82625914,  8.00788212,  8.18957233,  8.37132931,
-            8.55314732,  8.7350235 ,  8.91695595,  9.09894276,  9.28097916,
-            9.46306324,  9.6451931 ,  9.82736778, 10.00958443, 10.19184017,
-            10.37413406, 10.55646515, 10.73883247, 10.92123318, 11.10366535,
-            11.286129  ], dtype=np.float64)
+        2.21859169,  2.32100487,  2.42391562,  2.52727366,  2.63103557,
+        2.73516273,  2.8396225 ,  2.94438601,  3.04942703,  3.15472341,
+        3.26025462,  3.36600304,  3.47195196,  3.57808733,  3.68439579,
+        3.7908659 ,  3.89748669,  4.00424814,  4.11114168,  4.2181592 ,
+        4.32529306,  4.43253708,  4.53988361,  4.64732838,  4.75486517,
+        4.86248875,  4.97019529,  5.07798052,  5.18583965,  5.29376984,
+        5.40176773,  5.50982904,  5.61795235,  5.72613382,  5.83437061,
+        5.94266081,  6.0510025 ,  6.15939236,  6.26782942,  6.37631083,
+        6.48483562,  6.59340143,  6.70200729,  6.81065083,  6.91933107,
+        7.02804708,  7.13679647,  7.24557924,  7.35439348,  7.46323729,
+        7.57211161,  7.68101406,  7.78994322,  7.89889955,  8.00788212,
+        8.11688805,  8.22591877,  8.33497238,  8.44404888,  8.55314732,
+        8.66226578,  8.77140617,  8.88056564,  8.98974419,  9.09894276,
+        9.20815849,  9.3173914 ,  9.42664242,  9.53590965,  9.6451931 ,
+        9.75449276,  9.86380768,  9.9731369 , 10.08248138, 10.19184017,
+        10.30121231, 10.41059875, 10.51999664, 10.62940788, 10.73883247,
+        10.84826851, 10.95771694, 11.06717682, 11.17664719, 11.286129 ],
+        dtype=np.float64)
     )
-
-@pytest.fixture(scope="session")
-def cu_111_dynamic_l_max_delta_file(cu_111_dynamic_l_max_info,):
-    delta_path = str(cu_111_dynamic_l_max_info.input_path / 'Deltas') + '/'
-    raw = delta_transform(cu_111_dynamic_l_max_tensor_calculator.ref_data.n_energies,
-                            delta_path,
-                            ['DEL_1_Cu_1', 'DEL_2_Cu_1', 'DEL_3_Cu_1', 'DEL_4_Cu_1', 'DEL_5_Cu_1'])
-    cu_111_dynamic_l_max_info.reference_delta_amps = TensErLEEDDeltaReferenceData(raw)
 
 
 @pytest.fixture(scope='session')
@@ -149,15 +158,16 @@ def cu_111_dynamic_l_max_parameter_space(cu_111_dynamic_l_max_state_after_init):
     parameter_space.v0r_param.set_bound(V0rParamBound(-2., +2.))
     return parameter_space
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def cu_111_dynamic_l_max_calculator_with_parameter_space(cu_111_dynamic_l_max_tensor_calculator, cu_111_dynamic_l_max_parameter_space):
     calculator = cu_111_dynamic_l_max_tensor_calculator
     calculator.set_parameter_space(cu_111_dynamic_l_max_parameter_space)
     return calculator
 
-@pytest.fixture(scope='session')
-def cu_111_dynamic_l_max_parameter_delta_file(cu_111_dynamic_l_max_info):
-    delta_path = str(cu_111_dynamic_l_max_info.inputs_path / 'Deltas') + '/'
-    return delta_transform(cu_111_dynamic_l_max_info.n_energies,
-                            delta_path,
-                            ['DEL_1_Cu_1', 'DEL_2_Cu_1', 'DEL_3_Cu_1', 'DEL_4_Cu_1', 'DEL_5_Cu_1'])
+@fixture(scope='session')
+@pytest.mark.parametrize('parameters, reference_delta_amplitudes',
+                         _COMPARE_PARAMS_AMPS,
+                         ids=[str(p) for p in _COMPARE_PARAMS])
+def cu_111_dynamic_l_max_tenserleed_reference(parameters,
+                                              reference_delta_amplitudes):
+    return parameters, reference_delta_amplitudes, _COMPARE_ABS

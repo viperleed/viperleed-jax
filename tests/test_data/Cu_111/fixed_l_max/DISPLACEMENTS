@@ -1,0 +1,6 @@
+== SEARCH top atom
+  = GEO_DELTA
+  Cu_surf z = -0.05 0.05 0.01
+
+  = VIB_DELTA
+  Cu_surf = -0.02 0.02 0.02
