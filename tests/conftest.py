@@ -124,21 +124,3 @@ def cu111_phaseshifts(cu111_state_after_init, cu111_raw_phaseshifts, cu111_energ
                                 cu111_energies,
                                 l_max=14,
                                 phaseshift_map=phaseshift_map)
-
-@pytest.fixture(scope='session')
-def cu111_read_tensor_zip(cu111_tensor_path):
-    tensors = read_tensor_zip(cu111_tensor_path, lmax=10, n_beams=9, n_energies=51)
-    return tensors
-
-@pytest.fixture(scope='session')
-def cu111_read_ref_data(cu111_read_tensor_zip):
-    tensor_tuple = tuple(cu111_read_tensor_zip.values())
-    return ReferenceData(tensor_tuple, fix_lmax=10)
-
-@pytest.fixture(scope='session')
-def cu111_tensor_calculator(cu111_state_after_init, cu111_phaseshifts, cu111_read_ref_data):
-    slab, rpars = cu111_state_after_init
-    return TensorLEEDCalculator(cu111_read_ref_data,
-                                cu111_phaseshifts,
-                                slab,
-                                rpars)
