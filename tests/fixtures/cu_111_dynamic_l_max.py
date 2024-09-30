@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from pytest_cases import fixture
 
-from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo, DeltaAmplitudeReferenceData
+from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo
 
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
