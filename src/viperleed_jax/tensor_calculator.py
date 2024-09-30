@@ -537,6 +537,7 @@ class TensorLEEDCalculator:
         a = out_k_perp_vacuum
         c = in_k_vacuum * jnp.cos(self.theta)
 
+        # TODO: re-check if it should be a.real or abs(a)
         prefactor = abs(jnp.exp(-1j * onset_height_change/BOHR * (jnp.outer(in_k_perp_vacuum, jnp.ones(shape=(self.n_beams,))) + out_k_perp
                                                     ))) ** 2 * a.real / jnp.outer(c, jnp.ones(shape=(self.n_beams,))).real
         return prefactor
