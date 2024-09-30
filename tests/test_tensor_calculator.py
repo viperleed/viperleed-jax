@@ -15,6 +15,16 @@ DeltaIndices = namedtuple('DeltaIndices', ['geo', 'vib',])
 
 CU_111_PARAM_FILE_CORRESPONDENCE = {
     (.5, .5, 1.0, .5, .5) : (DeltaIndices(0, 0), 3.7e-5),
+    (.5, .5, 0.9, .5, .5) : (DeltaIndices(1, 0), 3.3e-5),
+    (.5, .5, 0.8, .5, .5) : (DeltaIndices(2, 0), 4e-5),
+    (.5, .5, 0.7, .5, .5) : (DeltaIndices(3, 0), 4e-5),
+    (.5, .5, 0.6, .5, .5) : (DeltaIndices(4, 0), 4e-5),
+    (.5, .5, 0.5, .5, .5) : (DeltaIndices(5, 0), 4e-5),
+    (.5, .5, 0.4, .5, .5) : (DeltaIndices(6, 0), 4e-5),
+    (.5, .5, 0.3, .5, .5) : (DeltaIndices(7, 0), 4e-5),
+    (.5, .5, 0.2, .5, .5) : (DeltaIndices(8, 0), 4e-5),
+    (.5, .5, 0.1, .5, .5) : (DeltaIndices(9, 0), 4e-5),
+    (.5, .5, 0.0, .5, .5) : (DeltaIndices(10, 0), 4.1e-5),
 }
 
 class TensorCalculatorsWithInfo:
