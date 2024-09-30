@@ -256,7 +256,6 @@ class TensorLEEDCalculator:
                 self.max_l_max,
                 self.phaseshifts[site_el][:, :self.max_l_max+1],
                 self.energies,
-                atomic_units.to_internal_vib_amps(vib_amp)
                 vib_amp,
             )
             for site_el, vib_amp
