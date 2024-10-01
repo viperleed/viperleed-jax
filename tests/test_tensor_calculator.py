@@ -83,6 +83,15 @@ class TensorCalculatorsWithTensErLEEDDeltas:
         params, reference_delta_amplitudes, abs = fe2o3_012_converged_tenserleed_reference_z
         return calculator, params, reference_delta_amplitudes, abs
 
+    @case(tags="fe2o3_012")
+    def case_fe2o3_012_converged_x(
+        self,
+        fe2o3_012_converged_calculator_with_parameter_space,
+        fe2o3_012_converged_tenserleed_reference_x):
+        calculator = fe2o3_012_converged_calculator_with_parameter_space
+        params, reference_delta_amplitudes, abs = fe2o3_012_converged_tenserleed_reference_x
+        return calculator, params, reference_delta_amplitudes, abs
+
 @parametrize_with_cases("calculator, info", cases=TensorCalculatorsWithInfo)
 def test_calculator_creation(calculator, info):
     assert calculator is not None
