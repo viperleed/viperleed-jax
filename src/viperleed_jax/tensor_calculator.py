@@ -23,7 +23,7 @@ from viperleed_jax.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 from viperleed_jax.dense_quantum_numbers import  map_l_array_to_compressed_quantum_index
 from viperleed_jax.batching import Batching
 
-import interpax
+from viperleed_jax.interpolation import interpolate_ragged_array
 
 _R_FACTOR_SYNONYMS = {
     rfactor.pendry_R: ('pendry', 'r_p', 'rp', 'pendry r-factor'),
@@ -835,33 +835,6 @@ class TensorLEEDCalculator:
         calculator.set_rfactor(dynamic_elements['rfactor_name'])
 
         return calculator
-
-
-def make_1d_ragged_cubic_spline(x, y, axis=0, bc_type="not-a-knot", extrapolate=False):
-    """Construct a piecewise cubic spline interpolator with ragged edges.
-
-    The interpolator uses a cubic spline to interpolate data.
-    """
-    if x.ndim > 1 or y.ndim > 1:
-        raise ValueError("x and y must be 1-dimensional arrays.")
-    y_mask = jnp.isnan(y)
-    x_subarray, y_subarray = x[~y_mask], y[~y_mask]
-    start_index = jnp.where(~y_mask)[0][0]
-    subarray_spline = interpax.CubicSpline(x_subarray, y_subarray, axis, bc_type, extrapolate, check=False)
-
-    return subarray_spline, start_index
-
-def interpolate_ragged_array(x, y, axis=0, bc_type="not-a-knot", extrapolate=False):
-    all_coeffs = np.full((4, y.shape[0], y.shape[1]), fill_value=jnp.nan)
-    for dim in range(y.shape[1]):
-        _y = y[:, dim]
-        all_nans = jnp.all(jnp.isnan(_y))
-        if all_nans:
-            continue
-        spline, start_id = make_1d_ragged_cubic_spline(x, y[:, dim], axis=0, bc_type=bc_type, extrapolate=None)
-        all_coeffs[:, start_id:start_id+spline.c.shape[1], dim] = spline.c
-    spline = interpax.PPoly.construct_fast(all_coeffs, x)
-    return spline
 
 
 def benchmark_calculator(calculator, free_params, n_repeats=10):
