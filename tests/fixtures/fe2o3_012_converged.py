@@ -20,7 +20,7 @@ from viperleed_jax.parameters.geo_parameters import GeoParamBound
 from viperleed_jax.parameters.vib_parameters import VibParamBound
 from viperleed_jax.parameters.v0r_parameters import V0rParamBound
 
-_DATA_PATH = Path(__file__).parent.parent / 'test_data' / 'Fe2O3_012_new' /'converged'
+_DATA_PATH = Path(__file__).parent.parent / 'test_data' / 'Fe2O3_012' /'converged'
 
 _REFERENCE_FILE_PATH_Z = _DATA_PATH / 'Fe2O3_012_TensErLEED_reference_z.npz'
 _REFERENCE_DATA_Z = np.load(_REFERENCE_FILE_PATH_Z)
