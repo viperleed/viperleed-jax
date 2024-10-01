@@ -598,12 +598,13 @@ class TensorLEEDCalculator:
         return symmetry_tensors, mirror_propagators
 
     def delta_amplitude(self, free_params):
+        _free_params = jnp.asarray(free_params)
 
         # split free parameters
         (_,
          vib_params,
          geo_parms,
-         occ_params) = self.parameter_space.split_free_params(jnp.asarray(free_params))
+         occ_params) = self.parameter_space.split_free_params(jnp.asarray(_free_params))
 
         # displacements, converted to atomic units
         displacements_ang = jnp.asarray(self.parameter_space.geo_transformer(geo_parms))
@@ -753,12 +754,13 @@ class TensorLEEDCalculator:
         return self.interpolated(free_params, deriv_deg)
 
     def R(self, free_params):
+        _free_params = jnp.asarray(free_params)
         if self.comp_intensity is None:
             raise ValueError("Comparison intensity not set.")
         v0i_electron_volt = -self.v0i*HARTREE
-        non_interpolated_intensity = self.intensity(free_params)
+        non_interpolated_intensity = self.intensity(_free_params)
 
-        v0r_param, *_ = self.parameter_space.split_free_params(jnp.asarray(free_params))
+        v0r_param, *_ = self.parameter_space.split_free_params(jnp.asarray(_free_params))
         v0r_shift = self.parameter_space.v0r_transformer(v0r_param)
 
         # apply v0r shift
