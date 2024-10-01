@@ -248,6 +248,9 @@ class TestSymmetryTensor:
         # apply the symmetry operation to the displacement vector
         disp_vector_sym = rotation_matrix_3d @ disp_vector
 
+        # length should be the same
+        assert np.linalg.norm(disp_vector_sym) == pytest.approx(np.linalg.norm(disp_vector), abs=1e-8)
+
         # calculate the propagator for both
         propagator_original = calc_propagator(self.L_MAX, disp_vector,
                                               self.ENERGY, self.V_IMAG)
