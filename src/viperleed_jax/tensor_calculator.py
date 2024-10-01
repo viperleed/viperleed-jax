@@ -136,12 +136,27 @@ class TensorLEEDCalculator:
 
         self.tensor_amps_in, self.tensor_amps_out = self._batch_tensor_amps()
 
-        # set experimental intensities
-        exp_beam_mapping = [int(np.argmax([b == t.hk for t in rparams.expbeams]))
-                            for b in beam_indices]
-
+        # get experimental intensities and hk
         exp_energies, _, _, exp_intensities = beamlist_to_array(rparams.expbeams)
-        mapped_exp_intensities = exp_intensities[:,exp_beam_mapping]
+        exp_hk = [b.hk for b in rparams.expbeams]
+
+        # determine the mapping
+        exp_beam_mapping = []
+        for b in beam_indices:
+            if b in exp_hk:
+                exp_beam_mapping.append(exp_hk.index(b))
+            else:
+                exp_beam_mapping.append(False)
+
+        mask_out_expbeam = [b is False for b in exp_beam_mapping]
+        exp_beam_mapping = np.array(exp_beam_mapping, dtype=np.int32)
+
+        # apply the mapping
+        mapped_exp_intensities = exp_intensities[:, exp_beam_mapping]
+
+        # mask out the beams that are not in the expbeams
+        mapped_exp_intensities = np.where(mask_out_expbeam, np.nan,
+                                          mapped_exp_intensities)
         self.set_experiment_intensity(mapped_exp_intensities, exp_energies)
 
     @property
@@ -837,10 +852,14 @@ def make_1d_ragged_cubic_spline(x, y, axis=0, bc_type="not-a-knot", extrapolate=
     return subarray_spline, start_index
 
 def interpolate_ragged_array(x, y, axis=0, bc_type="not-a-knot", extrapolate=False):
-    all_coeffs = jnp.full((4, y.shape[0], y.shape[1]), fill_value=jnp.nan)
+    all_coeffs = np.full((4, y.shape[0], y.shape[1]), fill_value=jnp.nan)
     for dim in range(y.shape[1]):
+        _y = y[:, dim]
+        all_nans = jnp.all(jnp.isnan(_y))
+        if all_nans:
+            continue
         spline, start_id = make_1d_ragged_cubic_spline(x, y[:, dim], axis=0, bc_type=bc_type, extrapolate=None)
-        all_coeffs = all_coeffs.at[:, start_id:start_id+spline.c.shape[1], dim].set(spline.c)
+        all_coeffs[:, start_id:start_id+spline.c.shape[1], dim] = spline.c
     spline = interpax.PPoly.construct_fast(all_coeffs, x)
     return spline
 
