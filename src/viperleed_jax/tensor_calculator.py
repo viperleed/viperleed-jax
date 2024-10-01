@@ -758,7 +758,8 @@ class TensorLEEDCalculator:
         v0i_electron_volt = -self.v0i*HARTREE
         non_interpolated_intensity = self.intensity(free_params)
 
-        v0r_shift, *_ = self.parameter_space.split_free_params(jnp.asarray(free_params))
+        v0r_param, *_ = self.parameter_space.split_free_params(jnp.asarray(free_params))
+        v0r_shift = self.parameter_space.v0r_transformer(v0r_param)
 
         # apply v0r shift
         theo_spline = interpax.CubicSpline(self.origin_grid + v0r_shift,
