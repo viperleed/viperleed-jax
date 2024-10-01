@@ -3,7 +3,9 @@ LOG_DEBUG = debug
 N_CORES = 48
 
 THEO_ENERGIES = 30 650 3
-LMAX = 14
+LMAX = 6-14
+
+TL_IGNORE_CHECKSUM = True
 
 !OPTIMIZE theta = step 0.1, minpoints 5
 

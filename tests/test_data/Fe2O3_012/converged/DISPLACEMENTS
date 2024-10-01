@@ -1,6 +1,6 @@
-== SEARCH L1-3 z+vib
+== SEARCH L1 x + vib
   = GEO_DELTA
-  * L(1-3) z = -0.05 0.05 0.005
+  *surf xy[1 0] = -0.05 0.05 0.025
 
  = VIB_DELTA
-  *surf = -0.05 0.05 0.005
+  *surf = -0.05 0.05 0.025
