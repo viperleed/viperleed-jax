@@ -52,8 +52,8 @@ def calculator_from_state(calc_path, tensor_path, l_max:int, **kwargs):
                             rpars.THEO_ENERGIES.step))
 
     logger.info(f'Starting to interpret tensor file {tensor_path.name}.')
-    logger.debug(f'Using lmax={ref_calc_lmax}, n_beams={n_beams}, '
-                 f'n_energies={n_energies}.')
+    logger.debug(f'Reading tensor file with lmax={ref_calc_lmax},'
+                 f'n_beams={n_beams}, n_energies={n_energies}.')
 
     # read tensor file
     tensors = read_tensor_zip(tensor_path, ref_calc_lmax, n_beams, n_energies)
