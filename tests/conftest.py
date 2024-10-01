@@ -17,6 +17,7 @@ from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
 from tests.fixtures.cu_111_dynamic_l_max import *
 from tests.fixtures.cu_111_fixed_l_max import *
+from tests.fixtures.fe2o3_012_converged import *
 
 if 'VIPERLEED_ON_THE_FLY_TESTS_LARGE_FILE_PATH' not in os.environ:
     raise ValueError('VIPERLEED_ON_THE_FLY_TESTS_LARGE_FILE_PATH not set')

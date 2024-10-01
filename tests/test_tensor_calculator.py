@@ -74,6 +74,14 @@ class TensorCalculatorsWithTensErLEEDDeltas:
         params, reference_delta_amplitudes, abs = cu_111_fixed_l_max_tenserleed_reference
         return calculator, params, reference_delta_amplitudes, abs
 
+    @case(tags="fe2o3_012")
+    def case_fe2o3_012_converged_z(
+        self,
+        fe2o3_012_converged_calculator_with_parameter_space,
+        fe2o3_012_converged_tenserleed_reference_z):
+        calculator = fe2o3_012_converged_calculator_with_parameter_space
+        params, reference_delta_amplitudes, abs = fe2o3_012_converged_tenserleed_reference_z
+        return calculator, params, reference_delta_amplitudes, abs
 
 @parametrize_with_cases("calculator, info", cases=TensorCalculatorsWithInfo)
 def test_calculator_creation(calculator, info):
@@ -103,5 +111,5 @@ def test_compare_known_delta_amplitudes_tenserleed(calculator,
                                                    reference_delta_amplitudes,
                                                    abs):
     # check that values match
-    delta_amps = calculator.delta_amplitude(params)
+    delta_amps = calculator.jit_delta_amplitude(params)
     assert delta_amps == pytest.approx(reference_delta_amplitudes, abs=abs)

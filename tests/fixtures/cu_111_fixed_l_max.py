@@ -175,8 +175,7 @@ def cu_111_fixed_l_max_calculator_with_parameter_space(cu_111_fixed_l_max_tensor
     return calculator
 
 @fixture(scope='session')
-def cu_111_fixed_l_max_calculator_with_parameter_space_recalc_t_matrices(cu_111_fixed_l_max_tensor_calculator_recalc_t_matrices,
-                                                                         cu_111_fixed_l_max_parameter_space):
+def cu_111_fixed_l_max_calculator_with_parameter_space_recalc_t_matrices(cu_111_fixed_l_max_tensor_calculator_recalc_t_matrices,cu_111_fixed_l_max_parameter_space):
     calculator = cu_111_fixed_l_max_tensor_calculator_recalc_t_matrices
     calculator.set_parameter_space(cu_111_fixed_l_max_parameter_space)
     return calculator
