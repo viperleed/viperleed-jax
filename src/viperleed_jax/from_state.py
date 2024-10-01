@@ -80,8 +80,6 @@ def calculator_from_state(calc_path, tensor_path, l_max:int, **kwargs):
     phaseshifts = ps.Phaseshifts(raw_phaseshifts, ref_data.energies, l_max,
                                  phaseshift_map=site_el_map)
 
-    iv_beam_indices = [beam.hk for beam in rpars.ivbeams]
-
     logger.debug('Initializing Tensor LEED calculator.')
     calculator = TensorLEEDCalculator(ref_data, phaseshifts, slab,
                                       rpars, **kwargs)
