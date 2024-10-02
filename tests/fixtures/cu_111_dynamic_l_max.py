@@ -25,7 +25,7 @@ from viperleed_jax.files.deltas import Transform as delta_transform
 
 _DATA_PATH = Path(__file__).parent.parent / 'test_data' / 'Cu_111' /'dynamic_l_max'
 _LARGE_DATA_PATH = LARGE_FILE_PATH / 'Cu_111' / 'dynamic_l_max' 
-_REFERENCE_FILE_PATH = _DATA_PATH / 'Cu_111_dynamic_l_max_TensErLEED_reference.npz'
+_REFERENCE_FILE_PATH = _LARGE_DATA_PATH / 'Cu_111_dynamic_l_max_TensErLEED_reference.npz'
 _REFERENCE_DATA = np.load(_REFERENCE_FILE_PATH)
 
 _COMPARE_PARAMS = _REFERENCE_DATA['parameters']
