@@ -24,7 +24,7 @@ from viperleed_jax.parameters.v0r_parameters import V0rParamBound
 _DATA_PATH = Path(__file__).parent.parent / 'test_data' / 'Fe2O3_012' /'converged'
 _LARGE_DATA_PATH = LARGE_FILE_PATH / 'Fe2O3_012' / 'converged'
 
-_REFERENCE_FILE_PATH_Z = _DATA_PATH / 'Fe2O3_012_TensErLEED_reference_z.npz'
+_REFERENCE_FILE_PATH_Z = _LARGE_DATA_PATH / 'Fe2O3_012_TensErLEED_reference_z.npz'
 _REFERENCE_DATA_Z = np.load(_REFERENCE_FILE_PATH_Z)
 _COMPARE_PARAMS_Z = _REFERENCE_DATA_Z['parameters']
 _COMPARE_DELTA_AMPLITUDES_Z = _REFERENCE_DATA_Z['tenserleed_delta_amplitudes_z']
@@ -32,7 +32,7 @@ _COMPARE_PARAMS_AMPS_Z = [(_COMPARE_PARAMS_Z[i,:], _COMPARE_DELTA_AMPLITUDES_Z[i
                         for i in range(len(_COMPARE_PARAMS_Z))]
 _COMPARE_ABS_Z = 8e-4 # for l_max=10
 
-_REFERENCE_FILE_PATH_X = _DATA_PATH / 'Fe2O3_012_TensErLEED_reference_x.npz'
+_REFERENCE_FILE_PATH_X = _LARGE_DATA_PATH / 'Fe2O3_012_TensErLEED_reference_x.npz'
 _REFERENCE_DATA_X = np.load(_REFERENCE_FILE_PATH_X)
 _COMPARE_PARAMS_X = _REFERENCE_DATA_X['parameters']
 _COMPARE_DELTA_AMPLITUDES_X = _REFERENCE_DATA_X['tenserleed_delta_amplitudes_x']

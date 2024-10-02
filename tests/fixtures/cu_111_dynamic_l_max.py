@@ -38,7 +38,7 @@ _COMPARE_ABS = 8.8e-5
 # Cu111 dynamic LMAX #
 ######################
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def cu_111_dynamic_l_max_info():
     input_path = _DATA_PATH
     tensor_path = _LARGE_DATA_PATH / 'Tensors' / 'Tensors_001.zip'
@@ -69,13 +69,13 @@ def cu_111_dynamic_l_max_info():
     )
 
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def cu_111_dynamic_l_max_state_after_init(cu_111_dynamic_l_max_info):
     state_after_init = run_viperleed_initialization(cu_111_dynamic_l_max_info.input_path)
     slab, rpars = state_after_init.slab, state_after_init.rpars
     return slab, rpars
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def cu_111_dynamic_l_max_raw_phaseshifts(cu_111_dynamic_l_max_info, cu_111_dynamic_l_max_state_after_init):
     slab, rpars = cu_111_dynamic_l_max_state_after_init
     phaseshifts_path = cu_111_dynamic_l_max_info.input_path / 'PHASESHIFTS'
@@ -83,7 +83,7 @@ def cu_111_dynamic_l_max_raw_phaseshifts(cu_111_dynamic_l_max_info, cu_111_dynam
         slab, rpars, readfile=phaseshifts_path, check=True, ignoreEnRange=False)
     return raw_phaseshifts
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def cu_111_dynamic_l_max_phaseshifts(cu_111_dynamic_l_max_info,
                                      cu_111_dynamic_l_max_state_after_init,
                                      cu_111_dynamic_l_max_raw_phaseshifts):
@@ -96,7 +96,7 @@ def cu_111_dynamic_l_max_phaseshifts(cu_111_dynamic_l_max_info,
         phaseshift_map=phaseshift_map)
 
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def cu_111_dynamic_l_max_read_tensor_zip(cu_111_dynamic_l_max_info):
     return read_tensor_zip(cu_111_dynamic_l_max_info.tensor_path,
                            lmax=cu_111_dynamic_l_max_info.max_l_max,
@@ -104,7 +104,7 @@ def cu_111_dynamic_l_max_read_tensor_zip(cu_111_dynamic_l_max_info):
                            n_energies=cu_111_dynamic_l_max_info.n_energies)
 
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def cu_111_dynamic_l_max_read_ref_data(cu_111_dynamic_l_max_read_tensor_zip,
                                        cu_111_dynamic_l_max_state_after_init):
     slab, _ = cu_111_dynamic_l_max_state_after_init
@@ -114,7 +114,7 @@ def cu_111_dynamic_l_max_read_ref_data(cu_111_dynamic_l_max_read_tensor_zip,
 
     return ReferenceData(sorted_tensors, fix_lmax=10) # TODO: fix!!
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def cu_111_dynamic_l_max_tensor_calculator(cu_111_dynamic_l_max_state_after_init, cu_111_dynamic_l_max_phaseshifts, cu_111_dynamic_l_max_read_ref_data):
     slab, rpars = cu_111_dynamic_l_max_state_after_init
     calculator = TensorLEEDCalculator(cu_111_dynamic_l_max_read_ref_data,
@@ -124,7 +124,7 @@ def cu_111_dynamic_l_max_tensor_calculator(cu_111_dynamic_l_max_state_after_init
                                 recalculate_ref_t_matrices=False)
     return calculator
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def cu_111_dynamic_l_max_tensor_calculator_recalc_t_matrices(cu_111_dynamic_l_max_state_after_init, cu_111_dynamic_l_max_phaseshifts, cu_111_dynamic_l_max_read_ref_data):
     slab, rpars = cu_111_dynamic_l_max_state_after_init
     calculator = TensorLEEDCalculator(cu_111_dynamic_l_max_read_ref_data,
@@ -134,7 +134,7 @@ def cu_111_dynamic_l_max_tensor_calculator_recalc_t_matrices(cu_111_dynamic_l_ma
                                 recalculate_ref_t_matrices=True)
     return calculator
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def cu_111_dynamic_l_max_parameter_space(cu_111_dynamic_l_max_state_after_init):
     slab, _ = cu_111_dynamic_l_max_state_after_init
     parameter_space = ParameterSpace(slab)
