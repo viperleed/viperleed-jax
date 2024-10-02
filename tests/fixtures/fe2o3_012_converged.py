@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from pytest_cases import fixture
 
+from tests.fixtures.base import LARGE_FILE_PATH
 from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo
 
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
@@ -21,6 +22,7 @@ from viperleed_jax.parameters.vib_parameters import VibParamBound
 from viperleed_jax.parameters.v0r_parameters import V0rParamBound
 
 _DATA_PATH = Path(__file__).parent.parent / 'test_data' / 'Fe2O3_012' /'converged'
+_LARGE_DATA_PATH = LARGE_FILE_PATH / 'Fe2O3_012' / 'converged'
 
 _REFERENCE_FILE_PATH_Z = _DATA_PATH / 'Fe2O3_012_TensErLEED_reference_z.npz'
 _REFERENCE_DATA_Z = np.load(_REFERENCE_FILE_PATH_Z)
@@ -45,7 +47,7 @@ _COMPARE_ABS_X = 5e-4 # for l_max=10
 @fixture(scope='session')
 def fe2o3_012_converged_info():
     input_path = _DATA_PATH
-    tensor_path = input_path / 'Tensors' / 'Tensors_001.zip'
+    tensor_path = _LARGE_DATA_PATH / 'Tensors' / 'Tensors_001.zip'
     return DeltaAmplitudeCalcInfo(
         input_path=input_path,
         tensor_path=tensor_path,

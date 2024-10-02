@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from pytest_cases import fixture
 
+from tests.fixtures.base import LARGE_FILE_PATH
 from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo
 
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
@@ -23,6 +24,7 @@ from viperleed_jax.parameters.v0r_parameters import V0rParamBound
 from viperleed_jax.files.deltas import Transform as delta_transform
 
 _DATA_PATH = Path(__file__).parent.parent / 'test_data' / 'Cu_111' /'dynamic_l_max'
+_LARGE_DATA_PATH = LARGE_FILE_PATH / 'Cu_111' / 'dynamic_l_max' 
 _REFERENCE_FILE_PATH = _DATA_PATH / 'Cu_111_dynamic_l_max_TensErLEED_reference.npz'
 _REFERENCE_DATA = np.load(_REFERENCE_FILE_PATH)
 
@@ -39,7 +41,7 @@ _COMPARE_ABS = 8.8e-5
 @pytest.fixture(scope='session')
 def cu_111_dynamic_l_max_info():
     input_path = _DATA_PATH
-    tensor_path = input_path / 'Tensors' / 'Tensors_001.zip'
+    tensor_path = _LARGE_DATA_PATH / 'Tensors' / 'Tensors_001.zip'
     return DeltaAmplitudeCalcInfo(
         input_path=input_path,
         tensor_path=tensor_path,
