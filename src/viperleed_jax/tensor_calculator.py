@@ -253,7 +253,12 @@ class TensorLEEDCalculator:
         self._calculate_static_t_matrices()
 
         # rotation angles
-        self.propagator_symmetry_operations, self.propagator_transpose = self._propagator_rotation_factors()
+        propagator_symmetry_operations, propagator_transpose = self._propagator_rotation_factors()
+        self.propagator_symmetry_operations = jnp.asarray(propagator_symmetry_operations)
+        # NB: Using an integer array here because there seems so be some kind of
+        # bug where jax.jit would flip on of the boolean values for some
+        # cases.
+        self.propagator_transpose_int = propagator_transpose.astype(jnp.int32)
 
         # pre-calculate the static propagators
         logger.debug(
@@ -368,21 +373,16 @@ class TensorLEEDCalculator:
             static_propagators = self._static_propagators[:, energy_indices, :, :]
 
         mapped_dynamic_propagators = dynamic_propagators[self.parameter_space.propagator_id]
-        del dynamic_propagators
         mapped_static_propagators = static_propagators[self.parameter_space.propagator_id]
-        del static_propagators
 
         propagators = jnp.where(
             self.parameter_space.is_dynamic_propagator[:, jnp.newaxis, jnp.newaxis, jnp.newaxis],
             mapped_dynamic_propagators,
             mapped_static_propagators)
-        del mapped_dynamic_propagators
-        del mapped_static_propagators
-
         # selective transpositions
         propagators = (
-            (1-self.propagator_transpose)[:, np.newaxis, np.newaxis, np.newaxis ]*propagators +
-            self.propagator_transpose[:, np.newaxis, np.newaxis, np.newaxis ]*jnp.transpose(propagators, (0, 1, 3, 2))
+            (1-self.propagator_transpose_int)[:, np.newaxis, np.newaxis, np.newaxis ]*propagators +
+            self.propagator_transpose_int[:, np.newaxis, np.newaxis, np.newaxis ]*jnp.transpose(propagators, (0, 1, 3, 2))
         )
         # apply rotations and rearrange to make energy the first axis
         propagators = jnp.einsum('aelm,alm->ealm',
