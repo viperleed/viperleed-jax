@@ -220,13 +220,13 @@ class TensorLEEDCalculator:
                 self.ref_data.tensor_amps_out[batch.l_max][batch.energy_indices])
         return tensor_amps_in, tensor_amps_out
 
-    def set_parameter_space(self, delta_slab):
+    def set_parameter_space(self, parameter_space):
         if self._parameter_space is not None:
             logger.debug("Overwriting parameter space.")
         # take delta_slab and set the parameter space
-        self._parameter_space = delta_slab.freeze()
+        self._parameter_space = parameter_space.freeze()
         logger.info("Parameter space set.\n"
-                    f"{delta_slab.info}")
+                    f"{parameter_space.info}")
         logger.info(
             "This parameter space requires dynamic calculation of "
             f"{self._parameter_space.n_dynamic_t_matrices} t-matrice(s) and "
@@ -235,13 +235,13 @@ class TensorLEEDCalculator:
 
         if self.recalculate_ref_t_matrices:
             # calculate reference t-matrices for full LMAX
-            n_ref_vib_amps = len(delta_slab.vib_params.base_params)
+            n_ref_vib_amps = len(parameter_space.vib_params.base_params)
             logger.debug(
                 f"Calculating {n_ref_vib_amps} reference t-matrices for "
                 f"LMAX={self.max_l_max}.")
             ref_vib_amps = [p.ref_vib_amp
-                            for p in delta_slab.vib_params.base_params]
-            site_elements = [p.site_element for p in delta_slab.vib_params.base_params]
+                            for p in parameter_space.vib_params.base_params]
+            site_elements = [p.site_element for p in parameter_space.vib_params.base_params]
             self.ref_t_matrices = self._calculate_reference_t_matrices(ref_vib_amps, site_elements)
         else:
             self.ref_t_matrices = self.ref_data.ref_t_matrix[self.max_l_max]
