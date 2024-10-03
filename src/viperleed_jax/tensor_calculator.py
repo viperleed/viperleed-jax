@@ -8,8 +8,6 @@ from viperleed.calc import symmetry
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.files.iorfactor import beamlist_to_array
 
-
-from viperleed_jax import delta
 from viperleed_jax import rfactor
 from viperleed_jax.constants import BOHR, HARTREE
 from viperleed_jax.interpolation import *
