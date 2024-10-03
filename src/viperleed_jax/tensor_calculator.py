@@ -363,7 +363,6 @@ class TensorLEEDCalculator:
 
     def _calculate_propagators(self, displacements, energy_indices):
         # return propagators indexed as (atom_site_elements, energies, lm, l'm')
-
         dynamic_propagators = self._calculate_dynamic_propagators(displacements, energy_indices)
 
         # if there are 0 static propagators, indexing would raise Error
@@ -389,6 +388,7 @@ class TensorLEEDCalculator:
                                 propagators,
                                 self.propagator_symmetry_operations,
                                 optimize='optimal')
+
         return propagators
 
     @partial(jax.jit, static_argnums=(0,))
@@ -599,7 +599,6 @@ class TensorLEEDCalculator:
 
     def delta_amplitude(self, free_params):
         _free_params = jnp.asarray(free_params)
-
         # split free parameters
         (_,
          vib_params,
