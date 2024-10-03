@@ -802,8 +802,9 @@ class TensorLEEDCalculator:
         }
         simple_elements = {
             'ref_data': self.ref_data,
+            'ref_t_matrices': self.ref_t_matrices,
             'phaseshifts': self.phaseshifts,
-            'batch_lmax': self.batch_lmax,
+            'batching': self.batching,
             'interpolation_deg': self.interpolation_deg,
             'bc_type': self.bc_type,
             'interpolation_step': self.interpolation_step,
@@ -814,12 +815,17 @@ class TensorLEEDCalculator:
             'phi': self.phi,
             'theta': self.theta,
             'is_surface_atom': self.is_surface_atom,
-            'parameter_transformer': self.parameter_transformer,
+            '_parameter_space': self.parameter_space,
             'exp_spline': self.exp_spline,
             'comp_intensity': self.comp_intensity,
             'comp_energies': self.comp_energies,
             'origin_grid': self.origin_grid,
             'delta_amp_prefactors': self.delta_amp_prefactors,
+            'tensor_amps_in': self.tensor_amps_in,
+            'tensor_amps_out': self.tensor_amps_out,
+            '_static_propagators': self._static_propagators,
+            'propagtor_symmetry_operations': self.propagator_symmetry_operations,
+            'propagator_transpose_int': self.propagator_transpose_int,
         }
         aux_data = (dynamic_elements, simple_elements)
         children = ()
