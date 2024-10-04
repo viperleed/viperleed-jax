@@ -1,28 +1,9 @@
-from enum import Enum
-from collections import namedtuple
 import re
 
-from viperleed.calc.files.parameters.file_reader import SettingsFileReader
-
-from .errors import InvalidSyntaxError
-from .errors import SymmetryViolationError
-
-DisplacementFileSections = Enum('DisplacementFileSections', [
-    'GEO_DELTA',
-    'VIB_DELTA',
-    'OCC_DELTA',
-    'CONSTRAIN'
-])
-
-LOOP_START_MARKER = 'LOOP_START'
-LOOP_END_MARKER = 'LOOP_END'
-
-LoopMarkerLine = namedtuple('LoopMarkerLine', ['type'])
-SearchHeaderLine = namedtuple('SearchHeaderLine', ['label'])
-SectionLine = namedtuple('SectionLine', ['section', 'line'])
 
 SEARCH_HEADER_PATTERN = re.compile(r"^==\s+(?i:search)\s+(.*)$")
 SECTION_HEADER_PATTERN = re.compile(r"^(GEO_DELTA|VIB_DELTA|OCC_DELTA|CONSTRAIN)$")
+
 
 GEO_LINE_PATTERN = re.compile(
     r"^(?P<label>\w+)"
@@ -49,6 +30,7 @@ CONSTRAIN_LINE_PATTERN = re.compile(
     r"^(?P<type>geo|vib|occ)\s+(?P<parameters>.+?)"
     r"\s*=\s*(?P<value>linked|-?\d+(\.\d+)?)$"
 )
+
 
 def match_geo_line(line):
     match = GEO_LINE_PATTERN.match(line)
@@ -127,3 +109,4 @@ def match_constrain_line(line):
     value = float(value) if value != "linked" else value
 
     return constraint_type, parameters, value
+

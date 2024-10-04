@@ -1,11 +1,11 @@
 import pytest
 
-from viperleed_jax.files.displacements import SEARCH_HEADER_PATTERN
-from viperleed_jax.files.displacements import SECTION_HEADER_PATTERN
-from viperleed_jax.files.displacements import match_geo_line
-from viperleed_jax.files.displacements import match_vib_line
-from viperleed_jax.files.displacements import match_occ_line
-from viperleed_jax.files.displacements import match_constrain_line
+from viperleed_jax.files.displacements.regex import SEARCH_HEADER_PATTERN
+from viperleed_jax.files.displacements.regex import SECTION_HEADER_PATTERN
+from viperleed_jax.files.displacements.regex import match_geo_line
+from viperleed_jax.files.displacements.regex import match_vib_line
+from viperleed_jax.files.displacements.regex import match_occ_line
+from viperleed_jax.files.displacements.regex import match_constrain_line
 
 # Test cases for SECTION_HEADER_PATTERN
 TEST_LINES_SECTION = {
