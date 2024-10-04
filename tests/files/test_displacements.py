@@ -5,20 +5,7 @@ from viperleed_jax.files.displacements import SECTION_HEADER_PATTERN
 from viperleed_jax.files.displacements import match_geo_line
 from viperleed_jax.files.displacements import match_vib_line
 from viperleed_jax.files.displacements import match_occ_line
-
-# Test cases for GEO_LINE_PATTERN
-TEST_LINES_GEOMETRY = {
-    "Ir L(1-6) z = -0.05 0.05 0.01": ('Ir', 'L(1-6)', 'z', -0.05, 0.05, 0.01),
-    "Si x = -0.005 0.005 0.0005": ('Si', None, 'x', -0.005, 0.005, 0.0005),
-    "Ir L(1-6) xy[1 0] = -0.03 0.03 0.01": ('Ir', 'L(1-6)', 'xy[1 0]', -0.03, 0.03, 0.01),
-    "Abc L(1-6) xy = -0.03 0.03 0.01": ('Abc', 'L(1-6)', 'xy', -0.03, 0.03, 0.01),
-    "Ir L(1-6) z = -0.03 0.03 0.01": ('Ir', 'L(1-6)', 'z', -0.03, 0.03, 0.01),
-    "Au 1 2 4 x = -0.03 0.03 0.01": ('Au', '1 2 4', 'x', -0.03, 0.03, 0.01),
-    "B 1 2 4 abc = -0.03 0.03 0.01" : ('B', '1 2 4', 'abc', -0.03, 0.03, 0.01),
-    "Cd L(1-6) azi(ab[c1 c2]) = -0.03 0.03 0.01" : ('Cd', 'L(1-6)', 'azi(ab[c1 c2])', -0.03, 0.03, 0.01),
-    "E 5 ab[n1 n2] = -0.005 0": ('E', '5', 'ab[n1 n2]', -0.005, 0., None),
-    "F 1 3 xy[0 1] = 0.2": ('F', '1 3', 'xy[0 1]', 0.2, None, None),
-}
+from viperleed_jax.files.displacements import match_constrain_line
 
 # Test cases for SECTION_HEADER_PATTERN
 TEST_LINES_SECTION = {
@@ -38,6 +25,20 @@ TEST_LINES_SEARCH = {
     "== SEARCH With_Spaces In_Label": ("With_Spaces In_Label",),
 }
 
+# Test cases for GEO_LINE_PATTERN
+TEST_LINES_GEOMETRY = {
+    "Ir L(1-6) z = -0.05 0.05 0.01": ('Ir', 'L(1-6)', 'z', -0.05, 0.05, 0.01),
+    "Si x = -0.005 0.005 0.0005": ('Si', None, 'x', -0.005, 0.005, 0.0005),
+    "Ir L(1-6) xy[1 0] = -0.03 0.03 0.01": ('Ir', 'L(1-6)', 'xy[1 0]', -0.03, 0.03, 0.01),
+    "Abc L(1-6) xy = -0.03 0.03 0.01": ('Abc', 'L(1-6)', 'xy', -0.03, 0.03, 0.01),
+    "Ir L(1-6) z = -0.03 0.03 0.01": ('Ir', 'L(1-6)', 'z', -0.03, 0.03, 0.01),
+    "Au 1 2 4 x = -0.03 0.03 0.01": ('Au', '1 2 4', 'x', -0.03, 0.03, 0.01),
+    "B 1 2 4 abc = -0.03 0.03 0.01" : ('B', '1 2 4', 'abc', -0.03, 0.03, 0.01),
+    "Cd L(1-6) azi(ab[c1 c2]) = -0.03 0.03 0.01" : ('Cd', 'L(1-6)', 'azi(ab[c1 c2])', -0.03, 0.03, 0.01),
+    "E 5 ab[n1 n2] = -0.005 0": ('E', '5', 'ab[n1 n2]', -0.005, 0., None),
+    "F 1 3 xy[0 1] = 0.2": ('F', '1 3', 'xy[0 1]', 0.2, None, None),
+}
+
 # Test cases for VIB_DELTA lines
 TEST_LINES_VIB = {
     "O 1 = -0.05 0.05 0.02": ('O', '1', -0.05, 0.05, 0.02),
@@ -47,6 +48,26 @@ TEST_LINES_VIB = {
     "H 5 = -0.03 0.03": ('H', '5', -0.03, 0.03, None),  # No step
     "C L(1-4) = -0.1 0.1 0.05": ('C', 'L(1-4)', -0.1, 0.1, 0.05),  # With L(1-4)
     "Mn L(2-3) = 0.0": ('Mn', 'L(2-3)', 0.0, None, None),  # Single value with L-range
+}
+
+# Test cases for OCC_DELTA lines with optional steps
+TEST_LINES_OCC = {
+    "O 1 = O 0.8 1.0 0.05": ('O', '1', [('O', 0.8, 1.0, 0.05)]),
+    "M_top = Fe 0.4 0.6 0.05, Ni 0.6 0.4 0.05": ('M_top', None, [('Fe', 0.4, 0.6, 0.05), ('Ni', 0.6, 0.4, 0.05)]),
+    "M_top = Fe 0.3 0.5, Ni 0.6 0.4, Ti 0.1": ('M_top', None, [('Fe', 0.3, 0.5, None), ('Ni', 0.6, 0.4, None), ('Ti', 0.1, None, None)]),  # Missing steps
+    "O 1 = O 0.8": ('O', '1', [('O', 0.8, None, None)]),  # offset only
+    "M_top = Fe 0.6, Ni 0.4": ('M_top', None, [('Fe', 0.6, None, None), ('Ni', 0.4, None, None)]),  # Fixed values
+    "Si 1 = Si 0.2 0.5, Ge 0.5": ('Si', '1', [('Si', 0.2, 0.5, None), ('Ge', 0.5, None, None)]),
+    "Cu = Cu 0.6 1.0, Zn 0.4 0.0": ('Cu', None, [('Cu', 0.6, 1.0, None), ('Zn', 0.4, 0.0, None)]),
+}
+
+# Test cases for CONSTRAIN lines
+TEST_LINES_CONSTRAIN = {
+    "geo O L(1-2), Ir L(1) = linked": ('geo', ['O L(1-2)', 'Ir L(1)'], 'linked'),
+    "vib Ir_top = linked": ('vib', ['Ir_top'], 'linked'),
+    "vib Ir_top = -0.03": ('vib', ['Ir_top'], -0.03),  # Fix to a specific value
+    "geo C L(1), N L(2) = 0.1": ('geo', ['C L(1)', 'N L(2)'], 0.1),  # Geo constraint to 0.1
+    "occ Fe L(3), Ni = linked": ('occ', ['Fe L(3)', 'Ni'], 'linked'),
 }
 
 @pytest.mark.parametrize("input, expected", TEST_LINES_GEOMETRY.items(),
@@ -64,14 +85,16 @@ def test_geo_line_regex(input, expected):
     assert stop == pytest.approx(e_stop)
     assert step == pytest.approx(e_step) or step is None  # optional
 
-@pytest.mark.parametrize("input, expected", TEST_LINES_SEARCH.items(), ids=TEST_LINES_SEARCH.keys())
+@pytest.mark.parametrize("input, expected", TEST_LINES_SEARCH.items(),
+                         ids=TEST_LINES_SEARCH.keys())
 def test_search_header_regex(input, expected):
     """Check that the regex for the search header works as expected."""
     match = SEARCH_HEADER_PATTERN.match(input)
     assert match is not None
     assert match.group(1) == expected[0]
 
-@pytest.mark.parametrize("input, expected", TEST_LINES_SECTION.items(), ids=TEST_LINES_SECTION.keys())
+@pytest.mark.parametrize("input, expected", TEST_LINES_SECTION.items(),
+                         ids=TEST_LINES_SECTION.keys())
 def test_section_header_regex(input, expected):
     """Check that the regex for the section header works as expected."""
     match = SECTION_HEADER_PATTERN.match(input)
@@ -81,7 +104,8 @@ def test_section_header_regex(input, expected):
     assert match is not None
     assert match.group(1) == expected
 
-@pytest.mark.parametrize("input, expected", TEST_LINES_VIB.items(), ids=TEST_LINES_VIB.keys())
+@pytest.mark.parametrize("input, expected", TEST_LINES_VIB.items(),
+                         ids=TEST_LINES_VIB.keys())
 def test_vib_line_regex(input, expected):
     """Check that the regex for VIB_DELTA lines works as expected."""
     match = match_vib_line(input)
@@ -94,22 +118,8 @@ def test_vib_line_regex(input, expected):
     assert stop == pytest.approx(e_stop) or stop is None
     assert step == pytest.approx(e_step) or step is None  # Optional
 
-
-import pytest
-
-# Test cases for OCC_DELTA lines with optional steps
-TEST_LINES_OCC = {
-    "O 1 = O 0.8 1.0 0.05": ('O', '1', [('O', 0.8, 1.0, 0.05)]),
-    "M_top = Fe 0.4 0.6 0.05, Ni 0.6 0.4 0.05": ('M_top', None, [('Fe', 0.4, 0.6, 0.05), ('Ni', 0.6, 0.4, 0.05)]),
-    "M_top = Fe 0.3 0.5, Ni 0.6 0.4, Ti 0.1": ('M_top', None, [('Fe', 0.3, 0.5, None), ('Ni', 0.6, 0.4, None), ('Ti', 0.1, None, None)]),  # Missing steps
-    "O 1 = O 0.8": ('O', '1', [('O', 0.8, None, None)]),  # offset only
-    "M_top = Fe 0.6, Ni 0.4": ('M_top', None, [('Fe', 0.6, None, None), ('Ni', 0.4, None, None)]),  # Fixed values
-    "Si 1 = Si 0.2 0.5, Ge 0.5": ('Si', '1', [('Si', 0.2, 0.5, None), ('Ge', 0.5, None, None)]),
-    "Cu = Cu 0.6 1.0, Zn 0.4 0.0": ('Cu', None, [('Cu', 0.6, 1.0, None), ('Zn', 0.4, 0.0, None)]),
-    
-}
-
-@pytest.mark.parametrize("input, expected", TEST_LINES_OCC.items(), ids=TEST_LINES_OCC.keys())
+@pytest.mark.parametrize("input, expected", TEST_LINES_OCC.items(),
+                         ids=TEST_LINES_OCC.keys())
 def test_occ_line_regex(input, expected):
     """Check that the regex for the OCC_DELTA line works as expected."""
     match = match_occ_line(input)
@@ -125,3 +135,15 @@ def test_occ_line_regex(input, expected):
         assert start == pytest.approx(e_start)
         assert stop == pytest.approx(e_stop) or stop is None
         assert step == pytest.approx(e_step) or step is None
+
+@pytest.mark.parametrize("input, expected", TEST_LINES_CONSTRAIN.items(),
+                         ids=TEST_LINES_CONSTRAIN.keys())
+def test_constrain_line_regex(input, expected):
+    """Check that the regex for CONSTRAIN lines works as expected."""
+    match = match_constrain_line(input)
+    assert match is not None
+    constraint_type, parameters, value = match
+    e_constraint_type, e_parameters, e_value = expected
+    assert constraint_type == e_constraint_type
+    assert parameters == e_parameters
+    assert value == e_value
