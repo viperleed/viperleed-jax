@@ -2,6 +2,8 @@ from enum import Enum
 from collections import namedtuple
 import re
 
+from viperleed.calc.files.parameters.file_reader import SettingsFileReader
+
 from .errors import InvalidSyntaxError
 from .errors import SymmetryViolationError
 
@@ -42,6 +44,10 @@ OCC_LINE_PATTERN = re.compile(
     r"\s*=\s*(?P<chem_blocks>(?P<chem>\w+)\s+(?P<start>-?\d+(\.\d+)?)"
     r"(?:\s+(?P<stop>-?\d+(\.\d+)?)(?:\s+(?P<step>-?\d+(\.\d+)?))?)?"
     r"(?:\s*,\s*(?P<additional_blocks>.+))?)$"
+)
+CONSTRAIN_LINE_PATTERN = re.compile(
+    r"^(?P<type>geo|vib|occ)\s+(?P<parameters>.+?)"
+    r"\s*=\s*(?P<value>linked|-?\d+(\.\d+)?)$"
 )
 
 def match_geo_line(line):
@@ -101,3 +107,19 @@ def match_occ_line(line):
                 chem_blocks.append((chem, start, stop, step))
 
     return label, which, chem_blocks
+
+def match_constrain_line(line):
+    """Match and parse a CONSTRAIN line, returning the type, parameters, and value."""
+    match = CONSTRAIN_LINE_PATTERN.match(line)
+    if match is None:
+        return None
+
+    constraint_type = match.group('type')
+    parameters = match.group('parameters').split(',')
+    parameters = [param.strip() for param in parameters]  # Clean up whitespace around parameters
+    value = match.group('value')
+
+    # Convert `value` to a float if it's a number, otherwise keep it as `linked`
+    value = float(value) if value != "linked" else value
+
+    return constraint_type, parameters, value
