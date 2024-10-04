@@ -4,6 +4,7 @@ from viperleed_jax.files.displacements import SEARCH_HEADER_PATTERN
 from viperleed_jax.files.displacements import SECTION_HEADER_PATTERN
 from viperleed_jax.files.displacements import match_geo_line
 from viperleed_jax.files.displacements import match_vib_line
+from viperleed_jax.files.displacements import match_occ_line
 
 # Test cases for GEO_LINE_PATTERN
 TEST_LINES_GEOMETRY = {
@@ -92,3 +93,35 @@ def test_vib_line_regex(input, expected):
     assert start == pytest.approx(e_start)
     assert stop == pytest.approx(e_stop) or stop is None
     assert step == pytest.approx(e_step) or step is None  # Optional
+
+
+import pytest
+
+# Test cases for OCC_DELTA lines with optional steps
+TEST_LINES_OCC = {
+    "O 1 = O 0.8 1.0 0.05": ('O', '1', [('O', 0.8, 1.0, 0.05)]),
+    "M_top = Fe 0.4 0.6 0.05, Ni 0.6 0.4 0.05": ('M_top', None, [('Fe', 0.4, 0.6, 0.05), ('Ni', 0.6, 0.4, 0.05)]),
+    "M_top = Fe 0.3 0.5, Ni 0.6 0.4, Ti 0.1": ('M_top', None, [('Fe', 0.3, 0.5, None), ('Ni', 0.6, 0.4, None), ('Ti', 0.1, None, None)]),  # Missing steps
+    "O 1 = O 0.8": ('O', '1', [('O', 0.8, None, None)]),  # offset only
+    "M_top = Fe 0.6, Ni 0.4": ('M_top', None, [('Fe', 0.6, None, None), ('Ni', 0.4, None, None)]),  # Fixed values
+    "Si 1 = Si 0.2 0.5, Ge 0.5": ('Si', '1', [('Si', 0.2, 0.5, None), ('Ge', 0.5, None, None)]),
+    "Cu = Cu 0.6 1.0, Zn 0.4 0.0": ('Cu', None, [('Cu', 0.6, 1.0, None), ('Zn', 0.4, 0.0, None)]),
+    
+}
+
+@pytest.mark.parametrize("input, expected", TEST_LINES_OCC.items(), ids=TEST_LINES_OCC.keys())
+def test_occ_line_regex(input, expected):
+    """Check that the regex for the OCC_DELTA line works as expected."""
+    match = match_occ_line(input)
+    assert match is not None
+    label, which, chem_blocks = match
+    e_label, e_which, e_chem_blocks = expected
+    assert label == e_label
+    assert which == e_which or e_which is None
+    assert len(chem_blocks) == len(e_chem_blocks)
+    
+    for (chem, start, stop, step), (e_chem, e_start, e_stop, e_step) in zip(chem_blocks, e_chem_blocks):
+        assert chem == e_chem
+        assert start == pytest.approx(e_start)
+        assert stop == pytest.approx(e_stop) or stop is None
+        assert step == pytest.approx(e_step) or step is None
