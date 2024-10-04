@@ -2,6 +2,9 @@ from enum import Enum
 from collections import namedtuple
 import re
 
+from .errors import InvalidSyntaxError
+from .errors import SymmetryViolationError
+
 DisplacementFileSections = Enum('DisplacementFileSections', [
     'GEO_DELTA',
     'VIB_DELTA',
@@ -66,7 +69,6 @@ def match_vib_line(line):
     step = float(match.group('step')) if match.group('step') is not None else None
 
     return label, which, start, stop, step
-
 
 def match_occ_line(line):
     """Match and parse an OCC_DELTA line, returning chemical blocks and their ranges."""
