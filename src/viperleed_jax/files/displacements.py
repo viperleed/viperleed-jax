@@ -110,6 +110,10 @@ def match_occ_line(line):
 
 def match_constrain_line(line):
     """Match and parse a CONSTRAIN line, returning the type, parameters, and value."""
+    if "ind(" in line:
+        raise NotImplementedError(
+            "Index based constrains are not yet supported in the new parser.")
+
     match = CONSTRAIN_LINE_PATTERN.match(line)
     if match is None:
         return None
