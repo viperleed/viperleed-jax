@@ -16,6 +16,7 @@ TEST_LINES_GEOMETRY = {
     "B 1 2 4 abc = -0.03 0.03 0.01" : ('B', '1 2 4', 'abc', -0.03, 0.03, 0.01),
     "Cd L(1-6) azi(ab[c1 c2]) = -0.03 0.03 0.01" : ('Cd', 'L(1-6)', 'azi(ab[c1 c2])', -0.03, 0.03, 0.01),
     "E 5 ab[n1 n2] = -0.005 0": ('E', '5', 'ab[n1 n2]', -0.005, 0., None),
+    "F 1 3 xy[0 1] = 0.2": ('F', '1 3', 'xy[0 1]', 0.2, None, None),
 }
 
 # Test cases for SECTION_HEADER_PATTERN
