@@ -1,8 +1,9 @@
 import pytest
 
-from viperleed_jax.files.displacements import match_geo_line
 from viperleed_jax.files.displacements import SEARCH_HEADER_PATTERN
 from viperleed_jax.files.displacements import SECTION_HEADER_PATTERN
+from viperleed_jax.files.displacements import match_geo_line
+from viperleed_jax.files.displacements import match_vib_line
 
 # Test cases for GEO_LINE_PATTERN
 TEST_LINES_GEOMETRY = {
@@ -35,6 +36,16 @@ TEST_LINES_SEARCH = {
     "== SEARCH With_Spaces In_Label": ("With_Spaces In_Label",),
 }
 
+# Test cases for VIB_DELTA lines
+TEST_LINES_VIB = {
+    "O 1 = -0.05 0.05 0.02": ('O', '1', -0.05, 0.05, 0.02),
+    "Ir_top = -0.05 0.05 0.01": ('Ir_top', None, -0.05, 0.05, 0.01),
+    "O 1 = 0.02": ('O', '1', 0.02, None, None),  # Single value offset
+    "Si = 0.1": ('Si', None, 0.1, None, None),  # Single value offset without which
+    "H 5 = -0.03 0.03": ('H', '5', -0.03, 0.03, None),  # No step
+    "C L(1-4) = -0.1 0.1 0.05": ('C', 'L(1-4)', -0.1, 0.1, 0.05),  # With L(1-4)
+    "Mn L(2-3) = 0.0": ('Mn', 'L(2-3)', 0.0, None, None),  # Single value with L-range
+}
 
 @pytest.mark.parametrize("input, expected", TEST_LINES_GEOMETRY.items(),
                          ids=TEST_LINES_GEOMETRY.keys())
@@ -67,3 +78,16 @@ def test_section_header_regex(input, expected):
         return
     assert match is not None
     assert match.group(1) == expected
+
+@pytest.mark.parametrize("input, expected", TEST_LINES_VIB.items(), ids=TEST_LINES_VIB.keys())
+def test_vib_line_regex(input, expected):
+    """Check that the regex for VIB_DELTA lines works as expected."""
+    match = match_vib_line(input)
+    assert match is not None
+    label, which, start, stop, step = match
+    e_label, e_which, e_start, e_stop, e_step = expected
+    assert label == e_label
+    assert which == e_which or e_which is None  # Optional
+    assert start == pytest.approx(e_start)
+    assert stop == pytest.approx(e_stop) or stop is None
+    assert step == pytest.approx(e_step) or step is None  # Optional
