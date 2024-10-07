@@ -1,42 +1,11 @@
 import numpy as np
 import jax.numpy as jnp
 
-
-class LinearTransformer:
-    """
-    Linear transformation that applies a weight and a bias to an input.
-    Can optionally reshape the output.
-    """
-
-    def __init__(self, weights, biases, out_reshape=None):
-        self.weights = jnp.array(weights)
-        self.n_free_params = self.weights.shape[1]
-        self.biases = jnp.array(biases)
-        self.out_reshape = out_reshape
-
-    def __call__(self, free_params):
-        if self.n_free_params == 0:
-            return self.biases
-        if isinstance(free_params, float):
-            free_params = jnp.array([free_params])
-        free_params = jnp.array(free_params)
-        if len(free_params) != self.n_free_params:
-            raise ValueError("Free parameters have wrong shape")
-        result = self.weights @ free_params + self.biases
-        if self.out_reshape is not None:
-            result = result.reshape(self.out_reshape)
-        return result
-
-    def __repr__(self):
-        return f"LinearTransformer(weights={self.weights.shape}, biases={self.biases.shape}, out_reshape={self.out_reshape})"
-
+from .linear_transfomer import LinearTransformer
 
 class HLNode:
     def __init__(self, dof):
-        """
-        Initialize a node with a given number of degrees of freedom (dof).
-        - `dof`: Number of degrees of freedom for the node.
-        """
+        """Initialize a node with a given number of degrees of freedom (dof)."""
         self.dof = dof
         self.children = []  # List to hold child nodes
         self.parent = None  # Reference to parent node
@@ -66,6 +35,20 @@ class HLLeafNode(HLNode):
         return f"HLLeafNode(dof={self.dof}, atom_site_element={self.atom_site_element}, site_element={self.site_element})"
 
 
+class HLConstraintNode(HLNode):
+    def __init__(self, dof, n_free_params):
+        """
+        Initialize a constraint node that reduces the degrees of freedom.
+        - `dof`: Number of degrees of freedom for the parent node.
+        - `n_free_params`: The number of free parameters before the constraint is applied.
+        """
+        super().__init__(dof)
+        self.n_free_params = n_free_params
+
+    def __repr__(self):
+        return f"HLConstraintNode(dof={self.dof}, n_free_params={self.n_free_params})"
+
+
 class HLEdge:
     def __init__(self, parent, child, transformer):
         """
@@ -82,6 +65,22 @@ class HLEdge:
         return f"HLEdge(Child dof={self.child.dof} -> Parent dof={self.parent.dof}, {self.transformer})"
 
 
+class Layer:
+    """A class representing a single layer in the Hierarchical Linear Tree."""
+
+    def __init__(self, name, nodes):
+        """
+        Initialize a layer with a name and a set of nodes.
+        - `name`: Name of the layer.
+        - `nodes`: A list of `HLConstraintNode` instances that make up this layer.
+        """
+        self.name = name
+        self.nodes = nodes
+
+    def __repr__(self):
+        return f"Layer(name={self.name}, nodes={len(self.nodes)} nodes)"
+
+
 class HierarchicalLinearTree:
     def __init__(self, leaf_nodes):
         """
@@ -90,6 +89,7 @@ class HierarchicalLinearTree:
         """
         self.nodes = []  # Store nodes in a list
         self.edges = []  # Store all edges
+        self.layers = []  # Store all layers
 
         # Ensure all provided leaf nodes are instances of HLLeafNode
         for leaf in leaf_nodes:
@@ -99,29 +99,26 @@ class HierarchicalLinearTree:
                 )
             self.nodes.append(leaf)
 
-    def add_parent(self, child_indices, transformers):
+    def add_layer(self, transformers, layer_name):
         """
-        Add a new parent node that connects to the specified child nodes by their indices.
+        Add a new layer to the tree, connecting all root nodes to new parent constraint nodes.
         The dimensions of the transformers must be validated against the child nodes' degrees of freedom.
 
         Parameters:
-        - `child_indices`: List of indices of the child nodes (must be roots).
-        - `transformers`: List of LinearTransformer objects for each child.
-
-        Returns:
-        - The newly created parent node.
+        - `transformers`: List of LinearTransformer objects, one for each current root node.
+        - `layer_name`: Name of the new layer.
         """
-        if len(child_indices) != len(transformers):
+        # Ensure that the number of transformers matches the number of root nodes
+        if len(transformers) != len(self.roots):
             raise ValueError(
-                "Number of child nodes and transformers must match."
+                "Number of transformers must match the number of root nodes."
             )
 
-        # Retrieve child nodes by their indices
-        children = [self.roots[i] for i in child_indices]
-
-        # Calculate the dof for the new parent node
+        # Calculate parent node dof and total free parameters
         parent_dof = transformers[0].weights.shape[0]
-        for transformer, child in zip(transformers, children):
+        total_free_params = sum(root.dof for root in self.roots)
+
+        for transformer, child in zip(transformers, self.roots):
             if transformer.weights.shape[1] != child.dof:
                 raise ValueError(
                     f"Transformer columns ({transformer.weights.shape[1]}) must match child node dof ({child.dof})."
@@ -131,21 +128,24 @@ class HierarchicalLinearTree:
                     "All transformers must have the same number of rows (parent node dof)."
                 )
 
-        # Create the new parent node
-        parent_node = HLNode(parent_dof)
-        self.nodes.append(parent_node)
+        # Create a new parent constraint node for each child
+        new_nodes = []
+        for child, transformer in zip(self.roots, transformers):
+            parent_node = HLConstraintNode(
+                parent_dof, n_free_params=total_free_params
+            )
+            self.nodes.append(parent_node)
+            new_nodes.append(parent_node)
 
-        # Connect the parent to each child
-        for child, transformer in zip(children, transformers):
+            # Connect each child to the new parent node
             self._add_edge(child, parent_node, transformer)
 
-        return parent_node
+        # Create and add the new layer
+        layer = Layer(name=layer_name, nodes=new_nodes)
+        self.layers.append(layer)
 
     def _add_edge(self, child, parent, transformer):
-        """
-        Create a linear edge between child and parent nodes using a LinearTransformer.
-        This method is private and should not be called directly.
-        """
+        """Create a linear edge between child and parent nodes using a LinearTransformer."""
         parent.add_child(child)
         edge = HLEdge(parent, child, transformer)
         self.edges.append(edge)
@@ -161,48 +161,22 @@ class HierarchicalLinearTree:
         return len(self.roots)
 
     def display_structure(self):
-        """Display the structure of the tree with node degrees of freedom (dof) and leaf attributes."""
-        print(f"Tree Structure with {self.n_roots} root node(s):")
+        """Display the structure of the tree with node degrees of freedom (dof), layers, and leaf attributes."""
+        print(
+            f"Tree Structure with {self.n_roots} root node(s) and {len(self.layers)} layer(s):"
+        )
         for idx, node in enumerate(self.nodes):
-            leaf_info = (
-                f" [Leaf: atom_site_element={node.atom_site_element}, site_element={node.site_element}]"
-                if isinstance(node, HLLeafNode)
-                else ""
-            )
+            if isinstance(node, HLLeafNode):
+                node_info = f" [Leaf: atom_site_element={node.atom_site_element}, site_element={node.site_element}]"
+            elif isinstance(node, HLConstraintNode):
+                node_info = (
+                    f" [Constraint Node: n_free_params={node.n_free_params}]"
+                )
+            else:
+                node_info = ""
             root_info = " (Root)" if node in self.roots else ""
-            print(f"Node {idx}: {node.dof} dof{root_info}{leaf_info}")
+            print(f"Node {idx}: {node.dof} dof{root_info}{node_info}")
 
-
-# Example Usage
-leaf1 = HLLeafNode(dof=2, atom_site_element="H", site_element="1")
-leaf2 = HLLeafNode(dof=1, atom_site_element="O", site_element="2")
-leaf3 = HLLeafNode(dof=3, atom_site_element="C", site_element="3")
-tree = HierarchicalLinearTree([leaf1, leaf2, leaf3])
-
-# Use LinearTransformer objects to add a parent node
-transformer1 = LinearTransformer(
-    weights=np.array([[1, 0], [0, 1]]), biases=np.array([1, -1])
-)
-transformer2 = LinearTransformer(weights=np.array([[1]]), biases=np.array([2]))
-
-# Adding parent node
-tree.add_parent(
-    child_indices=[0, 1],  # Indices of Leaf1 and Leaf2
-    transformers=[transformer1, transformer2],
-)
-
-transformer3 = LinearTransformer(
-    weights=np.array([[1, 1, 1], [0, 0, 1]]), biases=np.array([0, 0])
-)
-transformer4 = LinearTransformer(
-    weights=np.array([[1, 0], [0, 1]]), biases=np.array([1, 1])
-)
-
-# Adding another parent node
-tree.add_parent(
-    child_indices=[2, 3],  # Indices of Leaf3 and Parent1
-    transformers=[transformer3, transformer4],
-)
-
-# Display the structure with degrees of freedom and leaf attributes
-tree.display_structure()
+        print("\nLayers:")
+        for layer in self.layers:
+            print(f"{layer.name}: {len(layer.nodes)} nodes")
