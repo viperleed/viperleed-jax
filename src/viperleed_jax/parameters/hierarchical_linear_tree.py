@@ -1,22 +1,35 @@
+from collections.abc import ABC, abstractmethod
+
 import numpy as np
 import jax.numpy as jnp
 
 from .linear_transformer import LinearTransformer
 
-class HLNode:
+class HLNode(ABC):
     def __init__(self, dof):
         """Initialize a node with a given number of degrees of freedom (dof)."""
         self.dof = dof
         self.children = []  # List to hold child nodes
-        self.parent = None  # Reference to parent node
+        self.parent_edge = None  # Reference to parent edge
 
-    def add_child(self, child_node):
-        """Add a child node to the current node."""
-        self.children.append(child_node)
-        child_node.parent = self
+    @property
+    def parent(self):
+        """Return the parent node."""
+        if self.parent_edge is not None:
+            return self.parent_edge.parent
+        return None
 
+    @property
+    def root(self):
+        """Return the root node associated with this node."""
+        node = self
+        while node.parent is not None:
+            node = node.parent
+        return node
+
+    @abstractmethod
     def __repr__(self):
-        return f"HLNode(dof={self.dof})"
+        raise NotImplementedError
 
 
 class HLLeafNode(HLNode):
