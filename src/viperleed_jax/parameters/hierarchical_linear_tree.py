@@ -1,7 +1,7 @@
 import numpy as np
 import jax.numpy as jnp
 
-from .linear_transfomer import LinearTransformer
+from .linear_transformer import LinearTransformer
 
 class HLNode:
     def __init__(self, dof):
