@@ -2,9 +2,117 @@ import jax
 from jax import numpy as jnp
 import numpy as np
 
-from viperleed_jax.base import LinearTransformer
 from viperleed_jax.parameters.base_parameters import BaseParam, DeltaParam, Params, ConstrainedDeltaParam, Bound
 from viperleed_jax import atomic_units
+
+from .linear_transformer import LinearTransformer
+from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
+from .hierarchical_linear_tree import create_subtree_root
+
+class GeoHLLeafNode(HLLeafNode):
+    """Represents a leaf node with geometric parameters."""
+
+    def __init__(self, atom_site_element):
+        dof = 3
+        self.symrefm = atom_site_element.atom.symrefm
+        self.layer = atom_site_element.atom.layer.num
+        self.element = atom_site_element.site_element.element
+        self.site = atom_site_element.site_element.site
+        self.site_element = atom_site_element.site_element
+        self.atom_site_element = atom_site_element
+        self.num = atom_site_element.num
+        self.name = f"geo (At_{self.num},{self.site},{self.element})"
+        super().__init__(dof=dof, name=self.name)
+
+    @property
+    def symmetry_linking_matrix(self):
+        raise NotImplementedError  # TODO adapat from below
+
+
+class GeoHLConstraintNode(HLConstraintNode):
+    """Base constraint node for geometric parameters."""
+
+    def __init__(self, dof, children, transformers, name="unnamed"):
+        self.dof = dof
+
+        if transformers is None:
+            raise ValueError("Transformers must be provided for "
+                             "geometric constraint nodes.")
+        super().__init__(
+            dof=dof, name=name, children=children, transformers=transformers
+        )
+
+
+class GeoSymmetryHLConstraint(GeoHLConstraintNode):
+    """Constraint node for symmetry constraints on geometric parameters.
+
+    Symmetry constraints are the first layer of constraints applied to the 
+    geometric leaf nodes. They are link atoms based on symmetry relations and
+    always reduce the number of free parameters to 3. All transformers must 
+    therefore habe in_dim=3 and out_dim=3. Furthermore, the transformer bias
+    must be zero, and the weights must consist of a identity mapping for the 
+    z direction and a symmetry operation for the x and y directions."""
+
+    def __init__(self, children):
+        # transformers may not be provided, as they are determined from the
+        # symmetry operations
+        dof = 3
+        transformers = []
+
+        # make sure that all children are leaf nodes
+        if not all(isinstance(child, GeoHLLeafNode) for child in children):
+            raise ValueError("Symmetry constraints can only be applied to "
+                             "geometric leaf nodes.")
+
+        for child in children:
+            if not isinstance(child, GeoHLLeafNode):
+                raise ValueError("Symmetry constraints can only be applied to "
+                                 "geometric leaf nodes.")
+            # set the symmetry linking matrix and direct transfer of z
+            weights = np.identity(3)
+            weights[1:3, 1:3] = child.symrefm
+            bias = np.zeros(3)
+            transformers.append(LinearTransformer(weights, bias, (3,)))
+            
+        # self.symmetry_operations = {
+        #     child: geo_sym_linking(child)
+        #     for child in children
+        # }
+        super().__init__(
+            dof=dof, children=children,
+            transformers=transformers,
+            name="Symmetry"
+        )
+
+
+def create_geo_subtree(slab, atom_site_elements, site_elements):
+    nodes = []
+    # create leaf nodes
+    geo_leaf_nodes = [GeoHLLeafNode(atom_site_element)
+                      for atom_site_element in atom_site_elements]
+    nodes.extend(geo_leaf_nodes)
+
+    # apply symmetry constraints
+    for siteel in site_elements:
+        site_el_params = [node for node in geo_leaf_nodes 
+                          if node.site_element == siteel]
+
+    for linklist in slab.linklists:
+        # put all linked atoms in the same symmetry group
+        nodes_to_link = [node for node in geo_leaf_nodes
+                        if node.atom_site_element.atom in linklist]
+        if nodes_to_link:
+            nodes.append(GeoSymmetryHLConstraint(children=nodes_to_link))
+
+    unlinked_site_el_nodes = [node for node in geo_leaf_nodes
+                                if node.is_root]
+    for node in unlinked_site_el_nodes:
+        nodes.append(GeoSymmetryHLConstraint(children=[node]))
+            
+
+    # create the root node
+    geo_root_node = create_subtree_root(nodes, "geo root")
+    return geo_root_node
 
 class GeoBaseParam(BaseParam):
     def __init__(self, atom_site_element):
