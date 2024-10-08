@@ -1,9 +1,66 @@
-
 import numpy as np
 from jax import numpy as jnp
 
-from viperleed_jax.base import LinearTransformer
+from .linear_transformer import LinearTransformer
 from viperleed_jax.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam, Bound
+
+from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
+from .hierarchical_linear_tree import create_subtree_root
+
+
+class VibHLLeafNode(HLLeafNode):
+    """Represents a leaf node with vibrational parameters."""
+
+    def __init__(self, atom_site_element):
+        dof = 1
+        self.element = atom_site_element.site_element.element
+        self.site = atom_site_element.site_element.site
+        self.num = atom_site_element.num
+        self.site_element = atom_site_element.site_element
+        self.ref_vib_amp = atom_site_element.atom.site.vibamp[self.element]
+        self.name = f"vib (At_{self.num},{self.site},{self.element})"
+        super().__init__(dof=dof, name=self.name)
+
+
+class VibHLConstraintNode(HLConstraintNode):
+    """Represents a constraint node for vibrational parameters."""
+
+    def __init__(self, children, name, transformers=None):
+        self.dof = 1
+
+        if transformers is None:
+            # default to identity transformers
+            transformers = [LinearTransformer(np.eye(1), np.zeros(1), (1,))
+                            for _ in children]
+        super().__init__(dof=1, name=name, children=children, transformers=transformers)
+
+
+def create_vib_subtree(atom_site_elements, site_elements):
+    nodes = []
+    vib_leaf_nodes = [
+        VibHLLeafNode(ase) for ase in atom_site_elements
+    ]
+
+    nodes.extend(vib_leaf_nodes)
+
+    # link site-elements together
+    for site_el in site_elements:
+        nodes_to_link = [
+            node for node in vib_leaf_nodes if node.site_element == site_el
+        ]
+        if not nodes_to_link:
+            continue
+        site_link_node = VibHLConstraintNode(
+            name=f"vib ({site_el.site},{site_el.element})",
+            children=nodes_to_link,
+        )
+        nodes.append(site_link_node)
+
+
+    # link all unlinked nodes to a single root node
+    vib_root_node = create_subtree_root(nodes, name="vib root")
+
+    return vib_root_node
 
 
 class VibBaseParam(BaseParam):
