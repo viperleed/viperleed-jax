@@ -9,15 +9,22 @@ class HLNode(ABC):
     def __init__(self, dof):
         """Initialize a node with a given number of degrees of freedom (dof)."""
         self.dof = dof
-        self.children = []  # List to hold child nodes
-        self.parent_edge = None  # Reference to parent edge
+        self._child_edges = []  # List to hold child nodes
+        self._parent_edge = None  # Reference to parent edge
 
     @property
     def parent(self):
         """Return the parent node."""
         if self.parent_edge is not None:
-            return self.parent_edge.parent
+            return self._parent_edge.parent
         return None
+
+    @property
+    def children(self):
+        """Return a list of child nodes."""
+        if self._child_edges is not None:
+            return [edge.child for edge in self._child_edges]
+        return []
 
     @property
     def root(self):
@@ -27,36 +34,51 @@ class HLNode(ABC):
             node = node.parent
         return node
 
+    @property
+    def is_root(self):
+        """Check if the node is a root node."""
+        return self.parent is None
+
+    @abstractmethod
+    @property
+    def is_leaf(self):
+        """Check if the node is a leaf node."""
+        raise NotImplementedError
+
+
     @abstractmethod
     def __repr__(self):
         raise NotImplementedError
 
 
 class HLLeafNode(HLNode):
-    def __init__(self, dof, atom_site_element, site_element):
+    def __init__(self, dof):
         """
         Initialize a leaf node with degrees of freedom and specific attributes.
         - `dof`: Number of degrees of freedom for the node.
-        - `atom_site_element`: The atomic site element represented by this node.
-        - `site_element`: The specific site element attribute for this node.
         """
         super().__init__(dof)
-        self.atom_site_element = atom_site_element
-        self.site_element = site_element
 
-    def __repr__(self):
-        return f"HLLeafNode(dof={self.dof}, atom_site_element={self.atom_site_element}, site_element={self.site_element})"
+    @property
+    def is_leaf(self):
+        return True
 
 
 class HLConstraintNode(HLNode):
-    def __init__(self, dof, n_free_params):
+    def __init__(self, dof, child_edges):
         """
         Initialize a constraint node that reduces the degrees of freedom.
-        - `dof`: Number of degrees of freedom for the parent node.
-        - `n_free_params`: The number of free parameters before the constraint is applied.
+        - `dof`: Number of degrees of freedom for the this node.
         """
+        for edge in child_edges:
+
+
+            pass
         super().__init__(dof)
-        self.n_free_params = n_free_params
+
+    @property
+    def is_leaf(self):
+        return False
 
     def __repr__(self):
         return f"HLConstraintNode(dof={self.dof}, n_free_params={self.n_free_params})"
@@ -74,21 +96,58 @@ class HLEdge:
         self.child = child
         self.transformer = transformer
 
+        # check if the transformer is valid
+        if not isinstance(transformer, LinearTransformer):
+            raise TypeError(
+                f"Transformer must be an instance of LinearTransformer. "
+                f"Invalid transformer: {transformer}"
+            )
+        if transformer.in_dim != parent.dof:
+            raise ValueError(
+                f"Transformer input dimension ({transformer.in_dim}) "
+                f"must match parent dof ({parent.dof})."
+            )
+        if transformer.out_dim != child.dof:
+            raise ValueError(
+                f"Transformer output dimension ({transformer.out_dim}) "
+                f"must match child dof ({child.dof})."
+            )
+
     def __repr__(self):
         return f"HLEdge(Child dof={self.child.dof} -> Parent dof={self.parent.dof}, {self.transformer})"
 
 
-class Layer:
-    """A class representing a single layer in the Hierarchical Linear Tree."""
+class HLLayer:
+    """A class representing a layer in the Hierarchical Linear Tree."""
 
-    def __init__(self, name, nodes):
+    def __init__(self, name, new_nodes):
         """
-        Initialize a layer with a name and a set of nodes.
+        Initialize a layer with a name and a dict of new parent nodes,
+        each with a list of new edges to child nodes.
+
+        The layer makes sure that all nodes are instances of HLConstraintNode,
+        the number of edges matches the number of child nodes, and that the
         - `name`: Name of the layer.
         - `nodes`: A list of `HLConstraintNode` instances that make up this layer.
         """
+        if not isinstance(name, str):
+            raise TypeError("Layer name must be a string. Invalid name: "
+                            f"{name}")
         self.name = name
-        self.nodes = nodes
+        if not isinstance(new_nodes, dict):
+            raise TypeError(
+                f"Layer nodes must be provided as a dictionary mapping new "
+                "parent nodes to child nodes."
+            )
+
+
+
+        for new_node, children in new_nodes.keys():
+            if not isinstance(node, HLConstraintNode):
+                raise TypeError(
+                    f"All nodes in a layer must be instances of HLConstraintNode.
+                    Invalid node: {node}"
+                )
 
     def __repr__(self):
         return f"Layer(name={self.name}, nodes={len(self.nodes)} nodes)"
