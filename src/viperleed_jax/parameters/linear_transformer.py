@@ -1,3 +1,4 @@
+import numpy as np
 import jax.numpy as jnp
 
 
@@ -5,9 +6,9 @@ class LinearTransformer:
     """Linear transformation class that applies a weight matrix and a bias vector to an input."""
 
     def __init__(self, weights, biases, out_reshape=None):
-        self.weights = jnp.array(weights)
+        self.weights = np.array(weights)
         self.n_free_params = self.weights.shape[1]
-        self.biases = jnp.array(biases)
+        self.biases = np.array(biases)
         self.out_reshape = out_reshape
 
         self._in_dim = self.n_free_params
@@ -20,7 +21,7 @@ class LinearTransformer:
                 f"bias shape {self.biases.shape}"
             )
         if self.out_reshape is not None:
-            if self._out_dim != jnp.prod(self.out_reshape):
+            if self._out_dim != np.prod(self.out_reshape):
                 raise ValueError(
                     f"Output reshape {self.out_reshape} does not match bias "
                     f"shape {self.biases.shape}"
