@@ -13,7 +13,7 @@ from viperleed_jax import atomic_units
 
 from .linear_transformer import LinearTransformer
 from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
-from .hierarchical_linear_tree import create_subtree_root
+from .hierarchical_linear_tree import ParameterHLSubtree
 
 
 class GeoHLLeafNode(HLLeafNode):
@@ -166,38 +166,46 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
         )
 
 
-def create_geo_subtree(slab, atom_site_elements, site_elements):
-    nodes = []
-    # create leaf nodes
-    geo_leaf_nodes = [
-        GeoHLLeafNode(atom_site_element)
-        for atom_site_element in atom_site_elements
-    ]
-    nodes.extend(geo_leaf_nodes)
+class GeoHLSubtree(ParameterHLSubtree):
+    def __init__(self, slab, atom_site_elements, site_elements):
+        super().__init__(slab, atom_site_elements, site_elements)
 
-    # apply symmetry constraints
-    for siteel in site_elements:
-        site_el_params = [
-            node for node in geo_leaf_nodes if node.site_element == siteel
+    @property
+    def name(self):
+        return "Geometric Parameters"
+
+    @property
+    def subtree_root_name(self):
+        return "geo root"
+
+    def build_subtree(self):
+
+        # create leaf nodes
+        geo_leaf_nodes = [
+            GeoHLLeafNode(atom_site_element)
+            for atom_site_element in self.atom_site_elements
         ]
+        self.nodes.extend(geo_leaf_nodes)
 
-    for linklist in slab.linklists:
-        # put all linked atoms in the same symmetry group
-        nodes_to_link = [
-            node
-            for node in geo_leaf_nodes
-            if node.atom_site_element.atom in linklist
-        ]
-        if nodes_to_link:
-            nodes.append(GeoSymmetryHLConstraint(children=nodes_to_link))
+        # apply symmetry constraints
+        for siteel in self.site_elements:
+            site_el_params = [
+                node for node in self.leafs if node.site_element == siteel
+            ]
 
-    unlinked_site_el_nodes = [node for node in geo_leaf_nodes if node.is_root]
-    for node in unlinked_site_el_nodes:
-        nodes.append(GeoSymmetryHLConstraint(children=[node]))
+        for linklist in self.slab.linklists:
+            # put all linked atoms in the same symmetry group
+            nodes_to_link = [
+                node
+                for node in self.leafs
+                if node.atom_site_element.atom in linklist
+            ]
+            if nodes_to_link:
+                self.nodes.append(GeoSymmetryHLConstraint(children=nodes_to_link))
 
-    # create the root node
-    geo_root_node = create_subtree_root(nodes, "geo root")
-    return geo_root_node
+        unlinked_site_el_nodes = [node for node in self.leafs if node.is_root]
+        for node in unlinked_site_el_nodes:
+            self.nodes.append(GeoSymmetryHLConstraint(children=[node]))
 
 
 class GeoBaseParam(BaseParam):
