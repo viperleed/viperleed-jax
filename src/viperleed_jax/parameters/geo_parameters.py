@@ -9,6 +9,7 @@ from .linear_transformer import LinearTransformer
 from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
 from .hierarchical_linear_tree import create_subtree_root
 
+
 class GeoHLLeafNode(HLLeafNode):
     """Represents a leaf node with geometric parameters."""
 
@@ -36,8 +37,10 @@ class GeoHLConstraintNode(HLConstraintNode):
         self.dof = dof
 
         if transformers is None:
-            raise ValueError("Transformers must be provided for "
-                             "geometric constraint nodes.")
+            raise ValueError(
+                "Transformers must be provided for "
+                "geometric constraint nodes."
+            )
         super().__init__(
             dof=dof, name=name, children=children, transformers=transformers
         )
@@ -46,73 +49,150 @@ class GeoHLConstraintNode(HLConstraintNode):
 class GeoSymmetryHLConstraint(GeoHLConstraintNode):
     """Constraint node for symmetry constraints on geometric parameters.
 
-    Symmetry constraints are the first layer of constraints applied to the 
+    Symmetry constraints are the first layer of constraints applied to the
     geometric leaf nodes. They are link atoms based on symmetry relations and
-    always reduce the number of free parameters to 3. All transformers must 
-    therefore habe in_dim=3 and out_dim=3. Furthermore, the transformer bias
-    must be zero, and the weights must consist of a identity mapping for the 
-    z direction and a symmetry operation for the x and y directions."""
+    always reduce the number of free parameters to a maximum of 3.
+    All transformers must therefore have in_dim=3 and the bias must be zero.
+    Further properties of the transformer are determined by the symmetry and
+    the allowed directions of movement.
+    The viperleed.calc symmetry recognition gives atoms the attributes `symrefm`
+    and `freedir`. `freedir` determines the allowed directions of movement, and
+    `symrefm` is the symmetry operation that links the atoms that are symmetry
+    linked."""
 
     def __init__(self, children):
-        # transformers may not be provided, as they are determined from the
+        # transformers may not be provided, as they must be determined from the
         # symmetry operations
-        dof = 3
-        transformers = []
+        if not children:
+            raise ValueError("Symmetry constraints must have children")
 
         # make sure that all children are leaf nodes
         if not all(isinstance(child, GeoHLLeafNode) for child in children):
-            raise ValueError("Symmetry constraints can only be applied to "
-                             "geometric leaf nodes.")
+            raise ValueError(
+                "Symmetry constraints can only be applied to "
+                "geometric leaf nodes."
+            )
 
-        for child in children:
-            if not isinstance(child, GeoHLLeafNode):
-                raise ValueError("Symmetry constraints can only be applied to "
-                                 "geometric leaf nodes.")
-            # set the symmetry linking matrix and direct transfer of z
-            weights = np.identity(3)
-            weights[1:3, 1:3] = child.symrefm
-            bias = np.zeros(3)
-            transformers.append(LinearTransformer(weights, bias, (3,)))
-            
+        # check that all children are in the same linklist
+        linklist = children[0].atom_site_element.atom.linklist
+        if not all([child.atom_site_element.atom in linklist for child in children]):
+            raise ValueError(
+                "Symmetry linked atoms must be in the same " "linklist"
+            )
+
+        # irrespective of the symmetry the transformer bias is zero
+        bias = np.zeros(3)
+        transformers = []
+
+        # how to proceed is determined by the freedir attribute
+        # NB: this is a weird attribute and will be changed in the future
+        # Currently freedir can be either an int (specifically 0 or 1, implying
+        # z-only or completely free movement) or a 1D array of shape (2,)
+        # (implying 1D in-plane movement in addition to z)
+        if children[0].atom_site_element.atom.freedir == 0:
+            # check that all children have the same freedir
+            if not all(
+                child.atom_site_element.atom.freedir == 0 for child in children
+            ):
+                raise ValueError(
+                    "All symmetry linked atoms must have the same "
+                    "freedir attribute."
+                )
+            # z-only movement
+            dof = 1
+            name = "Symmetry (z-only)"
+            for child in children:
+                # set the symmetry linking matrix and direct transfer of z
+                weights = np.array([0., 0., 1.]).reshape((3,1))
+                transformers.append(LinearTransformer(weights, bias, (3,)))
+
+        elif children[0].atom_site_element.atom.freedir == 1:
+            # check that all children have the same freedir
+            if not all(
+                child.atom_site_element.atom.freedir == 1 for child in children
+            ):
+                raise ValueError(
+                    "All symmetry linked atoms must have the same "
+                    "freedir attribute."
+                )
+            # free in-plane movement in addition to z
+            dof = 3
+            name = "Symmetry (free)"
+
+            for child in children:
+                # set the symmetry linking matrix and direct transfer of z
+                weights = np.identity(3)
+                weights[1:3, 1:3] = child.symrefm
+                bias = np.zeros(3)
+                transformers.append(LinearTransformer(weights, bias, (3,)))
+
+        elif children[0].atom_site_element.atom.freedir.shape == (2,):
+            # check that all children have the same freedir
+            if not all(
+                child.atom_site_element.atom.freedir.shape == (2,)
+                for child in children
+            ):
+                raise ValueError(
+                    "All symmetry linked atoms must have the same "
+                    "freedir attribute."
+                )
+            # 1D in-plane movement in addition to z
+            dof = 2
+            name = "Symmetry (1D in-plane)"
+            # TODO: sort this out (discuss using fractional coordinates)
+            raise NotImplementedError
+        else:
+            raise ValueError(
+                "freedir attribute must be 0, 1, or have shape (2,)"
+            )
+
+        # TODO: sort out how the propagators transform
         # self.symmetry_operations = {
         #     child: geo_sym_linking(child)
         #     for child in children
         # }
+
         super().__init__(
-            dof=dof, children=children,
+            dof=dof,
+            children=children,
             transformers=transformers,
-            name="Symmetry"
+            name=name,
         )
 
 
 def create_geo_subtree(slab, atom_site_elements, site_elements):
     nodes = []
     # create leaf nodes
-    geo_leaf_nodes = [GeoHLLeafNode(atom_site_element)
-                      for atom_site_element in atom_site_elements]
+    geo_leaf_nodes = [
+        GeoHLLeafNode(atom_site_element)
+        for atom_site_element in atom_site_elements
+    ]
     nodes.extend(geo_leaf_nodes)
 
     # apply symmetry constraints
     for siteel in site_elements:
-        site_el_params = [node for node in geo_leaf_nodes 
-                          if node.site_element == siteel]
+        site_el_params = [
+            node for node in geo_leaf_nodes if node.site_element == siteel
+        ]
 
     for linklist in slab.linklists:
         # put all linked atoms in the same symmetry group
-        nodes_to_link = [node for node in geo_leaf_nodes
-                        if node.atom_site_element.atom in linklist]
+        nodes_to_link = [
+            node
+            for node in geo_leaf_nodes
+            if node.atom_site_element.atom in linklist
+        ]
         if nodes_to_link:
             nodes.append(GeoSymmetryHLConstraint(children=nodes_to_link))
 
-    unlinked_site_el_nodes = [node for node in geo_leaf_nodes
-                                if node.is_root]
+    unlinked_site_el_nodes = [node for node in geo_leaf_nodes if node.is_root]
     for node in unlinked_site_el_nodes:
         nodes.append(GeoSymmetryHLConstraint(children=[node]))
-            
 
     # create the root node
     geo_root_node = create_subtree_root(nodes, "geo root")
     return geo_root_node
+
 
 class GeoBaseParam(BaseParam):
     def __init__(self, atom_site_element):
