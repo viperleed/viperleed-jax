@@ -1,9 +1,9 @@
-from collections.abc import ABC, abstractmethod
+from abc import ABC, abstractmethod
 
 import numpy as np
 import jax.numpy as jnp
 import anytree
-from anytree import Node
+from anytree import Node, RenderTree
 
 
 from .linear_transformer import LinearTransformer
@@ -15,6 +15,7 @@ anytree.config.ASSERTIONS = True
 
 class HLNode(Node):
     """Base class for hierarchical linear tree nodes."""
+
     separator = "/"
 
     def __init__(self, dof, name=None, parent=None, children=None):
@@ -134,13 +135,28 @@ class ParameterHLSubtree(ABC):
         self.slab = slab
         self.atom_site_elements = atom_site_elements
         self.site_elements = site_elements
-        self.nodes = nodes
-        self.name = name
+        self.nodes = []
+
         self._subtree_root_has_been_created = False
+        self.build_subtree()
+
+    def __repr__(self):
+        if not self._subtree_root_has_been_created:
+            return f"{self.__class__.__name__}({self.name})"
+        return RenderTree(self.subtree_root).by_attr()
 
     @property
     def roots(self):
         return [node for node in self.nodes if node.is_root]
+
+    @property
+    def leafs(self):
+        return [node for node in self.nodes if node.is_leaf]
+
+    @property
+    @abstractmethod
+    def name(self):
+        pass
 
     @property
     @abstractmethod
@@ -167,7 +183,7 @@ class ParameterHLSubtree(ABC):
             weights[:, : node.dof] = np.identity(node.dof)
             bias = np.zeros(node.dof)
             transformers.append(LinearTransformer(weights, bias, (node.dof,)))
-        return HLConstraintNode(
+        self.subtree_root = HLConstraintNode(
             dof=root_dof,
             name=self.subtree_root_name,
             children=self.roots,
