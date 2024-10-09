@@ -89,8 +89,10 @@ class HLConstraintNode(HLNode):
         super().__init__(dof=dof, name=name)  # Initialize the base class
 
         if len(_children) == 0:
-            raise ValueError("Constraint nodes must be initialized with "
-                             "at least one child node.")
+            raise ValueError(
+                "Constraint nodes must be initialized with "
+                "at least one child node."
+            )
         # check that children are roots
         if any(not child.is_root for child in _children):
             raise ValueError("Children must be root nodes.")
