@@ -5,7 +5,7 @@ from .linear_transformer import LinearTransformer
 from viperleed_jax.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam, Bound
 
 from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
-from .hierarchical_linear_tree import create_subtree_root
+from .hierarchical_linear_tree import ParameterHLSubtree
 
 
 class VibHLLeafNode(HLLeafNode):
@@ -35,33 +35,37 @@ class VibHLConstraintNode(HLConstraintNode):
         super().__init__(dof=1, name=name, children=children, transformers=transformers)
 
 
-def create_vib_subtree(atom_site_elements, site_elements):
-    nodes = []
-    vib_leaf_nodes = [
-        VibHLLeafNode(ase) for ase in atom_site_elements
-    ]
+class VibHLSubtree(ParameterHLSubtree):
+    def __init__(self, slab, atom_site_elements, site_elements):
+        super().__init__(slab, atom_site_elements, site_elements)
 
-    nodes.extend(vib_leaf_nodes)
+    @property
+    def name(self):
+        return "Vibrational Parameters"
 
-    # link site-elements together
-    for site_el in site_elements:
-        nodes_to_link = [
-            node for node in vib_leaf_nodes if node.site_element == site_el
-        ]
-        if not nodes_to_link:
-            continue
-        site_link_node = VibHLConstraintNode(
-            name=f"vib ({site_el.site},{site_el.element})",
-            children=nodes_to_link,
-        )
-        nodes.append(site_link_node)
+    @property
+    def subtree_root_name(self):
+        return "vib root"
 
+    def build_subtree(self):
 
-    # link all unlinked nodes to a single root node
-    vib_root_node = create_subtree_root(nodes, name="vib root")
+        leaf_nodes = [VibHLLeafNode(ase)
+                    for ase in self.atom_site_elements]
 
-    return vib_root_node
+        self.nodes.extend(leaf_nodes)
 
+        # link site-elements together
+        for site_el in self.site_elements:
+            nodes_to_link = [
+                node for node in self.leafs if node.site_element == site_el
+            ]
+            if not nodes_to_link:
+                continue
+            site_link_node = VibHLConstraintNode(
+                name=f"vib ({site_el.site},{site_el.element})",
+                children=nodes_to_link,
+            )
+            self.nodes.append(site_link_node)
 
 class VibBaseParam(BaseParam):
     """Base class for vibrational parameters.
