@@ -2,7 +2,13 @@ import jax
 from jax import numpy as jnp
 import numpy as np
 
-from viperleed_jax.parameters.base_parameters import BaseParam, DeltaParam, Params, ConstrainedDeltaParam, Bound
+from viperleed_jax.parameters.base_parameters import (
+    BaseParam,
+    DeltaParam,
+    Params,
+    ConstrainedDeltaParam,
+    Bound,
+)
 from viperleed_jax import atomic_units
 
 from .linear_transformer import LinearTransformer
