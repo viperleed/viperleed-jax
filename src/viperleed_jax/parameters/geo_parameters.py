@@ -19,15 +19,15 @@ from .hierarchical_linear_tree import ParameterHLSubtree
 class GeoHLLeafNode(HLLeafNode):
     """Represents a leaf node with geometric parameters."""
 
-    def __init__(self, atom_site_element):
+    def __init__(self, base_scatterer):
         dof = 3
-        self.symrefm = atom_site_element.atom.symrefm
-        self.layer = atom_site_element.atom.layer.num
-        self.element = atom_site_element.site_element.element
-        self.site = atom_site_element.site_element.site
-        self.site_element = atom_site_element.site_element
-        self.atom_site_element = atom_site_element
-        self.num = atom_site_element.num
+        self.symrefm = base_scatterer.atom.symrefm
+        self.layer = base_scatterer.atom.layer.num
+        self.element = base_scatterer.site_element.element
+        self.site = base_scatterer.site_element.site
+        self.site_element = base_scatterer.site_element
+        self.base_scatterer = base_scatterer
+        self.num = base_scatterer.num
         self.name = f"geo (At_{self.num},{self.site},{self.element})"
         super().__init__(dof=dof, name=self.name)
 
@@ -80,8 +80,8 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
             )
 
         # check that all children are in the same linklist
-        linklist = children[0].atom_site_element.atom.linklist
-        if not all([child.atom_site_element.atom in linklist for child in children]):
+        linklist = children[0].base_scatterer.atom.linklist
+        if not all([child.base_scatterer.atom in linklist for child in children]):
             raise ValueError(
                 "Symmetry linked atoms must be in the same " "linklist"
             )
@@ -95,10 +95,10 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
         # Currently freedir can be either an int (specifically 0 or 1, implying
         # z-only or completely free movement) or a 1D array of shape (2,)
         # (implying 1D in-plane movement in addition to z)
-        if children[0].atom_site_element.atom.freedir == 0:
+        if children[0].base_scatterer.atom.freedir == 0:
             # check that all children have the same freedir
             if not all(
-                child.atom_site_element.atom.freedir == 0 for child in children
+                child.base_scatterer.atom.freedir == 0 for child in children
             ):
                 raise ValueError(
                     "All symmetry linked atoms must have the same "
@@ -112,10 +112,10 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
                 weights = np.array([0., 0., 1.]).reshape((3,1))
                 transformers.append(LinearTransformer(weights, bias, (3,)))
 
-        elif children[0].atom_site_element.atom.freedir == 1:
+        elif children[0].base_scatterer.atom.freedir == 1:
             # check that all children have the same freedir
             if not all(
-                child.atom_site_element.atom.freedir == 1 for child in children
+                child.base_scatterer.atom.freedir == 1 for child in children
             ):
                 raise ValueError(
                     "All symmetry linked atoms must have the same "
@@ -132,10 +132,10 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
                 bias = np.zeros(3)
                 transformers.append(LinearTransformer(weights, bias, (3,)))
 
-        elif children[0].atom_site_element.atom.freedir.shape == (2,):
+        elif children[0].base_scatterer.atom.freedir.shape == (2,):
             # check that all children have the same freedir
             if not all(
-                child.atom_site_element.atom.freedir.shape == (2,)
+                child.base_scatterer.atom.freedir.shape == (2,)
                 for child in children
             ):
                 raise ValueError(
@@ -167,8 +167,8 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
 
 
 class GeoHLSubtree(ParameterHLSubtree):
-    def __init__(self, slab, atom_site_elements, site_elements):
-        super().__init__(slab, atom_site_elements, site_elements)
+    def __init__(self, slab, base_scatterers, site_elements):
+        super().__init__(slab, base_scatterers, site_elements)
 
     @property
     def name(self):
@@ -182,8 +182,8 @@ class GeoHLSubtree(ParameterHLSubtree):
 
         # create leaf nodes
         geo_leaf_nodes = [
-            GeoHLLeafNode(atom_site_element)
-            for atom_site_element in self.atom_site_elements
+            GeoHLLeafNode(base_scatterer)
+            for base_scatterer in self.base_scatterers
         ]
         self.nodes.extend(geo_leaf_nodes)
 
@@ -198,7 +198,7 @@ class GeoHLSubtree(ParameterHLSubtree):
             nodes_to_link = [
                 node
                 for node in self.leafs
-                if node.atom_site_element.atom in linklist
+                if node.base_scatterer.atom in linklist
             ]
             if nodes_to_link:
                 self.nodes.append(GeoSymmetryHLConstraint(children=nodes_to_link))
@@ -209,23 +209,25 @@ class GeoHLSubtree(ParameterHLSubtree):
 
 
 class GeoBaseParam(BaseParam):
-    def __init__(self, atom_site_element):
-        self.n_free_params = 3 # x, y, z
-        self.symrefm = atom_site_element.atom.symrefm
-        self.layer = atom_site_element.atom.layer.num
-        super().__init__(atom_site_element)
+    def __init__(self, base_scatterer):
+        self.n_free_params = 3  # x, y, z
+        self.symrefm = base_scatterer.atom.symrefm
+        self.layer = base_scatterer.atom.layer.num
+        super().__init__(base_scatterer)
 
     @property
     def symmetry_linking(self):
         if self.parent is None:
             return self.symrefm
-        symmetry_op = np.array([[1.,0.],
-                                [0.,1.]])
+        symmetry_op = np.array([[1.0, 0.0], [0.0, 1.0]])
         up = self
         while up.parent is not None:
-            symmetry_op = np.dot(symmetry_op, up.parent.symmetry_operations[up]) # TODO: left or right multiply?
+            symmetry_op = np.dot(
+                symmetry_op, up.parent.symmetry_operations[up]
+            )  # TODO: left or right multiply?
             up = up.parent
         return symmetry_op
+
 
 # Isotropic geometric bound; could be extended to anisotropic
 class GeoParamBound(Bound):
@@ -236,26 +238,38 @@ class GeoParamBound(Bound):
     def fixed(self):
         return abs(self.min - self.max) < 1e-6
 
+
 class GeoParams(Params):
     def __init__(self, delta_slab):
         # Create base parameters for each non-bulk atom (x, y, z)
         self.params = [
-            GeoBaseParam(atom_site_element)
-            for atom_site_element in delta_slab.atom_site_elements
+            GeoBaseParam(base_scatterer)
+            for base_scatterer in delta_slab.base_scatterers
         ]
         # apply symmetry constraints
         for siteel in delta_slab.site_elements:
-            site_el_params = [param for param in self.base_params
-                                if param.site_element == siteel]
+            site_el_params = [
+                param
+                for param in self.base_params
+                if param.site_element == siteel
+            ]
             for linklist in delta_slab.slab.linklists:
                 ref_atom = linklist[0]
                 # put all linked atoms in the same symmetry group
-                params_to_link = [param for param in site_el_params
-                              if param.atom_site_element.atom in linklist]
+                params_to_link = [
+                    param
+                    for param in site_el_params
+                    if param.base_scatterer.atom in linklist
+                ]
                 if params_to_link:
-                    self.params.append(GeoSymmetryConstraint(
-                        children=params_to_link))
-            unlinked_site_el_params = [param for param in site_el_params if param in self.terminal_params]
+                    self.params.append(
+                        GeoSymmetryConstraint(children=params_to_link)
+                    )
+            unlinked_site_el_params = [
+                param
+                for param in site_el_params
+                if param in self.terminal_params
+            ]
             for param in unlinked_site_el_params:
                 # NB: if an atom is not linked to any others, it will be placed
                 #     into a symmetry constraint with a single child. No
@@ -273,14 +287,18 @@ class GeoParams(Params):
         return jnp.array([param.symmetry_linking for param in self.base_params])
 
     def constrain_layer(self, layer):
-        layer_params = [param for param in self.terminal_params if param.layer == layer]
+        layer_params = [
+            param for param in self.terminal_params if param.layer == layer
+        ]
         if not layer_params:
             raise ValueError(f"No free params for layer {layer}")
         new_constraint = GeoLayerConstraint(children=layer_params)
         self.params.append(new_constraint)
 
     def fix_layer(self, layer, z_offset=None):
-        layer_params = [param for param in self.terminal_params if param.layer == layer]
+        layer_params = [
+            param for param in self.terminal_params if param.layer == layer
+        ]
         if not layer_params:
             raise ValueError(f"No free params for layer {layer}")
         z_constraint = GeoLayerConstraint(children=layer_params)
@@ -302,13 +320,17 @@ class GeoParams(Params):
 
     @property
     def static_propagators(self):
-        return [param for param in self.terminal_params
-                if param not in self.free_params]
+        return [
+            param
+            for param in self.terminal_params
+            if param not in self.free_params
+        ]
 
     @property
     def static_propagator_inputs(self):
-        return tuple(param.get_static_displacement()
-                     for param in self.static_propagators)
+        return tuple(
+            param.get_static_displacement() for param in self.static_propagators
+        )
 
     @property
     def n_dynamic_propagators(self):
@@ -321,11 +343,14 @@ class GeoParams(Params):
     @property
     def propagator_map(self):
         # map proagators to atom-site-elements
-        return [('static', self.static_propagators.index(terminal))
-            if terminal in self.static_propagators else
-            ('dynamic', self.dynamic_propagators.index(terminal))
-            for base, terminal in self.base_to_terminal_map.items()]
-
+        return [
+            (
+                ("static", self.static_propagators.index(terminal))
+                if terminal in self.static_propagators
+                else ("dynamic", self.dynamic_propagators.index(terminal))
+            )
+            for base, terminal in self.base_to_terminal_map.items()
+        ]
 
     def get_geo_transformer(self):
         """Return a JAX function that transforms the free parameters
@@ -336,16 +361,25 @@ class GeoParams(Params):
             raise ValueError("Not all geometric parameters have bounds.")
 
         # offset is 0 (# TODO: could implement that)
-        offsets = np.zeros((3*self.n_dynamic_propagators))
+        offsets = np.zeros((3 * self.n_dynamic_propagators))
 
         # weights are given by the bounds and the constraint method
-        mins = [param.free_param_map * (param.bound.min)
-                   for param in self.dynamic_propagators]
-        offsets += jax.scipy.linalg.block_diag(*mins) @ jnp.ones(self.n_free_params)
-        weights = [param.free_param_map * (param.bound.max - param.bound.min)
-                   for param in self.dynamic_propagators]
+        mins = [
+            param.free_param_map * (param.bound.min)
+            for param in self.dynamic_propagators
+        ]
+        offsets += jax.scipy.linalg.block_diag(*mins) @ jnp.ones(
+            self.n_free_params
+        )
+        weights = [
+            param.free_param_map * (param.bound.max - param.bound.min)
+            for param in self.dynamic_propagators
+        ]
         weights = jax.scipy.linalg.block_diag(*weights)
-        assert weights.shape == (3*self.n_dynamic_propagators, self.n_free_params)
+        assert weights.shape == (
+            3 * self.n_dynamic_propagators,
+            self.n_free_params,
+        )
 
         transformer = LinearTransformer(weights, offsets, out_reshape=(-1, 3))
         return transformer
@@ -368,18 +402,14 @@ class GeoSymmetryConstraint(GeoConstraint):
     # from 3*n to 3.
     def __init__(self, children):
         self.n_free_params = 3
-        self.symmetry_operations = {
-            child: child.symrefm
-            for child in children
-        }
+        self.symmetry_operations = {child: child.symrefm for child in children}
         super().__init__(children)
 
     @property
     def free_param_map(self):
         # three free parameters are mapped to the x, y, z directions
-        return np.array(([1., 0., 0.],
-                         [0., 1., 0.],
-                         [0., 0., 1.]))
+        return np.array(([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]))
+
 
 class GeoLayerConstraint(GeoConstraint):
     # constrain multiple atoms in the same layer (x, y, z) to move together
@@ -387,16 +417,14 @@ class GeoLayerConstraint(GeoConstraint):
     def __init__(self, children):
         self.n_free_params = 1
         self.symmetry_operations = {
-            child: np.array([[1., 0.],
-                             [0., 1.]])
-            for child in children
+            child: np.array([[1.0, 0.0], [0.0, 1.0]]) for child in children
         }
         super().__init__(children)
 
     @property
     def free_param_map(self):
         # one free parameter is mapped to the z direction
-        return np.array([0., 0., 1.]).T
+        return np.array([0.0, 0.0, 1.0]).T
 
 
 class GeoFixConstraint(GeoConstraint):
@@ -411,8 +439,7 @@ class GeoFixConstraint(GeoConstraint):
         else:
             raise ValueError("FixConstraint can only take one child.")
         self.symmetry_operations = {
-            self.only_child: np.array([[1., 0.],
-                             [0., 1.]])
+            self.only_child: np.array([[1.0, 0.0], [0.0, 1.0]])
         }
         super().__init__([self.only_child])
 
@@ -425,7 +452,7 @@ class GeoFixConstraint(GeoConstraint):
 
 
 def geo_sym_linking(atom):
-    linking = np.zeros(shape=(3,3))
-    linking[1:3, 1:3] = atom.symrefm  #TODO: round off the 1e-16 contributions
-    linking[0,0] = 1.0 # all symmetry linked atoms move together is z directon
+    linking = np.zeros(shape=(3, 3))
+    linking[1:3, 1:3] = atom.symrefm  # TODO: round off the 1e-16 contributions
+    linking[0, 0] = 1.0  # all symmetry linked atoms move together is z directon
     return linking

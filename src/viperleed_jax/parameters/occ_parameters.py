@@ -15,14 +15,14 @@ from .hierarchical_linear_tree import ParameterHLSubtree
 class OccHLLeafNode(HLLeafNode):
     """Represents a leaf node with occupational parameters."""
 
-    def __init__(self, atom_site_element):
+    def __init__(self, base_scatterer):
         dof = 1
-        self.element = atom_site_element.site_element.element
-        self.site = atom_site_element.site_element.site
-        self.num = atom_site_element.num
-        self.site_element = atom_site_element.site_element
-        self.atom_site_element = atom_site_element
-        self.ref_vib_amp = atom_site_element.atom.site.vibamp[self.element]
+        self.element = base_scatterer.site_element.element
+        self.site = base_scatterer.site_element.site
+        self.num = base_scatterer.num
+        self.site_element = base_scatterer.site_element
+        self.base_scatterer = base_scatterer
+        self.ref_vib_amp = base_scatterer.atom.site.vibamp[self.element]
         self.name = f"occ (At_{self.num},{self.site},{self.element})"
         super().__init__(dof=dof, name=self.name)
 
@@ -74,8 +74,8 @@ class OccSymmetryHLConstraint(OccHLConstraintNode):
                          children=children, transformers=transformers)
 
 class OccHLSubtree(ParameterHLSubtree):
-    def __init__(self, slab, atom_site_elements, site_elements):
-        super().__init__(slab, atom_site_elements, site_elements)
+    def __init__(self, slab, base_scatterers, site_elements):
+        super().__init__(slab, base_scatterers, site_elements)
 
     @property
     def name(self):
@@ -91,7 +91,7 @@ class OccHLSubtree(ParameterHLSubtree):
 
         # initially, every atom-site-element has a free chemical weight
         # to allow for (partial) vacancies
-        occ_leaf_nodes = [OccHLLeafNode(ase) for ase in self.atom_site_elements]
+        occ_leaf_nodes = [OccHLLeafNode(ase) for ase in self.base_scatterers]
         self.nodes.extend(occ_leaf_nodes)
 
         # iterate over atom-site-elements and link ones from the same atom
@@ -113,7 +113,7 @@ class OccHLSubtree(ParameterHLSubtree):
         for linklist in self.slab.linklists:
             # put all linked atoms in the same symmetry group
             nodes_to_link = [node for node in linked_nodes
-                                if node.children[0].atom_site_element.atom in linklist]
+                                if node.children[0].base_scatterer.atom in linklist]
             if not nodes_to_link:
                 continue
             symmetry_node = OccSymmetryHLConstraint(children=nodes_to_link,
@@ -128,12 +128,12 @@ class OccHLSubtree(ParameterHLSubtree):
 
 
 class ChemBaseParam(BaseParam):
-    def __init__(self, atom_site_element):
-        self.atom = atom_site_element.atom
+    def __init__(self, base_scatterer):
+        self.atom = base_scatterer.atom
         self.n_free_params = 1
-        self.elements = {atom_site_element.site_element.element:None,
+        self.elements = {base_scatterer.site_element.element:None,
                          'vac':None}
-        super().__init__(atom_site_element)
+        super().__init__(base_scatterer)
 
 
 class ChemParams(Params):
@@ -141,7 +141,7 @@ class ChemParams(Params):
     def __init__(self, delta_slab):
         # initially, every atom-site-element has a free chemical weight
         # to allow for (partial) vacancies
-        self.params = [ChemBaseParam(ase) for ase in delta_slab.atom_site_elements]
+        self.params = [ChemBaseParam(ase) for ase in delta_slab.base_scatterers]
 
         # iterate over atom-site-elements and link ones from the same atom
         # since we can't have more than 100% occupancy
@@ -149,7 +149,7 @@ class ChemParams(Params):
         linked_params = []
         for atom in delta_slab.non_bulk_atoms:
             atom_params = [param for param in self.base_params
-                           if param.atom_site_element.atom == atom]
+                           if param.base_scatterer.atom == atom]
             if not atom_params:
                 continue
             linked_param = SharedOccChemConstraint(children=atom_params)

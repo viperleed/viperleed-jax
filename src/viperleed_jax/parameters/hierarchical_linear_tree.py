@@ -131,9 +131,9 @@ class ParameterHLSubtree(ABC):
     transformations).
     """
 
-    def __init__(self, slab, atom_site_elements, site_elements):
+    def __init__(self, slab, base_scatterers, site_elements):
         self.slab = slab
-        self.atom_site_elements = atom_site_elements
+        self.base_scatterers = base_scatterers
         self.site_elements = site_elements
         self.nodes = []
 

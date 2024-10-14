@@ -11,13 +11,13 @@ from .hierarchical_linear_tree import ParameterHLSubtree
 class VibHLLeafNode(HLLeafNode):
     """Represents a leaf node with vibrational parameters."""
 
-    def __init__(self, atom_site_element):
+    def __init__(self, base_scatterer):
         dof = 1
-        self.element = atom_site_element.site_element.element
-        self.site = atom_site_element.site_element.site
-        self.num = atom_site_element.num
-        self.site_element = atom_site_element.site_element
-        self.ref_vib_amp = atom_site_element.atom.site.vibamp[self.element]
+        self.element = base_scatterer.site_element.element
+        self.site = base_scatterer.site_element.site
+        self.num = base_scatterer.num
+        self.site_element = base_scatterer.site_element
+        self.ref_vib_amp = base_scatterer.atom.site.vibamp[self.element]
         self.name = f"vib (At_{self.num},{self.site},{self.element})"
         super().__init__(dof=dof, name=self.name)
 
@@ -36,8 +36,8 @@ class VibHLConstraintNode(HLConstraintNode):
 
 
 class VibHLSubtree(ParameterHLSubtree):
-    def __init__(self, slab, atom_site_elements, site_elements):
-        super().__init__(slab, atom_site_elements, site_elements)
+    def __init__(self, slab, base_scatterers, site_elements):
+        super().__init__(slab, base_scatterers, site_elements)
 
     @property
     def name(self):
@@ -50,7 +50,7 @@ class VibHLSubtree(ParameterHLSubtree):
     def build_subtree(self):
 
         leaf_nodes = [VibHLLeafNode(ase)
-                    for ase in self.atom_site_elements]
+                    for ase in self.base_scatterers]
 
         self.nodes.extend(leaf_nodes)
 
@@ -72,7 +72,7 @@ class VibBaseParam(BaseParam):
 
     Parameters
     ----------
-    atom_site_element : AtomSiteElement
+    base_scatterer : AtomSiteElement
         The atom site element.
 
     Attributes
@@ -84,12 +84,12 @@ class VibBaseParam(BaseParam):
     bound : Bound
         The bound value.
     """
-    def __init__(self, atom_site_element):
+    def __init__(self, base_scatterer):
         self.n_free_params = 1
-        element = atom_site_element.site_element.element
-        self.ref_vib_amp = atom_site_element.atom.site.vibamp[element]
+        element = base_scatterer.site_element.element
+        self.ref_vib_amp = base_scatterer.atom.site.vibamp[element]
         self.bound = None
-        super().__init__(atom_site_element)
+        super().__init__(base_scatterer)
 
 class VibParamBound(Bound):
     """Represents the bounds for a vibration parameter.
@@ -134,7 +134,7 @@ class VibParams(Params):
         # create a base parameter for every atom-site-element, then map them
         # to the site-elements
         self.params = [VibBaseParam(ase) for ase
-                            in delta_slab.atom_site_elements]
+                            in delta_slab.base_scatterers]
         self.vib_bounds = ()
         # TODO: if we wanted to changes vib amps for individual atoms, we would
         # have to changes this, but as is, one can easily create a new site

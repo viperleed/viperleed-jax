@@ -9,51 +9,11 @@ from viperleed_jax.parameters.occ_parameters import ChemParams
 from viperleed_jax.parameters.vib_parameters import VibParams
 from viperleed_jax.parameters.geo_parameters import GeoParams
 from viperleed_jax.parameters.v0r_parameters import V0rParam
+from viperleed_jax.base_scatterers import get_base_scatterers, get_site_elements
+
 
 _ATOM_Z_DIR_ID = 2
 _DISP_Z_DIR_ID = 0
-
-SiteEl = namedtuple('SiteEl', ['site', 'element'])
-AtomSiteElement = namedtuple('AtomSiteElement', ['atom', 'site_element'])
-
-
-def get_site_elements(slab):
-    """Get the site elements from the slab.
-
-    Parameters:
-    slab (Slab): The slab object for which to retrieve the site-elements.
-
-    Returns:
-    tuple: A tuple of SiteEl namedtuples representing the site elements.
-    """
-    site_elements = []
-    for site in slab.sitelist:
-        if site.mixedEls:
-            site_elements.extend([SiteEl(site.label, el) for el in site.mixedEls])
-        else:
-            site_elements.append(SiteEl(site.label, site.el))
-    site_elements = tuple(site_elements) # read only from here on out
-    return site_elements
-
-
-def get_atom_site_elements(slab):
-    """Get the atom site elements for a given slab.
-
-    Parameters:
-    slab (Slab): The slab object for which to retrieve the
-        atom-site-elements.
-
-    Returns:
-    tuple: A tuple of AtomSiteElement objects representing the atom site
-        elements.
-    """
-    atom_site_elements = []
-    non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
-    for at in non_bulk_atoms:
-        for siteel in get_site_elements(slab):
-            if siteel.site == at.site.label:
-                atom_site_elements.append(AtomSiteElement(at, siteel))
-    return tuple(atom_site_elements) # read only from here on out
 
 
 class ParameterSpace():
@@ -62,7 +22,14 @@ class ParameterSpace():
         self.slab = slab
         self.non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
         self.site_elements = get_site_elements(slab)
-        self.atom_site_elements = get_atom_site_elements(slab)
+        self.base_scatterers = get_base_scatterers(slab)
+
+        self.vib_subtree = None
+        self.geo_subtree = None
+        self.occ_subtree = None
+        self.v0r_subtree = None
+    
+    
 
         # TODO: handle "trees" in a more general manner that allows further parameters inter-linking (e.g. domains, incidence, linking geometry&vib, geo&occ etc.)
         # apply base parameters
@@ -74,7 +41,7 @@ class ParameterSpace():
         # atom-site-element reference z positions
         self._ats_ref_z_pos = jnp.array(
             [  ase.atom.cartpos[_ATOM_Z_DIR_ID]
-             for ase in self.atom_site_elements]
+             for ase in self.base_scatterers]
         )
 
     def freeze(self):
@@ -95,8 +62,8 @@ class ParameterSpace():
         )
 
     @property
-    def n_atom_site_elements(self):
-        return len(self.atom_site_elements)
+    def n_base_scatterers(self):
+        return len(self.base_scatterers)
 
     @property
     def n_base_params(self):
@@ -215,11 +182,11 @@ class ParameterSpace():
 
     @property
     def dynamic_ase_id(self):
-        return jnp.arange(self.n_atom_site_elements)[self.is_dynamic_ase]
+        return jnp.arange(self.n_base_scatterers)[self.is_dynamic_ase]
 
     @property
     def static_ase_id(self):
-        return jnp.arange(self.n_atom_site_elements)[~self.is_dynamic_ase]
+        return jnp.arange(self.n_base_scatterers)[~self.is_dynamic_ase]
 
     @property
     def dynamic_ase_propagator_id(self):
@@ -285,7 +252,7 @@ class FrozenParameterSpace():
     frozen_attributes = (
         'dynamic_t_matrix_site_elements',
         'geo_transformer',
-        'n_atom_site_elements',
+        'n_base_scatterers',
         'n_base_params',
         'n_dynamic_propagators',
         'n_dynamic_t_matrices',

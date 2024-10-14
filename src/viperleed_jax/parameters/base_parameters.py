@@ -41,20 +41,19 @@ class DeltaParam():
         return len(self.children) > 0
 
 
-
 class BaseParam(DeltaParam):
     """
     Represents a base parameter.
 
     Attributes:
-        atom_site_element (str): The atom site element.
+        base_scatterer (str): The atom site element.
         site_element (str): The site element.
         parent (object): The parent object.
         children (list): The list of child objects.
     """
-    def __init__(self, atom_site_element):
-        self.atom_site_element = atom_site_element
-        self.site_element = atom_site_element.site_element
+    def __init__(self, base_scatterer):
+        self.base_scatterer = base_scatterer
+        self.site_element = base_scatterer.site_element
         self.parent = None
         self.children = None
 
@@ -77,7 +76,6 @@ class BaseParam(DeltaParam):
             The maximum value.
         """
         return self.parent.max()
-
 
 
 class Params():  # This is the tree

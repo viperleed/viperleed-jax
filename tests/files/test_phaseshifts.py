@@ -5,7 +5,7 @@ from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
 from viperleed_jax.files.phaseshifts import Phaseshifts
 from viperleed_jax.files.phaseshifts import phaseshift_site_el_order
-from viperleed_jax.parameter_space import SiteEl
+from viperleed_jax.base_scatterers import SiteEl
 
 @pytest.fixture(scope='session')
 def fe2o3_unrelaxed_raw_phaseshifts(fe2o3_unrelaxed_state_after_init,
