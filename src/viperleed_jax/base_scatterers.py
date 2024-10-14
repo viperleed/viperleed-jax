@@ -27,6 +27,9 @@ def get_site_elements(slab):
     site_elements = tuple(site_elements)  # read only from here on out
     return site_elements
 
+# TODO: To discuss
+# Currently, the internal numbering is a bit inconsitent.
+# Atom numbers start at 1, but layer numbers start at 0.
 
 class BaseScatterer:
     def __init__(self, atom, site_element):
