@@ -36,8 +36,8 @@ class VibHLConstraintNode(HLConstraintNode):
 
 
 class VibHLSubtree(ParameterHLSubtree):
-    def __init__(self, slab, base_scatterers, site_elements):
-        super().__init__(slab, base_scatterers, site_elements)
+    def __init__(self, base_scatterers):
+        super().__init__(base_scatterers)
 
     @property
     def name(self):

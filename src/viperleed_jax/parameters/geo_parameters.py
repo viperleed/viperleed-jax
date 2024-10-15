@@ -167,8 +167,8 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
 
 
 class GeoHLSubtree(ParameterHLSubtree):
-    def __init__(self, slab, base_scatterers, site_elements):
-        super().__init__(slab, base_scatterers, site_elements)
+    def __init__(self, base_scatterers):
+        super().__init__(base_scatterers)
 
     @property
     def name(self):
@@ -193,12 +193,11 @@ class GeoHLSubtree(ParameterHLSubtree):
                 node for node in self.leafs if node.site_element == siteel
             ]
 
-        for linklist in self.slab.linklists:
+        for link in self.base_scatterers.symmetry_links:
             # put all linked atoms in the same symmetry group
             nodes_to_link = [
-                node
-                for node in self.leafs
-                if node.base_scatterer.atom in linklist
+                node for node in self.leafs
+                if node.base_scatterer in link
             ]
             if nodes_to_link:
                 self.nodes.append(GeoSymmetryHLConstraint(children=nodes_to_link))

@@ -46,6 +46,11 @@ class OccSharedHLConstraint(OccHLConstraintNode):
         if any(not isinstance(child, OccHLLeafNode) for child in children):
             raise ValueError("Children must be OccHLLeaf nodes.")
 
+        if any(child.num != children[0].num for child in children):
+            raise ValueError("Children must be of the same atom.")
+        # set the number of the atom
+        self.num = children[0].num
+
         transformers = []
         for child in children:
             weights = np.full(shape=(1, dof), fill_value=-1/dof)
@@ -74,8 +79,8 @@ class OccSymmetryHLConstraint(OccHLConstraintNode):
                          children=children, transformers=transformers)
 
 class OccHLSubtree(ParameterHLSubtree):
-    def __init__(self, slab, base_scatterers, site_elements):
-        super().__init__(slab, base_scatterers, site_elements)
+    def __init__(self, base_scatterers):
+        super().__init__(base_scatterers)
 
     @property
     def name(self):
@@ -86,9 +91,6 @@ class OccHLSubtree(ParameterHLSubtree):
         return "occ root"
 
     def build_subtree(self):
-
-        non_bulk_atoms = [at for at in self.slab.atlist if not at.is_bulk]
-
         # initially, every atom-site-element has a free chemical weight
         # to allow for (partial) vacancies
         occ_leaf_nodes = [OccHLLeafNode(ase) for ase in self.base_scatterers]
@@ -99,9 +101,9 @@ class OccHLSubtree(ParameterHLSubtree):
         # This does not reduce the number of free parameters, but it's a physical
         # requirement that we need to enforce
         linked_nodes = []
-        for atom in non_bulk_atoms:
+        for num in range(self.base_scatterers.max_atom_number+1):  # inclusive range
             atom_nodes = [node for node in self.leafs
-                        if node.num == atom.num]
+                        if node.num == num]
             if not atom_nodes:
                 continue
             linked_node = OccSharedHLConstraint(children=atom_nodes)
@@ -110,15 +112,17 @@ class OccHLSubtree(ParameterHLSubtree):
 
 
         # occupational parameters need to fulfill symmetry constraints
-        for linklist in self.slab.linklists:
+        for link in self.base_scatterers.atom_number_symmetry_links:
             # put all linked atoms in the same symmetry group
+            
             nodes_to_link = [node for node in linked_nodes
-                                if node.children[0].base_scatterer.atom in linklist]
+                                if node.num in link]
             if not nodes_to_link:
                 continue
             symmetry_node = OccSymmetryHLConstraint(children=nodes_to_link,
                                                     name=f"Symmetry")
             self.nodes.append(symmetry_node)
+
         unlinked_site_el_nodes = [node for node in linked_nodes
                                     if node.is_root]
         for node in unlinked_site_el_nodes:
