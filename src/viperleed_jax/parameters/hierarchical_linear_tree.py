@@ -168,6 +168,12 @@ class ParameterHLSubtree(ABC):
         """Method to build the subtree for the parameter group."""
         pass
 
+    def _check_constraint_line_type(self, constraint_line, constraint_type):
+        if not isinstance(constraint_line, ConstraintLine):
+            raise ValueError("Constraint must be a ConstraintLine.")
+        if constraint_line.constraint_type != constraint_type:
+            raise ValueError(f"Constraint must be a {constraint_type} constraint.")
+
     def _select_constraint(self, constraint_line):
         # gets the leafs that are affected by a constraint
         selected_leafs = list(
