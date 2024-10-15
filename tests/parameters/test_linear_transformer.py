@@ -1,6 +1,6 @@
 import pytest
 import jax.numpy as jnp
-from viperleed_jax.parameters.linear_transfomer import LinearTransformer
+from viperleed_jax.parameters.linear_transformer import LinearTransformer
 
 
 # Sample test cases
