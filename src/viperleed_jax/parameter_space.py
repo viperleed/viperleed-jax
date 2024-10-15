@@ -19,7 +19,6 @@ _DISP_Z_DIR_ID = 0
 class ParameterSpace():
 
     def __init__(self, slab):
-        self.slab = slab
         self.non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
         self.site_elements = get_site_elements(slab)
         self.base_scatterers = get_base_scatterers(slab)
@@ -294,9 +293,9 @@ class FrozenParameterSpace():
         occ_params = free_params[sum(self.n_param_split[:3]):]
         return v0r_params, vib_params, geo_params, occ_params
 
-    def __init__(self, delta_slab):
+    def __init__(self, parameter_space):
         for attr in self.frozen_attributes:
-            setattr(self, attr, deepcopy(getattr(delta_slab, attr)))
+            setattr(self, attr, deepcopy(getattr(parameter_space, attr)))
 
     def tree_flatten(self):
         aux_data = {attr: getattr(self, attr)
