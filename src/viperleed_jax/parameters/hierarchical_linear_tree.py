@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
+from itertools import compress
 
 import numpy as np
 import jax.numpy as jnp
 import anytree
 from anytree import Node, RenderTree
 
-
+from viperleed_jax.files.displacements.lines import ConstraintLine
 from .linear_transformer import LinearTransformer
 
 # Enable checks for the anytree library – we don't deal with huge trees so this
@@ -167,6 +168,32 @@ class ParameterHLSubtree(ABC):
         """Method to build the subtree for the parameter group."""
         pass
 
+    def _select_constraint(self, constraint_line):
+        # gets the leafs that are affected by a constraint
+        selected_leafs = list(
+            compress(self.leafs,
+                     constraint_line.targets.select(self.base_scatterers))
+        )
+        if not selected_leafs:
+            raise ValueError("No leaf nodes found for constraint "
+                             f"{constraint_line}.")
+        # TODO: other constraints ?
+        if constraint_line.value != "linked":
+            raise NotImplementedError("Only linked constraints are supported.")
+
+        # get the corresponding root nodes
+        selected_roots = list(
+            {leaf.root: None for leaf in selected_leafs}.keys()
+        )
+
+        if len(selected_roots) == 1:
+            # TODO: make into debug message
+            raise ValueError(
+                f"Constraint '{constraint_line}' only affects one root node. "
+                "It may be redundant."
+            )
+
+        return selected_leafs, selected_roots
 
     def create_subtree_root(self):
         """Create a root node that aggregates all root nodes in the subtree.y"""
