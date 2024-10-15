@@ -10,6 +10,7 @@ from viperleed_jax.parameters.base_parameters import (
     Bound,
 )
 from viperleed_jax import atomic_units
+from viperleed_jax.files.displacements.lines import ConstraintLine
 
 from .linear_transformer import LinearTransformer
 from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
@@ -165,6 +166,26 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
             name=name,
         )
 
+
+class GeoLinkedHLConstraint(GeoHLConstraintNode):
+    """Class for explicit links of geometric parameters."""
+    # TODO: if we implement linking of nodes with different dof (directional),
+    # this needs to be adapted
+    def __init__(self, children, name):
+        # check that all children have the same dof
+        if len(set(child.dof for child in children)) != 1:
+            raise ValueError("Children must have the same dof.")
+        dof = children[0].dof
+
+        # transformers can be identity
+        transformers = [
+            LinearTransformer(np.eye(dof), np.zeros(dof), (dof,))
+            for _ in children
+        ]
+        super().__init__(
+            dof=dof, children=children, transformers=transformers,
+            name=f'CONSTRAIN "{name}"'
+        )
 
 class GeoHLSubtree(ParameterHLSubtree):
     def __init__(self, base_scatterers):
