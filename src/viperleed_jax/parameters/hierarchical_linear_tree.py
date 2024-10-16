@@ -278,11 +278,15 @@ class ParameterHLSubtree(ABC):
             raise ValueError("No root nodes found in subtree.")
         root_dof = sum(node.dof for node in self.roots)
         transformers = []
+        cum_node_dof = 0
         for node in self.roots:
             weights = np.zeros((node.dof, root_dof))
-            weights[:, : node.dof] = np.identity(node.dof)
+            weights[:, cum_node_dof : cum_node_dof+node.dof] = np.identity(
+                node.dof
+            )
             bias = np.zeros(node.dof)
             transformers.append(LinearTransformer(weights, bias, (node.dof,)))
+            cum_node_dof += node.dof
         self.subtree_root = HLConstraintNode(
             dof=root_dof,
             name=self.subtree_root_name,
