@@ -102,7 +102,7 @@ class OccHLSubtree(ParameterHLSubtree):
         # requirement that we need to enforce
         linked_nodes = []
         for num in range(self.base_scatterers.max_atom_number+1):  # inclusive range
-            atom_nodes = [node for node in self.leafs
+            atom_nodes = [node for node in self.leaves
                         if node.num == num]
             if not atom_nodes:
                 continue

@@ -211,19 +211,19 @@ class GeoHLSubtree(ParameterHLSubtree):
         # apply symmetry constraints
         for siteel in self.site_elements:
             site_el_params = [
-                node for node in self.leafs if node.site_element == siteel
+                node for node in self.leaves if node.site_element == siteel
             ]
 
         for link in self.base_scatterers.symmetry_links:
             # put all linked atoms in the same symmetry group
             nodes_to_link = [
-                node for node in self.leafs
+                node for node in self.leaves
                 if node.base_scatterer in link
             ]
             if nodes_to_link:
                 self.nodes.append(GeoSymmetryHLConstraint(children=nodes_to_link))
 
-        unlinked_site_el_nodes = [node for node in self.leafs if node.is_root]
+        unlinked_site_el_nodes = [node for node in self.leaves if node.is_root]
         for node in unlinked_site_el_nodes:
             self.nodes.append(GeoSymmetryHLConstraint(children=[node]))
 

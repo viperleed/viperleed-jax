@@ -154,7 +154,7 @@ class ParameterHLSubtree(ABC):
         return [node for node in self.nodes if node.is_root]
 
     @property
-    def leafs(self):
+    def leaves(self):
         return [node for node in self.nodes if node.is_leaf]
 
     @property
@@ -209,15 +209,15 @@ class ParameterHLSubtree(ABC):
         return selected_leafs, selected_roots
 
     def _select_constraint(self, constraint_line):
-        # gets the leafs that are affected by a constraint
+        # gets the leaves that are affected by a constraint
 
         # TODO: other constraints ?
         if constraint_line.value != "linked":
             raise NotImplementedError("Only linked constraints are supported.")
 
         targets = constraint_line.targets
-        selected_leafs, selected_roots = self._target_nodes(targets)
-        return selected_leafs, selected_roots
+        selected_leaves, selected_roots = self._target_nodes(targets)
+        return selected_leaves, selected_roots
 
     def create_subtree_root(self):
         """Create a root node that aggregates all root nodes in the subtree.y"""

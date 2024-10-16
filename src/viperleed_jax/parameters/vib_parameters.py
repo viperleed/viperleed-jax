@@ -57,7 +57,7 @@ class VibHLSubtree(ParameterHLSubtree):
         # link site-elements together
         for site_el in self.site_elements:
             nodes_to_link = [
-                node for node in self.leafs if node.site_element == site_el
+                node for node in self.leaves if node.site_element == site_el
             ]
             if not nodes_to_link:
                 continue
