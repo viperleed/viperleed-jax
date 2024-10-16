@@ -35,6 +35,28 @@ class VibHLConstraintNode(HLConstraintNode):
         super().__init__(dof=1, name=name, children=children, transformers=transformers)
 
 
+class VibLinkedHLConstraint(VibHLConstraintNode):
+    """Class for explicit links of geometric parameters."""
+
+    def __init__(self, children, name):
+        # check that all children have the same dof
+        if len(set(child.dof for child in children)) != 1:
+            raise ValueError("Children must have the same dof.")
+        dof = children[0].dof
+
+        # transformers can be identity
+        transformers = [
+            LinearTransformer(np.eye(dof), np.zeros(dof), (dof,))
+            for _ in children
+        ]
+        super().__init__(
+            dof=dof,
+            children=children,
+            transformers=transformers,
+            name=f'CONSTRAIN "{name}"',
+        )
+
+
 class VibHLSubtree(ParameterHLSubtree):
     def __init__(self, base_scatterers):
         super().__init__(base_scatterers)
