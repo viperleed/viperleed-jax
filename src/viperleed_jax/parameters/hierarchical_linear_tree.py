@@ -190,23 +190,29 @@ class ParameterHLSubtree(ABC):
             raise ValueError(f"Constraint must be a {constraint_type} constraint.")
 
     def _target_nodes(self, targets):
-        """Takes a BSTarget and returns the corresponding leafs and roots."""
-        # gets the leafs that are affected by the targets
-        selected_leafs = list(
+        """Takes a BSTarget and returns the corresponding leaves and roots."""
+        # gets the leaves that are affected by the targets
+        explicitly_selected_leaves = list(
             compress(
-                self.leafs, targets.select(self.base_scatterers)
+                self.leaves, targets.select(self.base_scatterers)
             )
         )
-        if not selected_leafs:
+        if not explicitly_selected_leaves:
             raise ValueError(
                 f"No leaf nodes found for target {targets}."
             )
 
         # get the corresponding root nodes
         selected_roots = list(
-            {leaf.root: None for leaf in selected_leafs}.keys()
+            {leaf.root: None for leaf in explicitly_selected_leaves}.keys()
         )
-        return selected_leafs, selected_roots
+        # then get all unique leaves that grow form the selected roots
+        affected_leaves_dict = {}
+        for root in selected_roots:
+            affected_leaves_dict.update({leaf: None for leaf in root.leaves})
+        implicitly_selected_leaves = list(affected_leaves_dict.keys())
+
+        return implicitly_selected_leaves, selected_roots
 
     def _select_constraint(self, constraint_line):
         # gets the leaves that are affected by a constraint
