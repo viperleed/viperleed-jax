@@ -138,6 +138,7 @@ class ParameterHLSubtree(ABC):
         self.nodes = []
 
         self._subtree_root_has_been_created = False
+        self._offsets_have_been_added = False
         self.build_subtree()
 
     def __repr__(self):
@@ -171,6 +172,17 @@ class ParameterHLSubtree(ABC):
     def build_subtree(self):
         """Method to build the subtree for the parameter group."""
         pass
+
+    def _add_offset_nodes(self, generic_name):
+        """Add offset nodes to the tree."""
+        # TODO: mark the offset layer?
+        if self._offsets_have_been_added:
+            raise ValueError("Offset nodes have already been added.")
+
+        for node in self.roots:
+            self.nodes.append(HLOffsetNode(children=[node],
+                                           name=generic_name))
+        self._offsets_have_been_added = True
 
     def _check_constraint_line_type(self, constraint_line, constraint_type):
         if not isinstance(constraint_line, ConstraintLine):
