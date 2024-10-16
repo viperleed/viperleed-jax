@@ -57,6 +57,26 @@ class LinearTransformer:
             return True
         return self.out_reshape == other.out_reshape
 
+    def compose(self, other):
+        """Compose this transformer with another transformer.
+
+        Creates a new transformer object that applies the transformation of
+        other first and then the transformation of this object. The new weights
+        and biases are easily calculated by matrix multiplication.
+
+        For compatible transformers l1, l2, l3 and input x, it holds that:
+        l3(l2(l1(x))) == l1.compose(l2).compose(l3)(x)
+        """
+        if not isinstance(other, LinearTransformer):
+            raise ValueError("Can only compose with another LinearTransformer")
+        if self.out_dim != other.in_dim:
+            raise ValueError(
+                f"Cannot compose transformers with shapes {self._out_dim} and {other.in_dim}"
+            )
+        new_weights = other.weights @ self.weights
+        new_biases = other.weights @ self.biases + other.biases
+        return LinearTransformer(new_weights, new_biases, other.out_reshape)
+
     def __repr__(self):
         return f"LinearTransformer(weights={self.weights.shape}, biases={self.biases.shape}, out_reshape={self.out_reshape})"
 
