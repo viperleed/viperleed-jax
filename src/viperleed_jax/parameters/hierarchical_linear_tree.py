@@ -292,4 +292,5 @@ class ParameterHLSubtree(ABC):
             name=self.subtree_root_name,
             children=self.roots,
             transformers=transformers,
-    )
+        )
+        self.nodes.append(self.subtree_root)
