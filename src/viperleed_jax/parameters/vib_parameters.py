@@ -67,6 +67,8 @@ class VibHLSubtree(ParameterHLSubtree):
             )
             self.nodes.append(site_link_node)
 
+        # add offset nodes
+        self._add_offset_nodes(generic_name="vib offset (unused)")
 class VibBaseParam(BaseParam):
     """Base class for vibrational parameters.
 

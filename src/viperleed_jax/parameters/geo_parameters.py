@@ -227,6 +227,9 @@ class GeoHLSubtree(ParameterHLSubtree):
         for node in unlinked_site_el_nodes:
             self.nodes.append(GeoSymmetryHLConstraint(children=[node]))
 
+        # add offset nodes
+        self._add_offset_nodes("geo offset (unused)")
+
 
 class GeoBaseParam(BaseParam):
     def __init__(self, base_scatterer):

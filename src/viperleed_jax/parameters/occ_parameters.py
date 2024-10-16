@@ -130,6 +130,9 @@ class OccHLSubtree(ParameterHLSubtree):
                                                     name="Symmetry")
             self.nodes.append(symmetry_node)
 
+        # add offset nodes
+        self._add_offset_nodes("occ offset (unused)")
+
 
 class ChemBaseParam(BaseParam):
     def __init__(self, base_scatterer):
