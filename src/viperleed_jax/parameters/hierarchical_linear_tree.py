@@ -142,7 +142,11 @@ class ParameterHLSubtree(ABC):
 
     def __repr__(self):
         if not self._subtree_root_has_been_created:
-            return f"{self.__class__.__name__}({self.name})"
+            partial_trees = [RenderTree(root).by_attr() for root in self.roots]
+            trees_str = "\n".join(partial_trees)
+
+            return (f"{self.__class__.__name__}({self.name})\n"
+                    f"{trees_str}")
         return RenderTree(self.subtree_root).by_attr()
 
     @property
