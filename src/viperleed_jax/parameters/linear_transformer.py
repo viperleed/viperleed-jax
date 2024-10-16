@@ -46,6 +46,17 @@ class LinearTransformer:
             result = result.reshape(self.out_reshape)
         return result
 
+    def __eq__(self, other):
+        if not isinstance(other, LinearTransformer):
+            return False
+        if not np.array_equal(self.weights, other.weights):
+            return False
+        if not np.array_equal(self.biases, other.biases):
+            return False
+        if self._out_reshape is None and other.out_reshape is not None:
+            return True
+        return self.out_reshape == other.out_reshape
+
     def __repr__(self):
         return f"LinearTransformer(weights={self.weights.shape}, biases={self.biases.shape}, out_reshape={self.out_reshape})"
 
