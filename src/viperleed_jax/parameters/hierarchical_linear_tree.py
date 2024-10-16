@@ -174,31 +174,34 @@ class ParameterHLSubtree(ABC):
         if constraint_line.constraint_type != constraint_type:
             raise ValueError(f"Constraint must be a {constraint_type} constraint.")
 
-    def _select_constraint(self, constraint_line):
-        # gets the leafs that are affected by a constraint
+    def _target_nodes(self, targets):
+        """Takes a BSTarget and returns the corresponding leafs and roots."""
+        # gets the leafs that are affected by the targets
         selected_leafs = list(
-            compress(self.leafs,
-                     constraint_line.targets.select(self.base_scatterers))
+            compress(
+                self.leafs, targets.select(self.base_scatterers)
+            )
         )
         if not selected_leafs:
-            raise ValueError("No leaf nodes found for constraint "
-                             f"{constraint_line}.")
-        # TODO: other constraints ?
-        if constraint_line.value != "linked":
-            raise NotImplementedError("Only linked constraints are supported.")
+            raise ValueError(
+                f"No leaf nodes found for target {targets}."
+            )
 
         # get the corresponding root nodes
         selected_roots = list(
             {leaf.root: None for leaf in selected_leafs}.keys()
         )
+        return selected_leafs, selected_roots
 
-        if len(selected_roots) == 1:
-            # TODO: make into debug message
-            raise ValueError(
-                f"Constraint '{constraint_line}' only affects one root node. "
-                "It may be redundant."
-            )
+    def _select_constraint(self, constraint_line):
+        # gets the leafs that are affected by a constraint
 
+        # TODO: other constraints ?
+        if constraint_line.value != "linked":
+            raise NotImplementedError("Only linked constraints are supported.")
+
+        targets = constraint_line.targets
+        selected_leafs, selected_roots = self._target_nodes(targets)
         return selected_leafs, selected_roots
 
     def create_subtree_root(self):
