@@ -122,6 +122,50 @@ class HLConstraintNode(HLNode):
             child.parent = self
 
 
+class HLOffsetNode(HLConstraintNode):
+    """Node representing an offset in the hierarchical linear tree.
+
+    Offsets are any static offset from the reference (refcalc) parameters. These
+    can be user defined (in the OFFSETS block of DISPLACEMENTS) or they can be
+    the optimized parameters from a previous calculation.
+    Offset nodes can only have one child, and may not change the number of
+    degrees of freedom (dof). The linear transformers must have identity
+    weights, but the bias can be set to any value.
+    """
+
+    def __init__(self, children, offset=None, name=None):
+
+        # if more than one child is provided, raise an error
+        if len(children) != 1:
+            raise ValueError("Offset nodes can only have one child.")
+        child = children[0]
+        dof = child.dof
+
+        # offset must be a vector of length dof
+        if offset is None:
+            _offset = np.zeros(dof)
+        else:
+            _offset = np.asarray(offset).reshape(dof,)
+        transformer = LinearTransformer(weights=np.eye(dof),
+                                        biases=_offset, out_reshape=(dof,))
+
+        super().__init__(dof=dof, name=name,
+                       children=[child], transformers=[transformer])
+
+    # TODO: discuss if updating the offsets should be allowed, or if we should
+    # instead regenerate the whole tree when necessary
+    def update_offset(self, offset, name=None):
+        # check that the offset has the correct shape
+        try:
+            _offset = np.asarray(offset).reshape(self.dof,)
+        except ValueError:
+            raise ValueError("Offset must have the same shape as the child dof.")
+        new_transformer = LinearTransformer(weights=np.eye(self.dof),
+                                            bias=_offset, shape=(self.dof,))
+        if name is not None:
+            self.name = name
+        self.children[0].set_transformer(new_transformer)
+
 
 class ParameterHLSubtree(ABC):
     """Base class representing a subtree in the hierarchical linear tree.
