@@ -57,6 +57,9 @@ class BaseScatterers:
     def __iter__(self):
         return iter(self.scatterers)
 
+    def __getitem__(self, index):
+        return self.scatterers[index]
+
     def __len__(self):
         return len(self.scatterers)
 
