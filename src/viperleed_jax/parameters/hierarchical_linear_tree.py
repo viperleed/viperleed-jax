@@ -76,6 +76,8 @@ class HLLeafNode(HLNode):
     def __init__(self, dof, name=None, parent=None, children=[]):
         if children:
             raise ValueError("Leaf nodes cannot have children.")
+        # initialize bounds
+        self.bounds = HLBound(dof)
         super().__init__(dof=dof, name=name, parent=parent)
 
 
@@ -136,6 +138,19 @@ class HLConstraintNode(HLNode):
     def collapse_bounds(self):
         """Iterate through all descendants, collapsing the bounds."""
         user_set_bounds, lower_bounds, upper_bounds = [], [], []
+
+        for child in self.children:
+            if child.is_leaf:
+                user_set_bounds.append(child.bounds.user_set)
+                lower_bounds.append(child.bounds.lower)
+                upper_bounds.append(child.bounds.upper)
+            else:
+                _user_set, _lower, _upper = child.collapse_bounds()
+                user_set_bounds.extend(_user_set)
+                lower_bounds.extend(_lower)
+                upper_bounds.extend(_upper)
+
+        return np.hstack(user_set_bounds), np.hstack(lower_bounds), np.hstack(upper_bounds)
 
 
 class HLOffsetNode(HLConstraintNode):
