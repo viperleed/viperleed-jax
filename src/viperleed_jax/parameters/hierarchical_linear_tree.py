@@ -121,6 +121,22 @@ class HLConstraintNode(HLNode):
         for child in _children:
             child.parent = self
 
+    def collapse_transformer(self):
+        """Iterate through through all descendants, collapsing the transformers."""
+        collapsed_transformers = []
+        for child in self.children:
+            if child.is_leaf:
+                collapsed_transformers.append(child.transformer)
+            else:
+                collapsed_transformers.append(
+                    child.transformer.compose(child.collapse_transformer())
+                )
+        return stack_transformers(collapsed_transformers)
+
+    def collapse_bounds(self):
+        """Iterate through all descendants, collapsing the bounds."""
+        user_set_bounds, lower_bounds, upper_bounds = [], [], []
+
 
 class HLOffsetNode(HLConstraintNode):
 def stack_transformers(transformers):
