@@ -5,11 +5,12 @@ import jax
 from jax import numpy as jnp
 from jax.tree_util import register_pytree_node_class
 
-from viperleed_jax.parameters.occ_parameters import ChemParams
-from viperleed_jax.parameters.vib_parameters import VibParams
-from viperleed_jax.parameters.geo_parameters import GeoParams
-from viperleed_jax.parameters.v0r_parameters import V0rParam
-from viperleed_jax.base_scatterers import get_base_scatterers, get_site_elements
+from viperleed_jax.parameters import occ_parameters
+from viperleed_jax.parameters import vib_parameters
+from viperleed_jax.parameters import geo_parameters
+from viperleed_jax.parameters import v0r_parameters
+from viperleed_jax.base_scatterers import BaseScatterers
+from viperleed_jax.files.displacements.reader import DisplacementFileSections
 
 
 _ATOM_Z_DIR_ID = 2
@@ -18,29 +19,25 @@ _DISP_Z_DIR_ID = 0
 
 class ParameterSpace():
 
-    def __init__(self, slab):
-        self.non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
-        self.site_elements = get_site_elements(slab)
-        self.base_scatterers = get_base_scatterers(slab)
+    def __init__(self, base_scatterers):
+        self._displacements_applied = False
+        self.base_scatterers = base_scatterers
 
-        self.vib_subtree = None
-        self.geo_subtree = None
-        self.occ_subtree = None
-        self.v0r_subtree = None
-    
-    
+        # create the parameter subtrees - this automatically sets up all the
+        # symmetry constraints
+        self.vib_subtree = vib_parameters.VibHLSubtree(base_scatterers)
+        self.geo_subtree = geo_parameters.GeoHLSubtree(base_scatterers)
+        self.occ_subtree = occ_parameters.OccHLSubtree(base_scatterers)
+        #self.v0r_subtree = v0r_parameters.V0rHLSubtree(base_scatterers)
 
-        # TODO: handle "trees" in a more general manner that allows further parameters inter-linking (e.g. domains, incidence, linking geometry&vib, geo&occ etc.)
-        # apply base parameters
-        self.vib_params = VibParams(self)
-        self.geo_params = GeoParams(self)
-        self.occ_params = ChemParams(self)
-        self.v0r_param = V0rParam(self)
+        # next, we parse the constraints from the displacements file
+        
+
 
         # atom-site-element reference z positions
         self._ats_ref_z_pos = jnp.array(
-            [  ase.atom.cartpos[_ATOM_Z_DIR_ID]
-             for ase in self.base_scatterers]
+            [bs.atom.cartpos[_ATOM_Z_DIR_ID]
+             for bs in self.base_scatterers]
         )
 
     def parse_search_block(self, search_block):
@@ -76,6 +73,7 @@ class ParameterSpace():
 
         Parameters
         ----------
+        constrain_block
         """
         for constraint in constrain_block:
             if constraint.constraint_type == "geo": # TODO: make into Enum
@@ -91,6 +89,8 @@ class ParameterSpace():
 
 
     def freeze(self):
+        if not self._displacements_applied:
+            raise ValueError("Displacements must be applied before freezing.")
         return FrozenParameterSpace(self)
 
     @property
