@@ -77,6 +77,13 @@ class LinearTransformer:
         new_biases = other.weights @ self.biases + other.biases
         return LinearTransformer(new_weights, new_biases, other.out_reshape)
 
+    def select_rows(self, bool_mask):
+        # check that bool mask is a valid shape
+        _bool_mask = np.asarray(bool_mask)
+        new_weights = self.weights[_bool_mask]
+        new_biases = self.biases[_bool_mask]
+        return LinearTransformer(new_weights, new_biases, (_bool_mask.sum(),))
+
     def __repr__(self):
         return f"LinearTransformer(weights={self.weights.shape}, biases={self.biases.shape}, out_reshape={self.out_reshape})"
 
