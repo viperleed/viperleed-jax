@@ -123,6 +123,12 @@ class HLConstraintNode(HLNode):
 
 
 class HLOffsetNode(HLConstraintNode):
+def stack_transformers(transformers):
+    """Stack a list of transformers into a single transformer."""
+    weights = np.vstack([transformer.weights for transformer in transformers])
+    biases = np.hstack([transformer.biases for transformer in transformers])
+    return LinearTransformer(weights, biases, (np.sum([t.out_dim for t in transformers]),))
+
     """Node representing an offset in the hierarchical linear tree.
 
     Offsets are any static offset from the reference (refcalc) parameters. These
