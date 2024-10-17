@@ -43,6 +43,53 @@ class ParameterSpace():
              for ase in self.base_scatterers]
         )
 
+    def parse_search_block(self, search_block):
+        """
+        Parse the search block from the displacements file.
+
+        Parameters
+        ----------
+        search_block
+        """
+        if self._displacements_applied:
+            raise ValueError("Displacements have already been applied.")
+
+        # TODO: ordering, offsets
+
+        # first, parse the constraints
+        constraints_block = search_block.sections[DisplacementFileSections.CONSTRAIN]
+
+        # next, parse geo, vib and occ bounds
+        geo_block = search_block.sections[DisplacementFileSections.GEO_DELTA]
+        vib_block = search_block.sections[DisplacementFileSections.VIB_DELTA]
+        occ_block = search_block.sections[DisplacementFileSections.OCC_DELTA]
+
+        for subtree, block in zip((self.geo_subtree, self.vib_subtree, self.occ_subtree),
+                                  (geo_block, vib_block, occ_block)):
+            subtree.apply_bounds(block)
+        self._displacements_applied = True
+
+
+    def _parse_constraints(self, constrain_block):
+        """
+        Parse constraints from the displacements file.
+
+        Parameters
+        ----------
+        """
+        for constraint in constrain_block:
+            if constraint.constraint_type == "geo": # TODO: make into Enum
+                self.geo_subtree.apply_explicit_constraint(constraint)
+            elif constraint.constraint_type == "vib":
+                self.vib_subtree.apply_explicit_constraint(constraint)
+            elif constraint.constraint_type == "occ":
+                self.occ_subtree.apply_explicit_constraint(constraint)
+            else:
+                raise ValueError("Unknown constraint type: "
+                                 f"{constraint.constraint_type}")
+
+
+
     def freeze(self):
         return FrozenParameterSpace(self)
 
