@@ -384,6 +384,24 @@ class ParameterHLSubtree(ABC):
         """Method to build the subtree for the parameter group."""
         pass
 
+    def apply_bounds(self, vib_line):
+        targets = vib_line.targets
+        range = vib_line.range
+        _, explicitly_selected_leaves, selected_roots = self._target_nodes(
+            targets
+        )
+        primary_leaves = self._select_primary_leaf(
+            selected_roots, explicitly_selected_leaves
+        )
+
+        # apply the bound to the primary leaf only – others will be linked
+        # (this is so that for e.g. geometries the bounds are not swapped
+        # and violate symmetry)
+        for leaf in primary_leaves.values():
+            leaf.bounds.update_range(
+                range=(range.start, range.stop), user_set=True
+            )
+
     def _add_offset_nodes(self, generic_name):
         """Add offset nodes to the tree."""
         # TODO: mark the offset layer?
