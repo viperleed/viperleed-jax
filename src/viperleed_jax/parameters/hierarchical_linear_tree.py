@@ -189,6 +189,91 @@ def stack_transformers(transformers):
         self.children[0].set_transformer(new_transformer)
 
 
+class HLBound():
+    """Class representing a bound in the hierarchical linear tree.
+
+    Bounds are used to represent the lower and upper bounds of values that can
+    be taken by the parameters represented by nodes. Bounds are assigned to leaf
+    nodes in the tree.
+    Bounds can be propagated up and down the tree.
+    """
+    _EPS = 1e-6
+
+    def __init__(self, dimension):
+        self.dimension = dimension
+        self.update_range(range=(np.zeros(dimension), np.zeros(dimension)),
+                          offset=np.zeros(dimension))
+        
+
+    @property
+    def lower(self):
+        return self._lower + self._offset
+
+    @property
+    def upper(self):
+        return self._upper + self._offset
+
+    @property
+    def offset(self):
+        return self._offset
+
+    @property
+    def fixed(self):
+        return abs(self.upper - self.lower) < self._EPS
+
+    @property
+    def user_set(self):
+        return self._user_set
+
+    def update_range(self, range=None, offset=None, user_set=False):
+        if range is None and offset is None:
+            raise ValueError("range or offset must be provided")
+        if range is not None:
+            lower, upper = range
+            lower = np.asarray(lower).reshape(self.dimension)
+            upper = np.asarray(upper).reshape(self.dimension)
+            self._lower = lower
+            self._upper = upper
+        if offset is not None:
+            self._offset = np.asarray(offset).reshape(self.dimension)
+        self._user_set = user_set
+
+
+    def __repr__(self):
+        return f"HLBound(lower={self.lower}, upper={self.upper})"
+
+
+class ExplicitHLFixConstraint(HLConstraintNode):
+    """Implicit fix constraint for hierarchical linear tree.
+
+    This constraint is used to fix the value of a node in the tree to a
+    constant value. The value is fixed by setting the bias of the transformer
+    of the node to the desired value.
+    """
+
+    # TODO
+    def __init__(self, node, value):
+        super().__init__(dof=node.dof, name=f"Fix {node.name}", children=[node])
+        self.transformer.biases = value
+
+
+class ImplicitHLFixConstraint(HLConstraintNode):
+    """Implicit fix constraint for hierarchical linear tree.
+
+    This constraint is used to fix the value of a node in the tree to a
+    constant value. The value is fixed by setting the bias of the transformer
+    of the node to the desired value.
+    This class is used to create a fix constraint implicitly, when a root node
+    was not assigned any bounds during the bound propagation step.
+    """
+
+    # TODO
+    def __init__(self, node, value):
+        self.dof = 0
+        super().__init__(dof=node.dof, name=f"Fix {node.name}", children=[node])
+        self.transformer.biases = value
+
+
 class ParameterHLSubtree(ABC):
     """Base class representing a subtree in the hierarchical linear tree.
 
