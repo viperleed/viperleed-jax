@@ -55,6 +55,7 @@ class ParameterSpace():
 
         # first, parse the constraints
         constraints_block = search_block.sections[DisplacementFileSections.CONSTRAIN]
+        self._parse_constraints(constraints_block)
 
         # next, parse geo, vib and occ bounds
         geo_block = search_block.sections[DisplacementFileSections.GEO_DELTA]
