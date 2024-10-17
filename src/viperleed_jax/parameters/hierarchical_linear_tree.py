@@ -363,7 +363,25 @@ class ParameterHLSubtree(ABC):
             affected_leaves_dict.update({leaf: None for leaf in root.leaves})
         implicitly_selected_leaves = list(affected_leaves_dict.keys())
 
-        return implicitly_selected_leaves, selected_roots
+        return (
+            implicitly_selected_leaves,
+            explicitly_selected_leaves,
+            selected_roots
+        )
+
+    def _select_primary_leaf(self, roots, explicit_leaves):
+        # make a dict that maps the primary leaf for each root
+        # go through the leaves in reverse order to assign the first leaf in
+        # the list to the root
+        # If the root has no leafs in the explicit list, assign the first leaf
+        primary_leaves = {}
+        for root in roots:
+            for leaf in reversed(explicit_leaves):
+                if leaf in root.leaves:
+                    primary_leaves[root] = leaf
+            if root not in primary_leaves:
+                primary_leaves[root] = root.leaves[0]
+        return primary_leaves
 
     def _select_constraint(self, constraint_line):
         # gets the leaves that are affected by a constraint
