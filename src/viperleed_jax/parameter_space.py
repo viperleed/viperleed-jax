@@ -30,10 +30,6 @@ class ParameterSpace():
         self.occ_subtree = occ_parameters.OccHLSubtree(base_scatterers)
         #self.v0r_subtree = v0r_parameters.V0rHLSubtree(base_scatterers)
 
-        # next, we parse the constraints from the displacements file
-        
-
-
         # atom-site-element reference z positions
         self._ats_ref_z_pos = jnp.array(
             [bs.atom.cartpos[_ATOM_Z_DIR_ID]
@@ -64,7 +60,8 @@ class ParameterSpace():
 
         for subtree, block in zip((self.geo_subtree, self.vib_subtree, self.occ_subtree),
                                   (geo_block, vib_block, occ_block)):
-            subtree.apply_bounds(block)
+            for line in block:
+                subtree.apply_bounds(line)
         self._displacements_applied = True
 
 
@@ -250,7 +247,6 @@ class ParameterSpace():
     @property
     def n_static_ase(self):
         return jnp.sum(~self.is_dynamic_ase)
-
 
     @property
     def n_param_split(self):
