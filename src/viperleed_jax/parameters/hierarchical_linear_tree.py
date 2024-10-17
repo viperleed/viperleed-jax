@@ -123,6 +123,52 @@ class HLConstraintNode(HLNode):
         for child in _children:
             child.parent = self
 
+    def check_bounds_valid(self):
+        collapsed_tansformer = self.collapse_transformer()
+        user_mask, lower, upper = self.collapse_bounds()
+
+        # if no user set bounds are provided, return True
+        if not np.any(user_mask):
+            return True
+
+        # discard all non-user specified lines
+        transformer = collapsed_tansformer.select_rows(user_mask)
+        lower, upper = lower[user_mask], upper[user_mask]
+
+        # All of this gives us two (lower & upper bound) systems of linear equations
+        # We can check if all requirements can be statified by checking if at least
+        # one solution exists. This is equivalent to checking if the rank of the
+        # augmented matrix is equal to the rank of the coefficient matrix.
+
+        coeff_rank = np.linalg.matrix_rank(transformer.weights)
+
+        upper_bound_matrix = np.hstack(
+            [transformer.weights, (upper - transformer.biases).reshape(-1, 1)]
+        )
+        lower_bound_matrix = np.hstack(
+            [transformer.weights, (lower - transformer.biases).reshape(-1, 1)]
+        )
+        upper_rank = np.linalg.matrix_rank(upper_bound_matrix)
+        lower_rank = np.linalg.matrix_rank(lower_bound_matrix)
+
+
+        if upper_rank < coeff_rank or lower_rank < coeff_rank:
+            raise ValueError(
+                "Bounds are not satisfiable"
+            )  # TODO: better error message
+        return True
+
+    def _stacked_transformer(self):
+        """Return the stacked transformer of the children."""
+
+        child_weights = [child.transformer.weights for child in self.children]
+        child_biases = [child.transformer.biases for child in self.children]
+
+        stacked_weights = np.vstack(child_weights)
+        stacked_biases = np.hstack(child_biases)
+        return LinearTransformer(stacked_weights, stacked_biases,
+                                 (np.sum([c.dof for c in self.children]),))
+
     def collapse_transformer(self):
         """Iterate through through all descendants, collapsing the transformers."""
         collapsed_transformers = []
