@@ -155,7 +155,6 @@ class HLConstraintNode(HLNode):
         upper_rank = np.linalg.matrix_rank(upper_bound_matrix)
         lower_rank = np.linalg.matrix_rank(lower_bound_matrix)
 
-
         if upper_rank < coeff_rank or lower_rank < coeff_rank:
             raise ValueError(
                 "Bounds are not satisfiable"
@@ -191,9 +190,9 @@ class HLConstraintNode(HLNode):
 
         for child in self.children:
             if child.is_leaf:
-                user_set_bounds.append(child.bounds.user_set)
-                lower_bounds.append(child.bounds.lower)
-                upper_bounds.append(child.bounds.upper)
+                user_set_bounds.append(child._bounds.user_set)
+                lower_bounds.append(child._bounds.lower)
+                upper_bounds.append(child._bounds.upper)
             else:
                 _user_set, _lower, _upper = child.collapse_bounds()
                 user_set_bounds.extend(_user_set)
@@ -220,7 +219,7 @@ def stack_transformers(transformers):
     weights, but the bias can be set to any value.
     """
 
-    def __init__(self, children, offset=None, name=None):
+    def __init__(self, children, range=None, offset=None, name=None):
 
         # if more than one child is provided, raise an error
         if len(children) != 1:
@@ -233,6 +232,12 @@ def stack_transformers(transformers):
             _offset = np.zeros(dof)
         else:
             _offset = np.asarray(offset).reshape(dof,)
+        
+        if range is None:
+            lower, upper = np.zeros(dof), np.zeros(dof)
+        else:
+            lower = np.asarray(range[0]).reshape(dof,)
+            upper = np.asarray(range[1]).reshape(dof,)
         transformer = LinearTransformer(weights=np.eye(dof),
                                         biases=_offset, out_reshape=(dof,))
 
@@ -266,9 +271,9 @@ class HLBound():
 
     def __init__(self, dimension):
         self.dimension = dimension
+        self._user_set = np.full(shape=(self.dimension,), fill_value=False)
         self.update_range(range=(np.zeros(dimension), np.zeros(dimension)),
                           offset=np.zeros(dimension))
-        
 
     @property
     def lower(self):
@@ -290,7 +295,6 @@ class HLBound():
     def user_set(self):
         return self._user_set
 
-    def update_range(self, range=None, offset=None, user_set=False):
         if range is None and offset is None:
             raise ValueError("range or offset must be provided")
         if range is not None:
@@ -301,7 +305,13 @@ class HLBound():
             self._upper = upper
         if offset is not None:
             self._offset = np.asarray(offset).reshape(self.dimension)
-        self._user_set = user_set
+
+        # mark the bounds that were user set;
+        # use logical_or to combine the user set flags
+        if user_set is None:
+            user_set = np.full(self.dimension, False)
+        _user_set = np.asarray(user_set).reshape(self.dimension)
+        self._user_set = np.logical_or(self.user_set, _user_set)
 
 
     def __repr__(self):
@@ -388,9 +398,8 @@ class ParameterHLSubtree(ABC):
         """Method to build the subtree for the parameter group."""
         pass
 
-    def apply_bounds(self, vib_line):
-        targets = vib_line.targets
-        range = vib_line.range
+    def apply_bounds(self, line):
+        targets = line.targets
         _, explicitly_selected_leaves, selected_roots = self._target_nodes(
             targets
         )
@@ -402,9 +411,32 @@ class ParameterHLSubtree(ABC):
         # (this is so that for e.g. geometries the bounds are not swapped
         # and violate symmetry)
         for leaf in primary_leaves.values():
-            leaf.bounds.update_range(
-                range=(range.start, range.stop), user_set=True
-            )
+            leaf.update_bounds(line)
+
+    def apply_offsets(self, line):
+        """Apply offsets to the children of the node."""
+        targets = line.targets
+        _, explicitly_selected_leaves, selected_roots = self._target_nodes(
+            targets
+        )
+        primary_leaves = self._select_primary_leaf(
+            selected_roots, explicitly_selected_leaves
+        )
+
+        # apply the bound to the primary leaf only – others will be linked
+        # (this is so that for e.g. geometries the bounds are not swapped
+        # and violate symmetry)
+        for leaf in primary_leaves.values():
+            leaf.update_offsets(line)
+
+    def check_for_inconsistencies(self):
+        """Check for inconsistencies in the parameter space.
+
+        This method checks for inconsistencies in the parameter space, such as
+        symmetry violations, and raises an error if any are found.
+        """
+        for root in self.roots:
+            root.check_bounds_valid()
 
     def _add_offset_nodes(self, generic_name):
         """Add offset nodes to the tree."""
@@ -474,8 +506,8 @@ class ParameterHLSubtree(ABC):
             raise NotImplementedError("Only linked constraints are supported.")
 
         targets = constraint_line.targets
-        selected_leaves, selected_roots = self._target_nodes(targets)
-        return selected_leaves, selected_roots
+        implicit_leaves, explicit_leaves, selected_roots = self._target_nodes(targets)
+        return implicit_leaves, explicit_leaves, selected_roots
 
     def create_subtree_root(self):
         """Create a root node that aggregates all root nodes in the subtree.y"""
