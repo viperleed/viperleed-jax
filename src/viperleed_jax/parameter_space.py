@@ -56,9 +56,10 @@ class ParameterSpace():
         # first, parse the constraints
         self._parse_constraints(search_block)
 
-        # apply the implicit constraints
+        # apply the implicit constraints & create the subtree root
         for subtree in (self.geo_subtree, self.vib_subtree, self.occ_subtree):
             subtree.apply_implicit_constraints()
+            subtree.create_subtree_root()
 
         self._displacements_applied = True
 
