@@ -208,6 +208,47 @@ def stack_transformers(transformers):
     weights = np.vstack([transformer.weights for transformer in transformers])
     biases = np.hstack([transformer.biases for transformer in transformers])
     return LinearTransformer(weights, biases, (np.sum([t.out_dim for t in transformers]),))
+class ImplicitHLConstraint(HLConstraintNode):
+    """
+    """
+
+    # TODO
+    def __init__(self, children):
+        # can only have one child
+        if len(children) != 1:
+            raise ValueError("Implicit constraints must have exactly one child")
+        child = children[0]
+        child.check_bounds_valid()
+
+        collapsed_tansformer = child.collapse_transformer()
+        user_mask, lower, upper = child.collapse_bounds()
+
+        # if no user set bounds are provided, return True
+        if not np.any(user_mask):
+            dof = 0
+            transformer = LinearTransformer(np.zeros((child.dof, 0)), np.zeros(child.dof), (child.dof,))
+        else:
+
+            # discard all non-user specified lines
+            transformer = collapsed_tansformer.select_rows(user_mask)
+            lower, upper = lower[user_mask], upper[user_mask]
+
+            # All of this gives us two (lower & upper bound) systems of linear equations
+            # We can check if all requirements can be statified by checking if at least
+            # one solution exists. This is equivalent to checking if the rank of the
+            # augmented matrix is equal to the rank of the coefficient matrix.
+
+            coeff_rank = np.linalg.matrix_rank(transformer.weights)
+            dof = coeff_rank
+
+            new_biases = lower
+            new_weights = np.diag(upper - lower)
+            transformer = LinearTransformer(
+                new_weights, new_biases, (coeff_rank,)
+            )
+
+        super().__init__(dof=dof, name=f"Implicit", children=[child], transformers=[transformer])
+
 
     """Node representing an offset in the hierarchical linear tree.
 
