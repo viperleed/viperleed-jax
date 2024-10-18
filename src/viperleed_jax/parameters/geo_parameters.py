@@ -52,6 +52,25 @@ class GeoHLLeafNode(HLLeafNode):
             user_set = [True, False, False]
         else:
             raise NotImplementedError("TODO")
+        self._bounds.update_range((start, stop), user_set=user_set)
+
+    def update_offsets(self, line):
+        # geometric leaf bounds are 3D
+        direction = line.direction
+
+        if direction._fractional:
+            raise NotImplementedError("TODO")
+
+        if (
+            direction.num_free_directions == 1
+            and direction._vectors[0][self._Z_DIR_ID] == 1
+        ):
+            # z-only movement
+            offset = np.array([line.value, 0., 0.])
+            user_set = [True, False, False]
+        else:
+            raise NotImplementedError("TODO")
+        self._bounds.update_range(range=None, offset=offset, user_set=user_set)
 
 
 class GeoHLConstraintNode(HLConstraintNode):
