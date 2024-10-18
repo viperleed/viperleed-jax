@@ -280,6 +280,7 @@ class HLBound():
     def user_set(self):
         return self._user_set
 
+    def update_range(self, range=None, offset=None, user_set=None):
         if range is None and offset is None:
             raise ValueError("range or offset must be provided")
         if range is not None:
