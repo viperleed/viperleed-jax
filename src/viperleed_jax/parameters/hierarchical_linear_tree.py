@@ -238,13 +238,11 @@ class ImplicitHLConstraint(HLConstraintNode):
             # one solution exists. This is equivalent to checking if the rank of the
             # augmented matrix is equal to the rank of the coefficient matrix.
 
-            coeff_rank = np.linalg.matrix_rank(transformer.weights)
-            dof = coeff_rank
-
             new_biases = lower
             new_weights = np.diag(upper - lower)
+            dof = np.sum(user_mask)
             transformer = LinearTransformer(
-                new_weights, new_biases, (coeff_rank,)
+                new_weights, new_biases, (dof,)
             )
 
         super().__init__(dof=dof, name=f"Implicit", children=[child], transformers=[transformer])
