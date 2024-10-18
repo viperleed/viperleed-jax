@@ -36,7 +36,7 @@ class ParameterSpace():
              for bs in self.base_scatterers]
         )
 
-    def parse_search_block(self, search_block):
+    def apply_displacements(self, offset_block, search_block):
         """
         Parse the search block from the displacements file.
 
@@ -52,6 +52,17 @@ class ParameterSpace():
         # first, parse the constraints
         constraints_block = search_block.sections[DisplacementFileSections.CONSTRAIN]
         self._parse_constraints(constraints_block)
+
+    def check_for_inconsistencies(self):
+        """
+        Check for inconsistencies in the parameter space.
+
+        This method checks for inconsistencies in the parameter space, such as
+        symmetry violations, and raises a ValueError if any are found.
+        """
+        for subtree in (self.geo_subtree, self.vib_subtree, self.occ_subtree):
+            subtree.check_bounds_valid()
+
 
         # next, parse geo, vib and occ bounds
         geo_block = search_block.sections[DisplacementFileSections.GEO_DELTA]
