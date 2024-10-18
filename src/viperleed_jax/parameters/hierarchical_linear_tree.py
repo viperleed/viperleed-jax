@@ -543,6 +543,11 @@ class ParameterHLSubtree(ABC):
         implicit_leaves, explicit_leaves, selected_roots = self._target_nodes(targets)
         return implicit_leaves, explicit_leaves, selected_roots
 
+    def apply_implicit_constraints(self):
+        for root in self.roots:
+            implicit_node = ImplicitHLConstraint([root])
+            self.nodes.append(implicit_node)
+
     def create_subtree_root(self):
         """Create a root node that aggregates all root nodes in the subtree.y"""
         if self._subtree_root_has_been_created:
