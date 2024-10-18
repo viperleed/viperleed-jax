@@ -19,6 +19,7 @@ from .hierarchical_linear_tree import ParameterHLSubtree
 
 class GeoHLLeafNode(HLLeafNode):
     """Represents a leaf node with geometric parameters."""
+    _Z_DIR_ID = 2 # TODO: unify and move to a common place
 
     def __init__(self, base_scatterer):
         dof = 3
@@ -35,6 +36,22 @@ class GeoHLLeafNode(HLLeafNode):
     @property
     def symmetry_linking_matrix(self):
         raise NotImplementedError  # TODO adapat from below
+
+    def update_bounds(self, line):
+        # geometric leaf bounds are 3D
+        range = line.range
+        direction = line.direction
+
+        if direction._fractional:
+            raise NotImplementedError("TODO")
+
+        if direction.num_free_directions == 1 and direction._vectors[0][self._Z_DIR_ID] == 1:
+            # z-only movement
+            start = np.array([range.start, 0., 0.])
+            stop = np.array([range.stop, 0., 0.])
+        else:
+            raise NotImplementedError("TODO")
+        self._bounds.update_range((start, stop), user_set=True)
 
 
 class GeoHLConstraintNode(HLConstraintNode):

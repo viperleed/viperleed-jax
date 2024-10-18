@@ -21,6 +21,11 @@ class VibHLLeafNode(HLLeafNode):
         self.name = f"vib (At_{self.num},{self.site},{self.element})"
         super().__init__(dof=dof, name=self.name)
 
+    def update_bounds(self, line):
+        # vibrational leaves are 1D, so bounds are scalars
+        range = line.range
+        self._bounds.update_range((range.start, range.stop), user_set=True)
+
 
 class VibHLConstraintNode(HLConstraintNode):
     """Represents a constraint node for vibrational parameters."""

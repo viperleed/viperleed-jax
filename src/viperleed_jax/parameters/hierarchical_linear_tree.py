@@ -77,8 +77,12 @@ class HLLeafNode(HLNode):
         if children:
             raise ValueError("Leaf nodes cannot have children.")
         # initialize bounds
-        self.bounds = HLBound(dof)
+        self._bounds = HLBound(dof)
         super().__init__(dof=dof, name=name, parent=parent)
+
+    @abstractmethod
+    def update_bounds(self, line):
+        pass
 
 
 class HLConstraintNode(HLNode):
