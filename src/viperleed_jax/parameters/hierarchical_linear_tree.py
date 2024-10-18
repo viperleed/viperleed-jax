@@ -7,7 +7,7 @@ import anytree
 from anytree import Node, RenderTree
 
 from viperleed_jax.files.displacements.lines import ConstraintLine
-from .linear_transformer import LinearTransformer
+from .linear_transformer import LinearTransformer, stack_transformers
 
 # Enable checks for the anytree library – we don't deal with huge trees so this
 # should not be a performance issue.

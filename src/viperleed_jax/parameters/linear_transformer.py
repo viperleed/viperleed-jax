@@ -105,3 +105,12 @@ class LinearTransformer:
         for kw, value in aux_data.items():
             setattr(frozen_parameter_space, kw, value)
         return frozen_parameter_space
+
+
+def stack_transformers(transformers):
+    """Stack a list of transformers into a single transformer."""
+    weights = np.vstack([transformer.weights for transformer in transformers])
+    biases = np.hstack([transformer.biases for transformer in transformers])
+    return LinearTransformer(
+        weights, biases, (np.sum([t.out_dim for t in transformers]),)
+    )
