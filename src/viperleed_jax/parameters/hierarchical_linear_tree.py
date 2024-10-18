@@ -5,6 +5,7 @@ import numpy as np
 import jax.numpy as jnp
 import anytree
 from anytree import Node, RenderTree
+from anytree.exporter import UniqueDotExporter
 
 from viperleed_jax.files.displacements.lines import ConstraintLine
 from .linear_transformer import LinearTransformer, stack_transformers
@@ -567,3 +568,8 @@ class ParameterHLSubtree(ABC):
             transformers=transformers,
         )
         self.nodes.append(self.subtree_root)
+
+    def graphical_export(self, filename):
+        if not self._subtree_root_has_been_created:
+            raise ValueError("Subtree root has not yet been created.")
+        UniqueDotExporter(self.subtree_root).to_picture(filename)
