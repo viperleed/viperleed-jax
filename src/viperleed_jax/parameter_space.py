@@ -28,7 +28,7 @@ class ParameterSpace():
         self.vib_subtree = vib_parameters.VibHLSubtree(base_scatterers)
         self.geo_subtree = geo_parameters.GeoHLSubtree(base_scatterers)
         self.occ_subtree = occ_parameters.OccHLSubtree(base_scatterers)
-        #self.v0r_subtree = v0r_parameters.V0rHLSubtree(base_scatterers)
+        # self.v0r_subtree = v0r_parameters.V0rHLSubtree(base_scatterers)
 
         # atom-site-element reference z positions
         self._ats_ref_z_pos = jnp.array(
@@ -47,11 +47,16 @@ class ParameterSpace():
         if self._displacements_applied:
             raise ValueError("Displacements have already been applied.")
 
-        # TODO: ordering, offsets
+        # parse and set the offsets
+        self._parse_offsets(offset_block)
+
+        # parse and set the bounds & check for symmetry violations
+        self._parse_bounds(search_block)
 
         # first, parse the constraints
-        constraints_block = search_block.sections[DisplacementFileSections.CONSTRAIN]
-        self._parse_constraints(constraints_block)
+        self._parse_constraints(search_block)
+
+        self._displacements_applied = True
 
     def check_for_inconsistencies(self):
         """
