@@ -61,22 +61,44 @@ class ParameterSpace():
         symmetry violations, and raises a ValueError if any are found.
         """
         for subtree in (self.geo_subtree, self.vib_subtree, self.occ_subtree):
-            subtree.check_bounds_valid()
+            subtree.check_for_inconsistencies()
 
+    def _parse_offsets(self, offsets_block):
+        """
+        Parse the offsets block from the displacements file.
 
-        # next, parse geo, vib and occ bounds
+        Parameters
+        ----------
+        offsets_block
+        """
+        for line in offsets_block.lines:
+            if line.offset_type == "geo":
+                self.geo_subtree.apply_offsets(line)
+            elif line.offset_type == "vib":
+                self.vib_subtree.apply_offsets(line)
+            elif line.offset_type == "occ":
+                self.occ_subtree.apply_offsets(line)
+            else:
+                raise ValueError("Unknown offset type: "
+                                 f"{line.offset_type}")
+        self.check_for_inconsistencies()
+
+    def _parse_bounds(self, search_block):
+        # parse geo, vib and occ bounds
         geo_block = search_block.sections[DisplacementFileSections.GEO_DELTA]
         vib_block = search_block.sections[DisplacementFileSections.VIB_DELTA]
         occ_block = search_block.sections[DisplacementFileSections.OCC_DELTA]
 
-        for subtree, block in zip((self.geo_subtree, self.vib_subtree, self.occ_subtree),
-                                  (geo_block, vib_block, occ_block)):
+        for subtree, block in zip(
+            (self.geo_subtree, self.vib_subtree, self.occ_subtree),
+            (geo_block, vib_block, occ_block),
+        ):
             for line in block:
+                # apply and check for symmetry violations
                 subtree.apply_bounds(line)
-        self._displacements_applied = True
+        self.check_for_inconsistencies()
 
-
-    def _parse_constraints(self, constrain_block):
+    def _parse_constraints(self, search_block):
         """
         Parse constraints from the displacements file.
 
@@ -84,7 +106,8 @@ class ParameterSpace():
         ----------
         constrain_block
         """
-        for constraint in constrain_block:
+        constraints_block = search_block.sections[DisplacementFileSections.CONSTRAIN]
+        for constraint in constraints_block:
             if constraint.constraint_type == "geo": # TODO: make into Enum
                 self.geo_subtree.apply_explicit_constraint(constraint)
             elif constraint.constraint_type == "vib":
@@ -94,8 +117,7 @@ class ParameterSpace():
             else:
                 raise ValueError("Unknown constraint type: "
                                  f"{constraint.constraint_type}")
-
-
+        self.check_for_inconsistencies()
 
     def freeze(self):
         if not self._displacements_applied:
