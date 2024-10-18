@@ -266,6 +266,23 @@ class GeoHLSubtree(ParameterHLSubtree):
         # # add offset nodes
         # self._add_offset_nodes("geo offset (unused)")
 
+    def apply_explicit_constraint(self, constraint_line):
+        #self._check_constraint_line_type(constraint_line, "geo")
+        *_, selected_roots = self._select_constraint(constraint_line)
+
+        if constraint_line.direction is None:
+            # complete linking; requires all root nodes to have the same dof
+            if not all(node.dof == selected_roots[0].dof for node in selected_roots):
+                raise ValueError(
+                    "All root nodes must have the same number of free parameters."
+                )
+            # create a constraint node for the selected roots
+            self.nodes.append(GeoLinkedHLConstraint(children=selected_roots,
+                                                    name=constraint_line.line))
+        else:
+            raise NotImplementedError(
+                "Directional geo constraints are not yet supported.")
+
 
 class GeoBaseParam(BaseParam):
     def __init__(self, base_scatterer):

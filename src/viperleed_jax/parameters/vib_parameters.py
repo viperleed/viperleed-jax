@@ -100,8 +100,32 @@ class VibHLSubtree(ParameterHLSubtree):
             )
             self.nodes.append(site_link_node)
 
-        # add offset nodes
-        self._add_offset_nodes(generic_name="vib offset (unused)")
+        # # add offset nodes
+        # self._add_offset_nodes(generic_name="vib offset (unused)")
+
+        # check that all bounds are valid
+        for node in self.roots:
+            node.check_bounds_valid()
+
+
+    def apply_explicit_constraint(self, constraint_line):
+        # self._check_constraint_line_type(constraint_line, "vib")
+        _, selected_roots = self._select_constraint(constraint_line)
+
+        if not all(
+            node.dof == selected_roots[0].dof for node in selected_roots
+        ):
+            raise ValueError(
+                "All root nodes must have the same number of free parameters."
+            )
+        # create a constraint node for the selected roots
+        self.nodes.append(
+            VibLinkedHLConstraint(
+                children=selected_roots, name=constraint_line.line
+            )
+        )
+
+
 class VibBaseParam(BaseParam):
     """Base class for vibrational parameters.
 

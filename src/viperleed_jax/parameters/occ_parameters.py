@@ -163,8 +163,25 @@ class OccHLSubtree(ParameterHLSubtree):
                                                     name="Symmetry")
             self.nodes.append(symmetry_node)
 
-        # add offset nodes
-        self._add_offset_nodes("occ offset (unused)")
+        # # add offset nodes
+        # self._add_offset_nodes("occ offset (unused)")
+
+    def apply_explicit_constraint(self, constraint_line):
+        # self._check_constraint_line_type(constraint_line, "occ")
+        _, selected_roots = self._select_constraint(constraint_line)
+
+        if not all(
+            node.dof == selected_roots[0].dof for node in selected_roots
+        ):
+            raise ValueError(
+                "All root nodes must have the same number of free parameters."
+            )
+        # create a constraint node for the selected roots
+        self.nodes.append(
+            OccLinkedHLConstraint(
+                children=selected_roots, name=constraint_line.line
+            )
+        )
 
 
 class ChemBaseParam(BaseParam):
