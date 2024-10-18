@@ -31,6 +31,10 @@ class OccHLLeafNode(HLLeafNode):
         range = line.range
         self._bounds.update_range((range.start, range.stop), user_set=True)
 
+    def update_offsets(self, line):
+        offset = line.value
+        self._bounds.update_range(range=None, offset=offset, user_set=True)
+
 
 class OccHLConstraintNode(HLConstraintNode):
     """Represents a constraint node for occupational parameters."""

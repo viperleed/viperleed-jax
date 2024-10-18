@@ -24,7 +24,13 @@ class VibHLLeafNode(HLLeafNode):
     def update_bounds(self, line):
         # vibrational leaves are 1D, so bounds are scalars
         range = line.range
-        self._bounds.update_range((range.start, range.stop), user_set=True)
+        self._bounds.update_range(range=(range.start, range.stop),
+                                  offset=None,
+                                  user_set=True)
+
+    def update_offsets(self, line):
+        offset = line.value
+        self._bounds.update_range(range=None, offset=offset, user_set=True)
 
 
 class VibHLConstraintNode(HLConstraintNode):

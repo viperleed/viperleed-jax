@@ -49,9 +49,9 @@ class GeoHLLeafNode(HLLeafNode):
             # z-only movement
             start = np.array([range.start, 0., 0.])
             stop = np.array([range.stop, 0., 0.])
+            user_set = [True, False, False]
         else:
             raise NotImplementedError("TODO")
-        self._bounds.update_range((start, stop), user_set=True)
 
 
 class GeoHLConstraintNode(HLConstraintNode):
@@ -244,8 +244,8 @@ class GeoHLSubtree(ParameterHLSubtree):
         for node in unlinked_site_el_nodes:
             self.nodes.append(GeoSymmetryHLConstraint(children=[node]))
 
-        # add offset nodes
-        self._add_offset_nodes("geo offset (unused)")
+        # # add offset nodes
+        # self._add_offset_nodes("geo offset (unused)")
 
 
 class GeoBaseParam(BaseParam):
