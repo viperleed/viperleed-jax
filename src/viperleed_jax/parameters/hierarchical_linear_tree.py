@@ -74,9 +74,7 @@ class HLNode(Node):
 
 class HLLeafNode(HLNode):
 
-    def __init__(self, dof, name=None, parent=None, children=[]):
-        if children:
-            raise ValueError("Leaf nodes cannot have children.")
+    def __init__(self, dof, name=None, parent=None):
         # initialize bounds
         self._bounds = HLBound(dof)
         super().__init__(dof=dof, name=name, parent=parent)
@@ -303,31 +301,12 @@ class HLBound():
         return f"HLBound(lower={self.lower}, upper={self.upper})"
 
 
-class ParameterHLSubtree(ABC):
-    """Base class representing a subtree in the hierarchical linear tree.
+class HLSubtree(ABC):
 
-    Subtrees are used to group nodes for a group of parameters (vib, geo, occ,
-    V0r). This allows implementing constraints more easily and makes it possible
-    to extract additional information from the tree (e.g. propagator
-    transformations).
-    """
-
-    def __init__(self, base_scatterers):
-        self.base_scatterers = base_scatterers
-        self.site_elements = self.base_scatterers.site_elements
+    def __init__(self):
         self.nodes = []
-
         self._subtree_root_has_been_created = False
-        self._offsets_have_been_added = False
         self.build_subtree()
-
-    def __repr__(self):
-        if not self._subtree_root_has_been_created:
-            partial_trees = [RenderTree(root).by_attr() for root in self.roots]
-            trees_str = "\n".join(partial_trees)
-
-            return (f"{trees_str}")
-        return RenderTree(self.subtree_root).by_attr()
 
     @property
     def roots(self):
@@ -351,6 +330,62 @@ class ParameterHLSubtree(ABC):
     def build_subtree(self):
         """Method to build the subtree for the parameter group."""
         pass
+
+    def create_subtree_root(self):
+        """Create a root node that aggregates all root nodes in the subtree."""
+        if self._subtree_root_has_been_created:
+            raise ValueError("Subtree root has already been created.")
+        self._subtree_root_has_been_created = True
+        if not self.roots:
+            raise ValueError("No root nodes found in subtree.")
+        root_dof = sum(node.dof for node in self.roots)
+        transformers = []
+        cum_node_dof = 0
+        for node in self.roots:
+            weights = np.zeros((node.dof, root_dof))
+            weights[:, cum_node_dof : cum_node_dof + node.dof] = np.identity(
+                node.dof
+            )
+            bias = np.zeros(node.dof)
+            transformers.append(LinearTransformer(weights, bias, (node.dof,)))
+            cum_node_dof += node.dof
+        self.subtree_root = HLConstraintNode(
+            dof=root_dof,
+            name=self.subtree_root_name,
+            children=self.roots,
+            transformers=transformers,
+        )
+        self.nodes.append(self.subtree_root)
+
+    def __repr__(self):
+        if not self._subtree_root_has_been_created:
+            partial_trees = [RenderTree(root).by_attr() for root in self.roots]
+            trees_str = "\n".join(partial_trees)
+
+            return f"{trees_str}"
+        return RenderTree(self.subtree_root).by_attr()
+
+    def graphical_export(self, filename):
+        if not self._subtree_root_has_been_created:
+            raise ValueError("Subtree root has not yet been created.")
+        UniqueDotExporter(self.subtree_root).to_picture(filename)
+
+
+class ParameterHLSubtree(HLSubtree):
+    """Base class representing a subtree in the hierarchical linear tree.
+
+    Subtrees are used to group nodes for a group of parameters (vib, geo, occ,
+    V0r). This allows implementing constraints more easily and makes it possible
+    to extract additional information from the tree (e.g. propagator
+    transformations).
+    """
+
+    def __init__(self, base_scatterers):
+        self.base_scatterers = base_scatterers
+        self.site_elements = self.base_scatterers.site_elements
+
+        self._offsets_have_been_added = False
+        super().__init__()
 
     def apply_bounds(self, line):
         targets = line.targets
@@ -456,34 +491,3 @@ class ParameterHLSubtree(ABC):
         for root in self.roots:
             implicit_node = ImplicitHLConstraint([root])
             self.nodes.append(implicit_node)
-
-    def create_subtree_root(self):
-        """Create a root node that aggregates all root nodes in the subtree.y"""
-        if self._subtree_root_has_been_created:
-            raise ValueError("Subtree root has already been created.")
-        self._subtree_root_has_been_created = True
-        if not self.roots:
-            raise ValueError("No root nodes found in subtree.")
-        root_dof = sum(node.dof for node in self.roots)
-        transformers = []
-        cum_node_dof = 0
-        for node in self.roots:
-            weights = np.zeros((node.dof, root_dof))
-            weights[:, cum_node_dof : cum_node_dof+node.dof] = np.identity(
-                node.dof
-            )
-            bias = np.zeros(node.dof)
-            transformers.append(LinearTransformer(weights, bias, (node.dof,)))
-            cum_node_dof += node.dof
-        self.subtree_root = HLConstraintNode(
-            dof=root_dof,
-            name=self.subtree_root_name,
-            children=self.roots,
-            transformers=transformers,
-        )
-        self.nodes.append(self.subtree_root)
-
-    def graphical_export(self, filename):
-        if not self._subtree_root_has_been_created:
-            raise ValueError("Subtree root has not yet been created.")
-        UniqueDotExporter(self.subtree_root).to_picture(filename)
