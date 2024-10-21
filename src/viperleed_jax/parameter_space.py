@@ -36,7 +36,7 @@ class ParameterSpace():
              for bs in self.base_scatterers]
         )
 
-    def apply_displacements(self, offset_block, search_block):
+    def apply_displacements(self, offset_block=None, search_block=None):
         """
         Parse the search block from the displacements file.
 
@@ -47,14 +47,20 @@ class ParameterSpace():
         if self._displacements_applied:
             raise ValueError("Displacements have already been applied.")
 
-        # parse and set the offsets
-        self._parse_offsets(offset_block)
+        if offset_block is None and search_block is None:
+            raise ValueError("Either offset_block or search_block must be "
+                             "provided.")
 
-        # parse and set the bounds & check for symmetry violations
-        self._parse_bounds(search_block)
+        if offset_block is not None:
+            # parse and set the offsets
+            self._parse_offsets(offset_block)
 
-        # first, parse the constraints
-        self._parse_constraints(search_block)
+        if search_block is not None:
+            # parse and set the bounds & check for symmetry violations
+            self._parse_bounds(search_block)
+
+            # first, parse the constraints
+            self._parse_constraints(search_block)
 
         # apply the implicit constraints & create the subtree root
         for subtree in (self.geo_subtree, self.vib_subtree, self.occ_subtree):
