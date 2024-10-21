@@ -221,8 +221,9 @@ class ImplicitHLConstraint(HLConstraintNode):
         # if no user set bounds are provided, return True
         if not np.any(user_mask):
             dof = 0
-            transformer = LinearTransformer(np.zeros((child.dof, 0)), np.zeros(child.dof), (child.dof,))
+            new_transformer = LinearTransformer(np.zeros((child.dof, 0)), np.zeros(child.dof), (child.dof,))
         else:
+            dof = np.sum(user_mask)
 
             # discard all non-user specified lines
             transformer = collapsed_tansformer.select_rows(user_mask)
@@ -233,15 +234,13 @@ class ImplicitHLConstraint(HLConstraintNode):
             # one solution exists. This is equivalent to checking if the rank of the
             # augmented matrix is equal to the rank of the coefficient matrix.
 
-            new_biases = lower
-            new_weights = np.diag(upper - lower)
-            dof = np.sum(user_mask)
-            transformer = LinearTransformer(
-                new_weights, new_biases, (dof,)
+            new_biases = np.zeros(child.dof)
+            new_weights = transformer.weights.T @ np.diag(upper - lower)
+            new_transformer = LinearTransformer(
+                new_weights, new_biases, (child.dof,)
             )
-
         super().__init__(dof=dof, name=f"Implicit Constraint",
-                         children=[child], transformers=[transformer])
+                         children=[child], transformers=[new_transformer])
 
 
 class HLBound():
