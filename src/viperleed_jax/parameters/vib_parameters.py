@@ -36,14 +36,17 @@ class VibHLLeafNode(HLLeafNode):
 class VibHLConstraintNode(HLConstraintNode):
     """Represents a constraint node for vibrational parameters."""
 
-    def __init__(self, children, name, transformers=None):
-        self.dof = 1
+    def __init__(self, children, name, dof=1, transformers=None):
+
+        if dof != 1:
+            raise ValueError("Vibrational constraints must have dof=1.")
 
         if transformers is None:
             # default to identity transformers
             transformers = [LinearTransformer(np.eye(1), np.zeros(1), (1,))
                             for _ in children]
-        super().__init__(dof=1, name=name, children=children, transformers=transformers)
+        super().__init__(dof=dof, name=name, children=children,
+                         transformers=transformers)
 
 
 class VibLinkedHLConstraint(VibHLConstraintNode):
