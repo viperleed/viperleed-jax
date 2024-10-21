@@ -64,7 +64,7 @@ class VibLinkedHLConstraint(VibHLConstraintNode):
             dof=dof,
             children=children,
             transformers=transformers,
-            name=f'CONSTRAIN "{name}"',
+            name=f"CONSTRAIN '{name}'",
         )
 
 

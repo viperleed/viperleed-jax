@@ -220,7 +220,7 @@ class GeoLinkedHLConstraint(GeoHLConstraintNode):
         ]
         super().__init__(
             dof=dof, children=children, transformers=transformers,
-            name=f'CONSTRAIN "{name}"'
+            name=f"CONSTRAIN '{name}'"
         )
 
 class GeoHLSubtree(ParameterHLSubtree):
