@@ -113,7 +113,7 @@ class VibHLSubtree(ParameterHLSubtree):
 
     def apply_explicit_constraint(self, constraint_line):
         # self._check_constraint_line_type(constraint_line, "vib")
-        _, selected_roots = self._select_constraint(constraint_line)
+        *_, selected_roots = self._select_constraint(constraint_line)
 
         if not all(
             node.dof == selected_roots[0].dof for node in selected_roots
