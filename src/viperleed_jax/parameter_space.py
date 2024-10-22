@@ -8,8 +8,8 @@ from jax.tree_util import register_pytree_node_class
 from viperleed_jax.parameters import occ_parameters
 from viperleed_jax.parameters import vib_parameters
 from viperleed_jax.parameters import geo_parameters
-from viperleed_jax.parameters import v0r_parameters
 from viperleed_jax.base_scatterers import BaseScatterers
+from viperleed_jax.parameters import meta_parameters
 from viperleed_jax.files.displacements.reader import DisplacementFileSections
 
 
@@ -24,7 +24,7 @@ class ParameterSpace():
         self.base_scatterers = base_scatterers
 
         # create the meta parameter subtree
-        self.meta_param_subtree = v0r_parameters.MetaParameterSubtree()
+        self.meta_param_subtree = meta_parameters.MetaParameterSubtree()
         # read the meta parameters from the rpars
         self.meta_param_subtree.read_from_rpars(rpars)
 
