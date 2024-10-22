@@ -319,27 +319,26 @@ class ParameterSpace():
         Returns:
             str: Information about the parameters.
         """
-        return (
-            "Free parameters:\n"
-            f"{self.n_free_params}\t"
-            f"({self.v0r_param.n_free_params} V0r, "
-            f"{self.geo_params.n_free_params} geo, "
-            f"{self.vib_params.n_free_params} vib, "
-            f"{self.occ_params.n_free_params} occ)\n"
+        n_root_params = self._free_params_up_to_layer(HLTreeLayers.Root)
+        n_sym_params = self._free_params_up_to_layer(HLTreeLayers.Symmetry)
+        n_base_params = self._free_params_up_to_layer(HLTreeLayers.Base)
 
-            "Symmetry constrained parameters:\n"
-            f"{self.n_symmetry_constrained_params}\t"
-            f"({self.v0r_param.n_symmetry_constrained_params} V0r, "
-            f"{self.geo_params.n_symmetry_constrained_params} geo, "
-            f"{self.vib_params.n_symmetry_constrained_params} vib, "
-            f"{self.occ_params.n_symmetry_constrained_params} occ)\n"
+        def format(n_params):
+            return (f"({n_params[0]} V0r, "
+                   f"{n_params[1]} geo, "
+                   f"{n_params[2]} vib, "
+                   f"{n_params[3]} occ)"
+                   )
+
+        return (
+            "Free parameters:"
+            f"\n{self.n_free_params}\t{format(n_root_params)}\n"
+
+            "Symmetry constrained parameters:"
+            f"\n{self.n_symmetry_constrained_params}\t{format(n_sym_params)}\n"
 
             "Total parameters:\n"
-            f"{self.n_base_params}\t"
-            f"({self.v0r_param.n_base_params} V0r, "
-            f"{self.geo_params.n_base_params} geo, "
-            f"{self.vib_params.n_base_params} vib, "
-            f"{self.occ_params.n_base_params} occ)\n"
+            f"{self.n_base_params}\t{format(n_base_params)}\n"
         )
 
 
