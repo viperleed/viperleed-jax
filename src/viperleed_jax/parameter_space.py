@@ -11,6 +11,7 @@ from viperleed_jax.parameters import geo_parameters
 from viperleed_jax.base_scatterers import BaseScatterers
 from viperleed_jax.parameters import meta_parameters
 from viperleed_jax.files.displacements.reader import DisplacementFileSections
+from viperleed_jax.parameters.hierarchical_linear_tree import HLTreeLayers
 
 
 _ATOM_Z_DIR_ID = 2
@@ -33,7 +34,13 @@ class ParameterSpace():
         self.vib_subtree = vib_parameters.VibHLSubtree(base_scatterers)
         self.geo_subtree = geo_parameters.GeoHLSubtree(base_scatterers)
         self.occ_subtree = occ_parameters.OccHLSubtree(base_scatterers)
-        # self.v0r_subtree = v0r_parameters.V0rHLSubtree(base_scatterers)
+
+        self.subtrees = (
+            self.meta_param_subtree,
+            self.vib_subtree,
+            self.geo_subtree,
+            self.occ_subtree,
+        )
 
         # atom-site-element reference z positions
         self._ats_ref_z_pos = jnp.array(
@@ -145,41 +152,45 @@ class ParameterSpace():
             raise ValueError("Displacements must be applied before freezing.")
         return FrozenParameterSpace(self)
 
-    @property
-    def n_free_params(self):
-        """
-        Returns the total number of free parameters in the DeltaSlab object.
-        This includes the number of free parameters in the vibrational, geometric,
-        occupancy, and v0r parameters.
-        """
-        return (
-            self.vib_params.n_free_params
-            + self.geo_params.n_free_params
-            + self.occ_params.n_free_params
-            + self.v0r_param.n_free_params
-        )
+    def _free_params_up_to_layer(self, layer):
+        """Return the number of free parameters in all subtrees up to a given
+        layer."""
+        free_params = 0
+        for subtree in self.subtrees:
+            layer_roots = subtree.roots_up_to_layer(layer)
+            free_params += int(sum(node.dof for node in layer_roots))
+        return free_params
 
     @property
-    def n_base_scatterers(self):
-        return len(self.base_scatterers)
+    def n_free_params(self):
+        """Returns the total number of free parameters in the parameter space.
+        """
+        return self._free_params_up_to_layer(HLTreeLayers.Root)
+
+    @property
+    def n_symmetry_constrained_params(self):
+        """Returns the total number of symmetry constrained parameters.
+
+        This method calculates the total number of symmetry constrained
+        parameters by summing up the number of symmetry constrained
+        parameters from different parameter subtrees.
+
+        Returns:
+            int: The total number of symmetry constrained parameters.
+        """
+        return self._free_params_up_to_layer(HLTreeLayers.Symmetry)
 
     @property
     def n_base_params(self):
-        """
-        Returns the total number of base parameters.
+        """Returns the total number of base parameters.
 
-        This method calculates the sum of the number of base parameters from different parameter objects,
-        including `vib_params`, `geo_params`, `occ_params`, and `v0r_param`.
+        This method calculates the sum of the number of base parameters from
+        different parameter subtrees.
 
         Returns:
             int: The total number of base parameters.
         """
-        return (
-            self.vib_params.n_base_params
-            + self.geo_params.n_base_params
-            + self.occ_params.n_base_params
-            + self.v0r_param.n_base_params
-        )
+        return self._free_params_up_to_layer(HLTreeLayers.Base)
 
     @property
     def n_symmetry_constrained_params(self):
