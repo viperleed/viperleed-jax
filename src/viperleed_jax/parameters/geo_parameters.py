@@ -20,7 +20,7 @@ from .hierarchical_linear_tree import HLTreeLayers
 
 class GeoHLLeafNode(HLLeafNode):
     """Represents a leaf node with geometric parameters."""
-    _Z_DIR_ID = 2 # TODO: unify and move to a common place
+    _Z_DIR_ID = 0 # TODO: unify and move to a common place
 
     def __init__(self, base_scatterer):
         dof = 3
@@ -46,7 +46,7 @@ class GeoHLLeafNode(HLLeafNode):
         if direction._fractional:
             raise NotImplementedError("TODO")
 
-        if direction.num_free_directions == 1 and direction._vectors[0][self._Z_DIR_ID] == 1:
+        if direction.num_free_directions == 1 and direction._vectors[0][2] == 1:  # TODO: index 2 here needs to be changed to LEED convention
             # z-only movement
             start = np.array([range.start, 0., 0.])
             stop = np.array([range.stop, 0., 0.])
@@ -64,11 +64,12 @@ class GeoHLLeafNode(HLLeafNode):
 
         if (
             direction.num_free_directions == 1
-            and direction._vectors[0][self._Z_DIR_ID] == 1
+            and direction._vectors[0][2]
+            == 1  # TODO: index 2 here needs to be changed to LEED convention
         ):
             # z-only movement
             offset = np.array([line.value, 0., 0.])
-            user_set = [True, False, False]
+            user_set = np.array([True, False, False])
         else:
             raise NotImplementedError("TODO")
         self._bounds.update_range(range=None, offset=offset, user_set=user_set)
@@ -148,7 +149,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
             name = "Symmetry (z-only)"
             for child in children:
                 # set the symmetry linking matrix and direct transfer of z
-                weights = np.array([0., 0., 1.]).reshape((3,1))
+                weights = np.array([1.0, 0., 0.]).reshape((3,1))
                 transformers.append(LinearTransformer(weights, bias, (3,)))
 
         elif children[0].base_scatterer.atom.freedir == 1:
