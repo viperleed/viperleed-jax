@@ -1,7 +1,5 @@
 from jax import numpy as jnp
 
-from viperleed_jax.base import LinearTransformer
-from viperleed_jax.parameters.base_parameters import Bound
 from viperleed_jax.parameters.hierarchical_linear_tree import HLSubtree
 from viperleed_jax.parameters.hierarchical_linear_tree import HLLeafNode
 from viperleed_jax.parameters.hierarchical_linear_tree import HLBound
@@ -52,31 +50,3 @@ class V0rHLLeafNode(HLLeafNode):
         self.bound.update_range(
             range=(lower, upper), offset=None, user_set=True
         )
-
-
-class V0rParam():
-
-    def __init__(self, delta_slab):
-
-        self.n_free_params = 1
-        self.n_base_params = 1
-        self.n_symmetry_constrained_params = 1
-        self.bound = None
-
-    def set_bound(self, bound):
-        if not isinstance(bound, V0rParamBound):
-            raise ValueError("Bound must be of type V0rParamBound.")
-        self.bound = bound
-
-    def get_v0r_transformer(self):
-        if self.bound is None:
-            raise ValueError("Bound must be set before transformation.")
-        # v0r is a relative value, so there is no offset
-        offset = jnp.array([self.bound.min]).reshape(1, 1)
-        weights = jnp.array(self.bound.max - self.bound.min).reshape(1, 1)
-        return LinearTransformer(weights, offset, out_reshape=(1,))
-
-
-class V0rParamBound(Bound):
-    def __init__(self, min, max):
-        super().__init__(min, max)
