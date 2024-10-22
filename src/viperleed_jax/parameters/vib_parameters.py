@@ -106,9 +106,6 @@ class VibHLSubtree(ParameterHLSubtree):
             )
             self.nodes.append(site_link_node)
 
-        # # add offset nodes
-        # self._add_offset_nodes(generic_name="vib offset (unused)")
-
         # check that all bounds are valid
         for node in self.roots:
             node.check_bounds_valid()
