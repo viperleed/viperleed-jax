@@ -37,8 +37,8 @@ class ParameterSpace():
 
         self.subtrees = (
             self.meta_param_subtree,
-            self.vib_subtree,
             self.geo_subtree,
+            self.vib_subtree,
             self.occ_subtree,
         )
 
