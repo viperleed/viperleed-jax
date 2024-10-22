@@ -155,19 +155,20 @@ class ParameterSpace():
     def _free_params_up_to_layer(self, layer):
         """Return the number of free parameters in all subtrees up to a given
         layer."""
-        free_params = 0
+        free_params = []
         for subtree in self.subtrees:
             layer_roots = subtree.roots_up_to_layer(layer)
-            free_params += int(sum(node.dof for node in layer_roots))
+            free_params.append(int(sum(node.dof for node in layer_roots)))
         return free_params
 
     @property
     def n_free_params(self):
         """Returns the total number of free parameters in the parameter space.
         """
-        return self._free_params_up_to_layer(HLTreeLayers.Root)
         if not self._displacements_applied:
             raise ValueError("Displacements must be applied before counting "
+                             "free parameters.")
+        return sum(self._free_params_up_to_layer(HLTreeLayers.Root))
 
     @property
     def n_symmetry_constrained_params(self):
@@ -180,7 +181,7 @@ class ParameterSpace():
         Returns:
             int: The total number of symmetry constrained parameters.
         """
-        return self._free_params_up_to_layer(HLTreeLayers.Symmetry)
+        return sum(self._free_params_up_to_layer(HLTreeLayers.Symmetry))
 
     @property
     def n_base_params(self):
@@ -192,26 +193,11 @@ class ParameterSpace():
         Returns:
             int: The total number of base parameters.
         """
-        return self._free_params_up_to_layer(HLTreeLayers.Base)
+        return sum(self._free_params_up_to_layer(HLTreeLayers.Base))
 
     @property
-    def n_symmetry_constrained_params(self):
-        """
-        Returns the total number of symmetry constrained parameters.
-        
-        This method calculates the total number of symmetry constrained
-        parameters by summing up the number of symmetry constrained
-        parameters from different parameter groups.
+    def n_base_scatterers(self):
 
-        Returns:
-            int: The total number of symmetry constrained parameters.
-        """
-        return (
-            self.vib_params.n_symmetry_constrained_params
-            + self.geo_params.n_symmetry_constrained_params
-            + self.occ_params.n_symmetry_constrained_params
-            + self.v0r_param.n_symmetry_constrained_params
-        )
 
     @property
     def geo_transformer(self):
