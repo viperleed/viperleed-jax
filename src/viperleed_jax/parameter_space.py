@@ -19,9 +19,14 @@ _DISP_Z_DIR_ID = 0
 
 class ParameterSpace():
 
-    def __init__(self, base_scatterers):
+    def __init__(self, base_scatterers, rpars):
         self._displacements_applied = False
         self.base_scatterers = base_scatterers
+
+        # create the meta parameter subtree
+        self.meta_param_subtree = v0r_parameters.MetaParameterSubtree()
+        # read the meta parameters from the rpars
+        self.meta_param_subtree.read_from_rpars(rpars)
 
         # create the parameter subtrees - this automatically sets up all the
         # symmetry constraints
