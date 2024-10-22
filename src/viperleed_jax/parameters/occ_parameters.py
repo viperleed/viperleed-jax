@@ -3,7 +3,6 @@ from functools import partial
 from viperleed_jax.base import LinearTransformer
 
 import numpy as np
-import jax
 from jax import numpy as jnp
 
 from .linear_transformer import LinearTransformer
@@ -22,7 +21,6 @@ class OccHLLeafNode(HLLeafNode):
         self.num = base_scatterer.num
         self.site_element = base_scatterer.site_element
         self.base_scatterer = base_scatterer
-        self.ref_vib_amp = base_scatterer.atom.site.vibamp[self.element]
         self.name = f"occ (At_{self.num},{self.site},{self.element})"
         super().__init__(dof=dof, name=self.name)
 
@@ -66,7 +64,7 @@ class OccSharedHLConstraint(OccHLConstraintNode):
         for child in children:
             weights = np.full(shape=(1, dof), fill_value=-1/dof)
             weights[0, children.index(child)] = 1
-            bias = np.zeros(1)
+            bias = np.ones(1)
             transformers.append(LinearTransformer(weights, bias, (1,)))
         super().__init__(
             dof=dof,
@@ -172,9 +170,6 @@ class OccHLSubtree(ParameterHLSubtree):
             symmetry_node = OccSymmetryHLConstraint(children=[node],
                                                     name="Symmetry")
             self.nodes.append(symmetry_node)
-
-        # # add offset nodes
-        # self._add_offset_nodes("occ offset (unused)")
 
     def apply_explicit_constraint(self, constraint_line):
         # self._check_constraint_line_type(constraint_line, "occ")
