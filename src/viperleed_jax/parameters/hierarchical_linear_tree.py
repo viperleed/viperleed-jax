@@ -397,6 +397,11 @@ class HLSubtree(ABC):
             raise ValueError("Subtree root has not yet been created.")
         UniqueDotExporter(self.subtree_root).to_picture(filename)
 
+    def collapsed_transformer(self):
+        if not self._subtree_root_has_been_created:
+            raise ValueError("Subtree root has not yet been created.")
+        return self.subtree_root.collapse_transformer()
+
 
 class ParameterHLSubtree(HLSubtree):
     """Base class representing a subtree in the hierarchical linear tree.
