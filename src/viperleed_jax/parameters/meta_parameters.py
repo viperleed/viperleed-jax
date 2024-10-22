@@ -3,6 +3,7 @@ from jax import numpy as jnp
 from viperleed_jax.parameters.hierarchical_linear_tree import HLSubtree
 from viperleed_jax.parameters.hierarchical_linear_tree import HLLeafNode
 from viperleed_jax.parameters.hierarchical_linear_tree import HLBound
+from .hierarchical_linear_tree import HLTreeLayers
 
 
 # Note: currently, V0r is (and can only be) a single parameter, which makes

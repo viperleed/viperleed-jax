@@ -15,6 +15,7 @@ from viperleed_jax.files.displacements.lines import ConstraintLine
 from .linear_transformer import LinearTransformer
 from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
 from .hierarchical_linear_tree import ParameterHLSubtree
+from .hierarchical_linear_tree import HLTreeLayers
 
 
 class GeoHLLeafNode(HLLeafNode):
@@ -76,7 +77,7 @@ class GeoHLLeafNode(HLLeafNode):
 class GeoHLConstraintNode(HLConstraintNode):
     """Base constraint node for geometric parameters."""
 
-    def __init__(self, dof, children, transformers, name="unnamed"):
+    def __init__(self, dof, children, transformers, layer, name="unnamed"):
         self.dof = dof
 
         if transformers is None:
@@ -85,7 +86,8 @@ class GeoHLConstraintNode(HLConstraintNode):
                 "geometric constraint nodes."
             )
         super().__init__(
-            dof=dof, name=name, children=children, transformers=transformers
+            dof=dof, name=name, children=children,
+            transformers=transformers, layer=layer
         )
 
 
@@ -200,6 +202,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
             children=children,
             transformers=transformers,
             name=name,
+            layer=HLTreeLayers.Symmetry,
         )
 
 
@@ -220,7 +223,8 @@ class GeoLinkedHLConstraint(GeoHLConstraintNode):
         ]
         super().__init__(
             dof=dof, children=children, transformers=transformers,
-            name=f"CONSTRAIN '{name}'"
+            name=f"CONSTRAIN '{name}'",
+            layer=HLTreeLayers.User_Constraints,
         )
 
 class GeoHLSubtree(ParameterHLSubtree):

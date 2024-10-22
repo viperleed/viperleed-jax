@@ -27,9 +27,11 @@ class HLNode(Node):
 
     separator = "/"
 
-    def __init__(self, dof, name=None, parent=None, children=None):
+    def __init__(self, dof, layer, name=None, parent=None, children=None):
         self.dof = dof  # Number of degrees of freedom
         self._transformer = None  # LinearTransformer object
+        self.layer = HLTreeLayers(layer)
+
         self.name = f"({self.dof}) {name}" if name else f"({self.dof})"
         self.parent = parent
         if self.children:
@@ -66,6 +68,13 @@ class HLNode(Node):
                 f"Invalid parent: {parent}"
             )
 
+        # check that the parent layer is >= child layer
+        if not parent.layer.value >= self.layer.value:
+            raise ValueError(
+                f"Parent layer ({parent.layer}) must be greater or equal "
+                f"to child layer ({self.layer})."
+            )
+
         # check that the transformer dimensions match
         if self.transformer.in_dim != parent.dof:
             raise ValueError(
@@ -84,7 +93,8 @@ class HLLeafNode(HLNode):
     def __init__(self, dof, name=None, parent=None):
         # initialize bounds
         self._bounds = HLBound(dof)
-        super().__init__(dof=dof, name=name, parent=parent)
+        super().__init__(dof=dof, name=name, parent=parent,
+                         layer=HLTreeLayers.Base)
 
     @abstractmethod
     def update_bounds(self, line):
@@ -98,9 +108,9 @@ class HLConstraintNode(HLNode):
     be initialized with a list of child nodes and their corresponding
     transformers."""
 
-    def __init__(self, dof, name=None, children=[], transformers=None):
+    def __init__(self, dof, layer, name=None, children=[], transformers=None):
         _children = list(children)
-        super().__init__(dof=dof, name=name)  # Initialize the base class
+        super().__init__(dof=dof, name=name, layer=layer)  # Initialize the base class
 
         if len(_children) == 0:
             raise ValueError(
@@ -245,7 +255,8 @@ class ImplicitHLConstraint(HLConstraintNode):
                 new_weights, new_biases, (child.dof,)
             )
         super().__init__(dof=dof, name=f"Implicit Constraint",
-                         children=[child], transformers=[new_transformer])
+                         children=[child], transformers=[new_transformer],
+                         layer=HLTreeLayers.Implicit_Constraints)
 
 
 class HLBound():
@@ -361,6 +372,7 @@ class HLSubtree(ABC):
             name=self.subtree_root_name,
             children=self.roots,
             transformers=transformers,
+            layer=HLTreeLayers.Root,
         )
         self.nodes.append(self.subtree_root)
 

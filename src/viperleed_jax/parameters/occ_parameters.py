@@ -10,6 +10,7 @@ from jax import numpy as jnp
 from .linear_transformer import LinearTransformer
 from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
 from .hierarchical_linear_tree import ParameterHLSubtree
+from .hierarchical_linear_tree import HLTreeLayers
 
 
 class OccHLLeafNode(HLLeafNode):
@@ -39,12 +40,13 @@ class OccHLLeafNode(HLLeafNode):
 class OccHLConstraintNode(HLConstraintNode):
     """Represents a constraint node for occupational parameters."""
 
-    def __init__(self, dof, children, name, transformers=None):
+    def __init__(self, dof, children, name, layer, transformers=None):
         self.dof = dof
 
         if transformers is None:
             raise ValueError("Transformers must be provided.")
-        super().__init__(dof=dof, name=name, children=children, transformers=transformers)
+        super().__init__(dof=dof, name=name, children=children,
+                         layer=layer, transformers=transformers)
 
 class OccSharedHLConstraint(OccHLConstraintNode):
     """Constraint for sharing occupation to 100%."""
@@ -67,7 +69,13 @@ class OccSharedHLConstraint(OccHLConstraintNode):
             weights[0, children.index(child)] = 1
             bias = np.zeros(1)
             transformers.append(LinearTransformer(weights, bias, (1,)))
-        super().__init__(dof=dof, name=name, children=children, transformers=transformers)
+        super().__init__(
+            dof=dof,
+            name=name,
+            children=children,
+            transformers=transformers,
+            layer=HLTreeLayers.Symmetry,
+        )
 
 class OccSymmetryHLConstraint(OccHLConstraintNode):
     """Constraint for enforcing symmetry in occupation."""
@@ -86,7 +94,9 @@ class OccSymmetryHLConstraint(OccHLConstraintNode):
             bias = np.zeros(dof)
             transformers.append(LinearTransformer(weights, bias, (dof,)))
         super().__init__(dof=dof, name=name,
-                         children=children, transformers=transformers)
+                         children=children,
+                         transformers=transformers,
+                         layer=HLTreeLayers.Symmetry)
 
 
 class OccLinkedHLConstraint(OccHLConstraintNode):
@@ -108,6 +118,7 @@ class OccLinkedHLConstraint(OccHLConstraintNode):
             children=children,
             transformers=transformers,
             name=f"CONSTRAIN '{name}'",
+            layer=HLTreeLayers.User_Constraints,
         )
 
 
