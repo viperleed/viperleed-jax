@@ -384,6 +384,12 @@ class HLSubtree(ABC):
             return f"{trees_str}"
         return RenderTree(self.subtree_root).by_attr()
 
+    def roots_up_to_layer(self, layer):
+        _layer = HLTreeLayers(layer)
+        return [node for node in self.nodes
+                if node.layer.value <= _layer.value and
+                (node.is_root or node.parent.layer.value > _layer.value)]
+
     def graphical_export(self, filename):
         if not self._subtree_root_has_been_created:
             raise ValueError("Subtree root has not yet been created.")
