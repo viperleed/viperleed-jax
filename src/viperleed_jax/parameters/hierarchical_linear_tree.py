@@ -188,11 +188,13 @@ class HLConstraintNode(HLNode):
         return LinearTransformer(stacked_weights, stacked_biases,
                                  (np.sum([c.dof for c in self.children]),))
 
-    def collapse_transformer(self):
+    def collapse_transformer(self, stop_condition=None):
         """Iterate through through all descendants, collapsing the transformers."""
+        if stop_condition is None:
+            stop_condition = lambda node: node.is_leaf
         collapsed_transformers = []
         for child in self.children:
-            if child.is_leaf:
+            if stop_condition(child):
                 collapsed_transformers.append(child.transformer)
             else:
                 collapsed_transformers.append(
