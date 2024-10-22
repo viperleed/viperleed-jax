@@ -207,6 +207,7 @@ class ParameterSpace():
 
     @property
     def n_base_scatterers(self):
+        return len(self.base_scatterers)
 
 
     @property
