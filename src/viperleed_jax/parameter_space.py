@@ -166,6 +166,8 @@ class ParameterSpace():
         """Returns the total number of free parameters in the parameter space.
         """
         return self._free_params_up_to_layer(HLTreeLayers.Root)
+        if not self._displacements_applied:
+            raise ValueError("Displacements must be applied before counting "
 
     @property
     def n_symmetry_constrained_params(self):
