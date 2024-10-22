@@ -106,6 +106,9 @@ class LinearTransformer:
             setattr(frozen_parameter_space, kw, value)
         return frozen_parameter_space
 
+    def boolify(self):
+        return LinearTransformer(np.bool_(self.weights), np.bool_(self.biases), self.out_reshape)
+
 
 def stack_transformers(transformers):
     """Stack a list of transformers into a single transformer."""
