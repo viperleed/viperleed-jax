@@ -171,6 +171,16 @@ class ParameterSpace():
         return sum(self._free_params_up_to_layer(HLTreeLayers.Root))
 
     @property
+    def n_user_constrained_params(self):
+        """Returns the total number of free parameters in the parameter space."""
+        if not self._displacements_applied:
+            raise ValueError(
+                "Displacements must be applied before counting "
+                "user constrained parameters."
+            )
+        return sum(self._free_params_up_to_layer(HLTreeLayers.User_Constraints))
+
+    @property
     def n_symmetry_constrained_params(self):
         """Returns the total number of symmetry constrained parameters.
 
@@ -320,6 +330,7 @@ class ParameterSpace():
             str: Information about the parameters.
         """
         n_root_params = self._free_params_up_to_layer(HLTreeLayers.Root)
+        n_user_params = self._free_params_up_to_layer(HLTreeLayers.User_Constraints)
         n_sym_params = self._free_params_up_to_layer(HLTreeLayers.Symmetry)
         n_base_params = self._free_params_up_to_layer(HLTreeLayers.Base)
 
@@ -331,8 +342,11 @@ class ParameterSpace():
                    )
 
         return (
-            "Free parameters:"
+            "Free parameters (implicit constraints):"
             f"\n{self.n_free_params}\t{format(n_root_params)}\n"
+
+            "User constrained parameters:"
+            f"\n{self.n_user_constrained_params}\t{format(n_user_params)}\n"
 
             "Symmetry constrained parameters:"
             f"\n{self.n_symmetry_constrained_params}\t{format(n_sym_params)}\n"
