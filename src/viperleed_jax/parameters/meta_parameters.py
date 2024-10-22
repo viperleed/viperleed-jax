@@ -1,8 +1,8 @@
 from jax import numpy as jnp
 
-from viperleed_jax.parameters.hierarchical_linear_tree import HLSubtree
-from viperleed_jax.parameters.hierarchical_linear_tree import HLLeafNode
-from viperleed_jax.parameters.hierarchical_linear_tree import HLBound
+from .hierarchical_linear_tree import HLSubtree
+from .hierarchical_linear_tree import HLLeafNode
+from .hierarchical_linear_tree import HLBound
 from .hierarchical_linear_tree import HLTreeLayers
 
 
