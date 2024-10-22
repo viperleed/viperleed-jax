@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from itertools import compress
 
 import numpy as np
@@ -13,6 +14,12 @@ from .linear_transformer import LinearTransformer, stack_transformers
 # Enable checks for the anytree library – we don't deal with huge trees so this
 # should not be a performance issue.
 anytree.config.ASSERTIONS = True
+
+
+HLTreeLayers = Enum(
+    "HLTreeLayers",
+    ["Base", "Symmetry", "User_Constraints", "Implicit_Constraints", "Root"],
+)
 
 
 class HLNode(Node):
