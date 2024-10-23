@@ -111,7 +111,8 @@ class GeoHLConstraintNode(HLConstraintNode):
         """
         # first case
         if all(isinstance(child, GeoHLLeafNode) for child in children):
-            return
+            # choose first child as reference node
+            return children[0]
         # check node type
         for child in children:
             if not isinstance(child, GeoHLConstraintNode):
@@ -119,10 +120,8 @@ class GeoHLConstraintNode(HLConstraintNode):
                     "Shared propagator nodes must have shared propagator "
                     "children."
                 )
-            # choose first child as reference node
-            return children[0]
         # second case
-        if all([trafo.bias == 0 for trafo in transformers]):
+        if all([np.any(trafo.biases == 0) for trafo in transformers]):
             try:
                 inverted_weights = [
                     np.linalg.inv(trafo.weights) for trafo in transformers
