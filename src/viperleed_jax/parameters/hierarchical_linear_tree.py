@@ -1,3 +1,8 @@
+"""Module parameter_space."""
+
+__authors__ = ("Alexander M. Imre (@amimre)",)
+__created__ = "2024-10-07"
+
 from abc import ABC, abstractmethod
 from enum import Enum
 from itertools import compress

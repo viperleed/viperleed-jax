@@ -1,3 +1,8 @@
+"""Module geo_parameters."""
+
+__authors__ = ("Alexander M. Imre (@amimre)",)
+__created__ = "2024-08-30"
+
 from collections import deque
 from itertools import zip_longest
 

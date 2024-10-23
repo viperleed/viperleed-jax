@@ -1,3 +1,7 @@
+"""Module parameter_space."""
+__authors__ = ("Alexander M. Imre (@amimre)",)
+__created__ = "2024-09-02"
+
 from collections import namedtuple
 from copy import deepcopy
 
