@@ -196,7 +196,7 @@ class HLConstraintNode(HLNode):
             (upwards, common, downwards) = walker.walk(self, node)
         except walker.WalkError as err:
             raise ValueError(f"Node {node} cannot be reached from {self}.") from err
-        if upwards or common:
+        if upwards:
             raise ValueError(f"Node {node} is not a descendent of {self}.")
         transformers = [node.transformer for node in downwards]
         composed_transformer = transformers[0]
