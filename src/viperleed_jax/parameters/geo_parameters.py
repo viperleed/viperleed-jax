@@ -1,17 +1,9 @@
 from collections import deque
 from itertools import zip_longest
 
-import jax
-from jax import numpy as jnp
 import numpy as np
 from anytree.walker import Walker, WalkError
 
-from viperleed_jax.parameters.base_parameters import (
-    BaseParam,
-    Params,
-    ConstrainedDeltaParam,
-    Bound,
-)
 from viperleed_jax import atomic_units
 from viperleed_jax.files.displacements.lines import ConstraintLine
 
@@ -19,7 +11,7 @@ from .linear_transformer import LinearTransformer
 from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
 from .hierarchical_linear_tree import ParameterHLSubtree
 from .hierarchical_linear_tree import HLTreeLayers
-from .linear_transformer import LinearTransformer, stack_transformers
+from .linear_transformer import LinearTransformer
 
 
 class GeoHLLeafNode(HLLeafNode):
