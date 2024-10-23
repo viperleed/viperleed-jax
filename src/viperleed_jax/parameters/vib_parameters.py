@@ -1,12 +1,9 @@
 import numpy as np
-from jax import numpy as jnp
-
-from .linear_transformer import LinearTransformer
-from viperleed_jax.parameters.base_parameters import BaseParam, Params, ConstrainedDeltaParam, Bound
 
 from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
-from .hierarchical_linear_tree import ParameterHLSubtree
 from .hierarchical_linear_tree import HLTreeLayers
+from .hierarchical_linear_tree import ParameterHLSubtree
+from .linear_transformer import LinearTransformer
 
 
 class VibHLLeafNode(HLLeafNode):
