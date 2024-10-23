@@ -395,8 +395,7 @@ class GeoHLSubtree(ParameterHLSubtree):
     #############################
     # Geometry specific methods #
     #############################
-    @property
-    def dynamic_origin_dict(self):
+    def _dynamic_origin_dict(self):
         dynamic_leaves = [leaf for leaf in np.array(self.leaves)[self.leaf_is_dynamic]]
         origin_dict = {
             leaf: leaf.propagator_origin for leaf in dynamic_leaves
@@ -405,7 +404,8 @@ class GeoHLSubtree(ParameterHLSubtree):
 
     @property
     def dynamic_origin_nodes(self):
-        return list(dict.fromkeys(list(self.dynamic_origin_dict.values())))
+        """Return nodes that are the origin of the propagator for dynamic leaves."""
+        return list(dict.fromkeys(list(self._dynamic_origin_dict().values())))
 
     @property
     def transformers_for_dynamic_propagator_inputs(self):
@@ -414,8 +414,7 @@ class GeoHLSubtree(ParameterHLSubtree):
             for node in self.dynamic_origin_nodes
         ]
 
-    @property
-    def static_origin_dict(self):
+    def _static_origin_dict(self):
         static_leaves = [leaf for leaf in np.array(self.leaves)[~self.leaf_is_dynamic]]
         origin_dict = {
             leaf: leaf.propagator_origin for leaf in static_leaves
@@ -424,10 +423,12 @@ class GeoHLSubtree(ParameterHLSubtree):
 
     @property
     def static_origin_nodes(self):
-        return list(dict.fromkeys(list(self.static_origin_dict.values())))
+        """Return nodes that are the origin of the propagator for static leaves."""
+        return list(dict.fromkeys(list(self._static_origin_dict().values())))
 
     @property
     def static_propagator_inputs(self):
+        """Return the displacements for the static propagators."""
         static_propagator_transformers = [
             self.subtree_root.transformer_to_descendent(node)
             for node in self.static_origin_nodes
@@ -438,20 +439,20 @@ class GeoHLSubtree(ParameterHLSubtree):
 
     @property
     def propagator_map(self):
-        # map proagators to atom-site-elements
+        """Return a mapping of base scatterers to propagators."""
         return [
             (
                 (
                     "static",
                     self.static_origin_nodes.index(
-                        self.static_origin_dict[leaf]
+                        self._static_origin_dict()[leaf]
                     ),
                 )
                 if not dynamic
                 else (
                     "dynamic",
                     self.dynamic_origin_nodes.index(
-                        self.dynamic_origin_dict[leaf]
+                        self._dynamic_origin_dict[leaf]
                     ),
                 )
             )
@@ -460,6 +461,9 @@ class GeoHLSubtree(ParameterHLSubtree):
 
     @property
     def leaf_symmetry_operations(self):
+        """Return the symmetry operations for each leaf in respect to the
+        reference displacement (the one for which the propagator is calculated).
+        """
         return tuple([leaf.symmetry_operation_to_reference_propagator
                       for leaf in self.leaves])
 
