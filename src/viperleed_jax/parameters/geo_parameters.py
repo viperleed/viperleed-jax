@@ -392,6 +392,76 @@ class GeoHLSubtree(ParameterHLSubtree):
             raise NotImplementedError(
                 "Directional geo constraints are not yet supported.")
 
+    #############################
+    # Geometry specific methods #
+    #############################
+    @property
+    def dynamic_origin_dict(self):
+        dynamic_leaves = [leaf for leaf in np.array(self.leaves)[self.leaf_is_dynamic]]
+        origin_dict = {
+            leaf: leaf.propagator_origin for leaf in dynamic_leaves
+        }
+        return origin_dict
+
+    @property
+    def dynamic_origin_nodes(self):
+        return list(dict.fromkeys(list(self.dynamic_origin_dict.values())))
+
+    @property
+    def transformers_for_dynamic_propagator_inputs(self):
+        return [
+            self.subtree_root.transformer_to_descendent(node)
+            for node in self.dynamic_origin_nodes
+        ]
+
+    @property
+    def static_origin_dict(self):
+        static_leaves = [leaf for leaf in np.array(self.leaves)[~self.leaf_is_dynamic]]
+        origin_dict = {
+            leaf: leaf.propagator_origin for leaf in static_leaves
+        }
+        return origin_dict
+
+    @property
+    def static_origin_nodes(self):
+        return list(dict.fromkeys(list(self.static_origin_dict.values())))
+
+    @property
+    def static_propagator_inputs(self):
+        static_propagator_transformers = [
+            self.subtree_root.transformer_to_descendent(node)
+            for node in self.static_origin_nodes
+        ]
+        # since the transformers are static, we can evaluate them
+        return [transformer(np.full(self.subtree_root.dof, 0.5))
+                for transformer in static_propagator_transformers]
+
+    @property
+    def propagator_map(self):
+        # map proagators to atom-site-elements
+        return [
+            (
+                (
+                    "static",
+                    self.static_origin_nodes.index(
+                        self.static_origin_dict[leaf]
+                    ),
+                )
+                if not dynamic
+                else (
+                    "dynamic",
+                    self.dynamic_origin_nodes.index(
+                        self.dynamic_origin_dict[leaf]
+                    ),
+                )
+            )
+            for leaf, dynamic in zip(self.leaves, self.leaf_is_dynamic)
+        ]
+
+    @property
+    def propagator_plane_symmetry_operations(self):
+        pass
+
 
 class GeoBaseParam(BaseParam):
     def __init__(self, base_scatterer):
