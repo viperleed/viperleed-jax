@@ -7,6 +7,7 @@ import jax.numpy as jnp
 import anytree
 from anytree import Node, RenderTree
 from anytree.exporter import UniqueDotExporter
+from anytree.walker import Walker
 
 from viperleed_jax.files.displacements.lines import ConstraintLine
 from .linear_transformer import LinearTransformer, stack_transformers
@@ -188,8 +189,22 @@ class HLConstraintNode(HLNode):
         return LinearTransformer(stacked_weights, stacked_biases,
                                  (np.sum([c.dof for c in self.children]),))
 
-    def collapse_transformer(self, stop_condition=None):
-        """Iterate through through all descendants, collapsing the transformers."""
+    def transformer_to_descendent(self, node):
+        """Return the transformer from this node to a descendent."""
+        walker = Walker()
+        try:
+            (upwards, common, downwards) = walker.walk(self, node)
+        except walker.WalkError as err:
+            raise ValueError(f"Node {node} cannot be reached from {self}.") from err
+        if upwards or common:
+            raise ValueError(f"Node {node} is not a descendent of {self}.")
+        transformers = [node.transformer for node in downwards]
+        composed_transformer = transformers[0]
+        for trafo in transformers[1:]:
+            composed_transformer = composed_transformer.compose(trafo)
+        return composed_transformer
+
+    def down_collapse_transformers(self, stop_condition):
         if stop_condition is None:
             stop_condition = lambda node: node.is_leaf
         collapsed_transformers = []
@@ -198,8 +213,17 @@ class HLConstraintNode(HLNode):
                 collapsed_transformers.append(child.transformer)
             else:
                 collapsed_transformers.append(
-                    child.transformer.compose(child.collapse_transformer())
+                    child.transformer.compose(
+                        stack_transformers(child.down_collapse_transformers(
+                            stop_condition
+                        ))
+                    )
                 )
+        return collapsed_transformers
+
+    def collapse_transformer(self):
+        """Iterate through through all descendants, collapsing the transformers."""
+        collapsed_transformers = self.down_collapse_transformers(stop_condition=None)
         return stack_transformers(collapsed_transformers)
 
     def collapse_bounds(self):
