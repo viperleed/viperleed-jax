@@ -465,13 +465,25 @@ class GeoHLSubtree(ParameterHLSubtree):
             for leaf, dynamic in zip(self.leaves, self.leaf_is_dynamic)
         ]
 
-    @property
-    def leaf_symmetry_operations(self):
+    def _leaf_symmetry_operations(self):
         """Return the symmetry operations for each leaf in respect to the
         reference displacement (the one for which the propagator is calculated).
         """
         return tuple([leaf.symmetry_operation_to_reference_propagator
                       for leaf in self.leaves])
+
+    @property
+    def leaf_plane_symmetry_operations(self):
+        """Return the in-plane symmetry operations for each leaf in respect to the
+        reference displacement (the one for which the propagator is calculated).
+        """
+        for (
+            sym_op
+        ) in self._leaf_symmetry_operations():  # TODO: can this even happen?
+            if np.any(sym_op[0,:] != np.array([1., 0, 0])):
+                raise ValueError("Symmetry operation must be in-plane! "
+                                 "This should not happen!")
+        return tuple([sym_op[1:, 1:] for sym_op in self._leaf_symmetry_operations()])
 
     @property
     def n_dynamic_propagators(self):
