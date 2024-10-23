@@ -227,6 +227,30 @@ class ParameterSpace():
     def propagator_plane_symmetry_operations(self):
         return self.geo_subtree.leaf_plane_symmetry_operations
 
+    @property
+    def static_propagator_inputs(self):
+        return self.geo_subtree.static_propagator_inputs
+
+    @property
+    def n_dynamic_t_matrices(self):
+        return len(self.vib_subtree.n_dynamic_t_matrices)
+
+    @property
+    def n_static_t_matrices(self):
+        return len(self.vib_subtree.n_static_t_matrices)
+
+    @property
+    def static_t_matrix_inputs(self):
+        return self.vib_params.static_t_matrix_input
+
+    @property
+    def dynamic_t_matrix_site_elements(self):
+        return self.vib_params.dynamic_site_elements
+
+    @property
+    def t_matrix_map(self):
+        return self.vib_subtree.t_matrix_map
+
     # TODO
 
     @property
@@ -244,30 +268,6 @@ class ParameterSpace():
     @property
     def v0r_transformer(self):
         return self.v0r_param.get_v0r_transformer()
-
-    @property
-    def n_dynamic_t_matrices(self):
-        return len(self.vib_params.dynamic_site_elements)
-
-    @property
-    def n_static_t_matrices(self):
-        return len(self.vib_params.static_site_elements)
-
-    @property
-    def static_t_matrix_inputs(self):
-        return self.vib_params.static_t_matrix_input
-
-    @property
-    def static_propagator_inputs(self):
-        return self.geo_params.static_propagator_inputs
-
-    @property
-    def dynamic_t_matrix_site_elements(self):
-        return self.vib_params.dynamic_site_elements
-
-    @property
-    def t_matrix_map(self):
-        return self.vib_params.t_matrix_map
 
     @property
     def is_dynamic_t_matrix(self):
