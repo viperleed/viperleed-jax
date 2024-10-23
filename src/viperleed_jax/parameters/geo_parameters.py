@@ -161,7 +161,8 @@ class GeoHLConstraintNode(HLConstraintNode):
         must be met:
         1. all children are leaf nodes (i.e. self is a symmetry node)
         2. all children are constraint nodes with shared propagators
-           and all their transformers have 0 bias and invertible weights
+           and all their transformers have 0 bias, invertible weights
+           and det(weights) = 1
         3. all children are constraint nodes with shared propagators
            and their transformers are the same
         """
@@ -177,7 +178,8 @@ class GeoHLConstraintNode(HLConstraintNode):
                     "children."
                 )
         # second case
-        if all([np.any(trafo.biases == 0) for trafo in transformers]):
+        if all([np.any(trafo.biases == 0) and np.linalg.det(trafo.weights) == 1. # TODO: use EPS
+                for trafo in transformers]):
             try:
                 inverted_weights = [
                     np.linalg.inv(trafo.weights) for trafo in transformers
@@ -317,6 +319,10 @@ class GeoLinkedHLConstraint(GeoHLConstraintNode):
     # this needs to be adapted
     # TODO: this also needs to be adapted if we allow partial directional linking
     # e.g. linking z coordinates of two atoms, but not x and y
+    # TODO: furthermore: linking of atoms in the same direction, but with
+    #       different magnitudes would also be problematic! – check math for this
+    #       case. I'm not sure if the propagators are linear with respect to the
+    #       length of the displacement vector
     # If either of these is implemented, the children will not share a propagator
     def __init__(self, children, name):
         # check that all children have the same dof
