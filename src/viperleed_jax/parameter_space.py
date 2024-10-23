@@ -12,7 +12,6 @@ from jax.tree_util import register_pytree_node_class
 from viperleed_jax.parameters import occ_parameters
 from viperleed_jax.parameters import vib_parameters
 from viperleed_jax.parameters import geo_parameters
-from viperleed_jax.base_scatterers import BaseScatterers
 from viperleed_jax.parameters import meta_parameters
 from viperleed_jax.files.displacements.reader import DisplacementFileSections
 from viperleed_jax.parameters.hierarchical_linear_tree import HLTreeLayers
