@@ -1,10 +1,10 @@
 import jax
 from jax import numpy as jnp
 import numpy as np
+from anytree.walker import Walker
 
 from viperleed_jax.parameters.base_parameters import (
     BaseParam,
-    DeltaParam,
     Params,
     ConstrainedDeltaParam,
     Bound,
@@ -16,6 +16,7 @@ from .linear_transformer import LinearTransformer
 from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
 from .hierarchical_linear_tree import ParameterHLSubtree
 from .hierarchical_linear_tree import HLTreeLayers
+from .linear_transformer import LinearTransformer, stack_transformers
 
 
 class GeoHLLeafNode(HLLeafNode):
