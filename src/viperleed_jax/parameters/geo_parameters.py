@@ -79,8 +79,13 @@ class GeoHLLeafNode(HLLeafNode):
 class GeoHLConstraintNode(HLConstraintNode):
     """Base constraint node for geometric parameters."""
 
-    def __init__(self, dof, children, transformers, layer, name="unnamed"):
+    def __init__(self, dof, children, transformers, layer, name="unnamed",
+                 shared_propagator=False):
         self.dof = dof
+        if shared_propagator:
+            self.propagator_reference_node = self._check_reference_node(
+                children, transformers)
+            self.shared_propagator = shared_propagator
 
         if transformers is None:
             raise ValueError(
@@ -91,6 +96,48 @@ class GeoHLConstraintNode(HLConstraintNode):
             dof=dof, name=name, children=children,
             transformers=transformers, layer=layer
         )
+
+    def _check_reference_node(self, children, transformers):
+        """Checks if a shared propagator is allowed and if so, selects the
+        reference node.
+
+        For the shared propagator to be allowed, one of these conditions
+        must be met:
+        1. all children are leaf nodes (i.e. self is a symmetry node)
+        2. all children are constraint nodes with shared propagators
+           and all their transformers have 0 bias and invertible weights
+        3. all children are constraint nodes with shared propagators
+           and their transformers are the same
+        """
+        # first case
+        if all(isinstance(child, GeoHLLeafNode) for child in children):
+            return
+        # check node type
+        for child in children:
+            if not isinstance(child, GeoHLConstraintNode):
+                raise ValueError(
+                    "Shared propagator nodes must have shared propagator "
+                    "children."
+                )
+            # choose first child as reference node
+            return children[0]
+        # second case
+        if all([trafo.bias == 0 for trafo in transformers]):
+            try:
+                inverted_weights = [
+                    np.linalg.inv(trafo.weights) for trafo in transformers
+                ]
+            except np.linalg.LinAlgError:
+                raise ValueError(
+                    "Shared propagator transformers must have invertible "
+                    "weights."
+                )
+            # select the reference node of the first child
+            return children[0].propagator_reference_node
+        # third case
+        if all([trafo == transformers[0] for trafo in transformers]):
+            # select the reference node of the first child
+            return children[0].propagator_reference_node
 
 
 class GeoSymmetryHLConstraint(GeoHLConstraintNode):
@@ -205,6 +252,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
             transformers=transformers,
             name=name,
             layer=HLTreeLayers.Symmetry,
+            shared_propagator=True,  # symmetry nodes always share propagators
         )
 
 
@@ -212,6 +260,9 @@ class GeoLinkedHLConstraint(GeoHLConstraintNode):
     """Class for explicit links of geometric parameters."""
     # TODO: if we implement linking of nodes with different dof (directional),
     # this needs to be adapted
+    # TODO: this also needs to be adapted if we allow partial directional linking
+    # e.g. linking z coordinates of two atoms, but not x and y
+    # If either of these is implemented, the children will not share a propagator
     def __init__(self, children, name):
         # check that all children have the same dof
         if len(set(child.dof for child in children)) != 1:
@@ -227,6 +278,7 @@ class GeoLinkedHLConstraint(GeoHLConstraintNode):
             dof=dof, children=children, transformers=transformers,
             name=f"CONSTRAIN '{name}'",
             layer=HLTreeLayers.User_Constraints,
+            shared_propagator=True,  # see comment above
         )
 
 class GeoHLSubtree(ParameterHLSubtree):
