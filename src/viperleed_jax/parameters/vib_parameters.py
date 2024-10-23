@@ -163,3 +163,11 @@ class VibHLSubtree(ParameterHLSubtree):
             ('dynamic', self.dynamic_site_elements.index(leaf.site_element))
             for leaf in self.leaves
         ]
+
+    @property
+    def n_dynamic_t_matrices(self):
+        return len(self.dynamic_site_elements)
+
+    @property
+    def n_static_t_matrices(self):
+        return len(self.static_site_elements)
