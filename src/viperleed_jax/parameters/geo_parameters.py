@@ -1,7 +1,10 @@
+from collections import deque
+from itertools import zip_longest
+
 import jax
 from jax import numpy as jnp
 import numpy as np
-from anytree.walker import Walker
+from anytree.walker import Walker, WalkError
 
 from viperleed_jax.parameters.base_parameters import (
     BaseParam,
@@ -74,6 +77,59 @@ class GeoHLLeafNode(HLLeafNode):
         else:
             raise NotImplementedError("TODO")
         self._bounds.update_range(range=None, offset=offset, user_set=user_set)
+
+    @property
+    def propagator_origin(self):
+        """Return the node that is the origin of the propagator for this leaf"""
+        origin = self
+        while origin.parent:
+            if isinstance(origin.parent, GeoHLConstraintNode) and origin.parent.shared_propagator:
+                origin = origin.parent
+            else:
+                break
+        return origin
+
+    @property
+    def symmetry_operation_to_reference_propagator(self):
+        """Return the symmetry operation that links this leaf to the reference
+        propagator."""
+        node_walker = Walker()
+        target = self.propagator_origin.propagator_reference_node
+        try:
+            (upwards, common, downwards) = node_walker.walk(
+                self, target
+            )
+        except WalkError as err:
+            raise RuntimeError(f"Node {self} cannot be reached from "
+                               f"{self.propagator_origin}.") from err
+        if target is self:  # identity
+            return np.eye(3)
+
+        # sanity check
+        if not common.shared_propagator:
+            print(common)
+            raise ValueError("Common node must have shared propagator")
+
+        # traverse the tree and add up symmetry operations
+        operations = deque()
+        for up, down in zip_longest(upwards, reversed(downwards),
+                                    fillvalue=None):
+            if (up is not None and down is not None
+                and up.transformer == down.transformer):
+                continue
+            if up is not None:
+                if np.any(up.transformer.biases != 0):
+                    raise ValueError("Bias must be zero")
+                print(up.transformer.weights, down.transformer.weights)
+                inverse = np.linalg.inv(up.transformer.weights)
+                operations.appendleft(inverse)
+            if down is not None:
+                if np.any(down.transformer.biases != 0):
+                    raise ValueError("Bias must be zero")
+                operations.append(down.transformer.weights)
+        operations.appendleft(np.eye(3))
+        operations.append(np.eye(3))
+        return np.linalg.multi_dot(operations)
 
 
 class GeoHLConstraintNode(HLConstraintNode):
