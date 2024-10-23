@@ -1,14 +1,11 @@
-from functools import partial
+import numpy as np
 
 from viperleed_jax.base import LinearTransformer
 
-import numpy as np
-from jax import numpy as jnp
-
-from .linear_transformer import LinearTransformer
 from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
-from .hierarchical_linear_tree import ParameterHLSubtree
 from .hierarchical_linear_tree import HLTreeLayers
+from .hierarchical_linear_tree import ParameterHLSubtree
+from .linear_transformer import LinearTransformer
 
 
 class OccHLLeafNode(HLLeafNode):
