@@ -473,6 +473,14 @@ class GeoHLSubtree(ParameterHLSubtree):
         return tuple([leaf.symmetry_operation_to_reference_propagator
                       for leaf in self.leaves])
 
+    @property
+    def n_dynamic_propagators(self):
+        return len(self.dynamic_origin_nodes)
+
+    @property
+    def n_static_propagators(self):
+        return len(self.static_origin_nodes)
+
 
 class GeoBaseParam(BaseParam):
     def __init__(self, base_scatterer):
