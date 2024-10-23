@@ -349,7 +349,6 @@ class GeoHLSubtree(ParameterHLSubtree):
         return "geo root"
 
     def build_subtree(self):
-
         # create leaf nodes
         geo_leaf_nodes = [
             GeoHLLeafNode(base_scatterer)
@@ -375,9 +374,6 @@ class GeoHLSubtree(ParameterHLSubtree):
         unlinked_site_el_nodes = [node for node in self.leaves if node.is_root]
         for node in unlinked_site_el_nodes:
             self.nodes.append(GeoSymmetryHLConstraint(children=[node]))
-
-        # # add offset nodes
-        # self._add_offset_nodes("geo offset (unused)")
 
     def apply_explicit_constraint(self, constraint_line):
         #self._check_constraint_line_type(constraint_line, "geo")
