@@ -27,7 +27,6 @@ HLTreeLayers = Enum(
     ["Base", "Symmetry", "User_Constraints", "Implicit_Constraints", "Root"],
 )
 
-
 class HLNode(Node):
     """Base class for hierarchical linear tree nodes."""
 
@@ -253,7 +252,6 @@ class ImplicitHLConstraint(HLConstraintNode):
     """
     """
 
-    # TODO
     def __init__(self, children):
         # can only have one child
         if len(children) != 1:
