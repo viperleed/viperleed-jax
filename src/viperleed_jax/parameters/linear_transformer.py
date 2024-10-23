@@ -53,7 +53,7 @@ class LinearTransformer:
             return False
         if not np.array_equal(self.biases, other.biases):
             return False
-        if self._out_reshape is None and other.out_reshape is not None:
+        if self.out_reshape is None and other.out_reshape is not None:
             return True
         return self.out_reshape == other.out_reshape
 
