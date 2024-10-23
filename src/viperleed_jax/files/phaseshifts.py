@@ -1,3 +1,14 @@
+"""Module phaseshifts.
+
+This module is based on the files/phaseshifts and psgen modules from
+viperleed.calc."""
+
+__authors__ = (
+    "Alexander M. Imre (@amimre)",
+    "Florian Kraushofer (@fkraushofer)",
+)
+__created__ = "2024-08-29"
+
 import numpy as np
 import os
 import sys

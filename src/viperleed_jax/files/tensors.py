@@ -1,3 +1,9 @@
+"""Module tensors."""
+__authors__ = ("Alexander M. Imre (@amimre)",
+               "Paul Haidegger (@Paulhai7)",
+               "Tobias Hable (@ElHablos)")
+__created__ = "2024-08-29"
+
 from dataclasses import dataclass
 import zipfile
 from io import StringIO

@@ -1,5 +1,8 @@
 """Module for dense quantum number indexing"""
 
+__authors__ = ("Alexander M. Imre (@amimre)",)
+__created__ = "2024-02-17"
+
 import numpy as np
 from jax import config
 

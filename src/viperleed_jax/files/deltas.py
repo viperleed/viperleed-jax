@@ -1,3 +1,12 @@
+"""Module tensors."""
+
+__authors__ = (
+    "Tobias Hable (@ElHablos)",
+    "Alexander M. Imre (@amimre)",
+    "Paul Haidegger (@Paulhai7)",
+)
+__created__ = "2024-10-01"
+
 import warnings
 import numpy as np
 import fortranformat as ff

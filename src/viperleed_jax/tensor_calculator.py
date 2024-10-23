@@ -1,3 +1,9 @@
+"""Module tensor_calculator."""
+
+__authors__ = ("Alexander M. Imre (@amimre)",
+               "Paul Haidegger (@Paulhai7)")
+__created__ = "2024-05-03"
+
 import time
 
 import jax

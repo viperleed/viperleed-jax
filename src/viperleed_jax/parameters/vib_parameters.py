@@ -1,3 +1,8 @@
+"""Module vib_parameters."""
+
+__authors__ = ("Alexander M. Imre (@amimre)",)
+__created__ = "2024-09-09"
+
 import numpy as np
 
 from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode

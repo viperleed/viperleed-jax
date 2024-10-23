@@ -1,3 +1,8 @@
+"""Module from_state."""
+
+__authors__ = ("Alexander M. Imre (@amimre)",)
+__created__ = "2024-08-28"
+
 import jax
 from jax import config
 config.update("jax_debug_nans", False)

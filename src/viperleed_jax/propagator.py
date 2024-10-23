@@ -1,3 +1,8 @@
+"""Module propagators."""
+__authors__ = ("Alexander M. Imre (@amimre)",
+               "Paul Haidegger (@Paulhai7)")
+__created__ = "2024-09-03"
+
 import jax
 import jax.numpy as jnp
 import numpy as np

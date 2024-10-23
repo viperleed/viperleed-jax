@@ -1,6 +1,10 @@
 """Module atom_units.
 
 We use Angstrom and eV as inputs, but use atomic units internally."""
+
+__authors__ = ("Alexander M. Imre (@amimre)",)
+__created__ = "2024-09-05"
+
 import jax.numpy as jnp
 
 from viperleed_jax.constants import BOHR, HARTREE

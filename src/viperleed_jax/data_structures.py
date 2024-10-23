@@ -1,3 +1,8 @@
+"""Module data_structures."""
+
+__authors__ = ("Alexander M. Imre (@amimre)",)
+__created__ = "2024-04-29"
+
 from dataclasses import dataclass
 
 import sys

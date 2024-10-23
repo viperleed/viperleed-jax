@@ -1,3 +1,8 @@
+"""Module t_matrix."""
+__authors__ = ("Alexander M. Imre (@amimre)",
+               "Paul Haidegger (@Paulhai7)")
+__created__ = "2024-08-14"
+
 from jax import config
 config.update("jax_enable_x64", True)
 import jax

@@ -1,3 +1,8 @@
+"""Module occ_parameters."""
+
+__authors__ = ("Alexander M. Imre (@amimre)",)
+__created__ = "2024-09-08"
+
 import numpy as np
 
 from viperleed_jax.base import LinearTransformer

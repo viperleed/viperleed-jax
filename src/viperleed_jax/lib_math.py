@@ -1,3 +1,8 @@
+"""Module lib_math."""
+__authors__ = ("Alexander M. Imre (@amimre)",
+               "Paul Haidegger (@Paulhai7)")
+__created__ = "2024-01-02"
+
 from jax.scipy.special import sph_harm
 import jax
 import jax.numpy as jnp
@@ -152,4 +157,3 @@ def spherical_to_cart(spherical_coordinates):
     z = r * jnp.cos(theta)
 
     return jnp.array([z, x, y])
-
