@@ -29,10 +29,6 @@ class GeoHLLeafNode(HLLeafNode):
         self.name = f"geo (At_{self.num},{self.site},{self.element})"
         super().__init__(dof=dof, name=self.name)
 
-    @property
-    def symmetry_linking_matrix(self):
-        raise NotImplementedError  # TODO adapat from below
-
     def update_bounds(self, line):
         # geometric leaf bounds are 3D
         range = line.range
