@@ -459,8 +459,9 @@ class GeoHLSubtree(ParameterHLSubtree):
         ]
 
     @property
-    def propagator_plane_symmetry_operations(self):
-        pass
+    def leaf_symmetry_operations(self):
+        return tuple([leaf.symmetry_operation_to_reference_propagator
+                      for leaf in self.leaves])
 
 
 class GeoBaseParam(BaseParam):
