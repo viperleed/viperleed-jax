@@ -209,6 +209,23 @@ class ParameterSpace():
     def n_base_scatterers(self):
         return len(self.base_scatterers)
 
+    @property
+    def n_dynamic_propagators(self):
+        return self.geo_subtree.n_dynamic_propagators
+
+    @property
+    def n_static_propagators(self):
+        return self.geo_subtree.n_static_propagators
+
+    @property
+    def propagator_map(self):
+        return self.geo_subtree.propagator_map
+
+    @property
+    def propagator_plane_symmetry_operations(self):
+        return self.geo_subtree.leaf_plane_symmetry_operations
+
+    # TODO
 
     @property
     def geo_transformer(self):
@@ -235,14 +252,6 @@ class ParameterSpace():
         return len(self.vib_params.static_site_elements)
 
     @property
-    def n_dynamic_propagators(self):
-        return len(self.geo_params.dynamic_propagators)
-
-    @property
-    def n_static_propagators(self):
-        return len(self.geo_params.static_propagators)
-
-    @property
     def static_t_matrix_inputs(self):
         return self.vib_params.static_t_matrix_input
 
@@ -257,14 +266,6 @@ class ParameterSpace():
     @property
     def t_matrix_map(self):
         return self.vib_params.t_matrix_map
-
-    @property
-    def propagator_map(self):
-        return self.geo_params.propagator_map
-
-    @property
-    def propagator_plane_symmetry_operations(self):
-        return jnp.array(self.geo_params.symmetry_operations)
 
     @property
     def is_dynamic_t_matrix(self):
