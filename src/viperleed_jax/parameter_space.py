@@ -5,6 +5,7 @@ __created__ = "2024-09-02"
 from collections import namedtuple
 from copy import deepcopy
 
+import numpy as np
 import jax
 from jax import numpy as jnp
 from jax.tree_util import register_pytree_node_class
@@ -241,15 +242,63 @@ class ParameterSpace():
 
     @property
     def static_t_matrix_inputs(self):
-        return self.vib_params.static_t_matrix_input
+        return self.vib_subtree.static_t_matrix_input
 
     @property
     def dynamic_t_matrix_site_elements(self):
-        return self.vib_params.dynamic_site_elements
+        return self.vib_subtree.dynamic_site_elements
 
     @property
     def t_matrix_map(self):
         return self.vib_subtree.t_matrix_map
+
+    @property
+    def is_dynamic_t_matrix(self):
+        return np.array([val == "dynamic" for (val, id) in self.t_matrix_map])
+
+    @property
+    def is_dynamic_propagator(self):
+        return np.array(
+            [val == "dynamic" for (val, id) in self.propagator_map]
+        )
+
+    @property
+    def is_dynamic_scatterer(self):
+        return np.logical_or(
+            self.is_dynamic_t_matrix, self.is_dynamic_propagator
+        )
+
+    @property
+    def t_matrix_id(self):
+        return np.array([id for (val, id) in self.t_matrix_map])
+
+    @property
+    def propagator_id(self):
+        return np.array([id for (val, id) in self.propagator_map])
+
+    @property
+    def dynamic_scatterer_id(self):
+        return np.arange(self.n_base_scatterers)[self.is_dynamic_scatterer]
+
+    @property
+    def static_scatterer_id(self):
+        return np.arange(self.n_base_scatterers)[~self.is_dynamic_scatterer]
+
+    @property
+    def dynamic_scatterer_propagator_id(self):
+        return self.propagator_id[self.is_dynamic_scatterer]
+
+    @property
+    def dynamic_scatterer_t_matrix_id(self):
+        return self.t_matrix_id[self.is_dynamic_scatterer]
+
+    @property
+    def n_dynamic_scatterer(self):
+        return np.sum(self.is_dynamic_scatterer)
+
+    @property
+    def n_static_scatterer(self):
+        return np.sum(~self.is_dynamic_scatterer)
 
     # TODO
 
@@ -270,59 +319,13 @@ class ParameterSpace():
         return self.v0r_param.get_v0r_transformer()
 
     @property
-    def is_dynamic_t_matrix(self):
-        return jnp.array([val=='dynamic' for (val, id) in self.t_matrix_map])
-
-    @property
-    def is_dynamic_propagator(self):
-        return jnp.array([val=='dynamic' for (val, id) in self.propagator_map])
-
-    @property
-    def is_dynamic_ase(self):
-        return jnp.logical_or(
-            self.is_dynamic_t_matrix, self.is_dynamic_propagator
-        )
-
-    @property
-    def t_matrix_id(self):
-        return jnp.array([id for (val, id) in self.t_matrix_map])
-
-    @property
-    def propagator_id(self):
-        return jnp.array([id for (val, id) in self.propagator_map])
-
-    @property
-    def dynamic_ase_id(self):
-        return jnp.arange(self.n_base_scatterers)[self.is_dynamic_ase]
-
-    @property
-    def static_ase_id(self):
-        return jnp.arange(self.n_base_scatterers)[~self.is_dynamic_ase]
-
-    @property
-    def dynamic_ase_propagator_id(self):
-        return self.propagator_id[self.is_dynamic_ase]
-
-    @property
-    def dynamic_ase_t_matrix_id(self):
-        return self.t_matrix_id[self.is_dynamic_ase]
-
-    @property
-    def n_dynamic_ase(self):
-        return jnp.sum(self.is_dynamic_ase)
-
-    @property
-    def n_static_ase(self):
-        return jnp.sum(~self.is_dynamic_ase)
-
-    @property
     def n_param_split(self):
-        return (
-            self.v0r_param.n_free_params,
-            self.vib_params.n_free_params,
-            self.geo_params.n_free_params,
-            self.occ_params.n_free_params,
-        )
+        return np.array([
+            self.meta_param_subtree.subtree_root.dof,
+            self.vib_subtree.subtree_root.dof,
+            self.geo_subtree.subtree_root.dof,
+            self.occ_subtree.subtree_root.dof,
+        ])
 
     @property
     def info(self):
