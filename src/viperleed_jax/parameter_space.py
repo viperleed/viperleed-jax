@@ -373,6 +373,7 @@ class FrozenParameterSpace():
         'dynamic_ase_t_matrix_id',
         'dynamic_t_matrix_site_elements',
         'geo_transformer',
+        'info,'
         'is_dynamic_ase',
         'is_dynamic_propagator',
         'is_dynamic_t_matrix',
