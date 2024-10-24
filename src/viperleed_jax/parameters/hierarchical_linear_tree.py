@@ -126,6 +126,12 @@ class HLConstraintNode(HLNode):
         if any(not child.is_root for child in _children):
             raise ValueError("Children must be root nodes.")
 
+        # if one child is a leaf, all children must be leaves
+        if any(child.is_leaf for child in _children):
+            if not all(child.is_leaf for child in _children):
+                raise ValueError("If one child is a leaf node, all children "
+                                 "must be leaf nodes.")
+
         # if no transformers are provided, check if all children already
         # have transformers
         if transformers is None:
