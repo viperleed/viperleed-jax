@@ -29,11 +29,11 @@ class OccHLLeafNode(HLLeafNode):
     def update_bounds(self, line):
         # occupational leaves are 1D, so bounds are scalars
         range = line.range
-        self._bounds.update_range((range.start, range.stop), user_set=True)
+        self._bounds.update_range((range.start, range.stop), enforce=True)
 
     def update_offsets(self, line):
         offset = line.value
-        self._bounds.update_range(range=None, offset=offset, user_set=True)
+        self._bounds.update_range(range=None, offset=offset, enforce=True)
 
 
 class OccHLConstraintNode(HLConstraintNode):

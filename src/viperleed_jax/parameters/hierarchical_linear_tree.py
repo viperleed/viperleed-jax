@@ -300,7 +300,7 @@ class HLBound():
 
     def __init__(self, dimension):
         self.dimension = dimension
-        self._user_set = np.full(shape=(self.dimension,), fill_value=False)
+        self._enforce = np.full(shape=(self.dimension,), fill_value=False)
         self.update_range(range=(np.zeros(dimension), np.zeros(dimension)),
                           offset=np.zeros(dimension))
 
@@ -321,10 +321,10 @@ class HLBound():
         return abs(self.upper - self.lower) < self._EPS
 
     @property
-    def user_set(self):
-        return self._user_set
+    def enforce(self):
+        return self._enforce
 
-    def update_range(self, range=None, offset=None, user_set=None):
+    def update_range(self, range=None, offset=None, enforce=None):
         if range is None and offset is None:
             raise ValueError("range or offset must be provided")
         if range is not None:
@@ -338,10 +338,10 @@ class HLBound():
 
         # mark the bounds that were user set;
         # use logical_or to combine the user set flags
-        if user_set is None:
-            user_set = np.full(self.dimension, False)
-        _user_set = np.asarray(user_set).reshape(self.dimension)
-        self._user_set = np.logical_or(self.user_set, _user_set)
+        if enforce is None:
+            enforce = np.full(self.dimension, False)
+        _enforce = np.asarray(enforce).reshape(self.dimension)
+        self._enforce = np.logical_or(self.enforce, _enforce)
 
 
     def __repr__(self):

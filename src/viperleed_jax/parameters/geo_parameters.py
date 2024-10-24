@@ -49,7 +49,7 @@ class GeoHLLeafNode(HLLeafNode):
             user_set = [True, False, False]
         else:
             raise NotImplementedError("TODO")
-        self._bounds.update_range((start, stop), user_set=user_set)
+        self._bounds.update_range((start, stop), enforce=user_set)
 
     def update_offsets(self, line):
         # geometric leaf bounds are 3D
@@ -68,7 +68,7 @@ class GeoHLLeafNode(HLLeafNode):
             user_set = np.array([True, False, False])
         else:
             raise NotImplementedError("TODO")
-        self._bounds.update_range(range=None, offset=offset, user_set=user_set)
+        self._bounds.update_range(range=None, offset=offset, enforce=user_set)
 
     @property
     def propagator_origin(self):

@@ -29,11 +29,11 @@ class VibHLLeafNode(HLLeafNode):
         range = line.range
         self._bounds.update_range(range=(range.start, range.stop),
                                   offset=None,
-                                  user_set=True)
+                                  enforce=True)
 
     def update_offsets(self, line):
         offset = line.value
-        self._bounds.update_range(range=None, offset=offset, user_set=True)
+        self._bounds.update_range(range=None, offset=offset, enforce=True)
 
 
 class VibHLConstraintNode(HLConstraintNode):
