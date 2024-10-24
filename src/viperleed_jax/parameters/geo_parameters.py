@@ -444,7 +444,7 @@ class GeoHLSubtree(ParameterHLSubtree):
                 else (
                     "dynamic",
                     self.dynamic_origin_nodes.index(
-                        self._dynamic_origin_dict[leaf]
+                        self._dynamic_origin_dict()[leaf]
                     ),
                 )
             )
