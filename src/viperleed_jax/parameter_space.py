@@ -165,6 +165,14 @@ class ParameterSpace():
         return free_params
 
     @property
+    def all_displacements_transformer(self):
+        return self.geo_subtree.all_displacements_transformer
+
+    @property
+    def dynamic_displacements_transformers(self):
+        return self.geo_subtree.dynamic_displacements_transformers
+
+    @property
     def n_free_params(self):
         """Returns the total number of free parameters in the parameter space.
         """
@@ -301,10 +309,6 @@ class ParameterSpace():
         return np.sum(~self.is_dynamic_scatterer)
 
     # TODO
-
-    @property
-    def geo_transformer(self):
-        return self.geo_params.get_geo_transformer()
 
     @property
     def vib_transformer(self):
