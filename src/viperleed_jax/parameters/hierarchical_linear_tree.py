@@ -136,6 +136,11 @@ class HLConstraintNode(HLNode):
                 raise ValueError("If one child is a leaf node, all children "
                                  "must be leaf nodes.")
 
+        # dof cannot be larger than the sum of the children's dofs
+        if self.dof > sum(child.dof for child in _children):
+            raise ValueError("Degree of freedom must be less than or equal to "
+                             "the sum of the children's degrees of freedom.")
+
         # if no transformers are provided, check if all children already
         # have transformers
         if transformers is None:
