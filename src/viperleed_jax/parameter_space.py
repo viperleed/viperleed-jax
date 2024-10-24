@@ -412,8 +412,14 @@ class FrozenParameterSpace():
         return v0r_params, vib_params, geo_params, occ_params
 
     def __init__(self, parameter_space):
+        # take all the information from the parameter space and
+        # convert it to an immutable object.
         for attr in self.frozen_attributes:
-            setattr(self, attr, deepcopy(getattr(parameter_space, attr)))
+            copied_attr = deepcopy(getattr(parameter_space, attr))
+            # if the attribute is a numpy array, convert it to a jax array
+            if isinstance(copied_attr, jnp.ndarray):
+                copied_attr = jnp.asarray(copied_attr)
+            setattr(self, attr, copied_attr)
 
     def tree_flatten(self):
         aux_data = {attr: getattr(self, attr)
