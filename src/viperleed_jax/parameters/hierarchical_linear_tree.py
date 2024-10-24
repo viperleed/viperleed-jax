@@ -101,8 +101,12 @@ class HLLeafNode(HLNode):
         super().__init__(dof=dof, name=name, parent=parent,
                          layer=HLTreeLayers.Base)
 
-    @abstractmethod
     def update_bounds(self, line):
+        self._update_bounds(line)
+        self.parent.check_bounds_valid()
+
+    @abstractmethod
+    def _update_bounds(self, line):
         pass
 
 
