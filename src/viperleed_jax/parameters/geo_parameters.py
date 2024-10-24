@@ -387,6 +387,21 @@ class GeoHLSubtree(ParameterHLSubtree):
     #############################
     # Geometry specific methods #
     #############################
+    def all_displacements_transformer(self):
+        """Return a transformer that gives the displacements for all base
+        scatterers."""
+        collapsed_transformer = self.collapsed_transformer()
+        collapsed_transformer.out_reshape = (-1, 3)
+        return collapsed_transformer
+
+    def dynamic_displacements_transformers(self):
+        """Return a list of transformers that give the reference displacements
+        for the dynamic propagators."""
+        return [
+            self.subtree_root.transformer_to_descendent(node)
+            for node in self.dynamic_origin_nodes
+        ]
+
     def _dynamic_origin_dict(self):
         dynamic_leaves = [leaf for leaf in np.array(self.leaves)[self.leaf_is_dynamic]]
         origin_dict = {
