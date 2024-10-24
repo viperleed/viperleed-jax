@@ -75,6 +75,33 @@ class VibLinkedHLConstraint(VibHLConstraintNode):
         )
 
 
+class VibHLSiteConstraint(VibHLConstraintNode):
+    """Class for linking vibrations of the same site."""
+
+    def __init__(self, children):
+        # check that all children are leaf nodes and share a site-element
+        if not all(isinstance(child, VibHLLeafNode) for child in children):
+            raise ValueError("Children must be VibHLLeaf nodes.")
+        if not all(child.site_element == children[0].site_element
+                   for child in children):
+            raise ValueError("Children must have the same site-element.")
+        self.ref_vib_amp = children[0].ref_vib_amp
+        self.site_element = children[0].site_element
+        dof = 1
+
+        super().__init__(
+            dof=dof,
+            children=children,
+            transformers=None,  # transformers default to identity
+            name=(f"vib ({children[0].site_element.site},"
+                  f"{children[0].site_element.element})"),
+            layer=HLTreeLayers.Symmetry,
+        )
+
+    def _bounds_updated(self, child):
+        """Method to call when a child's bounds have been updated."""
+
+
 class VibHLSubtree(ParameterHLSubtree):
     def __init__(self, base_scatterers):
         super().__init__(base_scatterers)
