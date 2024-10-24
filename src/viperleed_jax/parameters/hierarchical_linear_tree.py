@@ -155,6 +155,7 @@ class HLConstraintNode(HLNode):
             child.parent = self
 
     def check_bounds_valid(self):
+        """Check that the bounds of the children are valid."""
         collapsed_tansformer = self.collapse_transformer()
         user_mask, lower, upper = self.collapse_bounds()
 
