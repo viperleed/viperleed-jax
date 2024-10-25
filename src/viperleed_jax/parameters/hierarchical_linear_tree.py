@@ -253,19 +253,20 @@ class HLConstraintNode(HLNode):
     def collapse_bounds(self):
         """Iterate through all descendants, collapsing the bounds."""
         user_set_bounds, lower_bounds, upper_bounds = [], [], []
+        enforced_bounds, lower_bounds, upper_bounds = [], [], []
 
         for child in self.children:
             if child.is_leaf:
-                user_set_bounds.append(child._bounds.user_set)
+                enforced_bounds.append(child._bounds.enforce)
                 lower_bounds.append(child._bounds.lower)
                 upper_bounds.append(child._bounds.upper)
             else:
-                _user_set, _lower, _upper = child.collapse_bounds()
-                user_set_bounds.extend(_user_set)
+                _enforce, _lower, _upper = child.collapse_bounds()
+                enforced_bounds.extend(_enforce)
                 lower_bounds.extend(_lower)
                 upper_bounds.extend(_upper)
 
-        return np.hstack(user_set_bounds), np.hstack(lower_bounds), np.hstack(upper_bounds)
+        return np.hstack(enforced_bounds), np.hstack(lower_bounds), np.hstack(upper_bounds)
 
     @property
     def free(self):
