@@ -181,6 +181,14 @@ class ParameterSpace():
         return self.vib_subtree.dynamic_t_matrix_transformers
 
     @property
+    def occ_weight_transformer(self):
+        return self.occ_subtree.collapsed_transformer()
+
+    @property
+    def v0r_transformer(self):
+        return self.meta_param_subtree.collapsed_transformer()
+
+    @property
     def n_free_params(self):
         """Returns the total number of free parameters in the parameter space.
         """
@@ -315,16 +323,6 @@ class ParameterSpace():
     @property
     def n_static_scatterer(self):
         return np.sum(~self.is_dynamic_scatterer)
-
-    # TODO
-
-    @property
-    def occ_weight_transformer(self):
-        return self.occ_params.get_weight_transformer()
-
-    @property
-    def v0r_transformer(self):
-        return self.v0r_param.get_v0r_transformer()
 
     @property
     def n_param_split(self):
