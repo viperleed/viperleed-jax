@@ -317,11 +317,11 @@ class ParameterSpace():
         return self.t_matrix_id[self.is_dynamic_scatterer]
 
     @property
-    def n_dynamic_scatterer(self):
+    def n_dynamic_scatterers(self):
         return np.sum(self.is_dynamic_scatterer)
 
     @property
-    def n_static_scatterer(self):
+    def n_static_scatterers(self):
         return np.sum(~self.is_dynamic_scatterer)
 
     @property
@@ -373,26 +373,27 @@ class ParameterSpace():
 class FrozenParameterSpace():
     frozen_attributes = (
         "_ats_ref_z_pos",
-        "all_displacements_transformers",
-        "all_t_matrix_transformers",
-        "dynamic_ase_id",
-        "dynamic_ase_id",
-        "dynamic_ase_propagator_id",
-        "dynamic_ase_t_matrix_id",
+        "all_displacements_transformer",
+        "all_vib_amps_transformer",
         "dynamic_displacements_transformers",
+        "dynamic_scatterer_id",
+        "dynamic_scatterer_id",
+        "dynamic_scatterer_propagator_id",
+        "dynamic_scatterer_t_matrix_id",
         "dynamic_t_matrix_site_elements",
         "dynamic_t_matrix_transformers",
-        "info," "is_dynamic_ase",
+        "info",
+        "is_dynamic_scatterer",
         "is_dynamic_propagator",
         "is_dynamic_t_matrix",
         "n_base_params",
         "n_base_scatterers",
-        "n_dynamic_ase",
+        "n_dynamic_scatterers",
         "n_dynamic_propagators",
         "n_dynamic_t_matrices",
         "n_free_params",
         "n_param_split",
-        "n_static_ase",
+        "n_static_scatterers",
         "n_static_propagators",
         "n_static_t_matrices",
         "n_symmetry_constrained_params",
@@ -401,7 +402,7 @@ class FrozenParameterSpace():
         "propagator_map",
         "propagator_plane_symmetry_operations",
         "site_elements",
-        "static_ase_id",
+        "static_scatterer_id",
         "static_propagator_inputs",
         "static_t_matrix_inputs",
         "t_matrix_id",
