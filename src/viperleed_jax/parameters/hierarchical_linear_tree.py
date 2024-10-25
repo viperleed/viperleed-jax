@@ -8,7 +8,6 @@ from enum import Enum
 from itertools import compress
 
 import numpy as np
-import jax.numpy as jnp
 import anytree
 from anytree import Node, RenderTree
 from anytree.exporter import UniqueDotExporter
