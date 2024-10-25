@@ -54,5 +54,5 @@ class V0rHLLeafNode(HLLeafNode):
     def update_bounds(self, rpars):
         lower, upper = rpars.IV_SHIFT_RANGE.start, rpars.IV_SHIFT_RANGE.stop
         self.bound.update_range(
-            range=(lower, upper), offset=None, enforce=True
+            _range=(lower, upper), offset=None, enforce=True
         )
