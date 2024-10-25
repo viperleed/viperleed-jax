@@ -115,6 +115,13 @@ class LinearTransformer:
         return LinearTransformer(np.bool_(self.weights), np.bool_(self.biases), self.out_reshape)
 
 
+class LinearMap(LinearTransformer):
+    """A linear map is a LinearTransformer with biases set to zero."""
+
+    def __init__(self, weights, out_reshape=None):
+        super().__init__(weights, np.zeros(weights.shape[0]), out_reshape)
+
+
 def stack_transformers(transformers):
     """Stack a list of transformers into a single transformer."""
     weights = np.vstack([transformer.weights for transformer in transformers])
