@@ -270,6 +270,10 @@ class HLConstraintNode(HLNode):
     def free(self):
         partial_free = []
         for child in self.children:
+            # We use the penrose moore pseudo inverse to see which degrees of
+            # are needed to satisfy the constraints.
+            # This essentially propagates the information about which implicitly
+            # fixed and free parameters up the tree.
             pseudo_inverse = np.linalg.pinv(child.transformer.weights)
             partial_free.append(np.bool(pseudo_inverse @ child.free))
         return np.logical_or.reduce(partial_free)
