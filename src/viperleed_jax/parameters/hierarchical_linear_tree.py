@@ -270,7 +270,7 @@ class HLConstraintNode(HLNode):
     def free(self):
         partial_free = []
         for child in self.children:
-            # We use the penrose moore pseudo inverse to see which degrees of
+            # We use the Penrose Moore pseudo inverse to see which degrees of
             # are needed to satisfy the constraints.
             # This essentially propagates the information about which implicitly
             # fixed and free parameters up the tree.
