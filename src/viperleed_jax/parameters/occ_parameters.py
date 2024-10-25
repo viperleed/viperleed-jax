@@ -189,7 +189,3 @@ class OccHLSubtree(ParameterHLSubtree):
                 children=selected_roots, name=constraint_line.line
             )
         )
-
-    @property
-    def occ_weight_transformer(self):
-        return self.subtree_root.collapse_transformer()
