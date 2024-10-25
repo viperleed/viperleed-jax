@@ -24,16 +24,21 @@ class VibHLLeafNode(HLLeafNode):
         self.name = f"vib (At_{self.num},{self.site},{self.element})"
         super().__init__(dof=dof, name=self.name)
 
-    def update_bounds(self, line):
+        # apply reference vibrational amplitudes as non-enforced bounds
+        self._bounds.update_range(
+            _range=None, offset=self.ref_vib_amp, enforce=False
+        )
+
+    def _update_bounds(self, line):
         # vibrational leaves are 1D, so bounds are scalars
         range = line.range
-        self._bounds.update_range(range=(range.start, range.stop),
+        self._bounds.update_range(_range=(range.start, range.stop),
                                   offset=None,
                                   enforce=True)
 
     def update_offsets(self, line):
         offset = line.value
-        self._bounds.update_range(range=None, offset=offset, enforce=True)
+        self._bounds.update_range(_range=None, offset=offset, enforce=True)
 
 
 class VibHLConstraintNode(HLConstraintNode):
@@ -61,11 +66,31 @@ class VibLinkedHLConstraint(VibHLConstraintNode):
             raise ValueError("Children must have the same dof.")
         dof = children[0].dof
 
-        # transformers can be identity
-        transformers = [
-            LinearTransformer(np.eye(dof), np.zeros(dof), (dof,))
-            for _ in children
-        ]
+        # ensure that children have consistent bounds
+        transformers = []
+        for child in children:
+            # create a transformer for each child
+            child.check_bounds_valid()
+            mask, upper, lower = child.collapse_bounds()
+            # if the child has no enforced bounds, no bounds were defined
+            # this means the node would be implicitly fixed; which is
+            # incompatible with explicit constraints!
+            if not np.any(mask):
+                raise ValueError(
+                    f"Linking vibrations for {child.name} requires "
+                    f"bounds to be defined."
+                )
+            _upper, _lower = upper[mask], lower[mask]
+            # all _upper and all _lower should be the same
+            if not np.all(_upper == _upper[0]) or not np.all(_lower == _lower[0]):
+                raise ValueError(
+                    f"Inconsistent bounds for {child.name}."
+                )
+            # let's create the transformer
+            weights = np.array([[_upper[0] - _lower[0]]])
+            biases = np.array([_lower[0]])
+            transformers.append(LinearTransformer(weights, biases, (1,)))
+
         super().__init__(
             dof=dof,
             children=children,
@@ -98,10 +123,6 @@ class VibHLSiteConstraint(VibHLConstraintNode):
             layer=HLTreeLayers.Symmetry,
         )
 
-    def _bounds_updated(self, child):
-        """Method to call when a child's bounds have been updated."""
-
-
 class VibHLSubtree(ParameterHLSubtree):
     def __init__(self, base_scatterers):
         super().__init__(base_scatterers)
@@ -128,10 +149,8 @@ class VibHLSubtree(ParameterHLSubtree):
             ]
             if not nodes_to_link:
                 continue
-            site_link_node = VibHLConstraintNode(
-                name=f"vib ({site_el.site},{site_el.element})",
+            site_link_node = VibHLSiteConstraint(
                 children=nodes_to_link,
-                layer=HLTreeLayers.Symmetry,
             )
             self.nodes.append(site_link_node)
 
