@@ -282,7 +282,15 @@ class HLConstraintNode(HLNode):
 
 
 class ImplicitHLConstraint(HLConstraintNode):
-    """
+    """Class representing implicit constraints in the hierarchical linear tree.
+    
+    Implicit constraints are constraints that are not explicitly defined by the
+    user, but rather by not explicitly allowing certain degrees of freedom.
+    E.g. if a group of symmetry equivalent atoms is not given a displacement
+    range, they are assumed to be static and will be constrained through an
+    implicit constraint node.
+    Implicit constraints are above user constraints in the hierarchy and are the
+    last layer before the subtree root node.
     """
 
     def __init__(self, children):
