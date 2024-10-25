@@ -99,7 +99,6 @@ class GeoHLLeafNode(HLLeafNode):
 
         # sanity check
         if not common.shared_propagator:
-            print(common)
             raise ValueError("Common node must have shared propagator")
 
         # traverse the tree and add up symmetry operations
@@ -112,7 +111,6 @@ class GeoHLLeafNode(HLLeafNode):
             if up is not None:
                 if np.any(up.transformer.biases != 0):
                     raise ValueError("Bias must be zero")
-                print(up.transformer.weights, down.transformer.weights)
                 inverse = np.linalg.inv(up.transformer.weights)
                 operations.appendleft(inverse)
             if down is not None:
