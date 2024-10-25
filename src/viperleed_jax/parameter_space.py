@@ -173,6 +173,14 @@ class ParameterSpace():
         return self.geo_subtree.dynamic_displacements_transformers
 
     @property
+    def all_vib_amps_transformer(self):
+        return self.vib_subtree.all_vib_amps_transformer
+
+    @property
+    def dynamic_t_matrix_transformers(self):
+        return self.vib_subtree.dynamic_t_matrix_transformers
+
+    @property
     def n_free_params(self):
         """Returns the total number of free parameters in the parameter space.
         """
@@ -311,10 +319,6 @@ class ParameterSpace():
     # TODO
 
     @property
-    def vib_transformer(self):
-        return self.vib_params.get_vib_transformer()
-
-    @property
     def occ_weight_transformer(self):
         return self.occ_params.get_weight_transformer()
 
@@ -370,40 +374,41 @@ class ParameterSpace():
 @register_pytree_node_class
 class FrozenParameterSpace():
     frozen_attributes = (
-        '_ats_ref_z_pos',
-        'dynamic_ase_id',
-        'dynamic_ase_id',
-        'dynamic_ase_propagator_id',
-        'dynamic_ase_t_matrix_id',
-        'dynamic_t_matrix_site_elements',
-        'geo_transformer',
-        'info,'
-        'is_dynamic_ase',
-        'is_dynamic_propagator',
-        'is_dynamic_t_matrix',
-        'n_base_params',
-        'n_base_scatterers',
-        'n_dynamic_ase',
-        'n_dynamic_propagators',
-        'n_dynamic_t_matrices',
-        'n_free_params',
-        'n_param_split',
-        'n_static_ase',
-        'n_static_propagators',
-        'n_static_t_matrices',
-        'n_symmetry_constrained_params',
-        'occ_weight_transformer',
-        'propagator_id',
-        'propagator_map',
-        'propagator_plane_symmetry_operations',
-        'site_elements',
-        'static_ase_id',
-        'static_propagator_inputs',
-        'static_t_matrix_inputs',
-        't_matrix_id',
-        't_matrix_map',
-        'v0r_transformer',
-        'vib_transformer',
+        "_ats_ref_z_pos",
+        "all_displacements_transformers",
+        "all_t_matrix_transformers",
+        "dynamic_ase_id",
+        "dynamic_ase_id",
+        "dynamic_ase_propagator_id",
+        "dynamic_ase_t_matrix_id",
+        "dynamic_displacements_transformers",
+        "dynamic_t_matrix_site_elements",
+        "dynamic_t_matrix_transformers",
+        "info," "is_dynamic_ase",
+        "is_dynamic_propagator",
+        "is_dynamic_t_matrix",
+        "n_base_params",
+        "n_base_scatterers",
+        "n_dynamic_ase",
+        "n_dynamic_propagators",
+        "n_dynamic_t_matrices",
+        "n_free_params",
+        "n_param_split",
+        "n_static_ase",
+        "n_static_propagators",
+        "n_static_t_matrices",
+        "n_symmetry_constrained_params",
+        "occ_weight_transformer",
+        "propagator_id",
+        "propagator_map",
+        "propagator_plane_symmetry_operations",
+        "site_elements",
+        "static_ase_id",
+        "static_propagator_inputs",
+        "static_t_matrix_inputs",
+        "t_matrix_id",
+        "t_matrix_map",
+        "v0r_transformer",
     )
 
     def split_free_params(self, free_params):
