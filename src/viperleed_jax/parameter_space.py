@@ -253,20 +253,24 @@ class ParameterSpace():
         return self.geo_subtree.leaf_plane_symmetry_operations
 
     @property
+    def site_elements(self):
+        return self.base_scatterers.site_elements
+
+    @property
     def static_propagator_inputs(self):
         return self.geo_subtree.static_propagator_inputs
 
     @property
     def n_dynamic_t_matrices(self):
-        return len(self.vib_subtree.n_dynamic_t_matrices)
+        return self.vib_subtree.n_dynamic_t_matrices
 
     @property
     def n_static_t_matrices(self):
-        return len(self.vib_subtree.n_static_t_matrices)
+        return self.vib_subtree.n_static_t_matrices
 
     @property
     def static_t_matrix_inputs(self):
-        return self.vib_subtree.static_t_matrix_input
+        return self.vib_subtree.static_t_matrix_inputs
 
     @property
     def dynamic_t_matrix_site_elements(self):
