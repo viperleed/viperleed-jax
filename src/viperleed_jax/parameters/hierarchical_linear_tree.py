@@ -275,7 +275,9 @@ class HLConstraintNode(HLNode):
             # This essentially propagates the information about which implicitly
             # fixed and free parameters up the tree.
             pseudo_inverse = np.linalg.pinv(child.transformer.weights)
+            # re-cast into a boolean array
             partial_free.append(np.bool(pseudo_inverse @ child.free))
+        # take the logical or of all the partial free arrays
         return np.logical_or.reduce(partial_free)
 
 
