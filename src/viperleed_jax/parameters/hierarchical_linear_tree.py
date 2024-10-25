@@ -15,7 +15,7 @@ from anytree.exporter import UniqueDotExporter
 from anytree.walker import Walker
 
 from viperleed_jax.files.displacements.lines import ConstraintLine
-from .linear_transformer import LinearTransformer, stack_transformers
+from .linear_transformer import LinearTransformer, LinearMap, stack_transformers
 
 # Enable checks for the anytree library – we don't deal with huge trees so this
 # should not be a performance issue.
@@ -252,7 +252,6 @@ class HLConstraintNode(HLNode):
 
     def collapse_bounds(self):
         """Iterate through all descendants, collapsing the bounds."""
-        user_set_bounds, lower_bounds, upper_bounds = [], [], []
         enforced_bounds, lower_bounds, upper_bounds = [], [], []
 
         for child in self.children:
@@ -288,32 +287,15 @@ class ImplicitHLConstraint(HLConstraintNode):
         child = children[0]
         child.check_bounds_valid()
 
-        collapsed_tansformer = child.collapse_transformer()
-        user_mask, lower, upper = child.collapse_bounds()
+        # using the child's free property, reduce the dof as much as possible
+        # by removing fixed degrees of freedom
+        dof = np.sum(child.free)
+        weights = np.diag(child.free)[child.free]
+        weights = (weights.astype(float)).T
 
-        # if no user set bounds are provided, return True
-        if not np.any(user_mask):
-            dof = 0
-            new_transformer = LinearTransformer(np.zeros((child.dof, 0)), np.zeros(child.dof), (child.dof,))
-        else:
-            dof = np.sum(user_mask)
-
-            # discard all non-user specified lines
-            transformer = collapsed_tansformer.select_rows(user_mask)
-            lower, upper = lower[user_mask], upper[user_mask]
-
-            # All of this gives us two (lower & upper bound) systems of linear equations
-            # We can check if all requirements can be statified by checking if at least
-            # one solution exists. This is equivalent to checking if the rank of the
-            # augmented matrix is equal to the rank of the coefficient matrix.
-
-            new_biases = np.zeros(child.dof)
-            new_weights = transformer.weights.T @ np.diag(upper - lower)
-            new_transformer = LinearTransformer(
-                new_weights, new_biases, (child.dof,)
-            )
         super().__init__(dof=dof, name=f"Implicit Constraint",
-                         children=[child], transformers=[new_transformer],
+                         children=[child],
+                         transformers=[LinearMap(weights, (child.dof,))],
                          layer=HLTreeLayers.Implicit_Constraints)
 
 
@@ -330,7 +312,9 @@ class HLBound():
     def __init__(self, dimension):
         self.dimension = dimension
         self._enforce = np.full(shape=(self.dimension,), fill_value=False)
-        self.update_range(range=(np.zeros(dimension), np.zeros(dimension)),
+        self._lower, self._upper = np.zeros(dimension), np.zeros(dimension)
+        self._offset = np.zeros(dimension)
+        self.update_range(_range=(np.zeros(dimension), np.zeros(dimension)),
                           offset=np.zeros(dimension))
 
     @property
@@ -353,13 +337,30 @@ class HLBound():
     def enforce(self):
         return self._enforce
 
-    def update_range(self, range=None, offset=None, enforce=None):
-        if range is None and offset is None:
+    def update_range(self, _range=None, offset=None, enforce=None):
+        if _range is None and offset is None:
             raise ValueError("range or offset must be provided")
-        if range is not None:
-            lower, upper = range
-            lower = np.asarray(lower).reshape(self.dimension)
-            upper = np.asarray(upper).reshape(self.dimension)
+        if enforce is None:
+            enforce = np.full(self.dimension, False)
+        elif isinstance(enforce, bool):
+            enforce = np.full(self.dimension, enforce, dtype=bool)
+        if offset is not None:
+            _offset = np.asarray(offset).reshape(self.dimension)
+        else: # offset is None
+            _offset = np.zeros(self.dimension)
+        if _range is not None:
+            lower, upper = _range
+            lower = np.asarray(lower).reshape(self.dimension) + _offset
+            upper = np.asarray(upper).reshape(self.dimension) + _offset
+            for idx in range(self.dimension):
+                if abs(self.lower[idx] - lower[idx]) > self._EPS and self.enforce[idx]:
+                    raise ValueError("Cannot change enforced lower bound.")
+                if abs(self.upper[idx] - upper[idx]) > self._EPS and self.enforce[idx]:
+                    raise ValueError("Cannot change enforced upper bound.")
+                self._lower = lower
+                self._upper = upper
+                self.enforce[idx] = np.logical_or(self.enforce[idx], enforce[idx])
+
             self._lower = lower
             self._upper = upper
         if offset is not None:
@@ -371,7 +372,6 @@ class HLBound():
             enforce = np.full(self.dimension, False)
         _enforce = np.asarray(enforce).reshape(self.dimension)
         self._enforce = np.logical_or(self.enforce, _enforce)
-
 
     def __repr__(self):
         return f"HLBound(lower={self.lower}, upper={self.upper})"
