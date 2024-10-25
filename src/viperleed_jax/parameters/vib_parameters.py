@@ -180,6 +180,23 @@ class VibHLSubtree(ParameterHLSubtree):
     # Vibration specific methods #
     ##############################
     @property
+    def all_vib_amps_transformer(self):
+        """Return a transformer that maps the free parameters to all vibrational
+        amplitudes"""
+        return self.subtree_root.collapse_transformer()
+
+    @property
+    def dynamic_t_matrix_transformers(self):
+        """Return a transformer that maps the free parameters to the dynamic
+        vibrational amplitudes."""
+        dynamic_reference_nodes = {
+            node.site_element:node for node
+            in reversed(np.array(self.leaves)[self.leaf_is_dynamic])
+        }
+        return [self.subtree_root.transformer_to_descendent(node)
+                for node in dynamic_reference_nodes.values()]
+
+    @property
     def dynamic_site_elements(self):
         dynamic_site_elements = [
             node.site_element for node
