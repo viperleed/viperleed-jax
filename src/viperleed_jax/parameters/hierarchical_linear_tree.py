@@ -109,6 +109,10 @@ class HLLeafNode(HLNode):
     def _update_bounds(self, line):
         pass
 
+    @property
+    def free(self):
+        return ~self._bounds.fixed
+
 
 class HLConstraintNode(HLNode):
     """Base class for hierarchical linear tree constraint nodes.
@@ -262,6 +266,14 @@ class HLConstraintNode(HLNode):
                 upper_bounds.extend(_upper)
 
         return np.hstack(user_set_bounds), np.hstack(lower_bounds), np.hstack(upper_bounds)
+
+    @property
+    def free(self):
+        partial_free = []
+        for child in self.children:
+            pseudo_inverse = np.linalg.pinv(child.transformer.weights)
+            partial_free.append(np.bool(pseudo_inverse @ child.free))
+        return np.logical_or.reduce(partial_free)
 
 
 class ImplicitHLConstraint(HLConstraintNode):
