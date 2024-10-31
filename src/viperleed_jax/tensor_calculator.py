@@ -610,7 +610,7 @@ class TensorLEEDCalculator:
         displacements_au = atomic_units.to_internal_displacement_vector(displacements_ang)
 
         # vibrational amplitudes, converted to atomic units
-        vib_amps_au = self.parameter_space.vib_transformer(vib_params)
+        vib_amps_au = self.parameter_space.reference_vib_amps(vib_params)
         # vib_amps_au = jax.vmap(atomic_units.to_internal_vib_amps,
         #                         in_axes=0)(vib_amps_ang)
 

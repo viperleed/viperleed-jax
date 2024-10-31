@@ -249,6 +249,15 @@ class HLConstraintNode(HLNode):
         collapsed_transformers = self.down_collapse_transformers(stop_condition=None)
         return stack_transformers(collapsed_transformers)
 
+    def stacked_bounds(self):
+        free, lower, upper = [], [], []
+        for leaf in self.leaves:
+            free.append(leaf.free)
+            lower.append(leaf._bounds.lower)
+            upper.append(leaf._bounds.upper)
+        return np.hstack(free), np.hstack(lower), np.hstack(upper)
+
+    # TODO: is this/can this be replaced by stacked_bounds()?
     def collapse_bounds(self):
         """Iterate through all descendants, collapsing the bounds."""
         enforced_bounds, lower_bounds, upper_bounds = [], [], []
