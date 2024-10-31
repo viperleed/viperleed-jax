@@ -605,11 +605,9 @@ class TensorLEEDCalculator:
          occ_params) = self.parameter_space.split_free_params(jnp.asarray(_free_params))
 
         # displacements, converted to atomic units
-        displacements_ang = jnp.asarray(self.parameter_space.geo_transformer(geo_parms))
-        displacements_au = (
-            jax.vmap(atomic_units.to_internal_displacement_vector,
-                        in_axes=0)(displacements_ang)
-        )
+        displacements_ang = self.parameter_space.reference_displacements(geo_parms)
+        displacements_ang = jnp.asarray(displacements_ang)
+        displacements_au = atomic_units.to_internal_displacement_vector(displacements_ang)
 
         # vibrational amplitudes, converted to atomic units
         vib_amps_au = self.parameter_space.vib_transformer(vib_params)
