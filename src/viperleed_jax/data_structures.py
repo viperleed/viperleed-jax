@@ -262,4 +262,3 @@ class ReferenceData:
                 total_size_in_bytes += sys.getsizeof(array)
 
         return total_size_in_bytes
-

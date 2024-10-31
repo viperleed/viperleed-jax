@@ -5,21 +5,21 @@ __created__ = "2024-08-30"
 
 import numpy as np
 
-#TODO: make into pytree
+# TODO: make into pytree
 
 # The calculation of delta-amplitudes is a computationally expensive operation
 # that can be well parallelized. However, the computation involves operations
 # with large input-, output- and intermediate arrays which can lead to memory
 # issues. To avoid this, we can split the computation into smaller chunks and
 # process them sequentially.
-# 
+#
 # There are two main ways in which we produce these batches:
 # 1) The calculation may use an energy-dependent L-max value. The largest array
 #    size scale with (L-max+1)^4, so we want to use the smallest L-max value
 #    possible. Due to JAXs limitation on static array sizes, this gives us a
 #    natural way to split the computation into smaller chunks that are processed
 #    sequentially.
-# 2) If the first point is not enough, or we want to calculate with a fixed 
+# 2) If the first point is not enough, or we want to calculate with a fixed
 #    L-max value we can further split the computation into smaller chunks by
 #    splitting the energy dimension.
 
