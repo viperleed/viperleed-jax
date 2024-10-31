@@ -291,9 +291,7 @@ class TensorLEEDCalculator:
         propagator_vmap_en = jax.vmap(calc_propagator,
                                       in_axes=(None, None, 0, None))
         displacements_ang = jnp.asarray(self._parameter_space.static_propagator_inputs)
-        displacements_au = jax.vmap(
-            atomic_units.to_internal_displacement_vector,
-            in_axes=0)(displacements_ang)
+        displacements_au = atomic_units.to_internal_displacement_vector(displacements_ang)
         self._static_propagators = jnp.array([
             propagator_vmap_en(
                 self.max_l_max,
