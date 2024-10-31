@@ -170,7 +170,7 @@ class ParameterSpace():
 
     @property
     def dynamic_displacements_transformers(self):
-        return self.geo_subtree.dynamic_displacements_transformers
+        return self.geo_subtree.dynamic_displacements_transformers()
 
     @property
     def all_vib_amps_transformer(self):
@@ -414,15 +414,6 @@ class FrozenParameterSpace():
         "v0r_transformer",
     )
 
-    def split_free_params(self, free_params):
-        if len(free_params) != self.n_free_params:
-            raise ValueError("Number of free parameters does not match.")
-        v0r_params = free_params[:self.n_param_split[0]]
-        vib_params = free_params[self.n_param_split[0]:sum(self.n_param_split[:2])]
-        geo_params = free_params[sum(self.n_param_split[:2]):sum(self.n_param_split[:3])]
-        occ_params = free_params[sum(self.n_param_split[:3]):]
-        return v0r_params, vib_params, geo_params, occ_params
-
     def __init__(self, parameter_space):
         # take all the information from the parameter space and
         # convert it to an immutable object.
@@ -433,18 +424,14 @@ class FrozenParameterSpace():
                 copied_attr = jnp.asarray(copied_attr)
             setattr(self, attr, copied_attr)
 
-    def tree_flatten(self):
-        aux_data = {attr: getattr(self, attr)
-                    for attr in self.frozen_attributes}
-        children = None
-        return (children, aux_data)
-
-    @classmethod
-    def tree_unflatten(cls, children, aux_data):
-        frozen_parameter_space = cls.__new__(cls)
-        for kw, value in aux_data.items():
-            setattr(frozen_parameter_space, kw, value)
-        return frozen_parameter_space
+    def split_free_params(self, free_params):
+        if len(free_params) != self.n_free_params:
+            raise ValueError("Number of free parameters does not match.")
+        v0r_params = free_params[:self.n_param_split[0]]
+        vib_params = free_params[self.n_param_split[0]:sum(self.n_param_split[:2])]
+        geo_params = free_params[sum(self.n_param_split[:2]):sum(self.n_param_split[:3])]
+        occ_params = free_params[sum(self.n_param_split[:3]):]
+        return v0r_params, vib_params, geo_params, occ_params
 
     def expand_params(self, free_params):
         v0r_params, vib_params, geo_params, occ_params = self.split_free_params(free_params)
@@ -522,3 +509,17 @@ class FrozenParameterSpace():
         # find the difference between the new highest atom z position and the
         # highest reference z position
         return jnp.max(new_z_pos) - jnp.max(self._ats_ref_z_pos)
+
+    def tree_flatten(self):
+        aux_data = {
+            attr: getattr(self, attr) for attr in self.frozen_attributes
+        }
+        children = None
+        return (children, aux_data)
+
+    @classmethod
+    def tree_unflatten(cls, children, aux_data):
+        frozen_parameter_space = cls.__new__(cls)
+        for kw, value in aux_data.items():
+            setattr(frozen_parameter_space, kw, value)
+        return frozen_parameter_space
