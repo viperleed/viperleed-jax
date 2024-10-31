@@ -185,7 +185,6 @@ class VibHLSubtree(ParameterHLSubtree):
         amplitudes"""
         return self.subtree_root.collapse_transformer()
 
-    @property
     def dynamic_t_matrix_transformers(self):
         """Return a transformer that maps the free parameters to the dynamic
         vibrational amplitudes."""

@@ -178,7 +178,7 @@ class ParameterSpace():
 
     @property
     def dynamic_t_matrix_transformers(self):
-        return self.vib_subtree.dynamic_t_matrix_transformers
+        return self.vib_subtree.dynamic_t_matrix_transformers()
 
     @property
     def occ_weight_transformer(self):
@@ -442,7 +442,7 @@ class FrozenParameterSpace():
         return v0r_shift, vib_amps, displacements, weights
 
     def reference_displacements(self, geo_free_params):
-        """Calculate the displacements for all propagators.
+        """Calculate the displacements for all reference propagators.
 
         Parameters
         ----------
@@ -450,10 +450,37 @@ class FrozenParameterSpace():
 
         Returns
         -------
-        displacements: The displacements for all propagators.
+        displacements: The displacements for all reference propagators.
         """
         return [trafo(geo_free_params) for trafo in
                 self.dynamic_displacements_transformers]
+
+    def reference_vib_amps(self, vib_free_params):
+        """Calculate the vibrational amplitudes for all reference t-matrices.
+
+        Parameters
+        ----------
+        vib_free_params: The vibrational free parameters.
+
+        Returns
+        -------
+        vib_amps: The vibrational amplitudes for all reference t-matrices.
+        """
+        return [trafo(vib_free_params) for trafo in
+                self.dynamic_t_matrix_transformers]
+
+    def occ_weights(self, occ_free_params):
+        """Calculate the occupation weights for all scatters.
+
+        Parameters
+        ----------
+        occ_free_params: The occupation free parameters.
+
+        Returns
+        -------
+        weights: The occupation weights for all scatterers.
+        """
+        return self.occ_weight_transformer(occ_free_params)
 
     def all_displacements(self, geo_free_params):
         """Calculate the displacements for all propagators.
