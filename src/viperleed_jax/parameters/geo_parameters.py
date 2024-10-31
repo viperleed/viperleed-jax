@@ -396,7 +396,7 @@ class GeoHLSubtree(ParameterHLSubtree):
         """Return a list of transformers that give the reference displacements
         for the dynamic propagators."""
         return [
-            self.subtree_root.transformer_to_descendent(node)
+            self.subtree_root.transformer_to_descendent(node.propagator_reference_node)
             for node in self.dynamic_origin_nodes
         ]
 
