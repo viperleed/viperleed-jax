@@ -441,6 +441,20 @@ class FrozenParameterSpace():
         weights = self.occ_weight_transformer(occ_params)
         return v0r_shift, vib_amps, displacements, weights
 
+    def reference_displacements(self, geo_free_params):
+        """Calculate the displacements for all propagators.
+
+        Parameters
+        ----------
+        geo_free_params: The geometric free parameters.
+
+        Returns
+        -------
+        displacements: The displacements for all propagators.
+        """
+        return [trafo(geo_free_params) for trafo in
+                self.dynamic_displacements_transformers]
+
     def all_displacements(self, geo_free_params):
         """Calculate the displacements for all propagators.
 
