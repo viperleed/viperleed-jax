@@ -441,7 +441,6 @@ class TensorLEEDCalculator:
             optimize='optimal',
         )
 
-
     # TODO: for testing purposes: contrib should be exactly 0 for not pertubations and if recalculate_ref_t_matrices=True
     def _calculate_static_ase_contributions(self):
 
@@ -515,7 +514,6 @@ class TensorLEEDCalculator:
 
         return static_ase_contributions
 
-
     def _calc_delta_amp_prefactors(self):
         energies = self.energies
         v_imag = self.v0i
@@ -542,10 +540,9 @@ class TensorLEEDCalculator:
         )
         return prefactors
 
-
     def _intensity_prefactors(self, onset_height_change):
         # onset height change was called CXDisp in the original code
-        
+
         # from lib_intensity
         (in_k_vacuum, in_k_perp_vacuum,
         out_k_perp, out_k_perp_vacuum) = self._wave_vectors()
@@ -733,7 +730,6 @@ class TensorLEEDCalculator:
     def jit_intensity(self, free_params):
         return self.intensity(free_params)
 
-
     @property
     def unperturbed_intensity(self):
         """Return intensity from reference data without pertubation."""
@@ -789,11 +785,9 @@ class TensorLEEDCalculator:
         # jax.grad). The forward mode differentiation works fine.
         return jax.jacfwd(self.R)(free_params)
 
-
     # @partial(jax.jit, static_argnames=('self')) # TODO: not good, redo as pytree
     # def jit_R_val_and_grad(self, free_params):
     #     return jax.value_and_grad(self.R)(free_params)
-
 
     # JAX PyTree methods
 
