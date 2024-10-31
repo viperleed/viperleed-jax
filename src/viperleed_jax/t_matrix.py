@@ -84,6 +84,9 @@ def vib_dependent_tmatrix(l_max, phaseshifts, e_inside, vib_amp):
         * 1j ** jnp.arange(2*l_max+1)
         * bessel(debye_waller_exponent * 1j, 2*l_max)
     )
+    bessel_with_prefactor = bessel_with_prefactor.reshape(
+        2 * l_max + 1,
+    )
 
     temperature_independent_t_matrix = (
         jnp.exp(2j*phaseshifts)-1)*(2*jnp.arange(l_max+1) + 1)
