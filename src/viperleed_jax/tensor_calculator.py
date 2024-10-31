@@ -305,7 +305,7 @@ class TensorLEEDCalculator:
         t_matrix_vmap_en = jax.vmap(vib_dependent_tmatrix,
                                    in_axes=(None, 0, 0, None),
                                    out_axes=0)
-        dynamic_t_matrices = jnp.array([
+        dynamic_t_matrices = [
             t_matrix_vmap_en(
                 self.max_l_max,
                 self.phaseshifts[site_el][energy_indices, :self.max_l_max+1],
@@ -313,7 +313,8 @@ class TensorLEEDCalculator:
                 vib_amp
             )
             for vib_amp, site_el
-            in zip(vib_amps, self.parameter_space.dynamic_t_matrix_site_elements)])
+            in zip(vib_amps, self.parameter_space.dynamic_t_matrix_site_elements)]
+        dynamic_t_matrices = jnp.asarray(dynamic_t_matrices)
         return jnp.einsum('ael->eal', dynamic_t_matrices)
 
     def _calculate_reference_t_matrices(self, ref_vib_amps, site_elements):
