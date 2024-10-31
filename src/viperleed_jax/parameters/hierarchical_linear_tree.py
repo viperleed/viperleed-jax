@@ -289,6 +289,7 @@ class HLConstraintNode(HLNode):
         # take the logical or of all the partial free arrays
         return np.logical_or.reduce(partial_free)
 
+# TODO: rename to bounds constraint
 
 class ImplicitHLConstraint(HLConstraintNode):
     """Class representing implicit constraints in the hierarchical linear tree.
@@ -314,10 +315,26 @@ class ImplicitHLConstraint(HLConstraintNode):
         dof = np.sum(child.free)
         weights = np.diag(child.free)[child.free]
         weights = (weights.astype(float)).T
+        implicit_trafo = LinearMap(weights, (child.dof,))
 
-        super().__init__(dof=dof, name=f"Implicit Constraint",
+        # TODO: does this automaticall raise if we have bound conflicts?
+
+        # now get a transfomer that enforces the bounds
+        free, lower, upper = child.stacked_bounds()
+        partial_trafo = child.collapse_transformer().select_rows(free)
+        inverted_weights = np.linalg.pinv(partial_trafo.weights)
+        norm_lower = inverted_weights @ (lower[free] - partial_trafo.biases)
+        norm_upper = inverted_weights @ (upper[free] - partial_trafo.biases)
+        weights = np.diag(norm_upper - norm_lower)
+        biases = -norm_lower
+        range_trafo = LinearTransformer(weights, biases)
+
+        # compose the two transformers
+        composed_transformer = implicit_trafo.compose(range_trafo)
+
+        super().__init__(dof=dof, name=f"Bounds Constraint",
                          children=[child],
-                         transformers=[LinearMap(weights, (child.dof,))],
+                         transformers=[composed_transformer],
                          layer=HLTreeLayers.Implicit_Constraints)
 
 
@@ -487,7 +504,6 @@ class HLSubtree(ABC):
         )
         return np.array([np.any(self.subtree_root.transformer_to_descendent(leaf).boolify()(input_val))
                          for leaf in self.leaves], dtype=bool)
-
 
 
 class ParameterHLSubtree(HLSubtree):
