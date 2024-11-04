@@ -326,7 +326,7 @@ class ImplicitHLConstraint(HLConstraintNode):
         norm_lower = inverted_weights @ (lower[free] - partial_trafo.biases)
         norm_upper = inverted_weights @ (upper[free] - partial_trafo.biases)
         weights = np.diag(norm_upper - norm_lower)
-        biases = -norm_lower
+        biases = norm_lower
         range_trafo = LinearTransformer(weights, biases)
 
         # compose the two transformers
