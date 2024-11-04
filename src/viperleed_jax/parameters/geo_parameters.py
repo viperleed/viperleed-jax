@@ -15,7 +15,7 @@ from viperleed_jax.files.displacements.lines import ConstraintLine
 from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
 from .hierarchical_linear_tree import HLTreeLayers
 from .hierarchical_linear_tree import ParameterHLSubtree
-from .linear_transformer import LinearTransformer
+from .linear_transformer import LinearMap
 
 
 class GeoHLLeafNode(HLLeafNode):
@@ -221,8 +221,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
                 "Symmetry linked atoms must be in the same " "linklist"
             )
 
-        # irrespective of the symmetry the transformer bias is zero
-        bias = np.zeros(3)
+        # irrespective of the symmetry the transformer bias so we use a map
         transformers = []
 
         # how to proceed is determined by the freedir attribute
@@ -245,7 +244,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
             for child in children:
                 # set the symmetry linking matrix and direct transfer of z
                 weights = np.array([1.0, 0., 0.]).reshape((3,1))
-                transformers.append(LinearTransformer(weights, bias, (3,)))
+                transformers.append(LinearMap(weights, (3,)))
 
         elif children[0].base_scatterer.atom.freedir == 1:
             # check that all children have the same freedir
@@ -264,8 +263,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
                 # set the symmetry linking matrix and direct transfer of z
                 weights = np.identity(3)
                 weights[1:3, 1:3] = child.symrefm
-                bias = np.zeros(3)
-                transformers.append(LinearTransformer(weights, bias, (3,)))
+                transformers.append(LinearMap(weights, (3,)))
 
         elif children[0].base_scatterer.atom.freedir.shape == (2,):
             # check that all children have the same freedir
@@ -316,7 +314,7 @@ class GeoLinkedHLConstraint(GeoHLConstraintNode):
 
         # transformers can be identity
         transformers = [
-            LinearTransformer(np.eye(dof), np.zeros(dof), (dof,))
+            LinearMap(np.eye(dof), (dof,))
             for _ in children
         ]
         super().__init__(
