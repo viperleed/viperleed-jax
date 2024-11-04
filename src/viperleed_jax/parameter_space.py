@@ -493,17 +493,7 @@ class FrozenParameterSpace():
         -------
         displacements: The displacements for all propagators.
         """
-        dynamic_displacements = self.geo_transformer(geo_free_params)
-        static_displacements = jnp.array(self.static_propagator_inputs)
-        if len(static_displacements) == 0:
-            static_displacements = jnp.array([jnp.nan, jnp.nan, jnp.nan])
-
-        mapped_dynamic_disp = [dynamic_displacements[id] for id in jnp.array(self.propagator_id)]
-        mapped_static_disp = [static_displacements[id] for id in jnp.array(self.propagator_id)]
-        vmap_where = jax.vmap(jnp.where, in_axes=(0, 0, 0))
-        return vmap_where(self.is_dynamic_propagator,
-                          jnp.array(mapped_dynamic_disp),
-                          jnp.array(mapped_static_disp))
+        return self.all_displacements_transformer()(geo_free_params)
 
     def all_vib_amps(self, vib_free_params):
         """Calculate the vibrational amplitudes for all t-matrices.
