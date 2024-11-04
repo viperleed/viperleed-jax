@@ -506,17 +506,7 @@ class FrozenParameterSpace():
         -------
         vib_amps: The vibrational amplitudes for all t-matrices.
         """
-        dynamic_vib_amps = self.vib_transformer(vib_free_params)
-        static_vib_amps = jnp.array([va for se, va
-                                     in self.static_t_matrix_inputs])
-        if len(static_vib_amps) == 0:
-            static_vib_amps = jnp.array([jnp.nan])
-
-        mapped_dynamic_vib_amps = [dynamic_vib_amps[id] for id in self.t_matrix_id]
-        mapped_static_vib_amps = [static_vib_amps[id] for id in self.t_matrix_id]
-        return jnp.where(self.is_dynamic_t_matrix,
-                          jnp.array(mapped_dynamic_vib_amps),
-                          jnp.array(mapped_static_vib_amps))
+        return self.all_vib_amps_transformer(vib_free_params)
 
     def potential_onset_height_change(self, geo_free_params):
         """Calculate the change in the highest atom z position.
