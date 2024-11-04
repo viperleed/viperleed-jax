@@ -505,11 +505,22 @@ class HLSubtree(ABC):
 
     @property
     def leaf_is_dynamic(self):
-        input_val = np.full(
-            shape=(self.subtree_root.dof,), fill_value=True, dtype=bool
-        )
-        return np.array([np.any(self.subtree_root.transformer_to_descendent(leaf).boolify()(input_val))
-                         for leaf in self.leaves], dtype=bool)
+        """To check which of the leaves are dynamic, we use the collapsed
+        transformer.
+        We first take the transformer, and create a new transformer without any
+        biases. We then boolify this weights transformer and feed in a vector of
+        true boolean values. The resulting vector will be true for all dynamic
+        leaves."""
+        is_dynamic = []
+        for leaf in self.leaves:
+            dummy_transformer = self.subtree_root.transformer_to_descendent(leaf)
+            dummy_transformer.biases = np.zeros_like(dummy_transformer.biases)
+            dummy_transformer = dummy_transformer.boolify()
+            input = np.full(
+                dummy_transformer.in_dim, dtype=bool, fill_value=True
+            )
+            is_dynamic.append(np.any(dummy_transformer(input)))
+        return np.array(is_dynamic, dtype=bool)
 
 
 class ParameterHLSubtree(HLSubtree):
