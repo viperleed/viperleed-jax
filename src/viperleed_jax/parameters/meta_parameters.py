@@ -7,8 +7,10 @@ from jax import numpy as jnp
 
 from .hierarchical_linear_tree import HLSubtree
 from .hierarchical_linear_tree import HLLeafNode
+from .hierarchical_linear_tree import HLConstraintNode
 from .hierarchical_linear_tree import HLBound
 from .hierarchical_linear_tree import HLTreeLayers
+from .linear_transformer import LinearTransformer
 
 
 # Note: currently, V0r is (and can only be) a single parameter, which makes
@@ -32,6 +34,8 @@ class MetaParameterSubtree(HLSubtree):
     def read_from_rpars(self, rpars):
         # V0r
         self.v0r_node.update_bounds(rpars)
+        bound_node = V0rBoundNode(self.v0r_node)
+        self.nodes.append(bound_node)
         self.create_subtree_root()
 
     @property
@@ -56,3 +60,17 @@ class V0rHLLeafNode(HLLeafNode):
         self.bound.update_range(
             _range=(lower, upper), offset=None, enforce=True
         )
+
+class V0rBoundNode(HLConstraintNode):
+
+    def __init__(self, child):
+        if not isinstance(child, V0rHLLeafNode):
+            raise ValueError("V0rBoundNode must have a single leaf child.")
+
+        weights = [child.bound.upper - child.bound.lower]
+        biases = child.bound.lower
+        transformer = LinearTransformer(weights, biases, (1,))
+
+        super().__init__(dof=1, name="Simple Bound", children=[child],
+                         transformers=[transformer],
+                         layer=HLTreeLayers.Implicit_Constraints)
