@@ -323,21 +323,17 @@ class ImplicitHLConstraint(HLConstraintNode):
         free, lower, upper = child.stacked_bounds()
         if np.any(free):
             partial_trafo = child.collapse_transformer().select_rows(free)
-            inverted_weights = np.linalg.pinv(partial_trafo.weights)
-            norm_lower = inverted_weights @ (lower[free] - partial_trafo.biases)
-            norm_upper = inverted_weights @ (upper[free] - partial_trafo.biases)
-            weights = np.diag(norm_upper - norm_lower)
-            biases = norm_lower
-            range_trafo = LinearTransformer(weights, biases)
+            lower = lower[free]
+            upper = upper[free]
         else:
             # all fixed, but may still have a default value
             partial_trafo = child.collapse_transformer()
-            inverted_weights = np.linalg.pinv(partial_trafo.weights)
-            norm_lower = inverted_weights @ (lower - partial_trafo.biases)
-            norm_upper = inverted_weights @ (upper - partial_trafo.biases)
-            weights = np.diag(norm_upper - norm_lower)
-            biases = norm_lower
-            range_trafo = LinearTransformer(weights, biases)
+        inverted_weights = np.linalg.pinv(partial_trafo.weights)
+        norm_lower = inverted_weights @ (lower - partial_trafo.biases)
+        norm_upper = inverted_weights @ (upper - partial_trafo.biases)
+        weights = np.diag(norm_upper - norm_lower)
+        biases = norm_lower
+        range_trafo = LinearTransformer(weights, biases)
 
         # compose the two transformers
         composed_transformer = implicit_trafo.compose(range_trafo)
