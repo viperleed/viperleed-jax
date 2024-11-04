@@ -616,7 +616,8 @@ class TensorLEEDCalculator:
         #                         in_axes=0)(vib_amps_ang)
 
         # chemical weights
-        chem_weights = self.parameter_space.occ_weight_transformer(occ_params)
+        chem_weights = jnp.asarray(
+            self.parameter_space.occ_weight_transformer(occ_params))
 
         # atom ids that will be batched over
         atom_ids = jnp.arange(self.parameter_space.n_base_scatterers)
