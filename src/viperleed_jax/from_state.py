@@ -21,20 +21,22 @@ import os, shutil
 import logging
 import zipfile
 
+from viperleed_jax.base_scatterers import BaseScatterers
 from viperleed_jax.data_structures import ReferenceData
-from viperleed_jax.tensor_calculator import TensorLEEDCalculator
+from viperleed_jax.files.displacements.file import DisplacementsFile
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.tensors import read_tensor_zip
-from viperleed_jax.base_scatterers import SiteEl
+from viperleed_jax.parameter_space import ParameterSpace
+from viperleed_jax.tensor_calculator import TensorLEEDCalculator
 
 from viperleed.calc.run import run_calc
-from viperleed.calc.files.displacements import readDISPLACEMENTS
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from viperleed.calc.files.iorfactor import beamlist_to_array
 
 
-def calculator_from_state(calc_path, tensor_path, l_max:int, **kwargs):
+def calculator_from_state(calc_path, tensor_path, l_max:int,
+                          displacements_file=None, **kwargs):
 
     last_state = run_viperleed_initialization(calc_path)
     slab, rpars = last_state.slab, last_state.rpars
@@ -43,11 +45,11 @@ def calculator_from_state(calc_path, tensor_path, l_max:int, **kwargs):
         raise RuntimeError('No (pseudo)experimental beams loaded. This is required '
                         'for the structure optimization.')
 
-    # # read DISPLACEMENTS if not yet loaded
-    # if not rpars.fileLoaded['DISPLACEMENTS']:
-    #     readDISPLACEMENTS(rpars, calc_path/'DISPLACEMENTS')
-    #     rpars.fileLoaded['DISPLACEMENTS'] = True
-    #     logger.debug('DISPLACEMENTS file loaded')
+    # load and read the DISPLACEMENTS file
+    if displacements_file is None:
+        displacements_file = calc_path / 'DISPLACEMENTS'
+    disp_file = DisplacementsFile()
+    disp_file.read(displacements_file)
 
     # parameters needed to interpret the tensor data
     ref_calc_lmax = rpars.LMAX.max
@@ -94,7 +96,23 @@ def calculator_from_state(calc_path, tensor_path, l_max:int, **kwargs):
     del tensors
     del raw_phaseshifts
 
-    return calculator, slab, rpars, ref_data, phaseshifts
+    # create the parameter space
+    logger.debug("Creating parameter space.")
+    base_scatterers = BaseScatterers(slab)
+    parameter_space = ParameterSpace(base_scatterers, rpars)
+
+    # take the blocks from the displacements file
+    # TODO: take care of multiple blocks!
+
+    offsets_block = disp_file.offsets_block()
+    search_block = disp_file.blocks[0]  # TODO,FIXME: can only do first block for now
+    parameter_space.apply_displacements(offsets_block, search_block)
+    logger.debug("Parameter space created"
+                 "-----------------------"
+                 f"\n{parameter_space.info}")
+
+
+    return calculator, slab, rpars, ref_data, phaseshifts, base_scatterers, disp_file, parameter_space
 
 def run_viperleed_initialization(calc_path):
     """Runs ViPErLEED initialization with the input data in calc_path.
