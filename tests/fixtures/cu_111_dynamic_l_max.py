@@ -11,17 +11,15 @@ from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo
 
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
-from viperleed_jax.from_state import run_viperleed_initialization
-from viperleed_jax.files.tensors import read_tensor_zip
+from viperleed_jax.base_scatterers import BaseScatterers
 from viperleed_jax.data_structures import ReferenceData
 from viperleed_jax.files import phaseshifts as ps
-from viperleed_jax.tensor_calculator import TensorLEEDCalculator
 from viperleed_jax.files.deltas import Transform as delta_transform
+from viperleed_jax.files.displacements.file import DisplacementsFile
+from viperleed_jax.files.tensors import read_tensor_zip
+from viperleed_jax.from_state import run_viperleed_initialization
 from viperleed_jax.parameter_space import ParameterSpace
-from viperleed_jax.parameters.geo_parameters import GeoParamBound
-from viperleed_jax.parameters.vib_parameters import VibParamBound
-from viperleed_jax.parameters.v0r_parameters import V0rParamBound
-from viperleed_jax.files.deltas import Transform as delta_transform
+from viperleed_jax.tensor_calculator import TensorLEEDCalculator
 
 _DATA_PATH = Path(__file__).parent.parent / 'test_data' / 'Cu_111' /'dynamic_l_max'
 _LARGE_DATA_PATH = LARGE_FILE_PATH / 'Cu_111' / 'dynamic_l_max' 
@@ -45,6 +43,7 @@ def cu_111_dynamic_l_max_info():
     return DeltaAmplitudeCalcInfo(
         input_path=input_path,
         tensor_path=tensor_path,
+        displacements_path=input_path / 'DISPLACEMENTS',
         n_beams=9,
         max_l_max=10,
         energies = np.array([
@@ -135,39 +134,20 @@ def cu_111_dynamic_l_max_tensor_calculator_recalc_t_matrices(cu_111_dynamic_l_ma
     return calculator
 
 @fixture(scope='session')
-def cu_111_dynamic_l_max_parameter_space(cu_111_dynamic_l_max_state_after_init):
-    slab, _ = cu_111_dynamic_l_max_state_after_init
-    parameter_space = ParameterSpace(slab)
-    ## GEOMETRY
-    # Fix layer 0
-    parameter_space.geo_params.fix_layer(1, z_offset=0.)
-    parameter_space.geo_params.fix_layer(2, z_offset=0.)
-    parameter_space.geo_params.fix_layer(3, z_offset=0.)
-    parameter_space.geo_params.fix_layer(4, z_offset=0.)
+def cu_111_dynamic_l_max_parameter_space(
+    cu_111_dynamic_l_max_state_after_init, cu_111_dynamic_l_max_info
+):
+    slab, rparams = cu_111_dynamic_l_max_state_after_init
+    base_scatterers = BaseScatterers(slab)
+    parameter_space = ParameterSpace(base_scatterers, rparams)
 
-    # symmetry constrained xyz movements ± 0.15 A for layer 2
-    for param in [p for p in parameter_space.geo_params.terminal_params if p.bound is None]:
-        param.set_bound(GeoParamBound(-0.05, + 0.05))
+    # displacements file
+    disp_file = DisplacementsFile()
+    disp_file.read(cu_111_dynamic_l_max_info.displacements_path)
 
-    ## VIBRATIONS
-    # fix *_def sites (O_def, Fe_def)
-    for param in [p for p in parameter_space.vib_params.terminal_params if p.site_element.site.endswith('_def')]:
-        parameter_space.vib_params.fix_site_element(param.site_element, None) # None fixes to the default value
-    # for param in [p for p in parameter_space.vib_params.terminal_params if p.site_element.site.endswith('_surf')]:
-    #     parameter_space.vib_params.fix_site_element(param.site_element, None) # None fixes to the default value
-
-
-    # # the rest can vary ± 0.05 A
-    for param in [p for p in parameter_space.vib_params.terminal_params if p.site_element.site.endswith('_surf')]:
-        param.set_bound(VibParamBound(-0.05, + 0.05))
-
-    ## CHEMISTRY
-    # no free parameters
-    parameter_space.occ_params.remove_remaining_vacancies()
-
-    # V0R
-    # set ± 2 eV
-    parameter_space.v0r_param.set_bound(V0rParamBound(-2., +2.))
+    offsets_block = disp_file.offsets_block()
+    search_block = disp_file.blocks[0] # TODO: can only do first block for now
+    parameter_space.apply_displacements(offsets_block, search_block)
     return parameter_space
 
 @fixture(scope='session')

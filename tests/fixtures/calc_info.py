@@ -11,6 +11,7 @@ class DeltaAmplitudeCalcInfo:
     energies: np.ndarray
     n_beams: int
     max_l_max: int
+    displacements_path: Path
 
     @property
     def n_energies(self):
