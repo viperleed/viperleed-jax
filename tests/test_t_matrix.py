@@ -1,12 +1,9 @@
-from pathlib import Path
 import pytest
 from pytest_cases import parametrize_with_cases, case, fixture
 import numpy as np
 import jax
 
 from viperleed_jax import t_matrix
-from viperleed_jax.parameter_space import get_site_elements
-from viperleed_jax.constants import BOHR
 
 from tests.fixtures.base import LARGE_FILE_PATH
 _REF_DATA_PATH = LARGE_FILE_PATH / 't_matrices'
