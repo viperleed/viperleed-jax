@@ -27,30 +27,34 @@ class TensorCalculatorsWithSpace:
     @case(tags="cu_111")
     def case_cu_111_dynamic_l(self,
         cu_111_dynamic_l_max_calculator_with_parameter_space):
-        center = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
+        calculator = cu_111_dynamic_l_max_calculator_with_parameter_space
+        center = np.array([0.5]*calculator.n_free_parameters)
         abs = 2.2e-4
-        return cu_111_dynamic_l_max_calculator_with_parameter_space, center, abs
+        return calculator, center, abs
 
     @case(tags="cu_111")
     def case_cu_111_dynamic_l_recalc_t_matrices(self,
         cu_111_dynamic_l_max_calculator_with_parameter_space_recalc_t_matrices):
-        center = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
+        calculator = cu_111_dynamic_l_max_calculator_with_parameter_space_recalc_t_matrices
+        center = np.array([0.5] * calculator.n_free_parameters)
         abs = 1e-9
-        return cu_111_dynamic_l_max_calculator_with_parameter_space_recalc_t_matrices, center, abs
+        return calculator, center, abs
 
     @case(tags="cu_111")
     def case_cu_111_fixed_l(self,
         cu_111_dynamic_l_max_calculator_with_parameter_space):
-        center = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
+        calculator = cu_111_dynamic_l_max_calculator_with_parameter_space
+        center = np.array([0.5] * calculator.n_free_parameters)
         abs = 2.2e-4
-        return cu_111_dynamic_l_max_calculator_with_parameter_space, center, abs
+        return calculator, center, abs
 
     @case(tags="cu_111")
     def case_cu_111_fixed_l_recalc_t_matrices(self,
         cu_111_fixed_l_max_calculator_with_parameter_space_recalc_t_matrices):
-        center = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
+        calculator = cu_111_fixed_l_max_calculator_with_parameter_space_recalc_t_matrices
+        center = np.array([0.5] * calculator.n_free_parameters)
         abs = 1e-9
-        return cu_111_fixed_l_max_calculator_with_parameter_space_recalc_t_matrices, center, abs
+        return calculator, center, abs
 
 class TensorCalculatorsWithTensErLEEDDeltas:
     """Tensor calculators with parameter space already applied and comparison
