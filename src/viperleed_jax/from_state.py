@@ -107,10 +107,11 @@ def calculator_from_state(calc_path, tensor_path, l_max:int,
     offsets_block = disp_file.offsets_block()
     search_block = disp_file.blocks[0]  # TODO,FIXME: can only do first block for now
     parameter_space.apply_displacements(offsets_block, search_block)
-    logger.debug("Parameter space created"
-                 "-----------------------"
-                 f"\n{parameter_space.info}")
 
+    calculator.set_parameter_space(parameter_space)
+    logger.debug("Parameter space created\n"
+                 "-----------------------\n"
+                 f"{calculator.parameter_space.info}")
 
     return calculator, slab, rpars, ref_data, phaseshifts, base_scatterers, disp_file, parameter_space
 
