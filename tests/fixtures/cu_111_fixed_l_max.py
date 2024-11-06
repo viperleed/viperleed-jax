@@ -138,7 +138,7 @@ def cu_111_fixed_l_max_parameter_space(cu_111_fixed_l_max_state_after_init,
                                        cu_111_fixed_l_max_info):
     slab, rparams = cu_111_fixed_l_max_state_after_init
     base_scatterers = BaseScatterers(slab)
-    parameter_space = ParameterSpace(base_scatterers)
+    parameter_space = ParameterSpace(base_scatterers, rparams)
 
     # displacements file
     disp_file = DisplacementsFile()
