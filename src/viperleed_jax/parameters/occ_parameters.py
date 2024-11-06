@@ -26,6 +26,10 @@ class OccHLLeafNode(HLLeafNode):
         self.name = f"occ (At_{self.num},{self.site},{self.element})"
         super().__init__(dof=dof, name=self.name)
 
+        # apply reference occupation as non-enforced bounds
+        # TODO: get non 100% reference occupation? Where is that stored?
+        self._bounds.update_range(_range=None, offset=1., enforce=False)
+
     def _update_bounds(self, line):
         # occupational leaves are 1D, so bounds are scalars
         range = line.range
@@ -157,7 +161,7 @@ class OccHLSubtree(ParameterHLSubtree):
         # occupational parameters need to fulfill symmetry constraints
         for link in self.base_scatterers.atom_number_symmetry_links:
             # put all linked atoms in the same symmetry group
-            
+
             nodes_to_link = [node for node in linked_nodes
                                 if node.num in link]
             if not nodes_to_link:
