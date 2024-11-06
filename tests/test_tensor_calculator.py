@@ -30,7 +30,7 @@ class TensorCalculatorsWithSpace:
         calculator = cu_111_dynamic_l_max_calculator_with_parameter_space
         center = np.array([0.5]*calculator.n_free_parameters)
         abs = 2.2e-4
-        return calculator, center, abs
+        return calculator, abs
 
     @case(tags="cu_111")
     def case_cu_111_dynamic_l_recalc_t_matrices(self,
@@ -38,7 +38,7 @@ class TensorCalculatorsWithSpace:
         calculator = cu_111_dynamic_l_max_calculator_with_parameter_space_recalc_t_matrices
         center = np.array([0.5] * calculator.n_free_parameters)
         abs = 1e-9
-        return calculator, center, abs
+        return calculator, abs
 
     @case(tags="cu_111")
     def case_cu_111_fixed_l(self,
@@ -46,7 +46,7 @@ class TensorCalculatorsWithSpace:
         calculator = cu_111_dynamic_l_max_calculator_with_parameter_space
         center = np.array([0.5] * calculator.n_free_parameters)
         abs = 2.2e-4
-        return calculator, center, abs
+        return calculator, abs
 
     @case(tags="cu_111")
     def case_cu_111_fixed_l_recalc_t_matrices(self,
@@ -54,7 +54,7 @@ class TensorCalculatorsWithSpace:
         calculator = cu_111_fixed_l_max_calculator_with_parameter_space_recalc_t_matrices
         center = np.array([0.5] * calculator.n_free_parameters)
         abs = 1e-9
-        return calculator, center, abs
+        return calculator, abs
 
 class TensorCalculatorsWithTensErLEEDDeltas:
     """Tensor calculators with parameter space already applied and comparison
@@ -103,8 +103,9 @@ def test_calculator_creation(calculator, info):
     assert len(calculator.energies) == info.n_energies
 
 @parametrize_with_cases("calculator, center, abs", cases=TensorCalculatorsWithSpace)
-def test_unperturbed_delta_amplitudes(calculator, center, abs):
+def test_unperturbed_delta_amplitudes(calculator, abs):
     """Check that the delta amplitudes for the unperturbed state are zero."""
+    center = np.array([0.5]*calculator.n_free_parameters)
     delta_amps = calculator.delta_amplitude(center)
     assert delta_amps == pytest.approx(0.0, abs=abs)
 
