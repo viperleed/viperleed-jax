@@ -14,7 +14,6 @@ from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from viperleed_jax.base_scatterers import BaseScatterers
 from viperleed_jax.data_structures import ReferenceData
 from viperleed_jax.files import phaseshifts as ps
-from viperleed_jax.files.deltas import Transform as delta_transform
 from viperleed_jax.files.displacements.file import DisplacementsFile
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.from_state import run_viperleed_initialization
