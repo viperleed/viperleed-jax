@@ -102,7 +102,7 @@ def test_calculator_creation(calculator, info):
     assert calculator.n_beams == info.n_beams
     assert len(calculator.energies) == info.n_energies
 
-@parametrize_with_cases("calculator, center, abs", cases=TensorCalculatorsWithSpace)
+@parametrize_with_cases("calculator, abs", cases=TensorCalculatorsWithSpace)
 def test_unperturbed_delta_amplitudes(calculator, abs):
     """Check that the delta amplitudes for the unperturbed state are zero."""
     center = np.array([0.5]*calculator.n_free_parameters)
@@ -112,8 +112,8 @@ def test_unperturbed_delta_amplitudes(calculator, abs):
 @pytest.mark.parametrize("delta",
                          [0.0, 1e-5, 1e-4, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
                           0.8, 0.9, 0.9999, 0.99999, 1.0])
-@parametrize_with_cases("calculator, center, abs", cases=TensorCalculatorsWithSpace)
-def test_perturbed_delta_amplitudes_finite(calculator, center, abs, delta):
+@parametrize_with_cases("calculator, abs", cases=TensorCalculatorsWithSpace)
+def test_perturbed_delta_amplitudes_finite(calculator, abs, delta):
     """Check that the delta amplitudes for a perturbed state are finite."""
     delta_amps = calculator.delta_amplitude([delta,] * calculator.n_free_parameters)
     assert np.isfinite(delta_amps).all()
