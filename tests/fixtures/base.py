@@ -18,7 +18,7 @@ class ComparisonTensErLEEDDeltaAmps(Iterable):
         self.expected = [
             {
                 "v0r": reference_data["expected_v0r"][i],
-                "vib_amps": reference_data["expected_vib_amps"][i],
+                "vib_amplitudes": reference_data["expected_vib_amps"][i],
                 "displacements": reference_data["expected_displacements"][i],
                 "occ": reference_data["expected_occ"][i],
                 "delta_amplitudes": reference_data[
