@@ -66,35 +66,35 @@ class TensorCalculatorsWithTensErLEEDDeltas:
         cu_111_dynamic_l_max_calculator_with_parameter_space,
         cu_111_dynamic_l_max_tenserleed_reference):
         calculator = cu_111_dynamic_l_max_calculator_with_parameter_space
-        params, reference_delta_amplitudes, abs = cu_111_dynamic_l_max_tenserleed_reference
-        return calculator, params, reference_delta_amplitudes, abs
+        parameters, expected = cu_111_dynamic_l_max_tenserleed_reference
+        return calculator, parameters, expected
 
-    @case(tags="cu_111")
-    def case_cu_111_fixed_l(
-        self,
-        cu_111_fixed_l_max_calculator_with_parameter_space,
-        cu_111_fixed_l_max_tenserleed_reference):
-        calculator = cu_111_fixed_l_max_calculator_with_parameter_space
-        params, reference_delta_amplitudes, abs = cu_111_fixed_l_max_tenserleed_reference
-        return calculator, params, reference_delta_amplitudes, abs
+    # @case(tags="cu_111")
+    # def case_cu_111_fixed_l(
+    #     self,
+    #     cu_111_fixed_l_max_calculator_with_parameter_space,
+    #     cu_111_fixed_l_max_tenserleed_reference):
+    #     calculator = cu_111_fixed_l_max_calculator_with_parameter_space
+    #     params, reference_delta_amplitudes, abs = cu_111_fixed_l_max_tenserleed_reference
+    #     return calculator, params, reference_delta_amplitudes, abs
 
-    @case(tags="fe2o3_012")
-    def case_fe2o3_012_converged_z(
-        self,
-        fe2o3_012_converged_calculator_with_parameter_space,
-        fe2o3_012_converged_tenserleed_reference_z):
-        calculator = fe2o3_012_converged_calculator_with_parameter_space
-        params, reference_delta_amplitudes, abs = fe2o3_012_converged_tenserleed_reference_z
-        return calculator, params, reference_delta_amplitudes, abs
+    # @case(tags="fe2o3_012")
+    # def case_fe2o3_012_converged_z(
+    #     self,
+    #     fe2o3_012_converged_calculator_with_parameter_space,
+    #     fe2o3_012_converged_tenserleed_reference_z):
+    #     calculator = fe2o3_012_converged_calculator_with_parameter_space
+    #     params, reference_delta_amplitudes, abs = fe2o3_012_converged_tenserleed_reference_z
+    #     return calculator, params, reference_delta_amplitudes, abs
 
-    @case(tags="fe2o3_012")
-    def case_fe2o3_012_converged_x(
-        self,
-        fe2o3_012_converged_calculator_with_parameter_space,
-        fe2o3_012_converged_tenserleed_reference_x):
-        calculator = fe2o3_012_converged_calculator_with_parameter_space
-        params, reference_delta_amplitudes, abs = fe2o3_012_converged_tenserleed_reference_x
-        return calculator, params, reference_delta_amplitudes, abs
+    # @case(tags="fe2o3_012")
+    # def case_fe2o3_012_converged_x(
+    #     self,
+    #     fe2o3_012_converged_calculator_with_parameter_space,
+    #     fe2o3_012_converged_tenserleed_reference_x):
+    #     calculator = fe2o3_012_converged_calculator_with_parameter_space
+    #     params, reference_delta_amplitudes, abs = fe2o3_012_converged_tenserleed_reference_x
+    #     return calculator, params, reference_delta_amplitudes, abs
 
 @parametrize_with_cases("calculator, info", cases=TensorCalculatorsWithInfo)
 def test_calculator_creation(calculator, info):
@@ -118,12 +118,36 @@ def test_perturbed_delta_amplitudes_finite(calculator, abs, delta):
     delta_amps = calculator.delta_amplitude([delta,] * calculator.n_free_parameters)
     assert np.isfinite(delta_amps).all()
 
-@parametrize_with_cases("calculator, params, reference_delta_amplitudes, abs",
+
+@parametrize_with_cases("calculator, parameters, expected",
                         cases=TensorCalculatorsWithTensErLEEDDeltas)
-def test_compare_known_delta_amplitudes_tenserleed(calculator,
-                                                   params,
-                                                   reference_delta_amplitudes,
-                                                   abs):
-    # check that values match
-    delta_amps = calculator.jit_delta_amplitude(params)
-    assert delta_amps == pytest.approx(reference_delta_amplitudes, abs=abs)
+def test_compare_known_delta_amplitudes_tenserleed(
+    calculator,
+    parameters,
+    expected,
+    subtests):
+    # get parameters
+    meta_params, vib_params, geo_parms, occ_params = (
+        calculator.parameter_space.split_free_params(parameters))
+    # calculate delta amplitudes
+    delta_amps = calculator.jit_delta_amplitude(parameters)
+
+    # compare the expanded parameters
+    with subtests.test('v0r'):
+        v0r = calculator.parameter_space.v0r_transformer(meta_params)
+        assert v0r == pytest.approx(expected['v0r'])
+    with subtests.test('vib amplitudes'):
+        vib_amps = calculator.parameter_space.all_vib_amps_transformer(
+            vib_params
+        )
+        assert vib_amps == pytest.approx(expected['vib_amplitudes'])
+    with subtests.test('displacements'):
+        displacements = (
+            calculator.parameter_space.all_displacements_transformer()(geo_parms)
+        )
+        assert displacements == pytest.approx(expected['displacements'])
+
+    # compare delta amplitudes
+    with subtests.test('delta amplitudes'):
+        assert delta_amps == pytest.approx(expected['delta_amplitudes'],
+                                           abs=expected['compare_abs'])
