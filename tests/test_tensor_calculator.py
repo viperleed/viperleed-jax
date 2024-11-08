@@ -69,14 +69,14 @@ class TensorCalculatorsWithTensErLEEDDeltas:
         parameters, expected = cu_111_dynamic_l_max_tenserleed_reference
         return calculator, parameters, expected
 
-    # @case(tags="cu_111")
-    # def case_cu_111_fixed_l(
-    #     self,
-    #     cu_111_fixed_l_max_calculator_with_parameter_space,
-    #     cu_111_fixed_l_max_tenserleed_reference):
-    #     calculator = cu_111_fixed_l_max_calculator_with_parameter_space
-    #     params, reference_delta_amplitudes, abs = cu_111_fixed_l_max_tenserleed_reference
-    #     return calculator, params, reference_delta_amplitudes, abs
+    @case(tags="cu_111")
+    def case_cu_111_fixed_l(
+        self,
+        cu_111_fixed_l_max_calculator_with_parameter_space,
+        cu_111_fixed_l_max_tenserleed_reference):
+        calculator = cu_111_fixed_l_max_calculator_with_parameter_space
+        params, reference_delta_amplitudes, abs = cu_111_fixed_l_max_tenserleed_reference
+        return calculator, params, reference_delta_amplitudes, abs
 
     # @case(tags="fe2o3_012")
     # def case_fe2o3_012_converged_z(

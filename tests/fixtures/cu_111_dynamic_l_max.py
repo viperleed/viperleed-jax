@@ -20,16 +20,16 @@ from viperleed_jax.from_state import run_viperleed_initialization
 from viperleed_jax.parameter_space import ParameterSpace
 from viperleed_jax.tensor_calculator import TensorLEEDCalculator
 
+from .base import ComparisonTensErLEEDDeltaAmps
+
 _DATA_PATH = Path(__file__).parent.parent / 'test_data' / 'Cu_111' /'dynamic_l_max'
 _LARGE_DATA_PATH = LARGE_FILE_PATH / 'Cu_111' / 'dynamic_l_max' 
 _REFERENCE_FILE_PATH = _LARGE_DATA_PATH / 'Cu_111_dynamic_l_max_TensErLEED_reference.npz'
 _REFERENCE_DATA = np.load(_REFERENCE_FILE_PATH)
 
-_COMPARE_PARAMS = _REFERENCE_DATA['parameters']
-_COMPARE_DELTA_AMPLITUDES = _REFERENCE_DATA['tenserleed_delta_amplitudes']
-_COMPARE_PARAMS_AMPS = [(_COMPARE_PARAMS[i,:], _COMPARE_DELTA_AMPLITUDES[i,:])
-                        for i in range(len(_COMPARE_PARAMS))]
 _COMPARE_ABS = 8.8e-5
+_comparison_data = ComparisonTensErLEEDDeltaAmps(_REFERENCE_DATA, _COMPARE_ABS)
+
 
 ######################
 # Cu111 dynamic LMAX #
@@ -162,10 +162,11 @@ def cu_111_dynamic_l_max_calculator_with_parameter_space_recalc_t_matrices(cu_11
     calculator.set_parameter_space(cu_111_dynamic_l_max_parameter_space)
     return calculator
 
-@fixture(scope='session')
-@pytest.mark.parametrize('parameters, reference_delta_amplitudes',
-                         _COMPARE_PARAMS_AMPS,
-                         ids=[str(p) for p in _COMPARE_PARAMS])
-def cu_111_dynamic_l_max_tenserleed_reference(parameters,
-                                              reference_delta_amplitudes):
-    return parameters, reference_delta_amplitudes, _COMPARE_ABS
+@fixture(scope="session")
+@pytest.mark.parametrize(
+    "parameters, expected",
+    _comparison_data,
+    ids=_comparison_data.ids,
+)
+def cu_111_dynamic_l_max_tenserleed_reference(parameters, expected):
+    return parameters, expected
