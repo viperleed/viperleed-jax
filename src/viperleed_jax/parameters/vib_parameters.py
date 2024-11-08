@@ -179,7 +179,6 @@ class VibHLSubtree(ParameterHLSubtree):
     ##############################
     # Vibration specific methods #
     ##############################
-    @property
     def all_vib_amps_transformer(self):
         """Return a transformer that maps the free parameters to all vibrational
         amplitudes"""

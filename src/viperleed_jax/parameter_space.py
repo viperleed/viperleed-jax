@@ -174,7 +174,7 @@ class ParameterSpace():
 
     @property
     def all_vib_amps_transformer(self):
-        return self.vib_subtree.all_vib_amps_transformer
+        return self.vib_subtree.all_vib_amps_transformer()
 
     @property
     def dynamic_t_matrix_transformers(self):
