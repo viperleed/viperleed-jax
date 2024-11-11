@@ -122,9 +122,7 @@ class HLScattererLeafNode(HLLeafNode):
         self.num = base_scatterer.num
         self.site = base_scatterer.site_element.site
         self.site_element = base_scatterer.site_element
-        super().__init__(
-            dof=dof, name=name, parent=parent, layer=HLTreeLayers.Base
-        )
+        super().__init__(dof=dof, name=name, parent=parent)
 
 
 class HLConstraintNode(HLNode):
