@@ -16,8 +16,8 @@ class VibHLLeafNode(HLScattererLeafNode):
 
     def __init__(self, base_scatterer):
         dof = 1
+        super().__init__(dof=dof, base_scatterer=base_scatterer)
         self.name = f"vib (At_{self.num},{self.site},{self.element})"
-        super().__init__(dof=dof, name=self.name, base_scatterer=base_scatterer)
         self.ref_vib_amp = base_scatterer.atom.site.vibamp[self.element]
 
         # apply reference vibrational amplitudes as non-enforced bounds
