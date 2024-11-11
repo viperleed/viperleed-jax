@@ -94,14 +94,9 @@ class HLNode(Node):
 
 class HLLeafNode(HLNode):
 
-    def __init__(self, dof, base_scatterer, name=None, parent=None):
+    def __init__(self, dof, name=None, parent=None):
         # initialize bounds
         self._bounds = HLBound(dof)
-        self.base_scatterer = base_scatterer
-        self.element = base_scatterer.site_element.element
-        self.num = base_scatterer.num
-        self.site = base_scatterer.site_element.site
-        self.site_element = base_scatterer.site_element
         super().__init__(dof=dof, name=name, parent=parent,
                          layer=HLTreeLayers.Base)
 
@@ -116,6 +111,19 @@ class HLLeafNode(HLNode):
     @property
     def free(self):
         return ~self._bounds.fixed
+
+class HLScattererLeafNode(HLLeafNode):
+
+    def __init__(self, dof, base_scatterer, name=None, parent=None):
+        # initialize bounds
+        self.base_scatterer = base_scatterer
+        self.element = base_scatterer.site_element.element
+        self.num = base_scatterer.num
+        self.site = base_scatterer.site_element.site
+        self.site_element = base_scatterer.site_element
+        super().__init__(
+            dof=dof, name=name, parent=parent, layer=HLTreeLayers.Base
+        )
 
 
 class HLConstraintNode(HLNode):
@@ -443,6 +451,10 @@ class HLSubtree(ABC):
         return [node for node in self.nodes if node.is_leaf]
 
     @property
+    def leaf_order(self):
+        return np.array([leaf.num for leaf in self.leaves])
+
+    @property
     @abstractmethod
     def name(self):
         pass
@@ -506,7 +518,11 @@ class HLSubtree(ABC):
     def collapsed_transformer(self):
         if not self._subtree_root_has_been_created:
             raise ValueError("Subtree root has not yet been created.")
-        return self.subtree_root.collapse_transformer()
+        collapsed = self.subtree_root.collapse_transformer()
+        ordered_biases = collapsed.biases[self.leaf_order]
+        ordered_weights = collapsed.weights[self.leaf_order]
+        return LinearTransformer(ordered_weights, ordered_biases,
+                                 (collapsed.out_dim,))
 
     @property
     def leaf_is_dynamic(self):

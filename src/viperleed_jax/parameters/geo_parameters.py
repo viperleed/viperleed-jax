@@ -12,13 +12,13 @@ import numpy as np
 from viperleed_jax import atomic_units
 from viperleed_jax.files.displacements.lines import ConstraintLine
 
-from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
+from .hierarchical_linear_tree import HLScattererLeafNode, HLConstraintNode
 from .hierarchical_linear_tree import HLTreeLayers
 from .hierarchical_linear_tree import ParameterHLSubtree
 from .linear_transformer import LinearMap
 
 
-class GeoHLLeafNode(HLLeafNode):
+class GeoHLLeafNode(HLScattererLeafNode):
     """Represents a leaf node with geometric parameters."""
     _Z_DIR_ID = 0 # TODO: unify and move to a common place
 

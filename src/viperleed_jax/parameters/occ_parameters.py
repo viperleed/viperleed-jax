@@ -7,13 +7,13 @@ import numpy as np
 
 from viperleed_jax.base import LinearTransformer
 
-from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
+from .hierarchical_linear_tree import HLScattererLeafNode, HLConstraintNode
 from .hierarchical_linear_tree import HLTreeLayers
 from .hierarchical_linear_tree import ParameterHLSubtree
 from .linear_transformer import LinearTransformer
 
 
-class OccHLLeafNode(HLLeafNode):
+class OccHLLeafNode(HLScattererLeafNode):
     """Represents a leaf node with occupational parameters."""
 
     def __init__(self, base_scatterer):

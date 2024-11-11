@@ -5,13 +5,13 @@ __created__ = "2024-09-09"
 
 import numpy as np
 
-from .hierarchical_linear_tree import HLLeafNode, HLConstraintNode
+from .hierarchical_linear_tree import HLScattererLeafNode, HLConstraintNode
 from .hierarchical_linear_tree import HLTreeLayers
 from .hierarchical_linear_tree import ParameterHLSubtree
 from .linear_transformer import LinearTransformer
 
 
-class VibHLLeafNode(HLLeafNode):
+class VibHLLeafNode(HLScattererLeafNode):
     """Represents a leaf node with vibrational parameters."""
 
     def __init__(self, base_scatterer):
@@ -178,7 +178,7 @@ class VibHLSubtree(ParameterHLSubtree):
     def all_vib_amps_transformer(self):
         """Return a transformer that maps the free parameters to all vibrational
         amplitudes"""
-        return self.subtree_root.collapse_transformer()
+        return self.collapsed_transformer()
 
     def dynamic_t_matrix_transformers(self):
         """Return a transformer that maps the free parameters to the dynamic
