@@ -25,14 +25,8 @@ class GeoHLLeafNode(HLLeafNode):
     def __init__(self, base_scatterer):
         dof = 3
         self.symrefm = base_scatterer.atom.symrefm
-        self.layer = base_scatterer.atom.layer.num
-        self.element = base_scatterer.site_element.element
-        self.site = base_scatterer.site_element.site
-        self.site_element = base_scatterer.site_element
-        self.base_scatterer = base_scatterer
-        self.num = base_scatterer.num
         self.name = f"geo (At_{self.num},{self.site},{self.element})"
-        super().__init__(dof=dof, name=self.name)
+        super().__init__(dof=dof, name=self.name, base_scatterer=base_scatterer)
 
     def _update_bounds(self, line):
         # geometric leaf bounds are 3D

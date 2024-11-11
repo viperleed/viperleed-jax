@@ -94,9 +94,14 @@ class HLNode(Node):
 
 class HLLeafNode(HLNode):
 
-    def __init__(self, dof, name=None, parent=None):
+    def __init__(self, dof, base_scatterer, name=None, parent=None):
         # initialize bounds
         self._bounds = HLBound(dof)
+        self.base_scatterer = base_scatterer
+        self.element = base_scatterer.site_element.element
+        self.num = base_scatterer.num
+        self.site = base_scatterer.site_element.site
+        self.site_element = base_scatterer.site_element
         super().__init__(dof=dof, name=name, parent=parent,
                          layer=HLTreeLayers.Base)
 
