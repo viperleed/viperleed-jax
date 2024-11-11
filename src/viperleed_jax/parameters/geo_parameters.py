@@ -358,7 +358,7 @@ class GeoHLSubtree(ParameterHLSubtree):
             self.nodes.append(GeoSymmetryHLConstraint(children=[node]))
 
     def apply_explicit_constraint(self, constraint_line):
-        #self._check_constraint_line_type(constraint_line, "geo")
+        # self._check_constraint_line_type(constraint_line, "geo")
         *_, selected_roots = self._select_constraint(constraint_line)
 
         if constraint_line.direction is None:
@@ -380,7 +380,7 @@ class GeoHLSubtree(ParameterHLSubtree):
     def all_displacements_transformer(self):
         """Return a transformer that gives the displacements for all base
         scatterers."""
-        collapsed_transformer = self.collapsed_transformer()
+        collapsed_transformer = self.collapsed_transformer_scatterer_order
         collapsed_transformer.out_reshape = (-1, 3)
         return collapsed_transformer
 

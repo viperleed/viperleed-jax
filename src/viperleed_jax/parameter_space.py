@@ -182,7 +182,7 @@ class ParameterSpace():
 
     @property
     def occ_weight_transformer(self):
-        return self.occ_subtree.collapsed_transformer()
+        return self.occ_subtree.collapsed_transformer_scatterer_order
 
     @property
     def v0r_transformer(self):

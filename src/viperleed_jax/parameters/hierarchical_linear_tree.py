@@ -450,11 +450,6 @@ class HLSubtree(ABC):
         return [node for node in self.nodes if node.is_leaf]
 
     @property
-    def leaf_order(self):
-        # num starts at 1, so we subtract 1 to get the index
-        return np.array([leaf.num for leaf in self.leaves]) - 1
-
-    @property
     @abstractmethod
     def name(self):
         pass
@@ -516,13 +511,7 @@ class HLSubtree(ABC):
         UniqueDotExporter(self.subtree_root).to_picture(filename)
 
     def collapsed_transformer(self):
-        if not self._subtree_root_has_been_created:
-            raise ValueError("Subtree root has not yet been created.")
-        collapsed = self.subtree_root.collapse_transformer()
-        ordered_biases = collapsed.biases[self.leaf_order]
-        ordered_weights = collapsed.weights[self.leaf_order]
-        return LinearTransformer(ordered_weights, ordered_biases,
-                                 (collapsed.out_dim,))
+        return self.subtree_root.collapse_transformer()
 
     @property
     def leaf_is_dynamic(self):
@@ -560,6 +549,15 @@ class ParameterHLSubtree(HLSubtree):
         self._offsets_have_been_added = False
         super().__init__()
 
+    @property
+    def leaves(self):
+        unordered_leaves = super().leaves
+        indices_by_base_scatterers = np.array([
+            self.base_scatterers.scatterers.index(leaf.base_scatterer)
+            for leaf in unordered_leaves
+        ])
+        return np.array(unordered_leaves)[indices_by_base_scatterers]
+
     def apply_bounds(self, line):
         targets = line.targets
         _, explicitly_selected_leaves, selected_roots = self._target_nodes(
@@ -590,6 +588,13 @@ class ParameterHLSubtree(HLSubtree):
         # and violate symmetry)
         for leaf in primary_leaves.values():
             leaf.update_offsets(line)
+
+    @property
+    def collapsed_transformer_scatterer_order(self):
+        """Return the collapsed transformer in the order of the base scatterers."""
+        transformers = [self.subtree_root.transformer_to_descendent(leaf)
+                for leaf in self.leaves]
+        return stack_transformers(transformers)
 
     def check_for_inconsistencies(self):
         """Check for inconsistencies in the parameter space.

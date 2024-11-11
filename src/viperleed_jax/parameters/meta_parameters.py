@@ -53,6 +53,7 @@ class V0rHLLeafNode(HLLeafNode):
         dof = 1  # V0r is a single scalar parameter
         name = "V0r"
         self.bound = HLBound(1)
+        self.num = 1
         super().__init__(dof=dof, name=name)
 
     def update_bounds(self, rpars):

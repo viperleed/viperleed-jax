@@ -178,7 +178,7 @@ class VibHLSubtree(ParameterHLSubtree):
     def all_vib_amps_transformer(self):
         """Return a transformer that maps the free parameters to all vibrational
         amplitudes"""
-        return self.collapsed_transformer()
+        return self.collapsed_transformer_scatterer_order
 
     def dynamic_t_matrix_transformers(self):
         """Return a transformer that maps the free parameters to the dynamic
@@ -187,8 +187,9 @@ class VibHLSubtree(ParameterHLSubtree):
             node.site_element:node for node
             in reversed(np.array(self.leaves)[self.leaf_is_dynamic])
         }
-        return [self.subtree_root.transformer_to_descendent(node)
-                for node in dynamic_reference_nodes.values()]
+        # un-reverse the order
+        return reversed([self.subtree_root.transformer_to_descendent(node)
+                for node in dynamic_reference_nodes.values()])
 
     @property
     def dynamic_site_elements(self):
