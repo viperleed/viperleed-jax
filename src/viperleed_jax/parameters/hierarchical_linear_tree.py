@@ -112,10 +112,11 @@ class HLLeafNode(HLNode):
     def free(self):
         return ~self._bounds.fixed
 
+
 class HLScattererLeafNode(HLLeafNode):
 
     def __init__(self, dof, base_scatterer, name=None, parent=None):
-        # initialize bounds
+        # base scatterer based attributes
         self.base_scatterer = base_scatterer
         self.element = base_scatterer.site_element.element
         self.num = base_scatterer.num
