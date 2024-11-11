@@ -451,7 +451,7 @@ class HLSubtree(ABC):
 
     @property
     def leaf_order(self):
-        return np.array([leaf.num for leaf in self.leaves])
+        return np.array([leaf.num for leaf in self.leaves]) - 1
 
     @property
     @abstractmethod
