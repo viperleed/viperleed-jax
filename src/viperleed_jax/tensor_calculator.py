@@ -10,7 +10,6 @@ import jax
 from jax.tree_util import register_pytree_node_class
 import jax.numpy as jnp
 
-from viperleed.calc import symmetry
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.files.iorfactor import beamlist_to_array
 
