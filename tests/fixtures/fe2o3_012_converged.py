@@ -20,16 +20,16 @@ from viperleed_jax.from_state import run_viperleed_initialization
 from viperleed_jax.parameter_space import ParameterSpace
 from viperleed_jax.tensor_calculator import TensorLEEDCalculator
 
+from .base import ComparisonTensErLEEDDeltaAmps
+
 _DATA_PATH = Path(__file__).parent.parent / 'test_data' / 'Fe2O3_012' /'converged'
 _LARGE_DATA_PATH = LARGE_FILE_PATH / 'Fe2O3_012' / 'converged'
 
 _REFERENCE_FILE_PATH_Z = _LARGE_DATA_PATH / 'Fe2O3_012_TensErLEED_reference_z.npz'
 _REFERENCE_DATA_Z = np.load(_REFERENCE_FILE_PATH_Z)
-_COMPARE_PARAMS_Z = _REFERENCE_DATA_Z['parameters']
-_COMPARE_DELTA_AMPLITUDES_Z = _REFERENCE_DATA_Z['tenserleed_delta_amplitudes_z']
-_COMPARE_PARAMS_AMPS_Z = [(_COMPARE_PARAMS_Z[i,:], _COMPARE_DELTA_AMPLITUDES_Z[i,:])
-                        for i in range(len(_COMPARE_PARAMS_Z))]
-_COMPARE_ABS_Z = 8e-4 # for l_max=10
+_COMPARE_ABS_Z = 8e-4  # for l_max=10
+_comparison_data_z = ComparisonTensErLEEDDeltaAmps(_REFERENCE_DATA_Z, _COMPARE_ABS_Z)
+
 
 _REFERENCE_FILE_PATH_X = _LARGE_DATA_PATH / 'Fe2O3_012_TensErLEED_reference_x.npz'
 _REFERENCE_DATA_X = np.load(_REFERENCE_FILE_PATH_X)
@@ -195,12 +195,11 @@ def fe2o3_012_converged_calculator_with_parameter_space_recalc_t_matrices(fe2o3_
     return calculator
 
 @fixture(scope='session')
-@pytest.mark.parametrize('parameters, reference_delta_amplitudes',
-                         _COMPARE_PARAMS_AMPS_Z,
-                         ids=[str(p) for p in _COMPARE_PARAMS_Z])
-def fe2o3_012_converged_tenserleed_reference_z(parameters,
-                                              reference_delta_amplitudes):
-    return parameters, reference_delta_amplitudes, _COMPARE_ABS_Z
+@pytest.mark.parametrize('parameters, expected',
+                         _comparison_data_z,
+                         ids=_comparison_data_z.ids)
+def fe2o3_012_converged_tenserleed_reference_z(parameters, expected):
+    return parameters, expected
 
 @fixture(scope='session')
 @pytest.mark.parametrize('parameters, reference_delta_amplitudes',
