@@ -4,10 +4,6 @@ import pytest
 from pytest_cases import parametrize_with_cases, case
 
 from viperleed_jax.parameter_space import ParameterSpace
-from viperleed_jax.parameters.geo_parameters import GeoParamBound
-from viperleed_jax.parameters.vib_parameters import VibParamBound
-from viperleed_jax.parameters.meta_parameters import V0rParamBound
-
 ParameterSpaceSize = namedtuple(
     "parameter_space_size", ["n_geo", "n_vib", "n_occ", "n_v0r"]
 )
