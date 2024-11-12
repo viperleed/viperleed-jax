@@ -3,6 +3,8 @@
 __authors__ = ("Alexander M. Imre (@amimre)",)
 __created__ = "2024-02-17"
 
+from pathlib import Path
+
 import numpy as np
 from jax import config
 
@@ -11,6 +13,10 @@ import jax.numpy as jnp
 
 MAXIMUM_LMAX = 18
 
+# load precalculated dense quantum numbers
+_FULL_DENSE_QUANTUM_NUMBERS = np.load(
+    Path(__file__).parent / "dense_quantum_numbers.npy", allow_pickle=False
+)
 
 # TODO: come up with a faster version of this
 def _asymmetric_dense_quantum_numbers(lmax_1, lmax_2):
@@ -31,7 +37,6 @@ def _dense_quantum_numbers(lmax):
     return _asymmetric_dense_quantum_numbers(lmax, lmax)
 
 
-_FULL_DENSE_QUANTUM_NUMBERS = _dense_quantum_numbers(2 * MAXIMUM_LMAX)
 DENSE_QUANTUM_NUMBERS = {
     l: _FULL_DENSE_QUANTUM_NUMBERS[: (l + 1) ** 2, : (l + 1) ** 2, :]
     for l in range(2 * MAXIMUM_LMAX + 1)
