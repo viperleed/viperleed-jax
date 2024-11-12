@@ -1,8 +1,13 @@
 import pytest
 import numpy as np
-from viperleed_jax.data_structures import ReferenceData
 from viperleed_jax import dense_quantum_numbers
 
+def test_correct_stored_quantum_numbers():
+    """"""
+    expected_qns = dense_quantum_numbers._dense_quantum_numbers(
+        2 * dense_quantum_numbers.MAXIMUM_LMAX)
+    assert (dense_quantum_numbers._FULL_DENSE_QUANTUM_NUMBERS
+            == expected_qns).all()  # int comparison
 
 def test_map_l_array_to_compressed_quantum_index_mapping():
     # Define your test case here
