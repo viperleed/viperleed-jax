@@ -355,6 +355,7 @@ class TensorLEEDCalculator:
             mapped_static_t_matrices)
         return t_matrices
 
+    @partial(jax.profiler.annotate_function, name="tc.calculate_dynamic_propagator")
     def _calculate_dynamic_propagators(self, displacements, energy_indices):
         propagator_vmap_en = jax.vmap(calc_propagator,
                                       in_axes=(None, None, 0, None))
