@@ -101,37 +101,3 @@ def TMATRIX_zero_displacement(t_matrix_ref, corrected_t_matrix, C, energy, v_ima
     DELTAT = jnp.diag(1j*mapped_t_matrix_new) - jnp.diag(1j*mapped_t_matrix_ref)
 
     return DELTAT
-
-# TODO: move this to a separate file and write tests
-def calc_propagator(LMAX, C, energy, v_imag):
-    c_norm = safe_norm(C)
-    kappa = 2*energy - 2j*v_imag
-    Z = jnp.sqrt(kappa) * c_norm
-    BJ = bessel(Z,2*LMAX)
-    YLM = HARMONY(C, LMAX)  # move outside since it's not energy dependent
-
-    dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
-    dense_mp_2d =  DENSE_QUANTUM_NUMBERS[LMAX][:, :, 3]
-
-    # AI: I don't fully understand this, technically it should be MPP = -M - MP
-    dense_mpp = dense_mp_2d - dense_m_2d
-
-    # pre-computed coeffs, capped to LMAX
-    capped_coeffs = CSUM_COEFFS[:2*LMAX+1, :(LMAX+1)**2, :(LMAX+1)**2]
-
-    def propagator_lpp_element(lpp, running_sum):
-        bessel_values = BJ[lpp]
-        ylm_values = YLM[lpp*lpp+lpp-dense_mpp]
-        # Equation (34) from Rous, Pendry 1989
-        return running_sum + bessel_values * ylm_values * capped_coeffs[lpp,:,:]
-
-    # we could skip some computations because some lpp are guaranteed to give
-    # zero contributions, but this would need a way around the non-static array
-    # sizes
-
-    # This is the propagator from the origin to C
-    propagator = jax.lax.fori_loop(0, LMAX*2+1, propagator_lpp_element,
-                             jnp.zeros(shape=((LMAX+1)**2, (LMAX+1)**2),
-                                       dtype=jnp.complex128))
-    propagator *= 4*jnp.pi
-    return propagator

@@ -1,22 +1,35 @@
 """Module for dense quantum number indexing"""
-from functools import partial
+
+__authors__ = ("Alexander M. Imre (@amimre)",)
+__created__ = "2024-02-17"
+
+from pathlib import Path
+
 import numpy as np
 from jax import config
+
 config.update("jax_enable_x64", True)
-import jax
 import jax.numpy as jnp
-from jax import jit
 
 MAXIMUM_LMAX = 18
 
+# load precalculated dense quantum numbers
+_FULL_DENSE_QUANTUM_NUMBERS = np.load(
+    Path(__file__).parent / "dense_quantum_numbers.npy", allow_pickle=False
+)
+
 # TODO: come up with a faster version of this
 def _asymmetric_dense_quantum_numbers(lmax_1, lmax_2):
-    valid_quantum_numbers = np.empty(((lmax_1+1)*(lmax_1+1), (lmax_2+1)*(lmax_2+1), 4), dtype=int)
-    for L in range(lmax_1+1):
-        for LP in range(lmax_2+1):
-            for M in range(-L, L+1):
-                for MP in range(-LP, LP+1):
-                    valid_quantum_numbers[(L+1)*(L+1)-L+M-1][(LP+1)*(LP+1)-LP+MP-1] = [L, LP, M, MP]
+    valid_quantum_numbers = np.empty(
+        ((lmax_1 + 1) * (lmax_1 + 1), (lmax_2 + 1) * (lmax_2 + 1), 4), dtype=int
+    )
+    for L in range(lmax_1 + 1):
+        for LP in range(lmax_2 + 1):
+            for M in range(-L, L + 1):
+                for MP in range(-LP, LP + 1):
+                    valid_quantum_numbers[(L + 1) * (L + 1) - L + M - 1][
+                        (LP + 1) * (LP + 1) - LP + MP - 1
+                    ] = [L, LP, M, MP]
     return jnp.array(valid_quantum_numbers)
 
 
@@ -24,20 +37,20 @@ def _dense_quantum_numbers(lmax):
     return _asymmetric_dense_quantum_numbers(lmax, lmax)
 
 
-_FULL_DENSE_QUANTUM_NUMBERS = _dense_quantum_numbers(2*MAXIMUM_LMAX)
 DENSE_QUANTUM_NUMBERS = {
-    l: _FULL_DENSE_QUANTUM_NUMBERS[:(l+1)**2,:(l+1)**2,:]
-    for l in range(2*MAXIMUM_LMAX+1)
+    l: _FULL_DENSE_QUANTUM_NUMBERS[: (l + 1) ** 2, : (l + 1) ** 2, :]
+    for l in range(2 * MAXIMUM_LMAX + 1)
 }
 DENSE_L = {
-    l: DENSE_QUANTUM_NUMBERS[l][:,0,0] for l in range(2*MAXIMUM_LMAX+1)
+    l: DENSE_QUANTUM_NUMBERS[l][:, 0, 0] for l in range(2 * MAXIMUM_LMAX + 1)
 }
 DENSE_M = {
-    l: DENSE_QUANTUM_NUMBERS[l][:,0,2] for l in range(2*MAXIMUM_LMAX+1)
+    l: DENSE_QUANTUM_NUMBERS[l][:, 0, 2] for l in range(2 * MAXIMUM_LMAX + 1)
 }
 MINUS_ONE_POW_M = {
-    l: jnp.power(-1, DENSE_M[l]) for l in range(2*MAXIMUM_LMAX+1)
+    l: jnp.power(-1, DENSE_M[l]) for l in range(2 * MAXIMUM_LMAX + 1)
 }
+
 
 def map_l_array_to_compressed_quantum_index(array, LMAX):
     """Takes an array of shape (LMAX+1) with values for each L and maps it to a
@@ -46,6 +59,8 @@ def map_l_array_to_compressed_quantum_index(array, LMAX):
     [val(l=0), val(l=1), val(l=2), ...] is mapped to
     [val(l=0), val(l=1), val(l=1), val(l=1), val(l=2), ...].
     """
+    if array.shape[0] != LMAX + 1:
+        raise ValueError("Array shape does not match LMAX")
     broadcast_l_index = DENSE_L[LMAX]
     mapped_array = jnp.asarray(array)[broadcast_l_index]
     return mapped_array

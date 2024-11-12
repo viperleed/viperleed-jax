@@ -1,5 +1,11 @@
+"""Module gaunt_coefficients."""
+__authors__ = ("Alexander M. Imre (@amimre)",
+               "Paul Haidegger (@Paulhai7)")
+__created__ = "2024-01-03"
+
 from functools import partial
 
+import numpy as np
 from jax import config
 config.update("jax_enable_x64", True)
 import jax.numpy as jnp
@@ -134,10 +140,15 @@ def integrate_legendre(l1: int, l2: int , l3: int) -> float:
     reduced_indices = find_index(l1, l2, l3, 0, 0, 0)
     return pre_factor * fetch_gaunt(reduced_indices[0], reduced_indices[1])
 
+_all_pre_calculated_cppp = integrate_legendre(
+    np.arange(0, 2 * MAXIMUM_LMAX + 1),
+    np.arange(0, MAXIMUM_LMAX + 1),
+    np.arange(0, MAXIMUM_LMAX + 1),
+)
 
 PRE_CALCULATED_CPPP = {
-    l: integrate_legendre(jnp.arange(0, 2*l+1), jnp.arange(0, l+1), jnp.arange(0, l+1))
-    for l in range(MAXIMUM_LMAX+1)
+    l: _all_pre_calculated_cppp[: 2 * l + 1, : l + 1, : l + 1]
+    for l in range(MAXIMUM_LMAX + 1)
 }
 
 lpp_indices = jax.vmap(jax.vmap(find_index,
@@ -151,7 +162,7 @@ gaunt_array = jnp.array([lpp_indices(_DENSE_L_2D, _DENSE_LP_2D, lpp, _DENSE_M_2D
 
 CSUM_COEFFS = jnp.array(
     [lpp_gaunt(gaunt_array[lpp,:,:,0], gaunt_array[lpp,:,:,1])
-     *(-1)**(_DENSE_M_2D)
+     *(-1.)**(_DENSE_M_2D)
      *1j**(_DENSE_L_2D+_DENSE_LP_2D-lpp) #AI: I found we need this factor, but I still don't understand where it comes from
      for lpp in range(MAXIMUM_LMAX*2+1)]
 )
