@@ -169,7 +169,7 @@ def prepare_tensor_file_reader(max_l_max, n_beams, n_energies):
     for l_max in range(1, max_l_max+1):
         # set up number of expected floats and lines
         n_t_matrix_floats = 2*(l_max+1)
-        
+
         n_outgoing_tensor_amps_floats = 2*(l_max+1)**2
 
         n_t_matrix_lines[l_max] = number_of_lines(n_t_matrix_floats)
