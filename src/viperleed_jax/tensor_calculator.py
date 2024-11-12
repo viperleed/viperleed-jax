@@ -359,14 +359,21 @@ class TensorLEEDCalculator:
     def _calculate_dynamic_propagators(self, displacements, energy_indices):
         propagator_vmap_en = jax.vmap(calc_propagator,
                                       in_axes=(None, None, 0, None))
-        return jnp.array([
-            propagator_vmap_en(
+
+        def body_fn(carry, displacement):
+            # Compute the result for the current displacement
+            result = propagator_vmap_en(
                 self.max_l_max,
                 displacement,
                 self.energies[energy_indices],
                 self.v0i
             )
-            for displacement in displacements])
+            # No carry state needed, just passing through
+            return carry, result
+
+        # Initial carry state can be None if not needed
+        _, results = jax.lax.scan(body_fn, None, displacements)
+        return results
 
     def _calculate_propagators(self, displacements, energy_indices):
         # return propagators indexed as (base_scatterers, energies, lm, l'm')
