@@ -188,8 +188,8 @@ class VibHLSubtree(ParameterHLSubtree):
             in reversed(np.array(self.leaves)[self.leaf_is_dynamic])
         }
         # un-reverse the order
-        return reversed([self.subtree_root.transformer_to_descendent(node)
-                for node in dynamic_reference_nodes.values()])
+        return list(reversed([self.subtree_root.transformer_to_descendent(node)
+                for node in dynamic_reference_nodes.values()]))
 
     @property
     def dynamic_site_elements(self):
