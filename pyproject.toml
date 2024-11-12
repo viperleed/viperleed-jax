@@ -12,10 +12,11 @@ license = {file = 'LICENSE'}
 
 dependencies = [
     'jax',
-    'numpy',
     'viperleed',
+    'numpy<2',
     'spbessax',
     'tqdm'
+    'interpax'
     ]
 
 keywords = [
