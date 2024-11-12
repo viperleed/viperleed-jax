@@ -162,7 +162,7 @@ gaunt_array = jnp.array([lpp_indices(_DENSE_L_2D, _DENSE_LP_2D, lpp, _DENSE_M_2D
 
 CSUM_COEFFS = jnp.array(
     [lpp_gaunt(gaunt_array[lpp,:,:,0], gaunt_array[lpp,:,:,1])
-     *(-1)**(_DENSE_M_2D)
+     *(-1.)**(_DENSE_M_2D)
      *1j**(_DENSE_L_2D+_DENSE_LP_2D-lpp) #AI: I found we need this factor, but I still don't understand where it comes from
      for lpp in range(MAXIMUM_LMAX*2+1)]
 )
