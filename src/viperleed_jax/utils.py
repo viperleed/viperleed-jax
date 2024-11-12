@@ -1,3 +1,8 @@
+"""Module utils."""
+
+__authors__ = ("Alexander M. Imre (@amimre)",)
+__created__ = "2024-02-27"
+
 import jax
 
 def estimate_function_cost(f, *args):

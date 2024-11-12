@@ -1,6 +1,6 @@
 # Notes on possible improvements/optimizations
 
-## Considering symmetry earlier
+## Considering symmetry earlier – DONE
 We now consider the symmetry (obatined from the viperleed slab) to reduce the
 number of parameters needed in the optimization. The optimizer is given a vector
 of irreducible parameters to optimize (e.g. only one x,y,z for a set of multiple
@@ -26,7 +26,7 @@ Give this another look.
 Reading the tensor files takes a long time. We should see if we can parallelize
 this or speed it up otherwise.
 
-## Spherical harmonic
+## Spherical harmonic - DONE
 Using symmetries of the Gaunt coefficients and spherical harmonics, it should be
 possible to calculate only half as many qunatum number combinations as we
 currently do.

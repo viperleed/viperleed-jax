@@ -1,0 +1,16 @@
+RUN = 1-2
+LOG_DEBUG = True
+N_CORES = 48
+
+LMAX = 6-14
+
+THEO_ENERGIES = 50 300 3
+
+SITE_DEF Cu = surf top(1)
+
+TL_IGNORE_CHECKSUM=True
+
+BULK_REPEAT = [1.27221 0.73450 2.08019] ! Found by full-dynamic optimization
+N_BULK_LAYERS = 1
+
+V0_IMAG = 4.6852 ! Found by full-dynamic optimization
