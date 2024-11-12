@@ -84,8 +84,8 @@ class TensorCalculatorsWithTensErLEEDDeltas:
     #     fe2o3_012_converged_calculator_with_parameter_space,
     #     fe2o3_012_converged_tenserleed_reference_z):
     #     calculator = fe2o3_012_converged_calculator_with_parameter_space
-    #     params, reference_delta_amplitudes, abs = fe2o3_012_converged_tenserleed_reference_z
-    #     return calculator, params, reference_delta_amplitudes, abs
+    #     parameters, expected = fe2o3_012_converged_tenserleed_reference_z
+    #     return calculator, parameters, expected
 
     # @case(tags="fe2o3_012")
     # def case_fe2o3_012_converged_x(
