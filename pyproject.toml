@@ -15,8 +15,8 @@ dependencies = [
     'viperleed',
     'numpy<2',
     'spbessax',
-    'tqdm'
-    'interpax'
+    'tqdm',
+    'interpax',
     ]
 
 keywords = [
