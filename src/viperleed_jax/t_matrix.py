@@ -3,6 +3,8 @@ __authors__ = ("Alexander M. Imre (@amimre)",
                "Paul Haidegger (@Paulhai7)")
 __created__ = "2024-08-14"
 
+from functools import partial
+
 from jax import config
 config.update("jax_enable_x64", True)
 import jax
@@ -14,8 +16,8 @@ from viperleed_jax.constants import BOHR
 from viperleed_jax.gaunt_coefficients import PRE_CALCULATED_CPPP
 
 
-@jax.named_scope("vib_dependent_tmatrix")
 # vmap over sites for which to calculate the t-matrix
+@partial(jax.profiler.annotate_function, name="vib_dependent_tmatrix")
 def vib_dependent_tmatrix(l_max, phaseshifts, e_inside, vib_amp):
     """Computes the temperature-dependent t-matrix elements.
 

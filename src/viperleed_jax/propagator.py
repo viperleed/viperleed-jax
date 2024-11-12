@@ -3,6 +3,8 @@ __authors__ = ("Alexander M. Imre (@amimre)",
                "Paul Haidegger (@Paulhai7)")
 __created__ = "2024-09-03"
 
+from functools import partial
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -12,7 +14,9 @@ from viperleed_jax.gaunt_coefficients import CSUM_COEFFS
 from viperleed_jax.lib_math import bessel, HARMONY, safe_norm, EPS
 from viperleed_jax.atomic_units import kappa
 
+
 # TODO: replace energy, v_imag with a single arg kappa = 2*energy - 2j*v_imag
+@partial(jax.profiler.annotate_function, name="calc_propagator")
 def calc_propagator(LMAX, c, energy, v_imag):
     c_norm = safe_norm(c)
 
@@ -91,7 +95,8 @@ def symmetry_operations(l_max, plane_symmetry_operation):
 
     symmetry_tensor = jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T
     if contains_mirror:
-        symmetry_tensor = (-1.)**(-dense_mpp)* jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T
+        symmetry_tensor = ((-1.)**(-dense_mpp)
+                           * jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T)
 
     return symmetry_tensor, contains_mirror
 
