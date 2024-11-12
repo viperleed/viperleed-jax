@@ -312,7 +312,7 @@ class TensorLEEDCalculator:
                 self.max_l_max,
                 self.phaseshifts[site_el][energy_indices, : self.max_l_max + 1],
                 self.energies[energy_indices],
-                vib_amp.reshape(),
+                vib_amp.reshape(),  # cast shape from (1,) to (); required to play nicely with grad
             )
             for vib_amp, site_el in zip(
                 vib_amps, self.parameter_space.dynamic_t_matrix_site_elements
