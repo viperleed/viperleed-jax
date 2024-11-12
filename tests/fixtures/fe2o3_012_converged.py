@@ -50,9 +50,9 @@ def fe2o3_012_converged_info():
     return DeltaAmplitudeCalcInfo(
         input_path=input_path,
         tensor_path=tensor_path,
-        displacements_path=input_path / 'DISPLACEMENTS',
+        displacements_path=input_path / 'DISPLACEMENTS_z',
         n_beams=38,
-        max_l_max=10,
+        max_l_max=12,
         energies = np.array([
         1.54641092,  1.65665889,  1.76690674,  1.86872446,  1.97021472,
         2.072294  ,  2.17489934,  2.27797675,  2.38147926,  2.48536658,
