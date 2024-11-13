@@ -10,6 +10,7 @@ from viperleed.calc.lib.matrix import rotation_matrix_order
 from viperleed_jax.propagator import calc_propagator, symmetry_operations
 from viperleed_jax.constants import BOHR
 from viperleed_jax.lib_math import EPS
+from viperleed_jax.atomic_units import kappa
 
 
 @pytest.fixture(scope="session")
@@ -68,7 +69,7 @@ JIT_JAC_ENERGY_JIT_CALC_PROPAGATOR = jax.jit(
     static_argnums=(0,),
 )
 _abs_calc_propagator = lambda l_max, vec, e, v_imag: abs(
-    calc_propagator(l_max, vec, e, v_imag)
+    calc_propagator(l_max, vec, kappa(e, v_imag))
 )
 JIT_JAC_ABS_DISP_CALC_PROPAGATOR = jax.jit(
     jax.jacrev(_abs_calc_propagator, argnums=1), static_argnums=(0,)
@@ -99,7 +100,7 @@ class TestPropagator:
     @pytest.mark.parametrize("l_max", range(5, 18))
     def test_propagator_zero_displacement(self, l_max):
         disp_vector = np.array([0.0, 0.0, 0.0])
-        propagator = calc_propagator(l_max, disp_vector, 1.0, 1.0)
+        propagator = calc_propagator(l_max, disp_vector, kappa(1.0, 1.0))
         assert propagator == pytest.approx(
             np.identity((l_max + 1) ** 2), abs=1e-8
         )
@@ -118,7 +119,7 @@ class TestPropagator:
         ) = stored_propagator_reference_values
         reference_value = stored_propagators[n_vector]
         # calculate the propagator
-        propagator = calc_propagator(l_max, disp_vector, energy, v_imag)
+        propagator = calc_propagator(l_max, disp_vector, kappa(energy, v_imag))
         assert propagator == pytest.approx(reference_value, rel=1e-6, abs=1e-8)
 
     @pytest.mark.parametrize("disp_vector", list(enumerate(TEST_DISP_VECTORS)))
@@ -134,7 +135,7 @@ class TestPropagator:
         reference_value = stored_propagators[n_vector]
 
         # calculate the propagator
-        propagator = JIT_CALC_PROPAGATOR(l_max, disp_vector, energy, v_imag)
+        propagator = JIT_CALC_PROPAGATOR(l_max, disp_vector, kappa(energy, v_imag))
         assert propagator == pytest.approx(reference_value, rel=1e-6, abs=1e-8)
 
     @pytest.mark.parametrize("disp_vector", list(enumerate(TEST_DISP_VECTORS)))
@@ -253,9 +254,9 @@ class TestSymmetryTensor:
 
         # calculate the propagator for both
         propagator_original = calc_propagator(self.L_MAX, disp_vector,
-                                              self.ENERGY, self.V_IMAG)
+                                              kappa(self.ENERGY, self.V_IMAG))
         propagator_sym = calc_propagator(self.L_MAX, disp_vector_sym,
-                                         self.ENERGY, self.V_IMAG)
+                                         kappa(self.ENERGY, self.V_IMAG))
 
         # get symmetry operations
         symmetry_tensor, mirror_propagator = symmetry_operations(self.L_MAX,

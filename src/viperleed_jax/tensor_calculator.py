@@ -95,8 +95,10 @@ class TensorLEEDCalculator:
         self.theta = jnp.deg2rad(rparams.THETA)
         self.phi = jnp.deg2rad(rparams.PHI)
 
-        # inner potential
+        # energies, inner potential, kappa
+        self.energies = jnp.asarray(self.ref_data.energies)
         self.v0i = ref_data.v0i
+        self.kappa = atomic_units.kappa(self.energies, self.v0i)
 
         non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
         # TODO check this
@@ -290,15 +292,14 @@ class TensorLEEDCalculator:
     def _calculate_static_propagators(self):
         # this is only done once – perform for maximum lmax and crop later
         propagator_vmap_en = jax.vmap(calc_propagator,
-                                      in_axes=(None, None, 0, None))
+                                      in_axes=(None, None, 0))
         displacements_ang = jnp.asarray(self._parameter_space.static_propagator_inputs)
         displacements_au = atomic_units.to_internal_displacement_vector(displacements_ang)
         self._static_propagators = jnp.array([
             propagator_vmap_en(
                 self.max_l_max,
                 displacement,
-                self.energies,
-                self.v0i
+                self.kappa
             )
             for displacement in displacements_au])
 
@@ -358,15 +359,14 @@ class TensorLEEDCalculator:
     @partial(jax.profiler.annotate_function, name="tc.calculate_dynamic_propagator")
     def _calculate_dynamic_propagators(self, displacements, energy_indices):
         propagator_vmap_en = jax.vmap(calc_propagator,
-                                      in_axes=(None, None, 0, None))
+                                      in_axes=(None, None, 0))
 
         def body_fn(carry, displacement):
             # Compute the result for the current displacement
             result = propagator_vmap_en(
                 self.max_l_max,
                 displacement,
-                self.energies[energy_indices],
-                self.v0i
+                self.kappa[energy_indices],
             )
             # No carry state needed, just passing through
             return carry, result
