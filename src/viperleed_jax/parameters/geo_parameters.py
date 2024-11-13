@@ -223,7 +223,8 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
         # Currently freedir can be either an int (specifically 0 or 1, implying
         # z-only or completely free movement) or a 1D array of shape (2,)
         # (implying 1D in-plane movement in addition to z)
-        if children[0].base_scatterer.atom.freedir == 0:
+        freedir = children[0].base_scatterer.atom.freedir
+        if isinstance(freedir, int) and freedir == 0:
             # check that all children have the same freedir
             if not all(
                 child.base_scatterer.atom.freedir == 0 for child in children
@@ -240,7 +241,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
                 weights = np.array([1.0, 0., 0.]).reshape((3,1))
                 transformers.append(LinearMap(weights, (3,)))
 
-        elif children[0].base_scatterer.atom.freedir == 1:
+        elif isinstance(freedir, int) and freedir == 1:
             # check that all children have the same freedir
             if not all(
                 child.base_scatterer.atom.freedir == 1 for child in children
@@ -259,7 +260,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
                 weights[1:3, 1:3] = child.symrefm
                 transformers.append(LinearMap(weights, (3,)))
 
-        elif children[0].base_scatterer.atom.freedir.shape == (2,):
+        elif freedir.shape == (2,):
             # check that all children have the same freedir
             if not all(
                 child.base_scatterer.atom.freedir.shape == (2,)
