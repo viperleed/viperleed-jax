@@ -17,7 +17,7 @@ from viperleed_jax import rfactor
 from viperleed_jax.constants import BOHR, HARTREE
 from viperleed_jax.interpolation import *
 from viperleed_jax.lib_intensity import intensity_prefactor, sum_intensity
-from viperleed_jax.lib_math import EPS
+from viperleed_jax import lib_math
 from viperleed_jax import atomic_units
 
 from viperleed_jax.t_matrix import vib_dependent_tmatrix
@@ -530,14 +530,14 @@ class TensorLEEDCalculator:
         out_k_par2 = self.ref_data.kx_in
         out_k_par3 = self.ref_data.ky_in
 
-        k_inside = jnp.sqrt(2*energies-2j*v_imag+1j*EPS)
+        k_inside = jnp.sqrt(2*energies-2j*v_imag+1j*lib_math.EPS)
 
         # Propagator evaluated relative to the muffin tin zero i.e.
         # it uses energy = incident electron energy + inner potential
         out_k_par = out_k_par2**2 + out_k_par3**2
         out_k_perp_inside = jnp.sqrt(
             ((2*energies-2j*v_imag)[:, jnp.newaxis] - out_k_par)
-            + 1j*EPS
+            + 1j*lib_math.EPS
         )
 
         # Prefactors from Equation (41) from Rous, Pendry 1989
