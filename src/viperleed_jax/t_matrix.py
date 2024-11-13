@@ -17,7 +17,7 @@ from viperleed_jax.gaunt_coefficients import PRE_CALCULATED_CPPP
 
 
 # vmap over sites for which to calculate the t-matrix
-@partial(jax.profiler.annotate_function, name="vib_dependent_tmatrix")
+#@partial(jax.profiler.annotate_function, name="vib_dependent_tmatrix")
 def vib_dependent_tmatrix(l_max, phaseshifts, e_inside, vib_amp):
     """Computes the temperature-dependent t-matrix elements.
 

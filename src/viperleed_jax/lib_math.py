@@ -38,7 +38,6 @@ def _divide_zero_safe(
         numerator / denominator_masked,
     )
 
-@jax.named_scope("safe_norm")
 def safe_norm(vector: jnp.ndarray) -> jnp.ndarray:
     """Safe norm calculation to avoid NaNs in gradients"""
     # avoids nan in gradient for jnp.linalg.norm(C)

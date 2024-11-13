@@ -15,7 +15,7 @@ from viperleed_jax.lib_math import spherical_harmonics_components
 from viperleed_jax.lib_math import bessel, safe_norm, EPS
 
 # TODO: replace energy, v_imag with a single arg kappa = 2*energy - 2j*v_imag
-@partial(jax.profiler.annotate_function, name="calc_propagator")
+#@partial(jax.profiler.annotate_function, name="calc_propagator")
 def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
     c_norm = safe_norm(c)
 
