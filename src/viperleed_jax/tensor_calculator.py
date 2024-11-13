@@ -892,7 +892,6 @@ def benchmark_calculator(calculator, free_params, n_repeats=10):
 
     return r_fac_compile_time, r_fac_time, grad_compile_time, grad_time
 
-@jax.named_scope("calculate_delta_t_matrix")
 def calculate_delta_t_matrix(propagator, t_matrix_vib, t_matrix_ref, chem_weight):
     # delta_t_matrix is the change of the atomic t-matrix with new
     # vibrational amplitudes and after applying the displacement

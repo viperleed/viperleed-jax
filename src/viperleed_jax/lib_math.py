@@ -60,7 +60,6 @@ BESSEL_FUNCTIONS = _generate_bessel_functions(2*MAXIMUM_LMAX)
 
 
 # Bessel functions from NeuralIL
-@jax.named_scope("bessel")
 def bessel(z, n1):
     """Spherical Bessel functions. Evaluated at z, up to degree n1."""
     return BESSEL_FUNCTIONS[n1](z+EPS)
