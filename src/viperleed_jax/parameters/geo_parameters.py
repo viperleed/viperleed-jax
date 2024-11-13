@@ -432,8 +432,15 @@ class GeoHLSubtree(ParameterHLSubtree):
             for node in self.static_origin_nodes
         ]
         # since the transformers are static, we can evaluate them
-        return [transformer(np.full(self.subtree_root.dof, 0.5))
-                for transformer in static_propagator_transformers]
+        # first, get the input values for the transformers
+        input_vals =  [transformer(np.full(self.subtree_root.dof, 0.5))
+                       for transformer in static_propagator_transformers]
+
+        # then evaluate the transformers
+        return np.array([
+            origin_node.transformer_to_descendent(origin_node.propagator_reference_node)(input)
+            for origin_node, input in zip(self.static_origin_nodes, input_vals)
+        ])
 
     @property
     def propagator_map(self):
