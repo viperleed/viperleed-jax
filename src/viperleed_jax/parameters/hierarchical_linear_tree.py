@@ -529,7 +529,8 @@ class HLSubtree(ABC):
             input = np.full(
                 dummy_transformer.in_dim, dtype=bool, fill_value=True
             )
-            is_dynamic.append(np.any(dummy_transformer(input)))
+            dummy_arr = np.asarray(dummy_transformer(input))
+            is_dynamic.append(dummy_arr)
         return np.array(is_dynamic, dtype=bool)
 
 
