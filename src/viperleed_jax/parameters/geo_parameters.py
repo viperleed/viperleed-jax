@@ -318,6 +318,7 @@ class GeoLinkedHLConstraint(GeoHLConstraintNode):
             shared_propagator=True,  # see comment above
         )
 
+
 class GeoHLSubtree(ParameterHLSubtree):
     def __init__(self, base_scatterers):
         super().__init__(base_scatterers)
