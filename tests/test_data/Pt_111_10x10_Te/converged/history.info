@@ -1,0 +1,38 @@
+# TENSORS   None
+# JOB ID    1
+# TIME      28.08.24 11:29:43 
+# FOLDER    t000.r001_240828-112943 
+Notes: 
+
+###########
+
+
+# TENSORS   None
+# JOB ID    2
+# RUN       0
+# TIME      28.08.24 11:35:57 
+# FOLDER    t000.r002_240828-113557 
+Notes: 
+
+###########
+
+
+# TENSORS   None
+# JOB ID    3
+# RUN       0 1
+# TIME      28.08.24 11:36:39 
+# FOLDER    t000.r003_240828-113639 
+Notes: 
+
+###########
+
+
+# TENSORS   1
+# JOB ID    1
+# RUN       0 1 11
+# R REF     0.1743 (0.1899 / 0.1739)
+# TIME      28.08.24 15:05:03 
+# FOLDER    t001.r001_240828-150503 
+Notes: 
+
+###########

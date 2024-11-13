@@ -1,0 +1,52 @@
+! ####### GLOBAL PARAMETERS #######
+N_CORES = 15
+
+RUN = 1
+LOG_DEBUG = True
+
+THEO_ENERGIES =  100 403 3
+LAYER_CUTS = 0.29 0.36 0.46 0.54 
+
+! ####### PARAMETERS FOR INTERPRETING THE POSCAR #######
+
+N_BULK_LAYERS = 1
+BULK_REPEAT = abc[-0.066666667  -0.033333333   -0.08333333]
+
+SITE_DEF Te = 4f 1-30, 3f 31-36, 3h 37-42, 1h 43-49 
+SITE_DEF Pt = sub 50-115, surf 116-215
+
+SUPERLATTICE = (10x10)
+
+! ####### PARAMETERS FOR REFCALC #######
+
+V0_IMAG = 5.8
+
+LMAX = 8-11
+
+ATTENUATION_EPS = 0.005
+
+!FORTRAN_COMP = 'ifort -O2 -I/opt/intel/mkl/include -mcmodel=medium'
+!FORTRAN_COMP post = '-L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ldl'
+!FORTRAN_COMP mpi = 'mpiifort -O2 -I/opt/intel/mkl/include -mcmodel=medium'
+
+
+SEARCH_START = centered
+SEARCH_CONVERGENCE gaussian = 0.0005 0.5
+SEARCH_CONVERGENCE dgen dec = 100 1.5
+
+
+!TENSOR_OUTPUT = FALSE
+!TENSOR_INDEX = 15
+
+!SUPPRESS_EXECUTION = True 
+!Stop = True
+
+! ####### PARAMETERS FOR R-factor Calculations #######
+
+IV_SHIFT_RANGE = 0 2 
+R_FACTOR_SMOOTH = 8
+PLOT_IV colors = blue red
+PLOT_IV overline = True
+PLOT_IV layout = 4 12
+
+ZIP_COMPRESSION_LEVEL = 7
