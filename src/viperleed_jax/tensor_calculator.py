@@ -165,10 +165,6 @@ class TensorLEEDCalculator:
         self.set_experiment_intensity(mapped_exp_intensities, exp_energies)
 
     @property
-    def energies(self):
-        return jnp.asarray(self.ref_data.energies)
-
-    @property
     def unit_cell_area(self):
         return jnp.linalg.norm(jnp.cross(self.unit_cell[:,0], self.unit_cell[:,1]))
 
