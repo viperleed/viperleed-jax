@@ -3,11 +3,11 @@ import jax.numpy as jnp
 
 from viperleed_jax.constants import BOHR
 
-@jax.named_scope("sum_intensity")
+#@jax.named_scope("sum_intensity")
 def sum_intensity(prefactors, reference_amplitudes, delta_amplitudes):
     return prefactors * abs(reference_amplitudes + delta_amplitudes) ** 2
 
-@jax.named_scope("_intensity_prefactor")
+#@jax.named_scope("_intensity_prefactor")
 def intensity_prefactor(displacement, ref_data,
                         beam_indices, theta, phi, trar, is_surface_atom):
     # prefactors (refraction) from amplitudes to intensities
