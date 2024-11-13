@@ -11,16 +11,16 @@ import numpy as np
 
 from viperleed_jax.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 from viperleed_jax.gaunt_coefficients import CSUM_COEFFS
-from viperleed_jax.lib_math import bessel, HARMONY, safe_norm, EPS
-
+from viperleed_jax.lib_math import spherical_harmonics_components
+from viperleed_jax.lib_math import bessel, safe_norm, EPS
 
 # TODO: replace energy, v_imag with a single arg kappa = 2*energy - 2j*v_imag
 @partial(jax.profiler.annotate_function, name="calc_propagator")
-def calc_propagator(LMAX, c, kappa):
+def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
     c_norm = safe_norm(c)
 
     BJ = bessel(kappa * c_norm, 2*LMAX)
-    YLM = HARMONY(c, LMAX)  # TODO: move outside since it's not energy dependent
+    YLM = c_sph_harm_components
 
     dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
     dense_mp_2d =  DENSE_QUANTUM_NUMBERS[LMAX][:, :, 3]

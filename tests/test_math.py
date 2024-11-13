@@ -8,7 +8,7 @@ import jax
 from jax import numpy as jnp
 from viperleed_jax.lib_math import _divide_zero_safe
 from viperleed_jax.dense_quantum_numbers import DENSE_M, DENSE_L
-from viperleed_jax.lib_math import bessel, HARMONY, _divide_zero_safe, EPS
+from viperleed_jax.lib_math import bessel, spherical_harmonics_components, _divide_zero_safe, EPS
 from viperleed_jax.lib_math import safe_norm, cart_to_polar, spherical_to_cart
 
 def scipy_bessel(n, z):
@@ -160,7 +160,7 @@ class TestHARMONY:
         # Compute expected output using sph_harm directly
         expected_output = sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.array([jnp.arctan2(C[2]+EPS, C[1]+EPS)]), jnp.array([jnp.arccos((C[0]+EPS)/safe_norm(C))]))
         # Compare with the output of HARMONY function
-        assert HARMONY(C, LMAX) == pytest.approx(expected_output)
+        assert spherical_harmonics_components(C, LMAX) == pytest.approx(expected_output)
 
     def test_HARMONY_division_by_zero(self):
         # Define input vector C where division by zero might occur
@@ -169,7 +169,7 @@ class TestHARMONY:
         # Compute expected output manually as sph_harm will raise errors
         expected_output = sph_harm(DENSE_M[2*LMAX], DENSE_L[2*LMAX], jnp.pi*0.25, 0)
         # Compare with the output of HARMONY function
-        assert HARMONY(C, LMAX) == pytest.approx(expected_output)
+        assert spherical_harmonics_components(C, LMAX) == pytest.approx(expected_output)
 
 class TestBessel:
     # rudimentary tests for bessel functions only, since

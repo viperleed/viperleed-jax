@@ -66,8 +66,7 @@ def bessel(z, n1):
     return BESSEL_FUNCTIONS[n1](z+EPS)
 
 
-@jax.named_scope("HARMONY")
-def HARMONY(C, LMAX):
+def spherical_harmonics_components(C, LMAX):
     """Generates the spherical harmonics for the vector C.
 
     This is a python implementation of the fortran subroutine HARMONY from

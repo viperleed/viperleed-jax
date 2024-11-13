@@ -288,16 +288,20 @@ class TensorLEEDCalculator:
     def _calculate_static_propagators(self):
         # this is only done once – perform for maximum lmax and crop later
         propagator_vmap_en = jax.vmap(calc_propagator,
-                                      in_axes=(None, None, 0))
+                                      in_axes=(None, None, None, 0))
         displacements_ang = jnp.asarray(self._parameter_space.static_propagator_inputs)
         displacements_au = atomic_units.to_internal_displacement_vector(displacements_ang)
-        self._static_propagators = jnp.array([
-            propagator_vmap_en(
-                self.max_l_max,
-                displacement,
-                self.kappa
-            )
+        spherical_harmonics_components = jnp.array([
+            lib_math.spherical_harmonics_components(self.max_l_max, displacement)
             for displacement in displacements_au])
+        self._static_propagators = jnp.array(
+            [
+                propagator_vmap_en(self.max_l_max, displacement, components, self.kappa)
+                for displacement, components in zip(
+                    displacements_au, spherical_harmonics_components
+                )
+            ]
+        )
 
     def _calculate_dynamic_t_matrices(self, vib_amps, energy_indices):
         t_matrix_vmap_en = jax.vmap(vib_dependent_tmatrix,
@@ -353,22 +357,24 @@ class TensorLEEDCalculator:
         return t_matrices
 
     @partial(jax.profiler.annotate_function, name="tc.calculate_dynamic_propagator")
-    def _calculate_dynamic_propagators(self, displacements, energy_indices):
+    def _calculate_dynamic_propagators(self, displacements, components, energy_indices):
         propagator_vmap_en = jax.vmap(calc_propagator,
                                       in_axes=(None, None, 0))
 
-        def body_fn(carry, displacement):
+        def body_fn(carry, displacement_component):
             # Compute the result for the current displacement
+            displacement, component = displacement_component
             result = propagator_vmap_en(
                 self.max_l_max,
                 displacement,
+                component,
                 self.kappa[energy_indices],
             )
             # No carry state needed, just passing through
             return carry, result
 
         # Initial carry state can be None if not needed
-        _, results = jax.lax.scan(body_fn, None, displacements)
+        _, results = jax.lax.scan(body_fn, None, zip(displacements, components))
         return results
 
     def _calculate_propagators(self, displacements, energy_indices):
@@ -616,6 +622,10 @@ class TensorLEEDCalculator:
         displacements_ang = self.parameter_space.reference_displacements(geo_parms)
         displacements_ang = jnp.asarray(displacements_ang)
         displacements_au = atomic_units.to_internal_displacement_vector(displacements_ang)
+        displacement_components = jnp.array([
+            lib_math.spherical_harmonics_components(self.max_l_max, displacement)
+            for displacement in displacements_au
+        ])
 
         # vibrational amplitudes, converted to atomic units
         vib_amps_au = self.parameter_space.reference_vib_amps(vib_params)
@@ -639,7 +649,9 @@ class TensorLEEDCalculator:
             energy_ids = jnp.asarray(batch.energy_indices)
 
             # propagators - already rotated
-            propagators = self._calculate_propagators(displacements_au, energy_ids)
+            propagators = self._calculate_propagators(displacements_au,
+                                                      displacement_components,
+                                                      energy_ids)
 
             # crop propagators
             propagators = propagators[:, :, :(l_max+1)**2, :(l_max+1)**2]
@@ -879,7 +891,7 @@ def benchmark_calculator(calculator, free_params, n_repeats=10):
 
     return r_fac_compile_time, r_fac_time, grad_compile_time, grad_time
 
-
+@jax.named_scope("calculate_delta_t_matrix")
 def calculate_delta_t_matrix(propagator, t_matrix_vib, t_matrix_ref, chem_weight):
     # delta_t_matrix is the change of the atomic t-matrix with new
     # vibrational amplitudes and after applying the displacement
