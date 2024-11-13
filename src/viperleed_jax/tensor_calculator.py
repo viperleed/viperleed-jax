@@ -359,27 +359,28 @@ class TensorLEEDCalculator:
     @partial(jax.profiler.annotate_function, name="tc.calculate_dynamic_propagator")
     def _calculate_dynamic_propagators(self, displacements, components, energy_indices):
         propagator_vmap_en = jax.vmap(calc_propagator,
-                                      in_axes=(None, None, 0))
+                                      in_axes=(None, None, None, 0))
 
-        def body_fn(carry, displacement_component):
+        def body_fn(carry, displacement_index):
             # Compute the result for the current displacement
-            displacement, component = displacement_component
             result = propagator_vmap_en(
                 self.max_l_max,
-                displacement,
-                component,
+                displacements[displacement_index],
+                components[displacement_index],
                 self.kappa[energy_indices],
             )
             # No carry state needed, just passing through
             return carry, result
 
         # Initial carry state can be None if not needed
-        _, results = jax.lax.scan(body_fn, None, zip(displacements, components))
+        _, results = jax.lax.scan(body_fn, None, jnp.arange(len(displacements)))
         return results
 
-    def _calculate_propagators(self, displacements, energy_indices):
+    def _calculate_propagators(self, displacements,
+                               displacements_components,energy_indices):
         # return propagators indexed as (base_scatterers, energies, lm, l'm')
-        dynamic_propagators = self._calculate_dynamic_propagators(displacements, energy_indices)
+        dynamic_propagators = self._calculate_dynamic_propagators(
+            displacements, displacements_components, energy_indices)
 
         # if there are 0 static propagators, indexing would raise Error
         if len(self._static_propagators) == 0:
