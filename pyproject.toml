@@ -110,8 +110,13 @@ namespaces = false
     msg-template = '"{module} - L{line:4d}: {msg_id:5s}: {msg} ({symbol})"'
 
     [tool.ruff]
+    fix = true
     line-length = 80
     indent-width = 4
 
+    [tool.ruff.lint]
+    select = ["I"]
+
     [tool.ruff.format]
+    quote-style = "single"
     docstring-code-format = true
