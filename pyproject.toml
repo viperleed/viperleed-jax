@@ -108,3 +108,10 @@ namespaces = false
     [tool.pylint.reports]
     output-format = 'colorized'
     msg-template = '"{module} - L{line:4d}: {msg_id:5s}: {msg} ({symbol})"'
+
+    [tool.ruff]
+    line-length = 80
+    indent-width = 4
+
+    [tool.ruff.format]
+    docstring-code-format = true
