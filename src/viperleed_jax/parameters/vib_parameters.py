@@ -54,7 +54,7 @@ class VibHLConstraintNode(HLConstraintNode):
 
 
 class VibLinkedHLConstraint(VibHLConstraintNode):
-    """Class for explicit links of geometric parameters."""
+    """Class for explicit links of vibrational parameters."""
 
     def __init__(self, children, name):
         # check that all children have the same dof
