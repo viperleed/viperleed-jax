@@ -273,8 +273,16 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
             # 1D in-plane movement in addition to z
             dof = 2
             name = "Symmetry (1D in-plane)"
-            # TODO: sort this out (discuss using fractional coordinates)
-            raise NotImplementedError
+
+            # plane unit cell
+            ab_cell = children[0].base_scatterer.atom.slab.ab_cell
+            movement_vector = ab_cell @ freedir
+            movement_vector = movement_vector / np.linalg.norm(movement_vector)
+
+            for child in children:
+                weights = np.array([[1.0, 0.0], [0.0, np.nan], [0.0, np.nan]])
+                weights[1:3, 1] = movement_vector @ child.symrefm
+                transformers.append(LinearMap(weights, (3,)))
         else:
             raise ValueError(
                 "freedir attribute must be 0, 1, or have shape (2,)"
