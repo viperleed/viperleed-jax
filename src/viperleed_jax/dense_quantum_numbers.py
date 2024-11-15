@@ -1,22 +1,23 @@
 """Module for dense quantum number indexing"""
 
-__authors__ = ("Alexander M. Imre (@amimre)",)
-__created__ = "2024-02-17"
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-02-17'
 
 from pathlib import Path
 
 import numpy as np
 from jax import config
 
-config.update("jax_enable_x64", True)
+config.update('jax_enable_x64', True)
 import jax.numpy as jnp
 
 MAXIMUM_LMAX = 18
 
 # load precalculated dense quantum numbers
 _FULL_DENSE_QUANTUM_NUMBERS = np.load(
-    Path(__file__).parent / "dense_quantum_numbers.npy", allow_pickle=False
+    Path(__file__).parent / 'dense_quantum_numbers.npy', allow_pickle=False
 )
+
 
 # TODO: come up with a faster version of this
 def _asymmetric_dense_quantum_numbers(lmax_1, lmax_2):
@@ -60,7 +61,7 @@ def map_l_array_to_compressed_quantum_index(array, LMAX):
     [val(l=0), val(l=1), val(l=1), val(l=1), val(l=2), ...].
     """
     if array.shape[0] != LMAX + 1:
-        raise ValueError("Array shape does not match LMAX")
+        raise ValueError('Array shape does not match LMAX')
     broadcast_l_index = DENSE_L[LMAX]
     mapped_array = jnp.asarray(array)[broadcast_l_index]
     return mapped_array

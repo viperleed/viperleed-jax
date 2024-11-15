@@ -1,27 +1,28 @@
 """Module data_structures."""
 
-__authors__ = ("Alexander M. Imre (@amimre)",)
-__created__ = "2024-04-29"
-
-from dataclasses import dataclass
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-04-29'
 
 import sys
 from collections import defaultdict
-
-import numpy as np
-
-from viperleed.calc.files.beams import readOUTBEAMS
+from dataclasses import dataclass
 
 import jax.numpy as jnp
+import numpy as np
 from jax.tree_util import register_pytree_node_class
-from viperleed_jax.dense_quantum_numbers import DENSE_L, DENSE_M, MINUS_ONE_POW_M
+from viperleed.calc.files.beams import readOUTBEAMS
 
-from viperleed_jax.hashable_array import HashableArray
 from viperleed_jax.constants import HARTREE
-
+from viperleed_jax.dense_quantum_numbers import (
+    DENSE_L,
+    DENSE_M,
+    MINUS_ONE_POW_M,
+)
+from viperleed_jax.hashable_array import HashableArray
 
 # TODO: keep everything in atomic units (Hartree, Bohr) internally
 # TODO: maybe make property to print into eV, Angstroms, etc.
+
 
 @register_pytree_node_class
 class ReferenceData:
@@ -64,17 +65,18 @@ class ReferenceData:
     tensor_amps_out: np.ndarray
     tensor_amps_in: np.ndarray
     """
+
     expected_kws = (
-            'energies',
-            'v0r',
-            'ref_amps',
-            'kx_in',
-            'ky_in',
-            'lmax',
-            'ref_t_matrix',
-            'tensor_amps_in',
-            'tensor_amps_out'
-        )
+        'energies',
+        'v0r',
+        'ref_amps',
+        'kx_in',
+        'ky_in',
+        'lmax',
+        'ref_t_matrix',
+        'tensor_amps_in',
+        'tensor_amps_out',
+    )
 
     def __init__(self, tensors, fix_lmax=False):
         """TODO
@@ -96,7 +98,7 @@ class ReferenceData:
         # Check consistency of tensor files
         for comp_tensor in tensors[1:]:
             if not tensors[0].is_consistent(comp_tensor):
-                raise ValueError("Inconsistent tensor files")
+                raise ValueError('Inconsistent tensor files')
 
         self.n_tensors = len(tensors)
 
@@ -107,12 +109,12 @@ class ReferenceData:
         # we don't yet support energy dependent v0i
         v0i_per_energy = tensors[0].v0i_substrate
         if not np.all(v0i_per_energy == v0i_per_energy[0]):
-            raise ValueError("Energy dependent v0i not supported")
-        self.v0i = v0i_per_energy[0]     # in Hartree
+            raise ValueError('Energy dependent v0i not supported')
+        self.v0i = v0i_per_energy[0]  # in Hartree
 
         # Energy Dependent Data
-        self.energies = np.asarray(tensors[0].e_kin) # in Hartree
-        self.v0r = np.asarray(tensors[0].v0r)        # in Hartree
+        self.energies = np.asarray(tensors[0].e_kin)  # in Hartree
+        self.v0r = np.asarray(tensors[0].v0r)  # in Hartree
 
         self.ref_amps = np.asarray(tensors[0].ref_amps)
 
@@ -125,15 +127,20 @@ class ReferenceData:
         dynamic_lmax = tensors[0].n_phaseshifts_per_energy - 1
         if fix_lmax:
             if isinstance(fix_lmax, int):
-                self.lmax = [fix_lmax,]*len(self.energies)
+                self.lmax = [
+                    fix_lmax,
+                ] * len(self.energies)
             else:
                 max_lmax = int(max(dynamic_lmax))
-                self.lmax = [max_lmax,]*len(self.energies)
+                self.lmax = [
+                    max_lmax,
+                ] * len(self.energies)
         else:
             self.lmax = dynamic_lmax
 
-        self.energy_ids_for_lmax = {int(l):
-            np.where(np.array(self.lmax) == l)[0] for l in self.lmax}
+        self.energy_ids_for_lmax = {
+            int(l): np.where(np.array(self.lmax) == l)[0] for l in self.lmax
+        }
 
         # LMAX dependent quantities – crop to max needed shape
         ref_t_matrix = defaultdict(list)
@@ -141,21 +148,25 @@ class ReferenceData:
         tensor_amps_out = defaultdict(list)
         for en_id, lmax in enumerate(self.lmax):
             # crop to the first lmax+1 elements (l indexed)
-            tmp_ref_t_matrix = [t.t_matrix[en_id, :lmax+1]
-                                for t in tensors]
+            tmp_ref_t_matrix = [t.t_matrix[en_id, : lmax + 1] for t in tensors]
             # crops to the first (lmax+1)^2 elements (lm indexed)
-            tmp_tensor_amps_in = [t.tensor_amps_in[en_id, :(lmax+1)**2]
-                                  for t in tensors]
+            tmp_tensor_amps_in = [
+                t.tensor_amps_in[en_id, : (lmax + 1) ** 2] for t in tensors
+            ]
             # transpose to swap lm, and beams axis for tensor_amps_out
-            tmp_tensor_amps_out = [t.tensor_amps_out[en_id, :, :(lmax+1)**2].T
-                                   for t in tensors]
+            tmp_tensor_amps_out = [
+                t.tensor_amps_out[en_id, :, : (lmax + 1) ** 2].T
+                for t in tensors
+            ]
 
             # One more conversion for usage in the delta amplitude calculation:
             # tensor_amps_out is for outgoing beams, so we need to swap indices
-            # m -> -m. To do this in the dense representation, we do the 
+            # m -> -m. To do this in the dense representation, we do the
             # following:
             tmp_tensor_amps_out = [
-                amps[(DENSE_L[lmax]+1)**2 - DENSE_L[lmax] - DENSE_M[lmax] -1]
+                amps[
+                    (DENSE_L[lmax] + 1) ** 2 - DENSE_L[lmax] - DENSE_M[lmax] - 1
+                ]
                 for amps in tmp_tensor_amps_out
             ]
 
@@ -173,12 +184,13 @@ class ReferenceData:
         del tmp_ref_t_matrix, tmp_tensor_amps_in, tmp_tensor_amps_out
 
         # convert to arrays
-        self.ref_t_matrix = {l:np.asarray(ref_t_matrix[l])
-                             for l in self.lmax}
-        self.tensor_amps_in = {l:np.asarray(tensor_amps_in[l])
-                               for l in self.lmax}
-        self.tensor_amps_out = {l:np.asarray(tensor_amps_out[l])
-                                for l in self.lmax}
+        self.ref_t_matrix = {l: np.asarray(ref_t_matrix[l]) for l in self.lmax}
+        self.tensor_amps_in = {
+            l: np.asarray(tensor_amps_in[l]) for l in self.lmax
+        }
+        self.tensor_amps_out = {
+            l: np.asarray(tensor_amps_out[l]) for l in self.lmax
+        }
 
     @property
     def needed_lmax(self):
@@ -196,10 +208,9 @@ class ReferenceData:
     def energy_ids_for_lmax(self, l):
         return np.where(self.lmax == l)[0]
 
-
     def _rebuild_from_dict(self, kw_dict):
         if not all(kw in kw_dict.keys() for kw in self.expected_kws):
-            raise ValueError("Not all keywords supplied to rebuild from dict.")
+            raise ValueError('Not all keywords supplied to rebuild from dict.')
         for kw in self.expected_kws:
             setattr(self, kw, kw_dict[kw])
 
@@ -239,7 +250,7 @@ class ReferenceData:
 
     @property
     def incident_energy_ev(self):
-        return (self.energies - self.v0r)*HARTREE
+        return (self.energies - self.v0r) * HARTREE
 
     @property
     def size_in_memory(self):
@@ -253,11 +264,11 @@ class ReferenceData:
             Total size in bytes of all arrays."""
         total_size_in_bytes = 0
         # simple arrays
-        for attr in ["energies", "v0i", "v0r", "ref_amps", "kx_in", "ky_in"]:
+        for attr in ['energies', 'v0i', 'v0r', 'ref_amps', 'kx_in', 'ky_in']:
             total_size_in_bytes += sys.getsizeof(getattr(self, attr))
 
         # lists of arrays - TODO: fix, this is broken since refactor
-        for attr in ["tensor_amps_in", "tensor_amps_out"]:
+        for attr in ['tensor_amps_in', 'tensor_amps_out']:
             for array in getattr(self, attr):
                 total_size_in_bytes += sys.getsizeof(array)
 

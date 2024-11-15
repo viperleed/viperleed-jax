@@ -1,16 +1,20 @@
 """Module vib_parameters."""
 
-__authors__ = ("Alexander M. Imre (@amimre)",)
-__created__ = "2024-09-09"
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-09-09'
 
 import numpy as np
 
-from .hierarchical_linear_tree import HLScattererLeafNode, HLConstraintNode
-from .hierarchical_linear_tree import HLTreeLayers
-from .hierarchical_linear_tree import ParameterHLSubtree
+from .hierarchical_linear_tree import (
+    HLConstraintNode,
+    HLScattererLeafNode,
+    HLTreeLayers,
+    ParameterHLSubtree,
+)
 from .linear_transformer import LinearTransformer
 
 EPS = 1e-6  # TODO: move to constants
+
 
 class VibHLLeafNode(HLScattererLeafNode):
     """Represents a leaf node with vibrational parameters."""
@@ -18,7 +22,7 @@ class VibHLLeafNode(HLScattererLeafNode):
     def __init__(self, base_scatterer):
         dof = 1
         super().__init__(dof=dof, base_scatterer=base_scatterer)
-        self.name = f"vib (At_{self.num},{self.site},{self.element})"
+        self.name = f'vib (At_{self.num},{self.site},{self.element})'
         self.ref_vib_amp = base_scatterer.atom.site.vibamp[self.element]
 
         # apply reference vibrational amplitudes as non-enforced bounds
@@ -29,9 +33,9 @@ class VibHLLeafNode(HLScattererLeafNode):
     def _update_bounds(self, line):
         # vibrational leaves are 1D, so bounds are scalars
         range = line.range
-        self._bounds.update_range(_range=(range.start, range.stop),
-                                  offset=None,
-                                  enforce=True)
+        self._bounds.update_range(
+            _range=(range.start, range.stop), offset=None, enforce=True
+        )
 
     def update_offsets(self, line):
         offset = line.value
@@ -42,16 +46,22 @@ class VibHLConstraintNode(HLConstraintNode):
     """Represents a constraint node for vibrational parameters."""
 
     def __init__(self, children, name, layer, dof=1, transformers=None):
-
         if dof != 1:
-            raise ValueError("Vibrational constraints must have dof=1.")
+            raise ValueError('Vibrational constraints must have dof=1.')
 
         if transformers is None:
             # default to identity transformers
-            transformers = [LinearTransformer(np.eye(1), np.zeros(1), (1,))
-                            for _ in children]
-        super().__init__(dof=dof, name=name, children=children, layer=layer,
-                         transformers=transformers)
+            transformers = [
+                LinearTransformer(np.eye(1), np.zeros(1), (1,))
+                for _ in children
+            ]
+        super().__init__(
+            dof=dof,
+            name=name,
+            children=children,
+            layer=layer,
+            transformers=transformers,
+        )
 
 
 class VibLinkedHLConstraint(VibHLConstraintNode):
@@ -60,7 +70,7 @@ class VibLinkedHLConstraint(VibHLConstraintNode):
     def __init__(self, children, name):
         # check that all children have the same dof
         if len(set(child.dof for child in children)) != 1:
-            raise ValueError("Children must have the same dof.")
+            raise ValueError('Children must have the same dof.')
         dof = children[0].dof
 
         # ensure that children have consistent bounds
@@ -74,17 +84,18 @@ class VibLinkedHLConstraint(VibHLConstraintNode):
             # incompatible with explicit constraints!
             if not np.any(mask):
                 raise ValueError(
-                    f"Linking vibrations for {child.name} requires "
-                    f"bounds to be defined."
+                    f'Linking vibrations for {child.name} requires '
+                    f'bounds to be defined.'
                 )
             _upper, _lower = upper[mask], lower[mask]
             # all _upper and all _lower should be the same
-            if (not np.all(abs(_upper - _upper[0]) < EPS) or                    # Need to implement reference nodes...
-                not np.all(abs(_lower - _lower[0]) < EPS
-            )):
-                raise ValueError(
-                    f"Inconsistent bounds for {child.name}."
-                )
+            if (
+                not np.all(
+                    abs(_upper - _upper[0]) < EPS
+                )  # Need to implement reference nodes...
+                or not np.all(abs(_lower - _lower[0]) < EPS)
+            ):
+                raise ValueError(f'Inconsistent bounds for {child.name}.')
             # let's create the transformer
             weights = np.array([[_upper[0] - _lower[0]]])
             biases = np.array([_lower[0]])
@@ -105,10 +116,11 @@ class VibHLSiteConstraint(VibHLConstraintNode):
     def __init__(self, children):
         # check that all children are leaf nodes and share a site-element
         if not all(isinstance(child, VibHLLeafNode) for child in children):
-            raise ValueError("Children must be VibHLLeaf nodes.")
-        if not all(child.site_element == children[0].site_element
-                   for child in children):
-            raise ValueError("Children must have the same site-element.")
+            raise ValueError('Children must be VibHLLeaf nodes.')
+        if not all(
+            child.site_element == children[0].site_element for child in children
+        ):
+            raise ValueError('Children must have the same site-element.')
         self.ref_vib_amp = children[0].ref_vib_amp
         self.site_element = children[0].site_element
         dof = 1
@@ -117,10 +129,13 @@ class VibHLSiteConstraint(VibHLConstraintNode):
             dof=dof,
             children=children,
             transformers=None,  # transformers default to identity
-            name=(f"vib ({children[0].site_element.site},"
-                  f"{children[0].site_element.element})"),
+            name=(
+                f'vib ({children[0].site_element.site},'
+                f'{children[0].site_element.element})'
+            ),
             layer=HLTreeLayers.Symmetry,
         )
+
 
 class VibHLSubtree(ParameterHLSubtree):
     def __init__(self, base_scatterers):
@@ -128,16 +143,14 @@ class VibHLSubtree(ParameterHLSubtree):
 
     @property
     def name(self):
-        return "Vibrational Parameters"
+        return 'Vibrational Parameters'
 
     @property
     def subtree_root_name(self):
-        return "vib root"
+        return 'vib root'
 
     def build_subtree(self):
-
-        leaf_nodes = [VibHLLeafNode(ase)
-                    for ase in self.base_scatterers]
+        leaf_nodes = [VibHLLeafNode(ase) for ase in self.base_scatterers]
 
         self.nodes.extend(leaf_nodes)
 
@@ -157,7 +170,6 @@ class VibHLSubtree(ParameterHLSubtree):
         for node in self.roots:
             node.check_bounds_valid()
 
-
     def apply_explicit_constraint(self, constraint_line):
         # self._check_constraint_line_type(constraint_line, "vib")
         *_, selected_roots = self._select_constraint(constraint_line)
@@ -166,7 +178,7 @@ class VibHLSubtree(ParameterHLSubtree):
             node.dof == selected_roots[0].dof for node in selected_roots
         ):
             raise ValueError(
-                "All root nodes must have the same number of free parameters."
+                'All root nodes must have the same number of free parameters.'
             )
         # create a constraint node for the selected roots
         self.nodes.append(
@@ -187,18 +199,24 @@ class VibHLSubtree(ParameterHLSubtree):
         """Return a transformer that maps the free parameters to the dynamic
         vibrational amplitudes."""
         dynamic_reference_nodes = {
-            node.site_element:node for node
-            in reversed(np.array(self.leaves)[self.leaf_is_dynamic])
+            node.site_element: node
+            for node in reversed(np.array(self.leaves)[self.leaf_is_dynamic])
         }
         # un-reverse the order
-        return list(reversed([self.subtree_root.transformer_to_descendent(node)
-                for node in dynamic_reference_nodes.values()]))
+        return list(
+            reversed(
+                [
+                    self.subtree_root.transformer_to_descendent(node)
+                    for node in dynamic_reference_nodes.values()
+                ]
+            )
+        )
 
     @property
     def dynamic_site_elements(self):
         dynamic_site_elements = [
-            node.site_element for node
-            in np.array(self.leaves)[self.leaf_is_dynamic]
+            node.site_element
+            for node in np.array(self.leaves)[self.leaf_is_dynamic]
         ]
         # make unique
         return tuple(dict.fromkeys(dynamic_site_elements))
@@ -206,8 +224,8 @@ class VibHLSubtree(ParameterHLSubtree):
     @property
     def static_t_matrix_inputs(self):
         static_t_matrix_inputs = {
-            node.site_element:node.ref_vib_amp for node
-            in np.array(self.leaves)[~self.leaf_is_dynamic]
+            node.site_element: node.ref_vib_amp
+            for node in np.array(self.leaves)[~self.leaf_is_dynamic]
         }
         return static_t_matrix_inputs
 
@@ -220,8 +238,11 @@ class VibHLSubtree(ParameterHLSubtree):
         # return a tuple with the site_elements for each base parameter
         return [
             ('static', self.static_site_elements.index(leaf.site_element))
-            if leaf.site_element in self.static_site_elements else
-            ('dynamic', self.dynamic_site_elements.index(leaf.site_element))
+            if leaf.site_element in self.static_site_elements
+            else (
+                'dynamic',
+                self.dynamic_site_elements.index(leaf.site_element),
+            )
             for leaf in self.leaves
         ]
 

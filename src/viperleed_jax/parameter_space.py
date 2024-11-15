@@ -1,28 +1,30 @@
 """Module parameter_space."""
-__authors__ = ("Alexander M. Imre (@amimre)",)
-__created__ = "2024-09-02"
+
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-09-02'
 
 from collections import namedtuple
 from copy import deepcopy
 
-import numpy as np
 import jax
+import numpy as np
 from jax import numpy as jnp
 from jax.tree_util import register_pytree_node_class
 
-from .parameters import occ_parameters
-from .parameters import vib_parameters
-from .parameters import geo_parameters
-from .parameters import meta_parameters
 from .files.displacements.reader import DisplacementFileSections
+from .parameters import (
+    geo_parameters,
+    meta_parameters,
+    occ_parameters,
+    vib_parameters,
+)
 from .parameters.hierarchical_linear_tree import HLTreeLayers
 
 _ATOM_Z_DIR_ID = 2
 _DISP_Z_DIR_ID = 0
 
 
-class ParameterSpace():
-
+class ParameterSpace:
     def __init__(self, base_scatterers, rpars):
         self._displacements_applied = False
         self.base_scatterers = base_scatterers
@@ -47,8 +49,7 @@ class ParameterSpace():
 
         # atom-site-element reference z positions
         self._ats_ref_z_pos = jnp.array(
-            [bs.atom.cartpos[_ATOM_Z_DIR_ID]
-             for bs in self.base_scatterers]
+            [bs.atom.cartpos[_ATOM_Z_DIR_ID] for bs in self.base_scatterers]
         )
 
     def apply_displacements(self, offset_block=None, search_block=None):
@@ -60,11 +61,12 @@ class ParameterSpace():
         search_block
         """
         if self._displacements_applied:
-            raise ValueError("Displacements have already been applied.")
+            raise ValueError('Displacements have already been applied.')
 
         if offset_block is None and search_block is None:
-            raise ValueError("Either offset_block or search_block must be "
-                             "provided.")
+            raise ValueError(
+                'Either offset_block or search_block must be ' 'provided.'
+            )
 
         if offset_block is not None:
             # parse and set the offsets
@@ -103,15 +105,14 @@ class ParameterSpace():
         offsets_block
         """
         for line in offsets_block.lines:
-            if line.offset_type == "geo":
+            if line.offset_type == 'geo':
                 self.geo_subtree.apply_offsets(line)
-            elif line.offset_type == "vib":
+            elif line.offset_type == 'vib':
                 self.vib_subtree.apply_offsets(line)
-            elif line.offset_type == "occ":
+            elif line.offset_type == 'occ':
                 self.occ_subtree.apply_offsets(line)
             else:
-                raise ValueError("Unknown offset type: "
-                                 f"{line.offset_type}")
+                raise ValueError('Unknown offset type: ' f'{line.offset_type}')
         self.check_for_inconsistencies()
 
     def _parse_bounds(self, search_block):
@@ -137,22 +138,25 @@ class ParameterSpace():
         ----------
         constrain_block
         """
-        constraints_block = search_block.sections[DisplacementFileSections.CONSTRAIN]
+        constraints_block = search_block.sections[
+            DisplacementFileSections.CONSTRAIN
+        ]
         for constraint in constraints_block:
-            if constraint.constraint_type == "geo": # TODO: make into Enum
+            if constraint.constraint_type == 'geo':  # TODO: make into Enum
                 self.geo_subtree.apply_explicit_constraint(constraint)
-            elif constraint.constraint_type == "vib":
+            elif constraint.constraint_type == 'vib':
                 self.vib_subtree.apply_explicit_constraint(constraint)
-            elif constraint.constraint_type == "occ":
+            elif constraint.constraint_type == 'occ':
                 self.occ_subtree.apply_explicit_constraint(constraint)
             else:
-                raise ValueError("Unknown constraint type: "
-                                 f"{constraint.constraint_type}")
+                raise ValueError(
+                    'Unknown constraint type: ' f'{constraint.constraint_type}'
+                )
         self.check_for_inconsistencies()
 
     def freeze(self):
         if not self._displacements_applied:
-            raise ValueError("Displacements must be applied before freezing.")
+            raise ValueError('Displacements must be applied before freezing.')
         return FrozenParameterSpace(self)
 
     def _free_params_up_to_layer(self, layer):
@@ -190,11 +194,12 @@ class ParameterSpace():
 
     @property
     def n_free_params(self):
-        """Returns the total number of free parameters in the parameter space.
-        """
+        """Returns the total number of free parameters in the parameter space."""
         if not self._displacements_applied:
-            raise ValueError("Displacements must be applied before counting "
-                             "free parameters.")
+            raise ValueError(
+                'Displacements must be applied before counting '
+                'free parameters.'
+            )
         return sum(self._free_params_up_to_layer(HLTreeLayers.Root))
 
     @property
@@ -202,8 +207,8 @@ class ParameterSpace():
         """Returns the total number of free parameters in the parameter space."""
         if not self._displacements_applied:
             raise ValueError(
-                "Displacements must be applied before counting "
-                "user constrained parameters."
+                'Displacements must be applied before counting '
+                'user constrained parameters.'
             )
         return sum(self._free_params_up_to_layer(HLTreeLayers.User_Constraints))
 
@@ -282,13 +287,11 @@ class ParameterSpace():
 
     @property
     def is_dynamic_t_matrix(self):
-        return np.array([val == "dynamic" for (val, id) in self.t_matrix_map])
+        return np.array([val == 'dynamic' for (val, id) in self.t_matrix_map])
 
     @property
     def is_dynamic_propagator(self):
-        return np.array(
-            [val == "dynamic" for (val, id) in self.propagator_map]
-        )
+        return np.array([val == 'dynamic' for (val, id) in self.propagator_map])
 
     @property
     def is_dynamic_scatterer(self):
@@ -330,12 +333,14 @@ class ParameterSpace():
 
     @property
     def n_param_split(self):
-        return np.array([
-            self.meta_param_subtree.subtree_root.dof,
-            self.vib_subtree.subtree_root.dof,
-            self.geo_subtree.subtree_root.dof,
-            self.occ_subtree.subtree_root.dof,
-        ])
+        return np.array(
+            [
+                self.meta_param_subtree.subtree_root.dof,
+                self.vib_subtree.subtree_root.dof,
+                self.geo_subtree.subtree_root.dof,
+                self.occ_subtree.subtree_root.dof,
+            ]
+        )
 
     @property
     def info(self):
@@ -347,71 +352,71 @@ class ParameterSpace():
             str: Information about the parameters.
         """
         n_root_params = self._free_params_up_to_layer(HLTreeLayers.Root)
-        n_user_params = self._free_params_up_to_layer(HLTreeLayers.User_Constraints)
+        n_user_params = self._free_params_up_to_layer(
+            HLTreeLayers.User_Constraints
+        )
         n_sym_params = self._free_params_up_to_layer(HLTreeLayers.Symmetry)
         n_base_params = self._free_params_up_to_layer(HLTreeLayers.Base)
 
         def format(n_params):
-            return (f"({n_params[0]} V0r, "
-                   f"{n_params[1]} geo, "
-                   f"{n_params[2]} vib, "
-                   f"{n_params[3]} occ)"
-                   )
+            return (
+                f'({n_params[0]} V0r, '
+                f'{n_params[1]} geo, '
+                f'{n_params[2]} vib, '
+                f'{n_params[3]} occ)'
+            )
 
         return (
-            "Free parameters (implicit constraints):"
-            f"\n{self.n_free_params}\t{format(n_root_params)}\n"
-
-            "User constrained parameters:"
-            f"\n{self.n_user_constrained_params}\t{format(n_user_params)}\n"
-
-            "Symmetry constrained parameters:"
-            f"\n{self.n_symmetry_constrained_params}\t{format(n_sym_params)}\n"
-
-            "Total parameters:\n"
-            f"{self.n_base_params}\t{format(n_base_params)}\n"
+            'Free parameters (implicit constraints):'
+            f'\n{self.n_free_params}\t{format(n_root_params)}\n'
+            'User constrained parameters:'
+            f'\n{self.n_user_constrained_params}\t{format(n_user_params)}\n'
+            'Symmetry constrained parameters:'
+            f'\n{self.n_symmetry_constrained_params}\t{format(n_sym_params)}\n'
+            'Total parameters:\n'
+            f'{self.n_base_params}\t{format(n_base_params)}\n'
         )
 
 
 @register_pytree_node_class
-class FrozenParameterSpace():
+class FrozenParameterSpace:
     frozen_attributes = (
-        "_ats_ref_z_pos",
-        "all_displacements_transformer",
-        "all_vib_amps_transformer",
-        "dynamic_displacements_transformers",
-        "dynamic_scatterer_id",
-        "dynamic_scatterer_id",
-        "dynamic_scatterer_propagator_id",
-        "dynamic_scatterer_t_matrix_id",
-        "dynamic_t_matrix_site_elements",
-        "dynamic_t_matrix_transformers",
-        "info",
-        "is_dynamic_scatterer",
-        "is_dynamic_propagator",
-        "is_dynamic_t_matrix",
-        "n_base_params",
-        "n_base_scatterers",
-        "n_dynamic_scatterers",
-        "n_dynamic_propagators",
-        "n_dynamic_t_matrices",
-        "n_free_params",
-        "n_param_split",
-        "n_static_scatterers",
-        "n_static_propagators",
-        "n_static_t_matrices",
-        "n_symmetry_constrained_params",
-        "occ_weight_transformer",
-        "propagator_id",
-        "propagator_map",
-        "propagator_plane_symmetry_operations",
-        "site_elements",
-        "static_scatterer_id",
-        "static_propagator_inputs",
-        "static_t_matrix_inputs",
-        "t_matrix_id",
-        "t_matrix_map",
-        "v0r_transformer",
+        '_ats_ref_z_pos',
+        'all_displacements_transformer',
+        'all_vib_amps_transformer',
+        'dynamic_displacements_transformers',
+        'dynamic_scatterer_id',
+        'dynamic_scatterer_id',
+        'dynamic_scatterer_propagator_id',
+        'dynamic_scatterer_t_matrix_id',
+        'dynamic_t_matrix_site_elements',
+        'dynamic_t_matrix_transformers',
+        'info',
+        'is_dynamic_scatterer',
+        'is_dynamic_propagator',
+        'is_dynamic_t_matrix',
+        'n_base_params',
+        'n_base_scatterers',
+        'n_dynamic_scatterers',
+        'n_dynamic_propagators',
+        'n_dynamic_t_matrices',
+        'n_free_params',
+        'n_param_split',
+        'n_static_scatterers',
+        'n_static_propagators',
+        'n_static_t_matrices',
+        'n_symmetry_constrained_params',
+        'occ_weight_transformer',
+        'propagator_id',
+        'propagator_map',
+        'propagator_plane_symmetry_operations',
+        'site_elements',
+        'static_scatterer_id',
+        'static_propagator_inputs',
+        'static_t_matrix_inputs',
+        't_matrix_id',
+        't_matrix_map',
+        'v0r_transformer',
     )
 
     def __init__(self, parameter_space):
@@ -426,15 +431,21 @@ class FrozenParameterSpace():
 
     def split_free_params(self, free_params):
         if len(free_params) != self.n_free_params:
-            raise ValueError("Number of free parameters does not match.")
-        v0r_params = free_params[:self.n_param_split[0]]
-        vib_params = free_params[self.n_param_split[0]:sum(self.n_param_split[:2])]
-        geo_params = free_params[sum(self.n_param_split[:2]):sum(self.n_param_split[:3])]
-        occ_params = free_params[sum(self.n_param_split[:3]):]
+            raise ValueError('Number of free parameters does not match.')
+        v0r_params = free_params[: self.n_param_split[0]]
+        vib_params = free_params[
+            self.n_param_split[0] : sum(self.n_param_split[:2])
+        ]
+        geo_params = free_params[
+            sum(self.n_param_split[:2]) : sum(self.n_param_split[:3])
+        ]
+        occ_params = free_params[sum(self.n_param_split[:3]) :]
         return v0r_params, vib_params, geo_params, occ_params
 
     def expand_params(self, free_params):
-        v0r_params, vib_params, geo_params, occ_params = self.split_free_params(free_params)
+        v0r_params, vib_params, geo_params, occ_params = self.split_free_params(
+            free_params
+        )
         v0r_shift = self.v0r_transformer(v0r_params)
         vib_amps = self.all_vib_amps(vib_params)
         displacements = self.all_displacements(geo_params)
@@ -452,8 +463,10 @@ class FrozenParameterSpace():
         -------
         displacements: The displacements for all reference propagators.
         """
-        return [trafo(geo_free_params) for trafo in
-                self.dynamic_displacements_transformers]
+        return [
+            trafo(geo_free_params)
+            for trafo in self.dynamic_displacements_transformers
+        ]
 
     def reference_vib_amps(self, vib_free_params):
         """Calculate the vibrational amplitudes for all reference t-matrices.
@@ -466,8 +479,10 @@ class FrozenParameterSpace():
         -------
         vib_amps: The vibrational amplitudes for all reference t-matrices.
         """
-        return [trafo(vib_free_params) for trafo in
-                self.dynamic_t_matrix_transformers]
+        return [
+            trafo(vib_free_params)
+            for trafo in self.dynamic_t_matrix_transformers
+        ]
 
     def occ_weights(self, occ_free_params):
         """Calculate the occupation weights for all scatters.

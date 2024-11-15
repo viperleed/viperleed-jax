@@ -1,6 +1,7 @@
 """Module test.fixtures.base"""
-from collections.abc import Iterable
+
 import os
+from collections.abc import Iterable
 from pathlib import Path
 
 if 'VIPERLEED_ON_THE_FLY_TESTS_LARGE_FILE_PATH' not in os.environ:
@@ -14,17 +15,17 @@ if not LARGE_FILE_PATH.exists():
 
 class ComparisonTensErLEEDDeltaAmps(Iterable):
     def __init__(self, reference_data, compare_abs):
-        self.parameters = reference_data["parameters"]
+        self.parameters = reference_data['parameters']
         self.expected = [
             {
-                "v0r": reference_data["expected_v0r"][i],
-                "vib_amplitudes": reference_data["expected_vib_amps"][i],
-                "displacements": reference_data["expected_displacements"][i],
-                "occ": reference_data["expected_occ"][i],
-                "delta_amplitudes": reference_data[
-                    "tenserleed_delta_amplitudes"
+                'v0r': reference_data['expected_v0r'][i],
+                'vib_amplitudes': reference_data['expected_vib_amps'][i],
+                'displacements': reference_data['expected_displacements'][i],
+                'occ': reference_data['expected_occ'][i],
+                'delta_amplitudes': reference_data[
+                    'tenserleed_delta_amplitudes'
                 ][i],
-                "compare_abs": compare_abs,
+                'compare_abs': compare_abs,
             }
             for i in range(len(self.parameters))
         ]

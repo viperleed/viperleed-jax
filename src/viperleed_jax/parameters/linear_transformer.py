@@ -1,10 +1,10 @@
 """Module linear_transformer."""
 
-__authors__ = ("Alexander M. Imre (@amimre)",)
-__created__ = "2024-10-07"
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-10-07'
 
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
 
 
 class LinearTransformer:
@@ -22,14 +22,14 @@ class LinearTransformer:
         # consistency check of dimensions
         if self.weights.shape[0] != self._out_dim:
             raise ValueError(
-                f"Weight matrix shape {self.weights.shape} does not match "
-                f"bias shape {self.biases.shape}"
+                f'Weight matrix shape {self.weights.shape} does not match '
+                f'bias shape {self.biases.shape}'
             )
         if self.out_reshape is not None:
             if self._out_dim != np.prod(self.out_reshape):
                 raise ValueError(
-                    f"Output reshape {self.out_reshape} does not match bias "
-                    f"shape {self.biases.shape}"
+                    f'Output reshape {self.out_reshape} does not match bias '
+                    f'shape {self.biases.shape}'
                 )
 
     @property
@@ -45,7 +45,7 @@ class LinearTransformer:
             return self.biases
         free_params = jnp.asarray(free_params)
         if len(free_params) != self.n_free_params:
-            raise ValueError("Free parameters have wrong shape")
+            raise ValueError('Free parameters have wrong shape')
         result = self.weights @ free_params + self.biases  # Ax + b
         if self.out_reshape is not None:
             result = result.reshape(self.out_reshape)
@@ -73,10 +73,10 @@ class LinearTransformer:
         l3(l2(l1(x))) == l1.compose(l2).compose(l3)(x)
         """
         if not isinstance(other, LinearTransformer):
-            raise ValueError("Can only compose with another LinearTransformer")
+            raise ValueError('Can only compose with another LinearTransformer')
         if self.out_dim != other.in_dim:
             raise ValueError(
-                f"Cannot compose transformers with shapes {self._out_dim} and {other.in_dim}"
+                f'Cannot compose transformers with shapes {self._out_dim} and {other.in_dim}'
             )
         new_weights = other.weights @ self.weights
         new_biases = other.weights @ self.biases + other.biases
@@ -90,16 +90,16 @@ class LinearTransformer:
         return LinearTransformer(new_weights, new_biases, (_bool_mask.sum(),))
 
     def __repr__(self):
-        return f"LinearTransformer(weights={self.weights.shape}, biases={self.biases.shape}, out_reshape={self.out_reshape})"
+        return f'LinearTransformer(weights={self.weights.shape}, biases={self.biases.shape}, out_reshape={self.out_reshape})'
 
     def tree_flatten(self):
         aux_data = {
-            "n_free_params": self.n_free_params,
-            "weights": self.weights,
-            "biases": self.biases,
-            "out_reshape": self.out_reshape,
-            "_in_dim": self._in_dim,
-            "_out_dim": self._out_dim,
+            'n_free_params': self.n_free_params,
+            'weights': self.weights,
+            'biases': self.biases,
+            'out_reshape': self.out_reshape,
+            '_in_dim': self._in_dim,
+            '_out_dim': self._out_dim,
         }
         children = None
         return (children, aux_data)
@@ -112,7 +112,9 @@ class LinearTransformer:
         return frozen_parameter_space
 
     def boolify(self):
-        return LinearTransformer(np.bool_(self.weights), np.bool_(self.biases), self.out_reshape)
+        return LinearTransformer(
+            np.bool_(self.weights), np.bool_(self.biases), self.out_reshape
+        )
 
 
 class LinearMap(LinearTransformer):

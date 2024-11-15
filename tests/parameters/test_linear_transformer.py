@@ -1,5 +1,6 @@
-import pytest
 import jax.numpy as jnp
+import pytest
+
 from viperleed_jax.parameters.linear_transformer import LinearTransformer
 
 
@@ -20,8 +21,8 @@ def test_call_with_correct_shape():
     transformer = LinearTransformer(weights, biases)
     free_params = [0.5, 0.25]
     result = transformer(free_params)
-    expected = jnp.array([6., 8.5])  # [1*0.5 + 2*0.25 + 5, 3*0.5 + 4*0.25 + 6]
-    assert result ==  pytest.approx(expected)
+    expected = jnp.array([6.0, 8.5])  # [1*0.5 + 2*0.25 + 5, 3*0.5 + 4*0.25 + 6]
+    assert result == pytest.approx(expected)
 
 
 def test_call_with_incorrect_shape():
@@ -29,7 +30,7 @@ def test_call_with_incorrect_shape():
     biases = [5, 6]
     transformer = LinearTransformer(weights, biases)
     free_params = [0.5]  # Incorrect length
-    with pytest.raises(ValueError, match="Free parameters have wrong shape"):
+    with pytest.raises(ValueError, match='Free parameters have wrong shape'):
         transformer(free_params)
 
 
@@ -58,5 +59,5 @@ def test_repr():
     transformer = LinearTransformer(weights, biases)
     assert (
         repr(transformer)
-        == "LinearTransformer(weights=(2, 2), biases=(2,), out_reshape=None)"
+        == 'LinearTransformer(weights=(2, 2), biases=(2,), out_reshape=None)'
     )

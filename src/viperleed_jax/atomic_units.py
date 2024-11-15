@@ -2,12 +2,13 @@
 
 We use Angstrom and eV as inputs, but use atomic units internally."""
 
-__authors__ = ("Alexander M. Imre (@amimre)",)
-__created__ = "2024-09-05"
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-09-05'
 
 import jax.numpy as jnp
 
 from viperleed_jax.constants import BOHR, HARTREE
+
 
 def to_internal_displacement_vector(displacement_vector_ang):
     """Convert from Angstrom to atomic units and left handed coordinate system.
@@ -33,6 +34,7 @@ def to_internal_displacement_vector(displacement_vector_ang):
     vector = vector * jnp.array([1, 1, -1])
     return vector
 
+
 def to_internal_vib_amps(vib_amps_ang):
     """Convert from Angstrom to atomic units.
 
@@ -47,6 +49,7 @@ def to_internal_vib_amps(vib_amps_ang):
         Vibrational amplitudes in Bohr.
     """
     return vib_amps_ang / BOHR
+
 
 def to_atomic_unit_energy(energy_eV):
     """Convert energy from eV to atomic units.

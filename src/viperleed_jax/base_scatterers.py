@@ -1,15 +1,16 @@
 """Module base_scatterers of viperleed_jax."""
 
-__authors__ = ("Alexander M. Imre (@amimre)",)
-__created__ = "2024-10-14"
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-10-14'
 
 from collections import namedtuple
 
-SiteEl = namedtuple("SiteEl", ["site", "element"])
+SiteEl = namedtuple('SiteEl', ['site', 'element'])
 
 # TODO: To discuss
 # Currently, the internal numbering is a bit inconsitent.
 # Atom numbers start at 1, but layer numbers start at 0.
+
 
 class BaseScatterer:
     def __init__(self, atom, site_element):
@@ -29,9 +30,10 @@ class BaseScatterer:
 
     def __repr__(self):
         return (
-            f"BaseScatterer(num={self.num}, layer={self.layer}, "
-            f"site={self.site}, element={self.element})"
+            f'BaseScatterer(num={self.num}, layer={self.layer}, '
+            f'site={self.site}, element={self.element})'
         )
+
 
 class BaseScatterers:
     def __init__(self, slab):
@@ -42,15 +44,21 @@ class BaseScatterers:
             link_numbers = [at.num for at in linklist]
             atom_number_symmetry_links.append(link_numbers)
             reference_atom_number = link_numbers[0]
-            reference_scatterers = [scatterer for scatterer in self.scatterers
-                                    if scatterer.num == reference_atom_number]
+            reference_scatterers = [
+                scatterer
+                for scatterer in self.scatterers
+                if scatterer.num == reference_atom_number
+            ]
             site_elements = [scat.site_element for scat in reference_scatterers]
             for site_element in site_elements:
-                symmetry_links.append([
-                    scatterer for scatterer in self.scatterers
-                    if scatterer.site_element == site_element
-                    and scatterer.num in link_numbers
-                ])
+                symmetry_links.append(
+                    [
+                        scatterer
+                        for scatterer in self.scatterers
+                        if scatterer.site_element == site_element
+                        and scatterer.num in link_numbers
+                    ]
+                )
         self.atom_number_symmetry_links = tuple(atom_number_symmetry_links)
         self.symmetry_links = tuple(symmetry_links)
 

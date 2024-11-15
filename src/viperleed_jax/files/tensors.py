@@ -1,22 +1,24 @@
 """Module tensors."""
-__authors__ = ("Alexander M. Imre (@amimre)",
-               "Paul Haidegger (@Paulhai7)",
-               "Tobias Hable (@ElHablos)")
-__created__ = "2024-08-29"
 
-from dataclasses import dataclass
-import zipfile
-from io import StringIO
+__authors__ = (
+    'Alexander M. Imre (@amimre)',
+    'Paul Haidegger (@Paulhai7)',
+    'Tobias Hable (@ElHablos)',
+)
+__created__ = '2024-08-29'
+
 import re
+import zipfile
+from dataclasses import dataclass
+from io import StringIO
 
-
-import numpy as np
 import fortranformat as ff
+import numpy as np
 import tqdm
 
 ENERGY_BLOCK_SEPARATOR = '\n   -1\n'
-FF_READER_4E12_6 = ff.FortranRecordReader("4E12.6")
-FF_READER_4E16_12 = ff.FortranRecordReader("4E16.12")
+FF_READER_4E12_6 = ff.FortranRecordReader('4E12.6')
+FF_READER_4E16_12 = ff.FortranRecordReader('4E16.12')
 NUMBERS_PER_LINE = 5
 
 """General Information on the data layout
@@ -93,6 +95,7 @@ class TensorFileData:
         Same as kx_in, but for the y-component.
         PARAMETER AK3M in TensErLEED.
     """
+
     raw_file_hash: int
     e_kin: np.ndarray
     v0i_substrate: np.ndarray
@@ -107,15 +110,21 @@ class TensorFileData:
     ky_in: np.ndarray
 
     def __hash__(self):
-        return sum(hash(HashableArray(arr)) for arr in
-                   (self.e_kin, self.ref_amps, self.t_matrix,))
+        return sum(
+            hash(HashableArray(arr))
+            for arr in (
+                self.e_kin,
+                self.ref_amps,
+                self.t_matrix,
+            )
+        )
 
     @property
     def n_energies(self):
         return self.e_kin.size
 
     @property
-    def n_beams(self):           # NTO
+    def n_beams(self):  # NTO
         return self.ref_amps.shape[1]
 
     def is_consistent(self, other):
@@ -136,8 +145,9 @@ class TensorFileData:
         """
         return (
             np.allclose(self.e_kin, other.e_kin)
-            and np.all(self.n_phaseshifts_per_energy ==
-                       other.n_phaseshifts_per_energy)
+            and np.all(
+                self.n_phaseshifts_per_energy == other.n_phaseshifts_per_energy
+            )
             and np.all(self.n_beams == other.n_beams)
             and np.allclose(self.v0i_substrate, other.v0i_substrate)
             and np.allclose(self.v0i_overlayer, other.v0i_overlayer)
@@ -147,13 +157,14 @@ class TensorFileData:
             and np.allclose(self.ky_in, other.ky_in)
         )
 
+
 def number_of_lines(n_floats):
     return n_floats // NUMBERS_PER_LINE + bool(n_floats % NUMBERS_PER_LINE)
 
 
 def prepare_tensor_file_reader(max_l_max, n_beams, n_energies):
-    n_ref_amps_floats = 2*n_beams
-    n_ref_amps_lines= number_of_lines(n_ref_amps_floats)
+    n_ref_amps_floats = 2 * n_beams
+    n_ref_amps_lines = number_of_lines(n_ref_amps_floats)
 
     n_t_matrix_lines = {}
     n_outgoing_tensor_amp_block_lines = {}
@@ -163,38 +174,61 @@ def prepare_tensor_file_reader(max_l_max, n_beams, n_energies):
     FF_OUTGOING_TENSOR_AMPS_READERS = {}
 
     re_12_char_no_whitespace = re.compile(r'([^\s]{12})')
-    re_4x12_char_no_whitespace = re.compile(r'([^\s]{12})([^\s]{12})([^\s]{12})([^\s]{12})')
+    re_4x12_char_no_whitespace = re.compile(
+        r'([^\s]{12})([^\s]{12})([^\s]{12})([^\s]{12})'
+    )
     re_16_char_no_whitespace = re.compile(r'([^\s]{16})')
 
-    for l_max in range(1, max_l_max+1):
+    for l_max in range(1, max_l_max + 1):
         # set up number of expected floats and lines
-        n_t_matrix_floats = 2*(l_max+1)
+        n_t_matrix_floats = 2 * (l_max + 1)
 
-        n_outgoing_tensor_amps_floats = 2*(l_max+1)**2
+        n_outgoing_tensor_amps_floats = 2 * (l_max + 1) ** 2
 
         n_t_matrix_lines[l_max] = number_of_lines(n_t_matrix_floats)
-        n_outgoing_tensor_amp_block_lines[l_max] = 2 + number_of_lines(n_outgoing_tensor_amps_floats)
+        n_outgoing_tensor_amp_block_lines[l_max] = 2 + number_of_lines(
+            n_outgoing_tensor_amps_floats
+        )
 
         # set up Fortran record readers
-        FF_T_MATRIX_READERS[l_max] = ff.FortranRecordReader(f"{n_t_matrix_floats}E16.12")
-        FF_REF_AMPS_READERS[l_max] = ff.FortranRecordReader(f"{n_ref_amps_floats}E16.12")
+        FF_T_MATRIX_READERS[l_max] = ff.FortranRecordReader(
+            f'{n_t_matrix_floats}E16.12'
+        )
+        FF_REF_AMPS_READERS[l_max] = ff.FortranRecordReader(
+            f'{n_ref_amps_floats}E16.12'
+        )
 
-        FF_OUTGOING_TENSOR_AMPS_READERS[l_max] = ff.FortranRecordReader(f"{n_outgoing_tensor_amps_floats}E12.6")
+        FF_OUTGOING_TENSOR_AMPS_READERS[l_max] = ff.FortranRecordReader(
+            f'{n_outgoing_tensor_amps_floats}E12.6'
+        )
 
     # set up subblock interpretation functions
     def interpret_exit_amps_subblock(split_subblock):
         try:
-            beam_id, momentum_line, *amp_lines = split_subblock  # no extra .split()
+            beam_id, momentum_line, *amp_lines = (
+                split_subblock  # no extra .split()
+            )
         except ValueError:
             return None, None, None, None
-        momentum = np.fromregex(StringIO(momentum_line), re_4x12_char_no_whitespace, dtype=[('c1', 'f8'), ('c2', 'f8'), ('k_in_x', 'f8'), ('k_in_y', 'f8')])
-        #_, _, k_in_x, k_in_y = FF_READER_4E12_6.read(momentum_line)
+        momentum = np.fromregex(
+            StringIO(momentum_line),
+            re_4x12_char_no_whitespace,
+            dtype=[
+                ('c1', 'f8'),
+                ('c2', 'f8'),
+                ('k_in_x', 'f8'),
+                ('k_in_y', 'f8'),
+            ],
+        )
+        # _, _, k_in_x, k_in_y = FF_READER_4E12_6.read(momentum_line)
         k_in_x = momentum['k_in_x'][0]
         k_in_y = momentum['k_in_y'][0]
 
         joined = ''.join(amp_lines)
         stringio = StringIO(joined)
-        amps = np.fromregex(stringio, re_12_char_no_whitespace, dtype=[('c1', 'f8')])
+        amps = np.fromregex(
+            stringio, re_12_char_no_whitespace, dtype=[('c1', 'f8')]
+        )
         amps = amps['c1']
         amps = np.array(amps, np.float64).view(np.complex128)
 
@@ -204,24 +238,45 @@ def prepare_tensor_file_reader(max_l_max, n_beams, n_energies):
     def interpret_file(content):
         file_hash = hash(content)
         energies = np.full((n_energies,), fill_value=np.nan, dtype=np.float64)
-        v0i_substrate = np.full((n_energies,), fill_value=np.nan, dtype=np.float64)
-        v0i_overlayer = np.full((n_energies,), fill_value=np.nan, dtype=np.float64)
+        v0i_substrate = np.full(
+            (n_energies,), fill_value=np.nan, dtype=np.float64
+        )
+        v0i_overlayer = np.full(
+            (n_energies,), fill_value=np.nan, dtype=np.float64
+        )
         v0r_arr = np.full((n_energies,), fill_value=np.nan, dtype=np.float64)
-        n_phaseshifts_per_energy = np.full((n_energies,), fill_value=0, dtype=np.int_)
-        t_matrix = np.zeros((n_energies, (max_l_max+1)), dtype=np.complex128)
-        ref_amps = np.full((n_energies, n_beams), fill_value=np.nan, dtype=np.complex128)
-        incident_tensor_amps = np.full((n_energies, (max_l_max+1)**2), fill_value=0.0, dtype=np.complex128)
-        outgoing_tensor_amp = np.full((n_energies, n_beams, (max_l_max+1)**2), fill_value=0.0, dtype=np.complex128)
-        k_in_x_arr = np.full((n_energies, n_beams), fill_value=1.0E+10, dtype=np.float64)
-        k_in_y_arr = np.full((n_energies, n_beams), fill_value=1.0E+10, dtype=np.float64)
+        n_phaseshifts_per_energy = np.full(
+            (n_energies,), fill_value=0, dtype=np.int_
+        )
+        t_matrix = np.zeros((n_energies, (max_l_max + 1)), dtype=np.complex128)
+        ref_amps = np.full(
+            (n_energies, n_beams), fill_value=np.nan, dtype=np.complex128
+        )
+        incident_tensor_amps = np.full(
+            (n_energies, (max_l_max + 1) ** 2),
+            fill_value=0.0,
+            dtype=np.complex128,
+        )
+        outgoing_tensor_amp = np.full(
+            (n_energies, n_beams, (max_l_max + 1) ** 2),
+            fill_value=0.0,
+            dtype=np.complex128,
+        )
+        k_in_x_arr = np.full(
+            (n_energies, n_beams), fill_value=1.0e10, dtype=np.float64
+        )
+        k_in_y_arr = np.full(
+            (n_energies, n_beams), fill_value=1.0e10, dtype=np.float64
+        )
 
         energy_blocks = content.split('\n   -1\n')[:-1]
         if len(energy_blocks) != n_energies:
-            raise ValueError('Number of energy blocks does not match expected '
-                            'number of energies')
+            raise ValueError(
+                'Number of energy blocks does not match expected '
+                'number of energies'
+            )
 
         for en_id, block in enumerate(energy_blocks):
-
             energy_line, lmax_line, the_rest = block.split('\n', maxsplit=2)
             energy, v0i_sub, v0i_ovl, v0r = FF_READER_4E16_12.read(energy_line)
             energies[en_id] = energy
@@ -231,39 +286,51 @@ def prepare_tensor_file_reader(max_l_max, n_beams, n_energies):
             n_phaseshifts_per_energy[en_id] = int(lmax_line)
             l_max = n_phaseshifts_per_energy[en_id] - 1  # current l_max
 
-            *t_matrix_lines, the_rest = the_rest.split('\n', maxsplit=n_t_matrix_lines[l_max])
+            *t_matrix_lines, the_rest = the_rest.split(
+                '\n', maxsplit=n_t_matrix_lines[l_max]
+            )
             t_matrix_block = ''.join(t_matrix_lines)
             t_matrix_block = FF_T_MATRIX_READERS[l_max].read(t_matrix_block)
-            t_matrix_block = np.array(t_matrix_block, np.float64).view(np.complex128)
-            t_matrix[en_id, :l_max+1] = t_matrix_block
+            t_matrix_block = np.array(t_matrix_block, np.float64).view(
+                np.complex128
+            )
+            t_matrix[en_id, : l_max + 1] = t_matrix_block
 
-            *ref_amps_lines, the_rest = the_rest.split('\n', maxsplit=n_ref_amps_lines)
+            *ref_amps_lines, the_rest = the_rest.split(
+                '\n', maxsplit=n_ref_amps_lines
+            )
             ref_amps_block = ''.join(ref_amps_lines)
-            ref_amps_block = np.fromregex(StringIO(ref_amps_block),
-                                          re_16_char_no_whitespace,
-                                          dtype=[('c1', 'f8')])
+            ref_amps_block = np.fromregex(
+                StringIO(ref_amps_block),
+                re_16_char_no_whitespace,
+                dtype=[('c1', 'f8')],
+            )
             ref_amps_block = ref_amps_block['c1'].view(np.complex128)
             ref_amps[en_id] = ref_amps_block
 
             outgoing_tensor_amp_blocks = []
             split_rest = the_rest.split('\n')
-            for i in range(n_beams+1):
+            for i in range(n_beams + 1):
                 indices = slice(
-                    n_outgoing_tensor_amp_block_lines[l_max]*i,
-                    n_outgoing_tensor_amp_block_lines[l_max]*(i+1)
+                    n_outgoing_tensor_amp_block_lines[l_max] * i,
+                    n_outgoing_tensor_amp_block_lines[l_max] * (i + 1),
                 )
                 input = split_rest[indices]
-                outgoing_tensor_amp_blocks.append(interpret_exit_amps_subblock(input))
+                outgoing_tensor_amp_blocks.append(
+                    interpret_exit_amps_subblock(input)
+                )
 
             for beam_id, k_in_x, k_in_y, amps in outgoing_tensor_amp_blocks:
                 if beam_id is None:
                     continue
                 if beam_id == 0:
-                    incident_tensor_amps[en_id, :(l_max+1)**2] = amps
+                    incident_tensor_amps[en_id, : (l_max + 1) ** 2] = amps
                 else:
-                    outgoing_tensor_amp[en_id,beam_id-1, :(l_max+1)**2] = amps
-                    k_in_x_arr[en_id,beam_id-1] = k_in_x
-                    k_in_y_arr[en_id,beam_id-1] = k_in_y
+                    outgoing_tensor_amp[
+                        en_id, beam_id - 1, : (l_max + 1) ** 2
+                    ] = amps
+                    k_in_x_arr[en_id, beam_id - 1] = k_in_x
+                    k_in_y_arr[en_id, beam_id - 1] = k_in_y
 
         return TensorFileData(
             raw_file_hash=file_hash,
@@ -279,7 +346,9 @@ def prepare_tensor_file_reader(max_l_max, n_beams, n_energies):
             kx_in=k_in_x_arr,
             ky_in=k_in_y_arr,
         )
+
     return interpret_file
+
 
 def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
     """
@@ -309,8 +378,7 @@ def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
 
     # read raw contents from the zip file
     tensor_raw_contents = {
-        f: (tensor_zip_path / f).read_text()
-        for f in tensor_files
+        f: (tensor_zip_path / f).read_text() for f in tensor_files
     }
 
     # process the contents

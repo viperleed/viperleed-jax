@@ -1,23 +1,23 @@
 """Module t_matrix."""
-__authors__ = ("Alexander M. Imre (@amimre)",
-               "Paul Haidegger (@Paulhai7)")
-__created__ = "2024-08-14"
+
+__authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
+__created__ = '2024-08-14'
 
 from functools import partial
 
 from jax import config
-config.update("jax_enable_x64", True)
+
+config.update('jax_enable_x64', True)
 import jax
 import jax.numpy as jnp
 
-from viperleed_jax.lib_math import bessel
 from viperleed_jax.constants import BOHR
-
 from viperleed_jax.gaunt_coefficients import PRE_CALCULATED_CPPP
+from viperleed_jax.lib_math import bessel
 
 
 # vmap over sites for which to calculate the t-matrix
-#@partial(jax.profiler.annotate_function, name="vib_dependent_tmatrix")
+# @partial(jax.profiler.annotate_function, name="vib_dependent_tmatrix")
 def vib_dependent_tmatrix(l_max, phaseshifts, e_inside, vib_amp):
     """Computes the temperature-dependent t-matrix elements.
 
@@ -25,16 +25,16 @@ def vib_dependent_tmatrix(l_max, phaseshifts, e_inside, vib_amp):
     elements. Thermal vibrations are taken into account through a Debye-Waller
     factor, whereby isotropic vibration amplitudes are assumed.
 
-    The entire function comprises equations (22), (23), and (24), page 29 of 
+    The entire function comprises equations (22), (23), and (24), page 29 of
     the Van Hove and Tong, 1979. Vibrational amplitudes are transformed into
     a Debye-Waller factor.  It's important to note that the vibrational
-    amplitudes are the sole temperature-dependent component. Therefore, 
-    utilizing a temperature-independent vibration amplitude obviates the need 
+    amplitudes are the sole temperature-dependent component. Therefore,
+    utilizing a temperature-independent vibration amplitude obviates the need
     to explicitly include temperature, and the phaseshifts in (23) depend on
     vibrations only. Up to and including the calculation of tmatrix_2j, every
     operation is derived from (23).
 
-    The factor PRE_CALCULATED_CPPP is defined as 
+    The factor PRE_CALCULATED_CPPP is defined as
     (4Pi/((2l+1)(2l'+1)(2*l''+1)))^0.5 * Gaunt(l,0,l',0,l'',0). The factor BJ
     is an array of Bessel functions and contains all terms dependent on l'. The
     factor CTAB includes all other terms dependent on l''.
@@ -77,26 +77,29 @@ def vib_dependent_tmatrix(l_max, phaseshifts, e_inside, vib_amp):
     the crystal potential as E -> E - VSITE. This functionality was also not
     included as VSITE was again hardcoded to 0 in the TensErLEED code.
     """
-    debye_waller_exponent = -2/3 * (vib_amp/BOHR)**2 * e_inside
+    debye_waller_exponent = -2 / 3 * (vib_amp / BOHR) ** 2 * e_inside
 
-    all_l = (2*jnp.arange(2*l_max+1) + 1)
+    all_l = 2 * jnp.arange(2 * l_max + 1) + 1
     bessel_with_prefactor = (
         jnp.exp(debye_waller_exponent)
         * all_l
-        * 1j ** jnp.arange(2*l_max+1)
-        * bessel(debye_waller_exponent * 1j, 2*l_max)
+        * 1j ** jnp.arange(2 * l_max + 1)
+        * bessel(debye_waller_exponent * 1j, 2 * l_max)
     )
 
-    temperature_independent_t_matrix = (
-        jnp.exp(2j*phaseshifts)-1)*(2*jnp.arange(l_max+1) + 1)
+    temperature_independent_t_matrix = (jnp.exp(2j * phaseshifts) - 1) * (
+        2 * jnp.arange(l_max + 1) + 1
+    )
 
     t_matrix_2j = jnp.einsum(
         'jki,i,j->k',
-        PRE_CALCULATED_CPPP[l_max],  # about 3/4 of these are zero. We could skip them
+        PRE_CALCULATED_CPPP[
+            l_max
+        ],  # about 3/4 of these are zero. We could skip them
         temperature_independent_t_matrix,
-        bessel_with_prefactor
+        bessel_with_prefactor,
     )
-    t_matrix = (t_matrix_2j)/(2j) # temperature-dependent t-matrix.
+    t_matrix = (t_matrix_2j) / (2j)  # temperature-dependent t-matrix.
     # t_matrix_2j is the factor exp(2*i*delta) - 1
     # Equation (22), page 29 in Van Hove, Tong book from 1979
     # Unlike TensErLEED, we do not convert it to a phase shift, but keep it as a
@@ -105,11 +108,11 @@ def vib_dependent_tmatrix(l_max, phaseshifts, e_inside, vib_amp):
 
 
 # vmap over sites for which to calculate the t-matrix
-vmap_vib_dependent_tmatrix = jax.vmap(vib_dependent_tmatrix,
-                                      in_axes=(None, 1, None, 0))
+vmap_vib_dependent_tmatrix = jax.vmap(
+    vib_dependent_tmatrix, in_axes=(None, 1, None, 0)
+)
 
 # vmap over energies
 vmap_energy_vib_dependent_tmatrix = jax.vmap(
-    vib_dependent_tmatrix,
-    in_axes=(None, 0, 0, None),
-    out_axes=0)
+    vib_dependent_tmatrix, in_axes=(None, 0, 0, None), out_axes=0
+)

@@ -1,17 +1,18 @@
 """Module meta_parameters."""
 
-__authors__ = ("Alexander M. Imre (@amimre)",)
-__created__ = "2024-10-01"
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-10-01'
 
 from jax import numpy as jnp
 
-from .hierarchical_linear_tree import HLSubtree
-from .hierarchical_linear_tree import HLLeafNode
-from .hierarchical_linear_tree import HLConstraintNode
-from .hierarchical_linear_tree import HLBound
-from .hierarchical_linear_tree import HLTreeLayers
+from .hierarchical_linear_tree import (
+    HLBound,
+    HLConstraintNode,
+    HLLeafNode,
+    HLSubtree,
+    HLTreeLayers,
+)
 from .linear_transformer import LinearTransformer
-
 
 # Note: currently, V0r is (and can only be) a single parameter, which makes
 # it much simpler than the other parameters. Further constraints are not
@@ -40,18 +41,17 @@ class MetaParameterSubtree(HLSubtree):
 
     @property
     def name(self):
-        return "Meta Parameters (V0r)"
+        return 'Meta Parameters (V0r)'
 
     @property
     def subtree_root_name(self):
-        return "V0r (root)"
+        return 'V0r (root)'
 
 
 class V0rHLLeafNode(HLLeafNode):
-
     def __init__(self):
         dof = 1  # V0r is a single scalar parameter
-        name = "V0r"
+        name = 'V0r'
         self.bound = HLBound(1)
         self.num = 1
         super().__init__(dof=dof, name=name)
@@ -62,16 +62,20 @@ class V0rHLLeafNode(HLLeafNode):
             _range=(lower, upper), offset=None, enforce=True
         )
 
-class V0rBoundNode(HLConstraintNode):
 
+class V0rBoundNode(HLConstraintNode):
     def __init__(self, child):
         if not isinstance(child, V0rHLLeafNode):
-            raise ValueError("V0rBoundNode must have a single leaf child.")
+            raise ValueError('V0rBoundNode must have a single leaf child.')
 
         weights = [child.bound.upper - child.bound.lower]
         biases = child.bound.lower
         transformer = LinearTransformer(weights, biases, (1,))
 
-        super().__init__(dof=1, name="Simple Bound", children=[child],
-                         transformers=[transformer],
-                         layer=HLTreeLayers.Implicit_Constraints)
+        super().__init__(
+            dof=1,
+            name='Simple Bound',
+            children=[child],
+            transformers=[transformer],
+            layer=HLTreeLayers.Implicit_Constraints,
+        )

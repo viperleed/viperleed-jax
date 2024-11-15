@@ -1,10 +1,12 @@
 """Tests for the reference_data module."""
+
 import pickle
 
-import pytest
 import numpy as np
+import pytest
 
 from viperleed_jax.data_structures import ReferenceData
+
 
 def test_create_fixed_lmax_ref_data(fe2o3_pickled_tensor):
     fixed_lmax = 12

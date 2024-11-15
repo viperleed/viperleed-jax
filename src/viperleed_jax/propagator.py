@@ -1,7 +1,7 @@
 """Module propagators."""
-__authors__ = ("Alexander M. Imre (@amimre)",
-               "Paul Haidegger (@Paulhai7)")
-__created__ = "2024-09-03"
+
+__authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
+__created__ = '2024-09-03'
 
 from functools import partial
 
@@ -11,42 +11,59 @@ import numpy as np
 
 from viperleed_jax.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 from viperleed_jax.gaunt_coefficients import CSUM_COEFFS
-from viperleed_jax.lib_math import spherical_harmonics_components
-from viperleed_jax.lib_math import bessel, safe_norm, EPS
+from viperleed_jax.lib_math import (
+    EPS,
+    bessel,
+    safe_norm,
+    spherical_harmonics_components,
+)
+
 
 # TODO: replace energy, v_imag with a single arg kappa = 2*energy - 2j*v_imag
-#@partial(jax.profiler.annotate_function, name="calc_propagator")
+# @partial(jax.profiler.annotate_function, name="calc_propagator")
 def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
     c_norm = safe_norm(c)
 
-    BJ = bessel(kappa * c_norm, 2*LMAX)
+    BJ = bessel(kappa * c_norm, 2 * LMAX)
     YLM = c_sph_harm_components
 
     dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
-    dense_mp_2d =  DENSE_QUANTUM_NUMBERS[LMAX][:, :, 3]
+    dense_mp_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 3]
 
     # AI: I don't fully understand this, technically it should be MPP = -M - MP
     dense_mpp = dense_mp_2d - dense_m_2d
 
     # pre-computed coeffs, capped to LMAX
-    capped_coeffs = CSUM_COEFFS[:2*LMAX+1, :(LMAX+1)**2, :(LMAX+1)**2]
+    capped_coeffs = CSUM_COEFFS[
+        : 2 * LMAX + 1, : (LMAX + 1) ** 2, : (LMAX + 1) ** 2
+    ]
 
     def propagator_lpp_element(lpp, running_sum):
         bessel_values = BJ[lpp]
-        ylm_values = YLM[lpp*lpp+lpp-dense_mpp]
+        ylm_values = YLM[lpp * lpp + lpp - dense_mpp]
         # Equation (34) from Rous, Pendry 1989
-        return running_sum + bessel_values * ylm_values * capped_coeffs[lpp,:,:] #* (abs(dense_mpp) <= lpp)
+        return (
+            running_sum + bessel_values * ylm_values * capped_coeffs[lpp, :, :]
+        )  # * (abs(dense_mpp) <= lpp)
 
     # we could skip some computations because some lpp are guaranteed to give
     # zero contributions, but this would need a way around the non-static array
     # sizes
 
     # This is the propagator from the origin to C
-    propagator = jax.lax.fori_loop(0, LMAX*2+1, propagator_lpp_element,
-                             jnp.zeros(shape=((LMAX+1)**2, (LMAX+1)**2),
-                                       dtype=jnp.complex128))
-    propagator *= 4*jnp.pi
-    return jnp.where(c_norm >= EPS*100, propagator, jnp.identity((LMAX+1)**2))
+    propagator = jax.lax.fori_loop(
+        0,
+        LMAX * 2 + 1,
+        propagator_lpp_element,
+        jnp.zeros(
+            shape=((LMAX + 1) ** 2, (LMAX + 1) ** 2), dtype=jnp.complex128
+        ),
+    )
+    propagator *= 4 * jnp.pi
+    return jnp.where(
+        c_norm >= EPS * 100, propagator, jnp.identity((LMAX + 1) ** 2)
+    )
+
 
 # Using equation (34) from Rous, Pendry 1989 it is easy to show that the
 # propagator for a vanishing displacement is the identity matrix.
@@ -75,16 +92,18 @@ def symmetry_operations(l_max, plane_symmetry_operation):
         propagator should be transposed.
     """
     dense_m_2d = DENSE_QUANTUM_NUMBERS[l_max][:, :, 2]
-    dense_mp_2d =  DENSE_QUANTUM_NUMBERS[l_max][:, :, 3]
+    dense_mp_2d = DENSE_QUANTUM_NUMBERS[l_max][:, :, 3]
     # AI: I don't fully understand this, technically it should be MPP = -M - MP
     dense_mpp = dense_mp_2d - dense_m_2d
 
     plane_symmetry_det = np.linalg.det(plane_symmetry_operation)
-    if abs(plane_symmetry_det) -1 > 1e-8:
-        raise ValueError("The determinant of the plane symmetry operation "
-                         "matrix must be 1 or -1.")
+    if abs(plane_symmetry_det) - 1 > 1e-8:
+        raise ValueError(
+            'The determinant of the plane symmetry operation '
+            'matrix must be 1 or -1.'
+        )
     contains_mirror = plane_symmetry_det < 0
-    mirror_x = np.array([[-1., 0.], [0., 1.]])
+    mirror_x = np.array([[-1.0, 0.0], [0.0, 1.0]])
     if contains_mirror:
         sym_op = plane_symmetry_operation @ mirror_x
     else:
@@ -92,10 +111,11 @@ def symmetry_operations(l_max, plane_symmetry_operation):
 
     plane_rotation_angle = get_plane_symmetry_operation_rotation_angle(sym_op)
 
-    symmetry_tensor = jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T
+    symmetry_tensor = jnp.exp(plane_rotation_angle * 1j * (dense_mpp)).T
     if contains_mirror:
-        symmetry_tensor = ((-1.)**(-dense_mpp)
-                           * jnp.exp(plane_rotation_angle*1j*(dense_mpp)).T)
+        symmetry_tensor = (-1.0) ** (-dense_mpp) * jnp.exp(
+            plane_rotation_angle * 1j * (dense_mpp)
+        ).T
 
     return symmetry_tensor, contains_mirror
 
@@ -117,5 +137,9 @@ def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
     float
         Rotation angle in radians.
     """
-    return (np.log(plane_symmetry_operation[0,0] +
-                   1j*plane_symmetry_operation[1, 0])/1j).real
+    return (
+        np.log(
+            plane_symmetry_operation[0, 0] + 1j * plane_symmetry_operation[1, 0]
+        )
+        / 1j
+    ).real

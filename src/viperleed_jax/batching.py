@@ -1,7 +1,7 @@
 """Module parameter_space."""
 
-__authors__ = ("Alexander M. Imre (@amimre)",)
-__created__ = "2024-08-30"
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-08-30'
 
 import numpy as np
 
@@ -23,6 +23,7 @@ import numpy as np
 #    L-max value we can further split the computation into smaller chunks by
 #    splitting the energy dimension.
 
+
 class Batch:
     """Represents a batch of energies with the same l_max.
 
@@ -43,6 +44,7 @@ class Batch:
     __len__():
         Returns the length of the batch.
     """
+
     def __init__(self, l_max, energies, energy_indices, batch_id):
         self.l_max = l_max
         self.energies = np.array(energies)
@@ -57,14 +59,20 @@ class Batch:
 class Batching:
     def __init__(self, energies, l_max_per_energy, max_energies_per_batch=None):
         # l_max_per_energy must be in ascending order
-        if not all(l_max_per_energy[i] <= l_max_per_energy[i+1]
-                   for i in range(len(l_max_per_energy)-1)):
-            raise ValueError("l_max_per_energy must be in ascending order")
+        if not all(
+            l_max_per_energy[i] <= l_max_per_energy[i + 1]
+            for i in range(len(l_max_per_energy) - 1)
+        ):
+            raise ValueError('l_max_per_energy must be in ascending order')
         self.l_max_per_energy = l_max_per_energy
 
-        if (not isinstance(max_energies_per_batch, int )
-            or max_energies_per_batch <= 0):
-            raise ValueError("max_energies_per_batch must be a positive integer")
+        if (
+            not isinstance(max_energies_per_batch, int)
+            or max_energies_per_batch <= 0
+        ):
+            raise ValueError(
+                'max_energies_per_batch must be a positive integer'
+            )
 
         self.max_l_max = max(l_max_per_energy)
         self.batches = self.create_batches(energies, max_energies_per_batch)
@@ -78,13 +86,22 @@ class Batching:
 
         for en_id, energy in enumerate(energies):
             next_batch_id = len(batches)
-            if (self.l_max_per_energy[en_id] != current_l_max
-                or len(batch_energies) == max_energies_per_batch):
+            if (
+                self.l_max_per_energy[en_id] != current_l_max
+                or len(batch_energies) == max_energies_per_batch
+            ):
                 # finish the batch and start a new one
                 batches.append(
-                    Batch(current_l_max, batch_energies, batch_indices, next_batch_id)
+                    Batch(
+                        current_l_max,
+                        batch_energies,
+                        batch_indices,
+                        next_batch_id,
+                    )
                 )
-                batch_energies = [energy,]
+                batch_energies = [
+                    energy,
+                ]
                 batch_indices = [en_id]
             else:
                 batch_energies.append(energy)
@@ -94,7 +111,9 @@ class Batching:
         # finish the last batch if there are any energies left
         if batch_energies:
             batches.append(
-                Batch(current_l_max, batch_energies, batch_indices, next_batch_id)
+                Batch(
+                    current_l_max, batch_energies, batch_indices, next_batch_id
+                )
             )
 
         # return as a tuple

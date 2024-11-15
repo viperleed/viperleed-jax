@@ -1,15 +1,18 @@
 """Module occ_parameters."""
 
-__authors__ = ("Alexander M. Imre (@amimre)",)
-__created__ = "2024-09-08"
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-09-08'
 
 import numpy as np
 
 from viperleed_jax.base import LinearTransformer
 
-from .hierarchical_linear_tree import HLScattererLeafNode, HLConstraintNode
-from .hierarchical_linear_tree import HLTreeLayers
-from .hierarchical_linear_tree import ParameterHLSubtree
+from .hierarchical_linear_tree import (
+    HLConstraintNode,
+    HLScattererLeafNode,
+    HLTreeLayers,
+    ParameterHLSubtree,
+)
 from .linear_transformer import LinearTransformer
 
 
@@ -19,11 +22,11 @@ class OccHLLeafNode(HLScattererLeafNode):
     def __init__(self, base_scatterer):
         dof = 1
         super().__init__(dof=dof, base_scatterer=base_scatterer)
-        self.name = f"occ (At_{self.num},{self.site},{self.element})"
+        self.name = f'occ (At_{self.num},{self.site},{self.element})'
 
         # apply reference occupation as non-enforced bounds
         # TODO: get non 100% reference occupation? Where is that stored?
-        self._bounds.update_range(_range=None, offset=1., enforce=False)
+        self._bounds.update_range(_range=None, offset=1.0, enforce=False)
 
     def _update_bounds(self, line):
         # occupational leaves are 1D, so bounds are scalars
@@ -42,28 +45,34 @@ class OccHLConstraintNode(HLConstraintNode):
         self.dof = dof
 
         if transformers is None:
-            raise ValueError("Transformers must be provided.")
-        super().__init__(dof=dof, name=name, children=children,
-                         layer=layer, transformers=transformers)
+            raise ValueError('Transformers must be provided.')
+        super().__init__(
+            dof=dof,
+            name=name,
+            children=children,
+            layer=layer,
+            transformers=transformers,
+        )
+
 
 class OccSharedHLConstraint(OccHLConstraintNode):
     """Constraint for sharing occupation to 100%."""
 
     def __init__(self, children):
-        name = "shared occ"
+        name = 'shared occ'
         dof = len(children)
 
         if any(not isinstance(child, OccHLLeafNode) for child in children):
-            raise ValueError("Children must be OccHLLeaf nodes.")
+            raise ValueError('Children must be OccHLLeaf nodes.')
 
         if any(child.num != children[0].num for child in children):
-            raise ValueError("Children must be of the same atom.")
+            raise ValueError('Children must be of the same atom.')
         # set the number of the atom
         self.num = children[0].num
 
         transformers = []
         for child in children:
-            weights = np.full(shape=(1, dof), fill_value=-1/dof)
+            weights = np.full(shape=(1, dof), fill_value=-1 / dof)
             weights[0, children.index(child)] = 1
             bias = np.ones(1)
             transformers.append(LinearTransformer(weights, bias, (1,)))
@@ -75,14 +84,14 @@ class OccSharedHLConstraint(OccHLConstraintNode):
             layer=HLTreeLayers.Symmetry,
         )
 
+
 class OccSymmetryHLConstraint(OccHLConstraintNode):
     """Constraint for enforcing symmetry in occupation."""
 
     def __init__(self, children, name):
-
         # Check that all children have the same dof
         if len(set(child.dof for child in children)) != 1:
-            raise ValueError("Children must have the same dof.")
+            raise ValueError('Children must have the same dof.')
 
         dof = children[0].dof
 
@@ -91,10 +100,13 @@ class OccSymmetryHLConstraint(OccHLConstraintNode):
             weights = np.identity(dof)
             bias = np.zeros(dof)
             transformers.append(LinearTransformer(weights, bias, (dof,)))
-        super().__init__(dof=dof, name=name,
-                         children=children,
-                         transformers=transformers,
-                         layer=HLTreeLayers.Symmetry)
+        super().__init__(
+            dof=dof,
+            name=name,
+            children=children,
+            transformers=transformers,
+            layer=HLTreeLayers.Symmetry,
+        )
 
 
 class OccLinkedHLConstraint(OccHLConstraintNode):
@@ -103,7 +115,7 @@ class OccLinkedHLConstraint(OccHLConstraintNode):
     def __init__(self, children, name):
         # check that all children have the same dof
         if len(set(child.dof for child in children)) != 1:
-            raise ValueError("Children must have the same dof.")
+            raise ValueError('Children must have the same dof.')
         dof = children[0].dof
 
         # transformers can be identity
@@ -126,11 +138,11 @@ class OccHLSubtree(ParameterHLSubtree):
 
     @property
     def name(self):
-        return "Occupational Parameters"
+        return 'Occupational Parameters'
 
     @property
     def subtree_root_name(self):
-        return "occ root"
+        return 'occ root'
 
     def build_subtree(self):
         # initially, every atom-site-element has a free chemical weight
@@ -143,33 +155,33 @@ class OccHLSubtree(ParameterHLSubtree):
         # This does not reduce the number of free parameters, but it's a physical
         # requirement that we need to enforce
         linked_nodes = []
-        for num in range(self.base_scatterers.max_atom_number+1):  # inclusive range
-            atom_nodes = [node for node in self.leaves
-                        if node.num == num]
+        for num in range(
+            self.base_scatterers.max_atom_number + 1
+        ):  # inclusive range
+            atom_nodes = [node for node in self.leaves if node.num == num]
             if not atom_nodes:
                 continue
             linked_node = OccSharedHLConstraint(children=atom_nodes)
             self.nodes.append(linked_node)
             linked_nodes.append(linked_node)
 
-
         # occupational parameters need to fulfill symmetry constraints
         for link in self.base_scatterers.atom_number_symmetry_links:
             # put all linked atoms in the same symmetry group
 
-            nodes_to_link = [node for node in linked_nodes
-                                if node.num in link]
+            nodes_to_link = [node for node in linked_nodes if node.num in link]
             if not nodes_to_link:
                 continue
-            symmetry_node = OccSymmetryHLConstraint(children=nodes_to_link,
-                                                    name=f"Symmetry")
+            symmetry_node = OccSymmetryHLConstraint(
+                children=nodes_to_link, name=f'Symmetry'
+            )
             self.nodes.append(symmetry_node)
 
-        unlinked_site_el_nodes = [node for node in linked_nodes
-                                    if node.is_root]
+        unlinked_site_el_nodes = [node for node in linked_nodes if node.is_root]
         for node in unlinked_site_el_nodes:
-            symmetry_node = OccSymmetryHLConstraint(children=[node],
-                                                    name="Symmetry")
+            symmetry_node = OccSymmetryHLConstraint(
+                children=[node], name='Symmetry'
+            )
             self.nodes.append(symmetry_node)
 
     def apply_explicit_constraint(self, constraint_line):
@@ -180,7 +192,7 @@ class OccHLSubtree(ParameterHLSubtree):
             node.dof == selected_roots[0].dof for node in selected_roots
         ):
             raise ValueError(
-                "All root nodes must have the same number of free parameters."
+                'All root nodes must have the same number of free parameters.'
             )
         # create a constraint node for the selected roots
         self.nodes.append(

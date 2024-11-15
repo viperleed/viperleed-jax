@@ -1,16 +1,14 @@
 """Module lib_math."""
-__authors__ = ("Alexander M. Imre (@amimre)",
-               "Paul Haidegger (@Paulhai7)")
-__created__ = "2024-01-02"
 
-from jax.scipy.special import sph_harm
+__authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
+__created__ = '2024-01-02'
+
 import jax
 import jax.numpy as jnp
-
+from jax.scipy.special import sph_harm
 from spbessax import functions
 
-from viperleed_jax.dense_quantum_numbers import DENSE_M, DENSE_L
-from viperleed_jax.dense_quantum_numbers import MAXIMUM_LMAX
+from viperleed_jax.dense_quantum_numbers import DENSE_L, DENSE_M, MAXIMUM_LMAX
 
 # numerical epsilon to avoid division by zero
 EPS = 1e-8
@@ -38,30 +36,31 @@ def _divide_zero_safe(
         numerator / denominator_masked,
     )
 
+
 def safe_norm(vector: jnp.ndarray) -> jnp.ndarray:
     """Safe norm calculation to avoid NaNs in gradients"""
     # avoids nan in gradient for jnp.linalg.norm(C)
-    return jnp.sqrt(jnp.sum(vector**2) + (EPS*1e-2)**2)
+    return jnp.sqrt(jnp.sum(vector**2) + (EPS * 1e-2) ** 2)
 
 
 def _generate_bessel_functions(l_max):
     """Generate a list of spherical Bessel functions up to order l_max"""
     bessel_functions = []
-    for order in range(l_max+1):
-        bessel_functions.append(functions.create_j_l(order,
-                                                     dtype=jnp.complex128,
-                                                     output_all=True))
+    for order in range(l_max + 1):
+        bessel_functions.append(
+            functions.create_j_l(order, dtype=jnp.complex128, output_all=True)
+        )
     return bessel_functions
 
 
 # generate a list of spherical Bessel functions up to order l_max
-BESSEL_FUNCTIONS = _generate_bessel_functions(2*MAXIMUM_LMAX)
+BESSEL_FUNCTIONS = _generate_bessel_functions(2 * MAXIMUM_LMAX)
 
 
 # Bessel functions from NeuralIL
 def bessel(z, n1):
     """Spherical Bessel functions. Evaluated at z, up to degree n1."""
-    return BESSEL_FUNCTIONS[n1](z+EPS)
+    return BESSEL_FUNCTIONS[n1](z + EPS)
 
 
 def spherical_harmonics_components(LMAX, vector):
@@ -71,64 +70,74 @@ def spherical_harmonics_components(LMAX, vector):
     TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
     equivalent results."""
     _, theta, phi = cart_to_polar(vector)
-    l = DENSE_L[2*LMAX]
-    m = DENSE_M[2*LMAX]
+    l = DENSE_L[2 * LMAX]
+    m = DENSE_M[2 * LMAX]
 
-    is_on_pole_axis = abs(theta)<=EPS
+    is_on_pole_axis = abs(theta) <= EPS
     _theta = jnp.where(is_on_pole_axis, 0.1, theta)
 
     # values at the poles(theta = 0) depend on l and m only
-    pole_values = (m == 0)*jnp.sqrt((2*l+1)/(4*jnp.pi))
-    non_pole_values = sph_harm(m, l,
-                               jnp.asarray([phi]), jnp.asarray([_theta]),
-                               n_max=2*LMAX)
+    pole_values = (m == 0) * jnp.sqrt((2 * l + 1) / (4 * jnp.pi))
+    non_pole_values = sph_harm(
+        m, l, jnp.asarray([phi]), jnp.asarray([_theta]), n_max=2 * LMAX
+    )
 
     return jnp.where(is_on_pole_axis, pole_values, non_pole_values)
+
 
 def cart_to_polar(c):
     """Converts cartesian coordinates to polar coordinates.
 
-    Note, this function uses safe division to avoid division by zero errors, 
+    Note, this function uses safe division to avoid division by zero errors,
     and gives defined results and gradients for all inputs, EXCEPT for
     c = (0.0, 0.0, 0.0)."""
     z, x, y = c  # LEED coordinates
 
     x_y_norm = jnp.hypot(x, y)
     r = jnp.linalg.norm(c)
-    theta = 2*jnp.arctan(
-        _divide_zero_safe(x_y_norm, (jnp.hypot(x_y_norm, z)+z), (1/EPS) * (1 - jnp.sign(z)))
+    theta = 2 * jnp.arctan(
+        _divide_zero_safe(
+            x_y_norm,
+            (jnp.hypot(x_y_norm, z) + z),
+            (1 / EPS) * (1 - jnp.sign(z)),
+        )
     )
 
-    #forces phi to 0 on theta=0 axis (where phi is undefined)
+    # forces phi to 0 on theta=0 axis (where phi is undefined)
     # phi = 2*jnp.arctan(
     #     _divide_zero_safe(y, (x_y_norm+x)+EPS, 0.0)
     # )
-    phi =  jnp.sign(y) * jnp.arccos(_divide_zero_safe(x, (x_y_norm)+EPS, 0.0))
-    phi = jnp.where(y != 0.0, phi, jnp.heaviside(-x, 0)*jnp.pi)
+    phi = jnp.sign(y) * jnp.arccos(_divide_zero_safe(x, (x_y_norm) + EPS, 0.0))
+    phi = jnp.where(y != 0.0, phi, jnp.heaviside(-x, 0) * jnp.pi)
 
     return r, theta, phi
+
 
 @jax.custom_jvp
 def cart_to_polar_2(c):
     """Converts cartesian coordinates to polar coordinates.
 
-    Note, this function uses safe division to avoid division by zero errors, 
+    Note, this function uses safe division to avoid division by zero errors,
     and gives defined results and gradients for all inputs, EXCEPT for
     c = (0.0, 0.0, 0.0)."""
     z, x, y = c  # LEED coordinates
 
     x_y_norm = jnp.hypot(x, y)
     r = jnp.linalg.norm(c)
-    theta = 2*jnp.arctan(
-        _divide_zero_safe(x_y_norm, (jnp.hypot(x_y_norm, z)+z), (1/EPS) * (1 - jnp.sign(z)))
+    theta = 2 * jnp.arctan(
+        _divide_zero_safe(
+            x_y_norm,
+            (jnp.hypot(x_y_norm, z) + z),
+            (1 / EPS) * (1 - jnp.sign(z)),
+        )
     )
 
-    #forces phi to 0 on theta=0 axis (where phi is undefined)
+    # forces phi to 0 on theta=0 axis (where phi is undefined)
     # phi = 2*jnp.arctan(
     #     _divide_zero_safe(y, (x_y_norm+x)+EPS, 0.0)
     # )
-    phi =  jnp.sign(y) * jnp.arccos(_divide_zero_safe(x, (x_y_norm)+EPS, 0.0))
-    phi = jnp.where(y != 0.0, phi, jnp.heaviside(-x, 0)*jnp.pi)
+    phi = jnp.sign(y) * jnp.arccos(_divide_zero_safe(x, (x_y_norm) + EPS, 0.0))
+    phi = jnp.where(y != 0.0, phi, jnp.heaviside(-x, 0) * jnp.pi)
 
     return r, theta, phi
 
@@ -140,14 +149,19 @@ def cart_to_polar_jacobian(primals, tangents):
     r, theta, phi = cart_to_polar(primals)
     x_y_norm = jnp.hypot(x, y)
     jacobian = jnp.array(
-        [[z/r*dz, x/r*dx, y/r*dy],
-         [-x_y_norm/r**2*dz, x*z/(r**2 * x_y_norm)*dx, y*z/(r**2 * x_y_norm)*dy],
-         [0, -y/(x_y_norm**2)*dx, x/(x_y_norm**2)*dy]],
-        
+        [
+            [z / r * dz, x / r * dx, y / r * dy],
+            [
+                -x_y_norm / r**2 * dz,
+                x * z / (r**2 * x_y_norm) * dx,
+                y * z / (r**2 * x_y_norm) * dy,
+            ],
+            [0, -y / (x_y_norm**2) * dx, x / (x_y_norm**2) * dy],
+        ],
     )
 
-def spherical_to_cart(spherical_coordinates):
 
+def spherical_to_cart(spherical_coordinates):
     r, theta, phi = spherical_coordinates
     x = r * jnp.sin(theta) * jnp.cos(phi)
     y = r * jnp.sin(theta) * jnp.sin(phi)

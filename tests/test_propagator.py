@@ -1,62 +1,58 @@
 from pathlib import Path
-import pytest
-import numpy as np
+
 import jax
-
+import numpy as np
 import pytest
-
 from viperleed.calc.lib.matrix import rotation_matrix_order
 
-from viperleed_jax.propagator import calc_propagator, symmetry_operations
+from viperleed_jax.atomic_units import kappa
 from viperleed_jax.constants import BOHR
 from viperleed_jax.lib_math import EPS
-from viperleed_jax.atomic_units import kappa
+from viperleed_jax.propagator import calc_propagator, symmetry_operations
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def stored_propagator_reference_values():
     file = (
         Path(__file__).parent
-        / "test_data"
-        / "reference_values"
-        / "propagator_reference_values.npz"
+        / 'test_data'
+        / 'reference_values'
+        / 'propagator_reference_values.npz'
     )
     return (
-        np.load(file)["values_l_max_18_e_1e0_v_imag_1e0"],
+        np.load(file)['values_l_max_18_e_1e0_v_imag_1e0'],
         18,
         1.0,
         1.0,
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def stored_propagator_energy_jacobians():
     file = (
         Path(__file__).parent
-        / "test_data"
-        / "reference_values"
-        / "propagator_reference_values.npz"
+        / 'test_data'
+        / 'reference_values'
+        / 'propagator_reference_values.npz'
     )
     return (
-        np.load(file)["energy_jac_values_l_max_8_e_1e0j_v_imag_1e0"],
+        np.load(file)['energy_jac_values_l_max_8_e_1e0j_v_imag_1e0'],
         8,
         1.0 + 0.0j,
         1.0,
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def stored_propagator_disp_jacobians():
     file = (
         Path(__file__).parent
-        / "test_data"
-        / "reference_values"
-        / "propagator_reference_values.npz"
+        / 'test_data'
+        / 'reference_values'
+        / 'propagator_reference_values.npz'
     )
     return (
-        np.load(file)[
-            "displacement_jac_values_l_max_8_e_1e0_v_imag_1e0"
-        ],
+        np.load(file)['displacement_jac_values_l_max_8_e_1e0_v_imag_1e0'],
         8,
         1.0 + 0.0j,
         1.0,
@@ -97,7 +93,7 @@ TEST_DISP_VECTORS = (
 class TestPropagator:
     # Propagators for a vanishing displacement should always yield the
     # identity matrix
-    @pytest.mark.parametrize("l_max", range(5, 18))
+    @pytest.mark.parametrize('l_max', range(5, 18))
     def test_propagator_zero_displacement(self, l_max):
         disp_vector = np.array([0.0, 0.0, 0.0])
         propagator = calc_propagator(l_max, disp_vector, kappa(1.0, 1.0))
@@ -105,7 +101,7 @@ class TestPropagator:
             np.identity((l_max + 1) ** 2), abs=1e-8
         )
 
-    @pytest.mark.parametrize("disp_vector", list(enumerate(TEST_DISP_VECTORS)))
+    @pytest.mark.parametrize('disp_vector', list(enumerate(TEST_DISP_VECTORS)))
     def test_with_displacement(
         self, disp_vector, stored_propagator_reference_values
     ):
@@ -122,7 +118,7 @@ class TestPropagator:
         propagator = calc_propagator(l_max, disp_vector, kappa(energy, v_imag))
         assert propagator == pytest.approx(reference_value, rel=1e-6, abs=1e-8)
 
-    @pytest.mark.parametrize("disp_vector", list(enumerate(TEST_DISP_VECTORS)))
+    @pytest.mark.parametrize('disp_vector', list(enumerate(TEST_DISP_VECTORS)))
     def test_jit(self, disp_vector, stored_propagator_reference_values):
         """Check if the jit compiled function gives the same result."""
         n_vector, disp_vector = disp_vector
@@ -135,10 +131,12 @@ class TestPropagator:
         reference_value = stored_propagators[n_vector]
 
         # calculate the propagator
-        propagator = JIT_CALC_PROPAGATOR(l_max, disp_vector, kappa(energy, v_imag))
+        propagator = JIT_CALC_PROPAGATOR(
+            l_max, disp_vector, kappa(energy, v_imag)
+        )
         assert propagator == pytest.approx(reference_value, rel=1e-6, abs=1e-8)
 
-    @pytest.mark.parametrize("disp_vector", list(enumerate(TEST_DISP_VECTORS)))
+    @pytest.mark.parametrize('disp_vector', list(enumerate(TEST_DISP_VECTORS)))
     def test_energy_jacobian(
         self, disp_vector, stored_propagator_energy_jacobians
     ):
@@ -160,7 +158,7 @@ class TestPropagator:
             reference_value, rel=1e-6, abs=1e-8
         )
 
-    @pytest.mark.parametrize("disp_vector", list(enumerate(TEST_DISP_VECTORS)))
+    @pytest.mark.parametrize('disp_vector', list(enumerate(TEST_DISP_VECTORS)))
     def test_displacement_jacobian(
         self, disp_vector, stored_propagator_disp_jacobians
     ):
@@ -182,19 +180,20 @@ class TestPropagator:
             reference_value, rel=5e-5, abs=1e-7
         )
 
+
 def rot_matrix(theta):
     """Return a 2D rotation matrix."""
-    return np.array([
-        [np.cos(theta), -np.sin(theta)],
-        [np.sin(theta), np.cos(theta)]
-    ])
+    return np.array(
+        [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
+    )
+
 
 def mirror_matrix(theta):
     """Return a 2D rotation matrix."""
-    return np.array([
-        [np.cos(theta), np.sin(theta)],
-        [np.sin(theta), -np.cos(theta)]
-    ])
+    return np.array(
+        [[np.cos(theta), np.sin(theta)], [np.sin(theta), -np.cos(theta)]]
+    )
+
 
 # TODO: eventually replace these with imports from Michele's guilib PlaneGroup class
 TEST_PLANE_SYMMETRY_OPERATIONS = {
@@ -211,16 +210,17 @@ TEST_PLANE_SYMMETRY_OPERATIONS = {
     'order 6': rotation_matrix_order(6),
     'order -6': rotation_matrix_order(-6),
     # mirror operations
-    'mirror_Mx' : np.array([[-1., 0.], [0., 1.]]),
-    'mirror_My' : np.array([[1., 0.], [0., -1.]]),
-    'mirror_M45' : np.array([[0., 1.], [1., 0.]]),
-    'mirror_Mm45' : np.array([[0., -1.], [-1., 0.]]),
+    'mirror_Mx': np.array([[-1.0, 0.0], [0.0, 1.0]]),
+    'mirror_My': np.array([[1.0, 0.0], [0.0, -1.0]]),
+    'mirror_M45': np.array([[0.0, 1.0], [1.0, 0.0]]),
+    'mirror_Mm45': np.array([[0.0, -1.0], [-1.0, 0.0]]),
     #'mirror_M01' : np.array([[-1., -1.], [0., 1.]]),
     #'mirror_M10' : np.array([[1., 0.], [-1., -1.]]),
-    'mirror_30': mirror_matrix(np.pi/6),
-    'mirror_60': mirror_matrix(np.pi/3),
-    'mirror_90': mirror_matrix(np.pi/2),
+    'mirror_30': mirror_matrix(np.pi / 6),
+    'mirror_60': mirror_matrix(np.pi / 3),
+    'mirror_90': mirror_matrix(np.pi / 2),
 }
+
 
 class TestSymmetryTensor:
     L_MAX = 8
@@ -229,18 +229,21 @@ class TestSymmetryTensor:
 
     def test_symmetry_tensor_identity(self):
         """Check that the symmetry tensor for the identity is ones."""
-        symmetry_tensor, mirror_propagator = symmetry_operations(self.L_MAX, np.identity(2))
+        symmetry_tensor, mirror_propagator = symmetry_operations(
+            self.L_MAX, np.identity(2)
+        )
         assert not mirror_propagator
         assert symmetry_tensor == pytest.approx(
             np.ones(((self.L_MAX + 1) ** 2, (self.L_MAX + 1) ** 2)), abs=1e-8
         )
 
-    @pytest.mark.parametrize("plane_symmetry_operation",
-                             TEST_PLANE_SYMMETRY_OPERATIONS.values(),
-                             ids=TEST_PLANE_SYMMETRY_OPERATIONS.keys())
-    @pytest.mark.parametrize("disp_vector", TEST_DISP_VECTORS)
+    @pytest.mark.parametrize(
+        'plane_symmetry_operation',
+        TEST_PLANE_SYMMETRY_OPERATIONS.values(),
+        ids=TEST_PLANE_SYMMETRY_OPERATIONS.keys(),
+    )
+    @pytest.mark.parametrize('disp_vector', TEST_DISP_VECTORS)
     def test_symmetry_tensor(self, plane_symmetry_operation, disp_vector):
-
         # add z to get full 3d symmetry operation
         # NB: coordinates are stored as (z, x, y)!
         rotation_matrix_3d = np.identity(3)
@@ -250,26 +253,32 @@ class TestSymmetryTensor:
         disp_vector_sym = rotation_matrix_3d @ disp_vector
 
         # length should be the same
-        assert np.linalg.norm(disp_vector_sym) == pytest.approx(np.linalg.norm(disp_vector), abs=1e-8)
+        assert np.linalg.norm(disp_vector_sym) == pytest.approx(
+            np.linalg.norm(disp_vector), abs=1e-8
+        )
 
         # calculate the propagator for both
-        propagator_original = calc_propagator(self.L_MAX, disp_vector,
-                                              kappa(self.ENERGY, self.V_IMAG))
-        propagator_sym = calc_propagator(self.L_MAX, disp_vector_sym,
-                                         kappa(self.ENERGY, self.V_IMAG))
+        propagator_original = calc_propagator(
+            self.L_MAX, disp_vector, kappa(self.ENERGY, self.V_IMAG)
+        )
+        propagator_sym = calc_propagator(
+            self.L_MAX, disp_vector_sym, kappa(self.ENERGY, self.V_IMAG)
+        )
 
         # get symmetry operations
-        symmetry_tensor, mirror_propagator = symmetry_operations(self.L_MAX,
-                                                            plane_symmetry_operation)
+        symmetry_tensor, mirror_propagator = symmetry_operations(
+            self.L_MAX, plane_symmetry_operation
+        )
 
         # apply the symmetry operation to the propagator
         # (element-wise multiplication)
         mirrored_propagator = (
-            propagator_original*(1-mirror_propagator) +
-            propagator_original.T*mirror_propagator
+            propagator_original * (1 - mirror_propagator)
+            + propagator_original.T * mirror_propagator
         )
-        propagator_original_sym = mirrored_propagator*symmetry_tensor
+        propagator_original_sym = mirrored_propagator * symmetry_tensor
 
         # check if the propagator is the same
-        assert propagator_sym == pytest.approx(propagator_original_sym,
-                                               abs=5e-5)
+        assert propagator_sym == pytest.approx(
+            propagator_original_sym, abs=5e-5
+        )

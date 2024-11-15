@@ -1,16 +1,17 @@
 from collections import namedtuple
 
 import pytest
-from pytest_cases import parametrize_with_cases, case
+from pytest_cases import case, parametrize_with_cases
 
 from viperleed_jax.parameter_space import ParameterSpace
+
 ParameterSpaceSize = namedtuple(
-    "parameter_space_size", ["n_geo", "n_vib", "n_occ", "n_v0r"]
+    'parameter_space_size', ['n_geo', 'n_vib', 'n_occ', 'n_v0r']
 )
 
 
 class CalculatorWithParameterSpaces:
-    @case(tags="cu_111")
+    @case(tags='cu_111')
     def case_default_parameter_space(
         self,
         cu_111_dynamic_l_max_tensor_calculator,
@@ -29,7 +30,7 @@ class CalculatorWithParameterSpaces:
             parameter_space_size,
         )
 
-    @case(tags="cu_111")
+    @case(tags='cu_111')
     def case_more_layers(
         self,
         cu_111_dynamic_l_max_tensor_calculator,
@@ -52,7 +53,7 @@ class CalculatorWithParameterSpaces:
         for param in [
             p
             for p in parameter_space.vib_params.terminal_params
-            if p.site_element.site.endswith("_def")
+            if p.site_element.site.endswith('_def')
         ]:
             parameter_space.vib_params.fix_site_element(
                 param.site_element, None
@@ -64,7 +65,7 @@ class CalculatorWithParameterSpaces:
         for param in [
             p
             for p in parameter_space.vib_params.terminal_params
-            if p.site_element.site.endswith("_surf")
+            if p.site_element.site.endswith('_surf')
         ]:
             param.set_bound(VibParamBound(-0.05, +0.05))
 
@@ -89,8 +90,8 @@ class CalculatorWithParameterSpaces:
             parameter_space_size,
         )
 
-    @pytest.mark.xfail(reason="broken for too small parameter spaces")
-    @case(tags="cu_111")
+    @pytest.mark.xfail(reason='broken for too small parameter spaces')
+    @case(tags='cu_111')
     def case_all_layers(
         self,
         cu_111_dynamic_l_max_tensor_calculator,
@@ -112,7 +113,7 @@ class CalculatorWithParameterSpaces:
         for param in [
             p
             for p in parameter_space.vib_params.terminal_params
-            if p.site_element.site.endswith("_def")
+            if p.site_element.site.endswith('_def')
         ]:
             parameter_space.vib_params.fix_site_element(
                 param.site_element, None
@@ -124,7 +125,7 @@ class CalculatorWithParameterSpaces:
         for param in [
             p
             for p in parameter_space.vib_params.terminal_params
-            if p.site_element.site.endswith("_surf")
+            if p.site_element.site.endswith('_surf')
         ]:
             param.set_bound(VibParamBound(-0.05, +0.05))
 
@@ -144,8 +145,8 @@ class CalculatorWithParameterSpaces:
         )  # TODO: fill
         return cu_111_dynamic_l_max_tensor_calculator, parameter_space
 
-    @pytest.mark.xfail(reason="broken for too small parameter spaces")
-    @case(tags="cu_111")
+    @pytest.mark.xfail(reason='broken for too small parameter spaces')
+    @case(tags='cu_111')
     def case_no_free_vib(
         self,
         cu_111_dynamic_l_max_tensor_calculator,
@@ -168,7 +169,7 @@ class CalculatorWithParameterSpaces:
         for param in [
             p
             for p in parameter_space.vib_params.terminal_params
-            if p.site_element.site.endswith("_def")
+            if p.site_element.site.endswith('_def')
         ]:
             parameter_space.vib_params.fix_site_element(
                 param.site_element, None
@@ -176,7 +177,7 @@ class CalculatorWithParameterSpaces:
         for param in [
             p
             for p in parameter_space.vib_params.terminal_params
-            if p.site_element.site.endswith("_surf")
+            if p.site_element.site.endswith('_surf')
         ]:
             parameter_space.vib_params.fix_site_element(
                 param.site_element, None
@@ -200,7 +201,7 @@ class CalculatorWithParameterSpaces:
 
 
 @parametrize_with_cases(
-    "calculator, parameter_space, expected_size",
+    'calculator, parameter_space, expected_size',
     cases=CalculatorWithParameterSpaces,
 )
 def test_apply_parameter_space(calculator, parameter_space, expected_size):
@@ -209,7 +210,7 @@ def test_apply_parameter_space(calculator, parameter_space, expected_size):
 
 
 @parametrize_with_cases(
-    "calculator, parameter_space, expected_size",
+    'calculator, parameter_space, expected_size',
     cases=CalculatorWithParameterSpaces,
 )
 def test_expected_parameter_size(calculator, parameter_space, expected_size):

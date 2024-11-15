@@ -1,9 +1,10 @@
 from jax import numpy as jnp
 from jax.tree_util import register_pytree_node_class
 
+
 # Transformer
 @register_pytree_node_class
-class LinearTransformer():
+class LinearTransformer:
     def __init__(self, weights, biases, out_reshape=None):
         self.weights = jnp.array(weights)
         self.n_free_params = self.weights.shape[1]
@@ -17,10 +18,10 @@ class LinearTransformer():
             free_params = jnp.array([free_params])
         free_params = jnp.array(free_params)
         if len(free_params) != self.n_free_params:
-            raise ValueError("Free parameters have wrong shape")
-        result =  self.weights @ free_params + self.biases
+            raise ValueError('Free parameters have wrong shape')
+        result = self.weights @ free_params + self.biases
         if self.out_reshape is not None:
-            result =  result.reshape(self.out_reshape)
+            result = result.reshape(self.out_reshape)
         return result
 
     def tree_flatten(self):
@@ -28,7 +29,7 @@ class LinearTransformer():
             'n_free_params': self.n_free_params,
             'weights': self.weights,
             'biases': self.biases,
-            'out_reshape': self.out_reshape
+            'out_reshape': self.out_reshape,
         }
         children = None
         return (children, aux_data)

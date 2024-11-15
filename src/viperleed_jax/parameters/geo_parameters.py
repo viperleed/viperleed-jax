@@ -1,32 +1,36 @@
 """Module geo_parameters."""
 
-__authors__ = ("Alexander M. Imre (@amimre)",)
-__created__ = "2024-08-30"
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-08-30'
 
 from collections import deque
 from itertools import zip_longest
 
-from anytree.walker import Walker, WalkError
 import numpy as np
+from anytree.walker import Walker, WalkError
 
 from viperleed_jax import atomic_units
 from viperleed_jax.files.displacements.lines import ConstraintLine
 
-from .hierarchical_linear_tree import HLScattererLeafNode, HLConstraintNode
-from .hierarchical_linear_tree import HLTreeLayers
-from .hierarchical_linear_tree import ParameterHLSubtree
+from .hierarchical_linear_tree import (
+    HLConstraintNode,
+    HLScattererLeafNode,
+    HLTreeLayers,
+    ParameterHLSubtree,
+)
 from .linear_transformer import LinearMap
 
 
 class GeoHLLeafNode(HLScattererLeafNode):
     """Represents a leaf node with geometric parameters."""
-    _Z_DIR_ID = 0 # TODO: unify and move to a common place
+
+    _Z_DIR_ID = 0  # TODO: unify and move to a common place
 
     def __init__(self, base_scatterer):
         dof = 3
         super().__init__(dof=dof, base_scatterer=base_scatterer)
         self.symrefm = base_scatterer.atom.symrefm
-        self.name = f"geo (At_{self.num},{self.site},{self.element})"
+        self.name = f'geo (At_{self.num},{self.site},{self.element})'
 
     def _update_bounds(self, line):
         # geometric leaf bounds are 3D
@@ -34,15 +38,17 @@ class GeoHLLeafNode(HLScattererLeafNode):
         direction = line.direction
 
         if direction._fractional:
-            raise NotImplementedError("TODO")
+            raise NotImplementedError('TODO')
 
-        if direction.num_free_directions == 1 and direction._vectors[0][2] == 1:  # TODO: index 2 here needs to be changed to LEED convention
+        if (
+            direction.num_free_directions == 1 and direction._vectors[0][2] == 1
+        ):  # TODO: index 2 here needs to be changed to LEED convention
             # z-only movement
-            start = np.array([range.start, 0., 0.])
-            stop = np.array([range.stop, 0., 0.])
+            start = np.array([range.start, 0.0, 0.0])
+            stop = np.array([range.stop, 0.0, 0.0])
             user_set = [True, False, False]
         else:
-            raise NotImplementedError("TODO")
+            raise NotImplementedError('TODO')
         self._bounds.update_range((start, stop), enforce=user_set)
 
     def update_offsets(self, line):
@@ -50,7 +56,7 @@ class GeoHLLeafNode(HLScattererLeafNode):
         direction = line.direction
 
         if direction._fractional:
-            raise NotImplementedError("TODO")
+            raise NotImplementedError('TODO')
 
         if (
             direction.num_free_directions == 1
@@ -58,10 +64,10 @@ class GeoHLLeafNode(HLScattererLeafNode):
             == 1  # TODO: index 2 here needs to be changed to LEED convention
         ):
             # z-only movement
-            offset = np.array([line.value, 0., 0.])
+            offset = np.array([line.value, 0.0, 0.0])
             user_set = np.array([True, False, False])
         else:
-            raise NotImplementedError("TODO")
+            raise NotImplementedError('TODO')
         self._bounds.update_range(_range=None, offset=offset, enforce=user_set)
 
     @property
@@ -69,7 +75,10 @@ class GeoHLLeafNode(HLScattererLeafNode):
         """Return the node that is the origin of the propagator for this leaf"""
         origin = self
         while origin.parent:
-            if isinstance(origin.parent, GeoHLConstraintNode) and origin.parent.shared_propagator:
+            if (
+                isinstance(origin.parent, GeoHLConstraintNode)
+                and origin.parent.shared_propagator
+            ):
                 origin = origin.parent
             else:
                 break
@@ -82,34 +91,38 @@ class GeoHLLeafNode(HLScattererLeafNode):
         node_walker = Walker()
         target = self.propagator_origin.propagator_reference_node
         try:
-            (upwards, common, downwards) = node_walker.walk(
-                self, target
-            )
+            (upwards, common, downwards) = node_walker.walk(self, target)
         except WalkError as err:
-            raise RuntimeError(f"Node {self} cannot be reached from "
-                               f"{self.propagator_origin}.") from err
+            raise RuntimeError(
+                f'Node {self} cannot be reached from '
+                f'{self.propagator_origin}.'
+            ) from err
         if target is self:  # identity
             return np.eye(3)
 
         # sanity check
         if not common.shared_propagator:
-            raise ValueError("Common node must have shared propagator")
+            raise ValueError('Common node must have shared propagator')
 
         # traverse the tree and add up symmetry operations
         operations = deque()
-        for up, down in zip_longest(upwards, reversed(downwards),
-                                    fillvalue=None):
-            if (up is not None and down is not None
-                and up.transformer == down.transformer):
+        for up, down in zip_longest(
+            upwards, reversed(downwards), fillvalue=None
+        ):
+            if (
+                up is not None
+                and down is not None
+                and up.transformer == down.transformer
+            ):
                 continue
             if up is not None:
                 if np.any(up.transformer.biases != 0):
-                    raise ValueError("Bias must be zero")
+                    raise ValueError('Bias must be zero')
                 inverse = np.linalg.inv(up.transformer.weights)
                 operations.appendleft(inverse)
             if down is not None:
                 if np.any(down.transformer.biases != 0):
-                    raise ValueError("Bias must be zero")
+                    raise ValueError('Bias must be zero')
                 operations.append(down.transformer.weights)
         operations.appendleft(np.eye(3))
         operations.append(np.eye(3))
@@ -119,22 +132,33 @@ class GeoHLLeafNode(HLScattererLeafNode):
 class GeoHLConstraintNode(HLConstraintNode):
     """Base constraint node for geometric parameters."""
 
-    def __init__(self, dof, children, transformers, layer, name="unnamed",
-                 shared_propagator=False):
+    def __init__(
+        self,
+        dof,
+        children,
+        transformers,
+        layer,
+        name='unnamed',
+        shared_propagator=False,
+    ):
         self.dof = dof
         if shared_propagator:
             self.propagator_reference_node = self._check_reference_node(
-                children, transformers)
+                children, transformers
+            )
             self.shared_propagator = shared_propagator
 
         if transformers is None:
             raise ValueError(
-                "Transformers must be provided for "
-                "geometric constraint nodes."
+                'Transformers must be provided for '
+                'geometric constraint nodes.'
             )
         super().__init__(
-            dof=dof, name=name, children=children,
-            transformers=transformers, layer=layer
+            dof=dof,
+            name=name,
+            children=children,
+            transformers=transformers,
+            layer=layer,
         )
 
     def _check_reference_node(self, children, transformers):
@@ -158,20 +182,25 @@ class GeoHLConstraintNode(HLConstraintNode):
         for child in children:
             if not isinstance(child, GeoHLConstraintNode):
                 raise ValueError(
-                    "Shared propagator nodes must have shared propagator "
-                    "children."
+                    'Shared propagator nodes must have shared propagator '
+                    'children.'
                 )
         # second case
-        if all([np.any(trafo.biases == 0) and np.linalg.det(trafo.weights) == 1. # TODO: use EPS
-                for trafo in transformers]):
+        if all(
+            [
+                np.any(trafo.biases == 0)
+                and np.linalg.det(trafo.weights) == 1.0  # TODO: use EPS
+                for trafo in transformers
+            ]
+        ):
             try:
                 inverted_weights = [
                     np.linalg.inv(trafo.weights) for trafo in transformers
                 ]
             except np.linalg.LinAlgError:
                 raise ValueError(
-                    "Shared propagator transformers must have invertible "
-                    "weights."
+                    'Shared propagator transformers must have invertible '
+                    'weights.'
                 )
             # select the reference node of the first child
             return children[0].propagator_reference_node
@@ -199,20 +228,22 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
         # transformers may not be provided, as they must be determined from the
         # symmetry operations
         if not children:
-            raise ValueError("Symmetry constraints must have children")
+            raise ValueError('Symmetry constraints must have children')
 
         # make sure that all children are leaf nodes
         if not all(isinstance(child, GeoHLLeafNode) for child in children):
             raise ValueError(
-                "Symmetry constraints can only be applied to "
-                "geometric leaf nodes."
+                'Symmetry constraints can only be applied to '
+                'geometric leaf nodes.'
             )
 
         # check that all children are in the same linklist
         linklist = children[0].base_scatterer.atom.linklist
-        if not all([child.base_scatterer.atom in linklist for child in children]):
+        if not all(
+            [child.base_scatterer.atom in linklist for child in children]
+        ):
             raise ValueError(
-                "Symmetry linked atoms must be in the same " "linklist"
+                'Symmetry linked atoms must be in the same ' 'linklist'
             )
 
         # irrespective of the symmetry the transformer bias so we use a map
@@ -230,15 +261,15 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
                 child.base_scatterer.atom.freedir == 0 for child in children
             ):
                 raise ValueError(
-                    "All symmetry linked atoms must have the same "
-                    "freedir attribute."
+                    'All symmetry linked atoms must have the same '
+                    'freedir attribute.'
                 )
             # z-only movement
             dof = 1
-            name = "Symmetry (z-only)"
+            name = 'Symmetry (z-only)'
             for child in children:
                 # set the symmetry linking matrix and direct transfer of z
-                weights = np.array([1.0, 0., 0.]).reshape((3,1))
+                weights = np.array([1.0, 0.0, 0.0]).reshape((3, 1))
                 transformers.append(LinearMap(weights, (3,)))
 
         elif isinstance(freedir, int) and freedir == 1:
@@ -247,12 +278,12 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
                 child.base_scatterer.atom.freedir == 1 for child in children
             ):
                 raise ValueError(
-                    "All symmetry linked atoms must have the same "
-                    "freedir attribute."
+                    'All symmetry linked atoms must have the same '
+                    'freedir attribute.'
                 )
             # free in-plane movement in addition to z
             dof = 3
-            name = "Symmetry (free)"
+            name = 'Symmetry (free)'
 
             for child in children:
                 # set the symmetry linking matrix and direct transfer of z
@@ -267,12 +298,12 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
                 for child in children
             ):
                 raise ValueError(
-                    "All symmetry linked atoms must have the same "
-                    "freedir attribute."
+                    'All symmetry linked atoms must have the same '
+                    'freedir attribute.'
                 )
             # 1D in-plane movement in addition to z
             dof = 2
-            name = "Symmetry (1D in-plane)"
+            name = 'Symmetry (1D in-plane)'
 
             # plane unit cell
             ab_cell = children[0].base_scatterer.atom.slab.ab_cell
@@ -285,7 +316,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
                 transformers.append(LinearMap(weights, (3,)))
         else:
             raise ValueError(
-                "freedir attribute must be 0, 1, or have shape (2,)"
+                'freedir attribute must be 0, 1, or have shape (2,)'
             )
 
         super().__init__(
@@ -300,6 +331,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
 
 class GeoLinkedHLConstraint(GeoHLConstraintNode):
     """Class for explicit links of geometric parameters."""
+
     # TODO: if we implement linking of nodes with different dof (directional),
     # this needs to be adapted
     # TODO: this also needs to be adapted if we allow partial directional linking
@@ -312,16 +344,15 @@ class GeoLinkedHLConstraint(GeoHLConstraintNode):
     def __init__(self, children, name):
         # check that all children have the same dof
         if len(set(child.dof for child in children)) != 1:
-            raise ValueError("Children must have the same dof.")
+            raise ValueError('Children must have the same dof.')
         dof = children[0].dof
 
         # transformers can be identity
-        transformers = [
-            LinearMap(np.eye(dof), (dof,))
-            for _ in children
-        ]
+        transformers = [LinearMap(np.eye(dof), (dof,)) for _ in children]
         super().__init__(
-            dof=dof, children=children, transformers=transformers,
+            dof=dof,
+            children=children,
+            transformers=transformers,
             name=f"CONSTRAIN '{name}'",
             layer=HLTreeLayers.User_Constraints,
             shared_propagator=True,  # see comment above
@@ -334,11 +365,11 @@ class GeoHLSubtree(ParameterHLSubtree):
 
     @property
     def name(self):
-        return "Geometric Parameters"
+        return 'Geometric Parameters'
 
     @property
     def subtree_root_name(self):
-        return "geo root"
+        return 'geo root'
 
     def build_subtree(self):
         # create leaf nodes
@@ -357,11 +388,12 @@ class GeoHLSubtree(ParameterHLSubtree):
         for link in self.base_scatterers.symmetry_links:
             # put all linked atoms in the same symmetry group
             nodes_to_link = [
-                node for node in self.leaves
-                if node.base_scatterer in link
+                node for node in self.leaves if node.base_scatterer in link
             ]
             if nodes_to_link:
-                self.nodes.append(GeoSymmetryHLConstraint(children=nodes_to_link))
+                self.nodes.append(
+                    GeoSymmetryHLConstraint(children=nodes_to_link)
+                )
 
         unlinked_site_el_nodes = [node for node in self.leaves if node.is_root]
         for node in unlinked_site_el_nodes:
@@ -373,16 +405,22 @@ class GeoHLSubtree(ParameterHLSubtree):
 
         if constraint_line.direction is None:
             # complete linking; requires all root nodes to have the same dof
-            if not all(node.dof == selected_roots[0].dof for node in selected_roots):
+            if not all(
+                node.dof == selected_roots[0].dof for node in selected_roots
+            ):
                 raise ValueError(
-                    "All root nodes must have the same number of free parameters."
+                    'All root nodes must have the same number of free parameters.'
                 )
             # create a constraint node for the selected roots
-            self.nodes.append(GeoLinkedHLConstraint(children=selected_roots,
-                                                    name=constraint_line.line))
+            self.nodes.append(
+                GeoLinkedHLConstraint(
+                    children=selected_roots, name=constraint_line.line
+                )
+            )
         else:
             raise NotImplementedError(
-                "Directional geo constraints are not yet supported.")
+                'Directional geo constraints are not yet supported.'
+            )
 
     #############################
     # Geometry specific methods #
@@ -398,15 +436,17 @@ class GeoHLSubtree(ParameterHLSubtree):
         """Return a list of transformers that give the reference displacements
         for the dynamic propagators."""
         return [
-            self.subtree_root.transformer_to_descendent(node.propagator_reference_node)
+            self.subtree_root.transformer_to_descendent(
+                node.propagator_reference_node
+            )
             for node in self.dynamic_origin_nodes
         ]
 
     def _dynamic_origin_dict(self):
-        dynamic_leaves = [leaf for leaf in np.array(self.leaves)[self.leaf_is_dynamic]]
-        origin_dict = {
-            leaf: leaf.propagator_origin for leaf in dynamic_leaves
-        }
+        dynamic_leaves = [
+            leaf for leaf in np.array(self.leaves)[self.leaf_is_dynamic]
+        ]
+        origin_dict = {leaf: leaf.propagator_origin for leaf in dynamic_leaves}
         return origin_dict
 
     @property
@@ -422,10 +462,10 @@ class GeoHLSubtree(ParameterHLSubtree):
         ]
 
     def _static_origin_dict(self):
-        static_leaves = [leaf for leaf in np.array(self.leaves)[~self.leaf_is_dynamic]]
-        origin_dict = {
-            leaf: leaf.propagator_origin for leaf in static_leaves
-        }
+        static_leaves = [
+            leaf for leaf in np.array(self.leaves)[~self.leaf_is_dynamic]
+        ]
+        origin_dict = {leaf: leaf.propagator_origin for leaf in static_leaves}
         return origin_dict
 
     @property
@@ -442,14 +482,22 @@ class GeoHLSubtree(ParameterHLSubtree):
         ]
         # since the transformers are static, we can evaluate them
         # first, get the input values for the transformers
-        input_vals =  [transformer(np.full(self.subtree_root.dof, 0.5))
-                       for transformer in static_propagator_transformers]
+        input_vals = [
+            transformer(np.full(self.subtree_root.dof, 0.5))
+            for transformer in static_propagator_transformers
+        ]
 
         # then evaluate the transformers
-        return np.array([
-            origin_node.transformer_to_descendent(origin_node.propagator_reference_node)(input)
-            for origin_node, input in zip(self.static_origin_nodes, input_vals)
-        ])
+        return np.array(
+            [
+                origin_node.transformer_to_descendent(
+                    origin_node.propagator_reference_node
+                )(input)
+                for origin_node, input in zip(
+                    self.static_origin_nodes, input_vals
+                )
+            ]
+        )
 
     @property
     def propagator_map(self):
@@ -457,14 +505,14 @@ class GeoHLSubtree(ParameterHLSubtree):
         return [
             (
                 (
-                    "static",
+                    'static',
                     self.static_origin_nodes.index(
                         self._static_origin_dict()[leaf]
                     ),
                 )
                 if not dynamic
                 else (
-                    "dynamic",
+                    'dynamic',
                     self.dynamic_origin_nodes.index(
                         self._dynamic_origin_dict()[leaf]
                     ),
@@ -477,8 +525,12 @@ class GeoHLSubtree(ParameterHLSubtree):
         """Return the symmetry operations for each leaf in respect to the
         reference displacement (the one for which the propagator is calculated).
         """
-        return tuple([leaf.symmetry_operation_to_reference_propagator
-                      for leaf in self.leaves])
+        return tuple(
+            [
+                leaf.symmetry_operation_to_reference_propagator
+                for leaf in self.leaves
+            ]
+        )
 
     @property
     def leaf_plane_symmetry_operations(self):
@@ -488,10 +540,14 @@ class GeoHLSubtree(ParameterHLSubtree):
         for (
             sym_op
         ) in self._leaf_symmetry_operations():  # TODO: can this even happen?
-            if np.any(sym_op[0,:] != np.array([1., 0, 0])):
-                raise ValueError("Symmetry operation must be in-plane! "
-                                 "This should not happen!")
-        return tuple([sym_op[1:, 1:] for sym_op in self._leaf_symmetry_operations()])
+            if np.any(sym_op[0, :] != np.array([1.0, 0, 0])):
+                raise ValueError(
+                    'Symmetry operation must be in-plane! '
+                    'This should not happen!'
+                )
+        return tuple(
+            [sym_op[1:, 1:] for sym_op in self._leaf_symmetry_operations()]
+        )
 
     @property
     def n_dynamic_propagators(self):
