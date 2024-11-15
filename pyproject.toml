@@ -12,8 +12,8 @@ license = {file = 'LICENSE'}
 
 dependencies = [
     'jax',
-    'viperleed',
     'numpy<2',
+    'viperleed>0.12.1',
     'spbessax',
     'tqdm',
     'interpax',
