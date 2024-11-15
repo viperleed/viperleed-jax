@@ -10,6 +10,7 @@ from .hierarchical_linear_tree import HLTreeLayers
 from .hierarchical_linear_tree import ParameterHLSubtree
 from .linear_transformer import LinearTransformer
 
+EPS = 1e-6  # TODO: move to constants
 
 class VibHLLeafNode(HLScattererLeafNode):
     """Represents a leaf node with vibrational parameters."""
@@ -78,7 +79,9 @@ class VibLinkedHLConstraint(VibHLConstraintNode):
                 )
             _upper, _lower = upper[mask], lower[mask]
             # all _upper and all _lower should be the same
-            if not np.all(_upper == _upper[0]) or not np.all(_lower == _lower[0]):
+            if (not np.all(abs(_upper - _upper[0]) < EPS) or                    # Need to implement reference nodes...
+                not np.all(abs(_lower - _lower[0]) < EPS
+            )):
                 raise ValueError(
                     f"Inconsistent bounds for {child.name}."
                 )
