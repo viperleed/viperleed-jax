@@ -6,15 +6,15 @@ __created__ = '2024-09-08'
 import numpy as np
 
 from .hierarchical_linear_tree import (
-    HLConstraintNode,
-    HLScattererLeafNode,
+    LinearConstraintNode,
+    AtomicLinearNode,
     DisplacementTreeLayers,
     DisplacementTree,
 )
 from .linear_transformer import LinearTransformer
 
 
-class OccHLLeafNode(HLScattererLeafNode):
+class OccHLLeafNode(AtomicLinearNode):
     """Represents a leaf node with occupational parameters."""
 
     def __init__(self, base_scatterer):
@@ -36,7 +36,7 @@ class OccHLLeafNode(HLScattererLeafNode):
         self._bounds.update_range(_range=None, offset=offset, enforce=True)
 
 
-class OccHLConstraintNode(HLConstraintNode):
+class OccHLConstraintNode(LinearConstraintNode):
     """Represents a constraint node for occupational parameters."""
 
     def __init__(self, dof, children, name, layer, transformers=None):

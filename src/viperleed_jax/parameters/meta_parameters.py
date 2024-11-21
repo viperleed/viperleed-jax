@@ -7,8 +7,8 @@ from jax import numpy as jnp
 
 from .hierarchical_linear_tree import (
     HLBound,
-    HLConstraintNode,
-    HLLeafNode,
+    LinearConstraintNode,
+    LinearLeafNode,
     LinearTree,
     DisplacementTreeLayers,
 )
@@ -48,7 +48,7 @@ class MetaParameterSubtree(LinearTree):
         return 'V0r (root)'
 
 
-class V0rHLLeafNode(HLLeafNode):
+class V0rHLLeafNode(LinearLeafNode):
     def __init__(self):
         dof = 1  # V0r is a single scalar parameter
         name = 'V0r'
@@ -63,7 +63,7 @@ class V0rHLLeafNode(HLLeafNode):
         )
 
 
-class V0rBoundNode(HLConstraintNode):
+class V0rBoundNode(LinearConstraintNode):
     def __init__(self, child):
         if not isinstance(child, V0rHLLeafNode):
             raise ValueError('V0rBoundNode must have a single leaf child.')

@@ -13,15 +13,15 @@ from viperleed_jax import atomic_units
 from viperleed_jax.files.displacements.lines import ConstraintLine
 
 from .hierarchical_linear_tree import (
-    HLConstraintNode,
-    HLScattererLeafNode,
+    LinearConstraintNode,
+    AtomicLinearNode,
     DisplacementTreeLayers,
     DisplacementTree,
 )
 from .linear_transformer import LinearMap
 
 
-class GeoHLLeafNode(HLScattererLeafNode):
+class GeoHLLeafNode(AtomicLinearNode):
     """Represents a leaf node with geometric parameters."""
 
     _Z_DIR_ID = 0  # TODO: unify and move to a common place
@@ -129,7 +129,7 @@ class GeoHLLeafNode(HLScattererLeafNode):
         return np.linalg.multi_dot(operations)
 
 
-class GeoHLConstraintNode(HLConstraintNode):
+class GeoHLConstraintNode(LinearConstraintNode):
     """Base constraint node for geometric parameters."""
 
     def __init__(

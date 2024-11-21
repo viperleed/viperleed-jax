@@ -38,7 +38,7 @@ DisplacementTreeLayers = Enum(
 # Abstraction: TreeNode -> LinearTreeNode -> LinearLeafNode/LinearConstraintNode
 
 
-class HLNode(Node):  # LinearTreeNode
+class LinearTreeNode(Node):
     """Base class for hierarchical linear tree nodes."""
 
     separator = '/'
@@ -77,7 +77,7 @@ class HLNode(Node):  # LinearTreeNode
 
     def _pre_attach(self, parent):
         # check that the parent is a ConstraintNode
-        if not isinstance(parent, HLConstraintNode):
+        if not isinstance(parent, LinearConstraintNode):
             raise TypeError(
                 f'Parent must be an instance of HLConstraintNode. '
                 f'Invalid parent: {parent}'
@@ -103,7 +103,7 @@ class HLNode(Node):  # LinearTreeNode
         )
 
 
-class HLLeafNode(HLNode):  # LinearLeafNode
+class LinearLeafNode(LinearTreeNode):
     def __init__(self, dof, name=None, parent=None):
         # initialize bounds
         self._bounds = HLBound(dof)
@@ -124,7 +124,7 @@ class HLLeafNode(HLNode):  # LinearLeafNode
         return ~self._bounds.fixed
 
 
-class HLScattererLeafNode(HLLeafNode):  # AtomicLinearNode
+class AtomicLinearNode(LinearLeafNode):
     def __init__(self, dof, base_scatterer, name=None, parent=None):
         # base scatterer based attributes
         self.base_scatterer = base_scatterer
@@ -135,7 +135,7 @@ class HLScattererLeafNode(HLLeafNode):  # AtomicLinearNode
         super().__init__(dof=dof, name=name, parent=parent)
 
 
-class HLConstraintNode(HLNode):  # LinearConstraintNode
+class LinearConstraintNode(LinearTreeNode):
     """Base class for hierarchical linear tree constraint nodes.
 
     Any non-leaf node in the tree is a constraint node. Constraint nodes must
@@ -329,7 +329,7 @@ class HLConstraintNode(HLNode):  # LinearConstraintNode
         return np.logical_or.reduce(partial_free)
 
 
-class ImplicitHLConstraint(HLConstraintNode):  # ImplicitLinearConstraint
+class ImplicitLinearConstraint(LinearConstraintNode):
     """Class representing implicit constraints in the hierarchical linear tree.
 
     Implicit constraints are constraints that are not explicitly defined by the
@@ -524,7 +524,7 @@ class LinearTree(ABC):  # TODO: further abstract to a tree
             bias = np.zeros(node.dof)
             transformers.append(LinearTransformer(weights, bias, (node.dof,)))
             cum_node_dof += node.dof
-        self.subtree_root = HLConstraintNode(
+        self.subtree_root = LinearConstraintNode(
             dof=root_dof,
             name=self.subtree_root_name,
             children=self.roots,
@@ -719,5 +719,5 @@ class DisplacementTree(LinearTree):
 
     def apply_implicit_constraints(self):
         for root in self.roots:
-            implicit_node = ImplicitHLConstraint([root])
+            implicit_node = ImplicitLinearConstraint([root])
             self.nodes.append(implicit_node)

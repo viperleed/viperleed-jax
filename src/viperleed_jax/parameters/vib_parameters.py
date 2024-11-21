@@ -6,8 +6,8 @@ __created__ = '2024-09-09'
 import numpy as np
 
 from .hierarchical_linear_tree import (
-    HLConstraintNode,
-    HLScattererLeafNode,
+    LinearConstraintNode,
+    AtomicLinearNode,
     DisplacementTreeLayers,
     DisplacementTree,
 )
@@ -16,7 +16,7 @@ from .linear_transformer import LinearTransformer
 EPS = 1e-6  # TODO: move to constants
 
 
-class VibHLLeafNode(HLScattererLeafNode):
+class VibHLLeafNode(AtomicLinearNode):
     """Represents a leaf node with vibrational parameters."""
 
     def __init__(self, base_scatterer):
@@ -42,7 +42,7 @@ class VibHLLeafNode(HLScattererLeafNode):
         self._bounds.update_range(_range=None, offset=offset, enforce=True)
 
 
-class VibHLConstraintNode(HLConstraintNode):
+class VibHLConstraintNode(LinearConstraintNode):
     """Represents a constraint node for vibrational parameters."""
 
     def __init__(self, children, name, layer, dof=1, transformers=None):
