@@ -3,7 +3,6 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-08-28'
 
-import jax
 from jax import config
 
 config.update('jax_debug_nans', False)
@@ -14,14 +13,10 @@ import logging
 import os
 import shutil
 import tempfile
-import zipfile
 from pathlib import Path
 
-import jax.numpy as jnp
 import numpy as np
-from matplotlib import pyplot as plt
 from viperleed.calc import LOGGER as logger
-from viperleed.calc.files.iorfactor import beamlist_to_array
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from viperleed.calc.run import run_calc
 
@@ -41,11 +36,11 @@ def calculator_from_state(
     slab, rpars = last_state.slab, last_state.rpars
 
     if not rpars.expbeams:
-        raise RuntimeError(
+        msg = (
             'No (pseudo)experimental beams loaded. This is required '
             'for the structure optimization.'
         )
-
+        raise RuntimeError(msg)
     # load and read the DISPLACEMENTS file
     if displacements_file is None:
         displacements_file = calc_path / 'DISPLACEMENTS'
@@ -72,7 +67,7 @@ def calculator_from_state(
     # read tensor file
     tensors = read_tensor_zip(tensor_path, ref_calc_lmax, n_beams, n_energies)
 
-    logger.debug(f'Finished reading tensor file.')
+    logger.debug('Finished reading tensor file.')
 
     non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
     sorted_tensors = [tensors[f'T_{at.num}'] for at in non_bulk_atoms]
@@ -140,7 +135,7 @@ def calculator_from_state(
 
 
 def run_viperleed_initialization(calc_path):
-    """Runs ViPErLEED initialization with the input data in calc_path.
+    """Run ViPErLEED initialization with the input data in calc_path.
 
     The calculation runs in a temporary directory, so the input data is not
     modified.
@@ -151,7 +146,7 @@ def run_viperleed_initialization(calc_path):
         shutil.copytree(calc_path, tmp_calc_path, dirs_exist_ok=True)
 
         home = Path.cwd()
-        # run viperleed.calc with the test data, but only intialization
+        # run viperleed.calc with the test data, but only initialization
         os.chdir(tmp_calc_path)
         try:
             exit_code, state_recorder = run_calc(
@@ -161,15 +156,13 @@ def run_viperleed_initialization(calc_path):
             os.chdir(home)
 
     if exit_code != 0:
-        raise RuntimeError(
-            f'ViPErLEED Initialization failed with exit code {exit_code}'
-        )
+        msg = f'ViPErLEED Initialization failed with exit code {exit_code}.'
+        raise RuntimeError(msg)
 
-    consoleHandler = logging.StreamHandler()
+    console_handler = logging.StreamHandler()
 
-    logger.addHandler(consoleHandler)
+    logger.addHandler(console_handler)
     logger.info('ViPErLEED initialization successful')
 
     # get slab and rparams from state
-    last_state = state_recorder.last_state
-    return last_state
+    return state_recorder.last_state
