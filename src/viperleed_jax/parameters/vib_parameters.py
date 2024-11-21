@@ -6,13 +6,11 @@ __created__ = '2024-09-09'
 import numpy as np
 
 from .displacement_tree_layers import DisplacementTreeLayers
-
-from .linear_tree_nodes import AtomicLinearNode, LinearConstraintNode
-
 from .hierarchical_linear_tree import (
     DisplacementTree,
 )
 from .linear_transformer import LinearTransformer
+from .linear_tree_nodes import AtomicLinearNode, LinearConstraintNode
 
 EPS = 1e-6  # TODO: move to constants
 
