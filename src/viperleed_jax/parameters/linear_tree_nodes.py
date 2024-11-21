@@ -55,6 +55,11 @@ class TransformationTreeNode(Node):
     def set_transformer(self, transformer):
         """Set the transformer describing the edge."""
 
+    def _pre_detach(self):
+        raise RuntimeError(
+            'Transformation trees do not support detaching nodes.'
+        )
+
 
 class LinearTreeNode(TransformationTreeNode):
     """Base class for hierarchical linear tree nodes."""
@@ -103,11 +108,6 @@ class LinearTreeNode(TransformationTreeNode):
                 f'Transformer input dimension ({self.transformer.in_dim}) '
                 f'must match parent dof ({parent.dof}).'
             )
-
-    def _pre_detach(self):
-        raise RuntimeError(
-            'The hierarchical linear tree does not support detaching nodes.'
-        )
 
 
 class LinearLeafNode(LinearTreeNode):
