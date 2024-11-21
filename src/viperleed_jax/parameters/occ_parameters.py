@@ -171,7 +171,7 @@ class OccHLSubtree(DisplacementTree):
             if not nodes_to_link:
                 continue
             symmetry_node = OccSymmetryHLConstraint(
-                children=nodes_to_link, name=f'Symmetry'
+                children=nodes_to_link, name='Symmetry'
             )
             self.nodes.append(symmetry_node)
 
