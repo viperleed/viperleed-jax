@@ -7,9 +7,9 @@ from abc import abstractmethod
 
 import numpy as np
 from anytree.walker import Walker
+from viperleed_jax.parameters.DisplacementRange import DisplacementRange
 from viperleed_jax.parameters.hierarchical_linear_tree import (
     DisplacementTreeLayers,
-    DisplacementRange,
 )
 from viperleed_jax.parameters.linear_transformer import (
     LinearMap,
