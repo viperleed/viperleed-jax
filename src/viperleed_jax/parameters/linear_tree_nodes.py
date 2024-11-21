@@ -73,39 +73,44 @@ class LinearTreeNode(TransformationTreeNode):
     def set_transformer(self, transformer):
         # check if the transformer is valid
         if not isinstance(transformer, LinearTransformer):
-            raise TypeError(
+            msg = (
                 f'Transformer must be an instance of LinearTransformer. '
                 f'Invalid transformer: {transformer}'
             )
+            raise TypeError(msg)
 
         if transformer.out_dim != self.dof:
-            raise ValueError(
+            msg = (
                 f'Transformer output dimension ({transformer.out_dim}) '
                 f'must match child dof ({self.dof}).'
             )
+            raise ValueError(msg)
         self._transformer = transformer
 
     def _pre_attach(self, parent):
         # check that the parent is a ConstraintNode
         if not isinstance(parent, LinearConstraintNode):
-            raise TypeError(
+            msg = (
                 f'Parent must be an instance of HLConstraintNode. '
                 f'Invalid parent: {parent}'
             )
+            raise TypeError(msg)
 
         # check that the parent layer is >= child layer
         if not parent.layer.value >= self.layer.value:
-            raise ValueError(
+            msg = (
                 f'Parent layer ({parent.layer}) must be greater or equal '
                 f'to child layer ({self.layer}).'
             )
+            raise ValueError(msg)
 
         # check that the transformer dimensions match
         if self.transformer.in_dim != parent.dof:
-            raise ValueError(
+            msg = (
                 f'Transformer input dimension ({self.transformer.in_dim}) '
                 f'must match parent dof ({parent.dof}).'
             )
+            raise ValueError(msg)
 
 
 class LinearLeafNode(LinearTreeNode):
