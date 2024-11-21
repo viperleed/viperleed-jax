@@ -8,7 +8,7 @@ import numpy as np
 from .hierarchical_linear_tree import (
     HLConstraintNode,
     HLScattererLeafNode,
-    HLTreeLayers,
+    DisplacementTreeLayers,
     DisplacementTree,
 )
 from .linear_transformer import LinearTransformer
@@ -79,7 +79,7 @@ class OccSharedHLConstraint(OccHLConstraintNode):
             name=name,
             children=children,
             transformers=transformers,
-            layer=HLTreeLayers.Symmetry,
+            layer=DisplacementTreeLayers.Symmetry,
         )
 
 
@@ -103,7 +103,7 @@ class OccSymmetryHLConstraint(OccHLConstraintNode):
             name=name,
             children=children,
             transformers=transformers,
-            layer=HLTreeLayers.Symmetry,
+            layer=DisplacementTreeLayers.Symmetry,
         )
 
 
@@ -126,7 +126,7 @@ class OccLinkedHLConstraint(OccHLConstraintNode):
             children=children,
             transformers=transformers,
             name=f"CONSTRAIN '{name}'",
-            layer=HLTreeLayers.User_Constraints,
+            layer=DisplacementTreeLayers.User_Constraints,
         )
 
 

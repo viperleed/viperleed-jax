@@ -10,7 +10,7 @@ from .hierarchical_linear_tree import (
     HLConstraintNode,
     HLLeafNode,
     LinearTree,
-    HLTreeLayers,
+    DisplacementTreeLayers,
 )
 from .linear_transformer import LinearTransformer
 
@@ -77,5 +77,5 @@ class V0rBoundNode(HLConstraintNode):
             name='Simple Bound',
             children=[child],
             transformers=[transformer],
-            layer=HLTreeLayers.Implicit_Constraints,
+            layer=DisplacementTreeLayers.Implicit_Constraints,
         )

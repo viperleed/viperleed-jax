@@ -15,7 +15,7 @@ from viperleed_jax.files.displacements.lines import ConstraintLine
 from .hierarchical_linear_tree import (
     HLConstraintNode,
     HLScattererLeafNode,
-    HLTreeLayers,
+    DisplacementTreeLayers,
     DisplacementTree,
 )
 from .linear_transformer import LinearMap
@@ -324,7 +324,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
             children=children,
             transformers=transformers,
             name=name,
-            layer=HLTreeLayers.Symmetry,
+            layer=DisplacementTreeLayers.Symmetry,
             shared_propagator=True,  # symmetry nodes always share propagators
         )
 
@@ -354,7 +354,7 @@ class GeoLinkedHLConstraint(GeoHLConstraintNode):
             children=children,
             transformers=transformers,
             name=f"CONSTRAIN '{name}'",
-            layer=HLTreeLayers.User_Constraints,
+            layer=DisplacementTreeLayers.User_Constraints,
             shared_propagator=True,  # see comment above
         )
 

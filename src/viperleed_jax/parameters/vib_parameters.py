@@ -8,7 +8,7 @@ import numpy as np
 from .hierarchical_linear_tree import (
     HLConstraintNode,
     HLScattererLeafNode,
-    HLTreeLayers,
+    DisplacementTreeLayers,
     DisplacementTree,
 )
 from .linear_transformer import LinearTransformer
@@ -106,7 +106,7 @@ class VibLinkedHLConstraint(VibHLConstraintNode):
             children=children,
             transformers=transformers,
             name=f"CONSTRAIN '{name}'",
-            layer=HLTreeLayers.User_Constraints,
+            layer=DisplacementTreeLayers.User_Constraints,
         )
 
 
@@ -133,7 +133,7 @@ class VibHLSiteConstraint(VibHLConstraintNode):
                 f'vib ({children[0].site_element.site},'
                 f'{children[0].site_element.element})'
             ),
-            layer=HLTreeLayers.Symmetry,
+            layer=DisplacementTreeLayers.Symmetry,
         )
 
 

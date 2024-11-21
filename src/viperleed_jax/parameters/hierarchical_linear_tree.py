@@ -22,8 +22,7 @@ from .linear_transformer import LinearMap, LinearTransformer, stack_transformers
 anytree.config.ASSERTIONS = True
 
 
-# TODO: rename displacement tree layers
-HLTreeLayers = Enum(
+DisplacementTreeLayers = Enum(
     'HLTreeLayers',
     [
         'Base',
@@ -47,7 +46,7 @@ class HLNode(Node):  # LinearTreeNode
     def __init__(self, dof, layer, name=None, parent=None, children=None):
         self.dof = dof  # Number of degrees of freedom
         self._transformer = None  # LinearTransformer object
-        self.layer = HLTreeLayers(layer)
+        self.layer = DisplacementTreeLayers(layer)
 
         self.name = f'({self.dof}) {name}' if name else f'({self.dof})'
         self.parent = parent
@@ -109,7 +108,7 @@ class HLLeafNode(HLNode):  # LinearLeafNode
         # initialize bounds
         self._bounds = HLBound(dof)
         super().__init__(
-            dof=dof, name=name, parent=parent, layer=HLTreeLayers.Base
+            dof=dof, name=name, parent=parent, layer=DisplacementTreeLayers.Base
         )
 
     def update_bounds(self, line):
@@ -382,7 +381,7 @@ class ImplicitHLConstraint(HLConstraintNode):  # ImplicitLinearConstraint
             name=f'Bounds Constraint',
             children=[child],
             transformers=[composed_transformer],
-            layer=HLTreeLayers.Implicit_Constraints,
+            layer=DisplacementTreeLayers.Implicit_Constraints,
         )
 
 
@@ -530,7 +529,7 @@ class LinearTree(ABC):  # TODO: further abstract to a tree
             name=self.subtree_root_name,
             children=self.roots,
             transformers=transformers,
-            layer=HLTreeLayers.Root,
+            layer=DisplacementTreeLayers.Root,
         )
         self.nodes.append(self.subtree_root)
 
@@ -543,7 +542,7 @@ class LinearTree(ABC):  # TODO: further abstract to a tree
         return RenderTree(self.subtree_root).by_attr()
 
     def roots_up_to_layer(self, layer):
-        _layer = HLTreeLayers(layer)
+        _layer = DisplacementTreeLayers(layer)
         return [
             node
             for node in self.nodes

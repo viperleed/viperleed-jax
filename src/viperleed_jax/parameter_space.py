@@ -18,7 +18,7 @@ from .parameters import (
     occ_parameters,
     vib_parameters,
 )
-from .parameters.hierarchical_linear_tree import HLTreeLayers
+from .parameters.hierarchical_linear_tree import DisplacementTreeLayers
 
 _ATOM_Z_DIR_ID = 2
 _DISP_Z_DIR_ID = 0
@@ -200,7 +200,7 @@ class ParameterSpace:
                 'Displacements must be applied before counting '
                 'free parameters.'
             )
-        return sum(self._free_params_up_to_layer(HLTreeLayers.Root))
+        return sum(self._free_params_up_to_layer(DisplacementTreeLayers.Root))
 
     @property
     def n_user_constrained_params(self):
@@ -210,7 +210,11 @@ class ParameterSpace:
                 'Displacements must be applied before counting '
                 'user constrained parameters.'
             )
-        return sum(self._free_params_up_to_layer(HLTreeLayers.User_Constraints))
+        return sum(
+            self._free_params_up_to_layer(
+                DisplacementTreeLayers.User_Constraints
+            )
+        )
 
     @property
     def n_symmetry_constrained_params(self):
@@ -223,7 +227,9 @@ class ParameterSpace:
         Returns:
             int: The total number of symmetry constrained parameters.
         """
-        return sum(self._free_params_up_to_layer(HLTreeLayers.Symmetry))
+        return sum(
+            self._free_params_up_to_layer(DisplacementTreeLayers.Symmetry)
+        )
 
     @property
     def n_base_params(self):
@@ -235,7 +241,7 @@ class ParameterSpace:
         Returns:
             int: The total number of base parameters.
         """
-        return sum(self._free_params_up_to_layer(HLTreeLayers.Base))
+        return sum(self._free_params_up_to_layer(DisplacementTreeLayers.Base))
 
     @property
     def n_base_scatterers(self):
@@ -351,12 +357,18 @@ class ParameterSpace:
         Returns:
             str: Information about the parameters.
         """
-        n_root_params = self._free_params_up_to_layer(HLTreeLayers.Root)
-        n_user_params = self._free_params_up_to_layer(
-            HLTreeLayers.User_Constraints
+        n_root_params = self._free_params_up_to_layer(
+            DisplacementTreeLayers.Root
         )
-        n_sym_params = self._free_params_up_to_layer(HLTreeLayers.Symmetry)
-        n_base_params = self._free_params_up_to_layer(HLTreeLayers.Base)
+        n_user_params = self._free_params_up_to_layer(
+            DisplacementTreeLayers.User_Constraints
+        )
+        n_sym_params = self._free_params_up_to_layer(
+            DisplacementTreeLayers.Symmetry
+        )
+        n_base_params = self._free_params_up_to_layer(
+            DisplacementTreeLayers.Base
+        )
 
         def format(n_params):
             return (
