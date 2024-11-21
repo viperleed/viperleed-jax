@@ -5,8 +5,6 @@ __created__ = '2024-09-08'
 
 import numpy as np
 
-from viperleed_jax.base import LinearTransformer
-
 from .hierarchical_linear_tree import (
     HLConstraintNode,
     HLScattererLeafNode,
