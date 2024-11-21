@@ -1,3 +1,8 @@
+"""Module displacements/regex."""
+
+__authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@PaulHai7)')
+__created__ = '2024-02-22'
+
 import jax
 import jax.numpy as jnp
 
