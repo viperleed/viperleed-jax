@@ -128,6 +128,7 @@ namespaces = false
         'COM812', # avoids conflicts with formatter
         'ISC001', # avoids conflicts with formatter
         'TRY003', # allow long error messages
+        'EM101',  # allow string literals in errors
     ]
     flake8-quotes.inline-quotes='single'
 
