@@ -17,14 +17,21 @@ from viperleed_jax.files.displacements.lines import ConstraintLine
 
 from .linear_transformer import LinearMap, LinearTransformer, stack_transformers
 
-# Enable checks for the anytree library – we don't deal with huge trees so this
+# Enable checks for the anytree library; we don't deal with huge trees so this
 # should not be a performance issue.
 anytree.config.ASSERTIONS = True
 
 
 HLTreeLayers = Enum(
     'HLTreeLayers',
-    ['Base', 'Symmetry', 'User_Constraints', 'Implicit_Constraints', 'Root'],
+    [
+        'Base',
+        'Symmetry',
+        'Backend_Constraints',
+        'User_Constraints',
+        'Implicit_Constraints',
+        'Root',
+    ],
 )
 
 
