@@ -1,0 +1,11 @@
+= Vibrational Amplitudes
+O_surfA = 0.23
+O_surfB = 0.14
+Fe_surf = 0.236
+Fe_tet = 0.065
+O_def = 0.11
+Fe_def = 0.059
+
+= Occupations
+
+= Search offsets
