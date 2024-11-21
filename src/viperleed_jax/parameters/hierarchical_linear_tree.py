@@ -50,6 +50,36 @@ class TransformationTree(ABC):
     def build_tree(self):
         """Build the tree."""
 
+    @property
+    def roots(self):
+        """Return all root nodes in the tree."""
+        return [node for node in self.nodes if node.is_root]
+
+    @property
+    def leaves(self):
+        """Return all leaf nodes in the tree."""
+        return [node for node in self.nodes if node.is_leaf]
+
+    @property
+    @abstractmethod
+    def name(self):
+        """Return the name of the tree."""
+
+    @property
+    @abstractmethod
+    def subtree_root_name(self):
+        """Return the name of the tree root node."""
+
+    @abstractmethod
+    def create_subtree_root(self):
+        """Create a root node that aggregates all root nodes in the subtree."""
+
+    def graphical_export(self, filename):
+        """Create and save a graphical representation of the tree to file."""
+        if not self._tree_root_has_been_created:
+            raise ValueError('Subtree root has not yet been created.')
+        UniqueDotExporter(self.subtree_root).to_picture(filename)
+
 
 class InvertibleTransformationTree(ABC):
     """Abstract base class for an invertible transformation tree."""
@@ -63,25 +93,6 @@ class LinearTree(InvertibleTransformationTree):
 
     def __init__(self):
         super().__init__()
-
-    @property
-    def roots(self):
-        return [node for node in self.nodes if node.is_root]
-
-    @property
-    def leaves(self):
-        return [node for node in self.nodes if node.is_leaf]
-
-    @property
-    @abstractmethod
-    def name(self):
-        pass
-
-    @property
-    @abstractmethod
-    def subtree_root_name(self):
-        """Return the name of the tree root node."""
-        pass
 
     def create_subtree_root(self):
         """Create a root node that aggregates all root nodes in the subtree."""
@@ -128,12 +139,6 @@ class LinearTree(InvertibleTransformationTree):
             if node.layer.value <= _layer.value
             and (node.is_root or node.parent.layer.value > _layer.value)
         ]
-
-    def graphical_export(self, filename):
-        """Create and save a graphical representation of the tree to file."""
-        if not self._tree_root_has_been_created:
-            raise ValueError('Subtree root has not yet been created.')
-        UniqueDotExporter(self.subtree_root).to_picture(filename)
 
     def collapsed_transformer(self):
         return self.subtree_root.collapse_transformer()
