@@ -82,13 +82,6 @@ class LinearTreeNode(TransformationTreeNode):
             )
         self._transformer = transformer
 
-    @property
-    def transformer(self):
-        """TODO: mention in docstrings that this is the edge"""
-        if self._transformer is None:
-            raise ValueError('Node does not have a transformer.')
-        return self._transformer
-
     def _pre_attach(self, parent):
         # check that the parent is a ConstraintNode
         if not isinstance(parent, LinearConstraintNode):
