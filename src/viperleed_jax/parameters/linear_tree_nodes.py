@@ -11,7 +11,9 @@ __created__ = '2024-11-21'
 from abc import abstractmethod
 
 import numpy as np
+from anytree import Node
 from anytree.walker import Walker
+
 from viperleed_jax.parameters.displacement_range import DisplacementRange
 from viperleed_jax.parameters.hierarchical_linear_tree import (
     DisplacementTreeLayers,
@@ -21,9 +23,6 @@ from viperleed_jax.parameters.linear_transformer import (
     LinearTransformer,
     stack_transformers,
 )
-
-
-from anytree import Node
 
 
 class LinearTreeNode(Node):
