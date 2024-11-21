@@ -22,6 +22,7 @@ from .linear_transformer import LinearMap, LinearTransformer, stack_transformers
 anytree.config.ASSERTIONS = True
 
 
+# TODO: rename displacement tree layers
 HLTreeLayers = Enum(
     'HLTreeLayers',
     [
@@ -33,9 +34,12 @@ HLTreeLayers = Enum(
         'Root',
     ],
 )
+# TODO: rename base to atoms
+
+# Abstraction: TreeNode -> LinearTreeNode -> LinearLeafNode/LinearConstraintNode
 
 
-class HLNode(Node):
+class HLNode(Node):  # LinearTreeNode
     """Base class for hierarchical linear tree nodes."""
 
     separator = '/'
@@ -67,6 +71,7 @@ class HLNode(Node):
 
     @property
     def transformer(self):
+        """TODO: mention in docstrings that this is the edge"""
         if self._transformer is None:
             raise ValueError('Node does not have a transformer.')
         return self._transformer
@@ -99,7 +104,7 @@ class HLNode(Node):
         )
 
 
-class HLLeafNode(HLNode):
+class HLLeafNode(HLNode):  # LinearLeafNode
     def __init__(self, dof, name=None, parent=None):
         # initialize bounds
         self._bounds = HLBound(dof)
@@ -120,7 +125,7 @@ class HLLeafNode(HLNode):
         return ~self._bounds.fixed
 
 
-class HLScattererLeafNode(HLLeafNode):
+class HLScattererLeafNode(HLLeafNode):  # AtomicLinearNode
     def __init__(self, dof, base_scatterer, name=None, parent=None):
         # base scatterer based attributes
         self.base_scatterer = base_scatterer
@@ -131,7 +136,7 @@ class HLScattererLeafNode(HLLeafNode):
         super().__init__(dof=dof, name=name, parent=parent)
 
 
-class HLConstraintNode(HLNode):
+class HLConstraintNode(HLNode):  # LinearConstraintNode
     """Base class for hierarchical linear tree constraint nodes.
 
     Any non-leaf node in the tree is a constraint node. Constraint nodes must
@@ -325,10 +330,7 @@ class HLConstraintNode(HLNode):
         return np.logical_or.reduce(partial_free)
 
 
-# TODO: rename to bounds constraint
-
-
-class ImplicitHLConstraint(HLConstraintNode):
+class ImplicitHLConstraint(HLConstraintNode):  # ImplicitLinearConstraint
     """Class representing implicit constraints in the hierarchical linear tree.
 
     Implicit constraints are constraints that are not explicitly defined by the
@@ -384,7 +386,7 @@ class ImplicitHLConstraint(HLConstraintNode):
         )
 
 
-class HLBound:
+class HLBound:  # DisplacementRange or DisplacementBounds
     """Class representing a bound in the hierarchical linear tree.
 
     Bounds are used to represent the lower and upper bounds of values that can
