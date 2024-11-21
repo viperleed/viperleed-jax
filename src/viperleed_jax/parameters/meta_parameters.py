@@ -28,7 +28,7 @@ class MetaParameterSubtree(LinearTree):
     def build_tree(self):
         # called in init
         # V0r
-        self.v0r_node = V0rHLLeafNode()
+        self.v0r_node = V0rLeafNode()
         self.nodes.append(self.v0r_node)
 
     def read_from_rpars(self, rpars):
@@ -46,7 +46,7 @@ class MetaParameterSubtree(LinearTree):
         return 'V0r (root)'
 
 
-class V0rHLLeafNode(LinearLeafNode):
+class V0rLeafNode(LinearLeafNode):
     def __init__(self):
         dof = 1  # V0r is a single scalar parameter
         name = 'V0r'
@@ -63,7 +63,7 @@ class V0rHLLeafNode(LinearLeafNode):
 
 class V0rBoundNode(LinearConstraintNode):
     def __init__(self, child):
-        if not isinstance(child, V0rHLLeafNode):
+        if not isinstance(child, V0rLeafNode):
             raise ValueError('V0rBoundNode must have a single leaf child.')
 
         weights = [child.bound.upper - child.bound.lower]
