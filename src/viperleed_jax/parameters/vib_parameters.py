@@ -149,7 +149,7 @@ class VibHLSubtree(DisplacementTree):
     def subtree_root_name(self):
         return 'vib root'
 
-    def build_subtree(self):
+    def build_tree(self):
         leaf_nodes = [VibHLLeafNode(ase) for ase in self.base_scatterers]
 
         self.nodes.extend(leaf_nodes)

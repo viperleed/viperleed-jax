@@ -5,7 +5,7 @@ __created__ = '2024-10-01'
 
 from jax import numpy as jnp
 
-from .DisplacementRange import DisplacementRange
+from .displacement_range import DisplacementRange
 
 from .linear_tree_nodes import LinearConstraintNode, LinearLeafNode
 
@@ -28,7 +28,7 @@ class MetaParameterSubtree(LinearTree):
     def __init__(self):
         super().__init__()
 
-    def build_subtree(self):
+    def build_tree(self):
         # V0r
         self.v0r_node = V0rHLLeafNode()
         self.nodes.append(self.v0r_node)

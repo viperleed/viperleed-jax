@@ -45,7 +45,7 @@ class LinearTree(ABC):  # TODO: further abstract to a tree
     def __init__(self):
         self.nodes = []
         self._subtree_root_has_been_created = False
-        self.build_subtree()
+        self.build_tree()
 
     @property
     def roots(self):
@@ -66,7 +66,7 @@ class LinearTree(ABC):  # TODO: further abstract to a tree
         pass
 
     @abstractmethod
-    def build_subtree(self):
+    def build_tree(self):
         """Method to build the subtree for the parameter group."""
         pass
 

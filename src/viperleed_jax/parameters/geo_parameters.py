@@ -370,7 +370,7 @@ class GeoHLSubtree(DisplacementTree):
     def subtree_root_name(self):
         return 'geo root'
 
-    def build_subtree(self):
+    def build_tree(self):
         # create leaf nodes
         geo_leaf_nodes = [
             GeoHLLeafNode(base_scatterer)

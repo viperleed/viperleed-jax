@@ -142,7 +142,7 @@ class OccHLSubtree(DisplacementTree):
     def subtree_root_name(self):
         return 'occ root'
 
-    def build_subtree(self):
+    def build_tree(self):
         # initially, every atom-site-element has a free chemical weight
         # to allow for (partial) vacancies
         occ_leaf_nodes = [OccHLLeafNode(ase) for ase in self.base_scatterers]
