@@ -36,7 +36,7 @@ class TransformationTreeNode(Node):
     separator = '/'
 
     def __init__(self, name, parent=None, children=None):
-        self.name = name
+        self._name = name
         self._transformer = None
         self.parent = parent
         if children:
@@ -67,8 +67,12 @@ class LinearTreeNode(TransformationTreeNode):
         self._transformer = None  # LinearTransformer object
         self.layer = DisplacementTreeLayers(layer)
 
-        self.name = f'({self.dof}) {name}' if name else f'({self.dof})'
         super().__init__(name=name, parent=parent, children=children)
+
+    @property
+    def name(self):
+        """Return the name of the node."""
+        return f'({self.dof}) {self._name}' if self._name else f'({self.dof})'
 
     def set_transformer(self, transformer):
         # check if the transformer is valid

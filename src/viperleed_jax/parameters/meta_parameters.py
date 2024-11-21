@@ -3,18 +3,14 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-10-01'
 
-from jax import numpy as jnp
-
-from .displacement_tree_layers import DisplacementTreeLayers
 
 from .displacement_range import DisplacementRange
-
-from .linear_tree_nodes import LinearConstraintNode, LinearLeafNode
-
+from .displacement_tree_layers import DisplacementTreeLayers
 from .hierarchical_linear_tree import (
     LinearTree,
 )
 from .linear_transformer import LinearTransformer
+from .linear_tree_nodes import LinearConstraintNode, LinearLeafNode
 
 # Note: currently, V0r is (and can only be) a single parameter, which makes
 # it much simpler than the other parameters. Further constraints are not
@@ -30,12 +26,12 @@ class MetaParameterSubtree(LinearTree):
         super().__init__()
 
     def build_tree(self):
+        # called in init
         # V0r
         self.v0r_node = V0rHLLeafNode()
         self.nodes.append(self.v0r_node)
 
     def read_from_rpars(self, rpars):
-        # V0r
         self.v0r_node.update_bounds(rpars)
         bound_node = V0rBoundNode(self.v0r_node)
         self.nodes.append(bound_node)

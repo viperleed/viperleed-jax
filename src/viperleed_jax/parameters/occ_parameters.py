@@ -21,7 +21,7 @@ class OccHLLeafNode(AtomicLinearNode):
     def __init__(self, base_scatterer):
         dof = 1
         super().__init__(dof=dof, base_scatterer=base_scatterer)
-        self.name = f'occ (At_{self.num},{self.site},{self.element})'
+        self._name = f'occ (At_{self.num},{self.site},{self.element})'
 
         # apply reference occupation as non-enforced bounds
         # TODO: get non 100% reference occupation? Where is that stored?

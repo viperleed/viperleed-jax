@@ -29,7 +29,7 @@ class GeoHLLeafNode(AtomicLinearNode):
         dof = 3
         super().__init__(dof=dof, base_scatterer=base_scatterer)
         self.symrefm = base_scatterer.atom.symrefm
-        self.name = f'geo (At_{self.num},{self.site},{self.element})'
+        self._name = f'geo (At_{self.num},{self.site},{self.element})'
 
     def _update_bounds(self, line):
         # geometric leaf bounds are 3D
