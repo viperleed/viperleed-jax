@@ -136,7 +136,7 @@ class VibSiteConstraint(VibConstraintNode):
         )
 
 
-class VibHLSubtree(DisplacementTree):
+class VibTree(DisplacementTree):
     def __init__(self, base_scatterers):
         super().__init__(base_scatterers)
 

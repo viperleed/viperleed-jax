@@ -129,7 +129,7 @@ class OccLinkedConstraint(OccConstraintNode):
         )
 
 
-class OccHLSubtree(DisplacementTree):
+class OccTree(DisplacementTree):
     def __init__(self, base_scatterers):
         super().__init__(base_scatterers)
 

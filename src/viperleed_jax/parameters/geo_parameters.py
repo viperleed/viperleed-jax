@@ -355,7 +355,7 @@ class GeoLinkedConstraint(GeoConstraintNode):
         )
 
 
-class GeoHLSubtree(DisplacementTree):
+class GeoTree(DisplacementTree):
     def __init__(self, base_scatterers):
         super().__init__(base_scatterers)
 
