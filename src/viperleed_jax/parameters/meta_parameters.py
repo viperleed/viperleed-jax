@@ -56,9 +56,11 @@ class V0rLeafNode(LinearLeafNode):
 
 
 class V0rBoundNode(LinearConstraintNode):
+    """Node that constrains the V0r parameter to a given bound."""
+
     def __init__(self, child):
         if not isinstance(child, V0rLeafNode):
-            raise ValueError('V0rBoundNode must have a single leaf child.')
+            raise TypeError('V0rBoundNode must have a single leaf child.')
 
         weights = [child.bound.upper - child.bound.lower]
         biases = child.bound.lower
