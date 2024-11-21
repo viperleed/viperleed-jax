@@ -5,7 +5,6 @@ __created__ = '2024-11-21'
 
 from enum import Enum
 
-
 DisplacementTreeLayers = Enum(
     'DisplacementTreeLayers',
     [
