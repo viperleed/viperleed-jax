@@ -131,15 +131,11 @@ class OccLinkedConstraint(OccConstraintNode):
 
 class OccTree(DisplacementTree):
     def __init__(self, base_scatterers):
-        super().__init__(base_scatterers)
-
-    @property
-    def name(self):
-        return 'Occupational Parameters'
-
-    @property
-    def subtree_root_name(self):
-        return 'occ root'
+        super().__init__(
+            base_scatterers,
+            name='Occupational Parameters',
+            root_node_name='occ root',
+        )
 
     def build_tree(self):
         # initially, every atom-site-element has a free chemical weight

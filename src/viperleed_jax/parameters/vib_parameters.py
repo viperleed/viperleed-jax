@@ -138,15 +138,11 @@ class VibSiteConstraint(VibConstraintNode):
 
 class VibTree(DisplacementTree):
     def __init__(self, base_scatterers):
-        super().__init__(base_scatterers)
-
-    @property
-    def name(self):
-        return 'Vibrational Parameters'
-
-    @property
-    def subtree_root_name(self):
-        return 'vib root'
+        super().__init__(
+            base_scatterers,
+            name='Vibrational Parameters',
+            root_node_name='vib root',
+        )
 
     def build_tree(self):
         leaf_nodes = [VibLeafNode(ase) for ase in self.base_scatterers]

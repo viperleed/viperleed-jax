@@ -30,8 +30,10 @@ anytree.config.ASSERTIONS = True
 class TransformationTree(ABC):
     """Abstract base class for a transformation tree."""
 
-    def __init__(self):
+    def __init__(self, name, root_node_name):
         self.nodes = []
+        self.name = name
+        self.root_node_name = root_node_name
         self._tree_root_has_been_created = False
         self.build_tree()
 
@@ -49,16 +51,6 @@ class TransformationTree(ABC):
         """Return all leaf nodes in the tree."""
         return [node for node in self.nodes if node.is_leaf]
 
-    @property
-    @abstractmethod
-    def name(self):
-        """Return the name of the tree."""
-
-    @property
-    @abstractmethod
-    def subtree_root_name(self):
-        """Return the name of the tree root node."""
-
     @abstractmethod
     def create_subtree_root(self):
         """Create a root node that aggregates all root nodes in the subtree."""
@@ -73,15 +65,15 @@ class TransformationTree(ABC):
 class InvertibleTransformationTree(TransformationTree):
     """Abstract base class for an invertible transformation tree."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, name, root_node_name):
+        super().__init__(name, root_node_name)
 
 
 class LinearTree(InvertibleTransformationTree):
     """Represents a transformation tree where all transformations are linear."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, name, root_node_name):
+        super().__init__(name, root_node_name)
 
     def create_subtree_root(self):
         """Create a root node that aggregates all root nodes in the subtree."""
@@ -103,7 +95,7 @@ class LinearTree(InvertibleTransformationTree):
             cum_node_dof += node.dof
         self.subtree_root = LinearConstraintNode(
             dof=root_dof,
-            name=self.subtree_root_name,
+            name=self.root_node_name,
             children=self.roots,
             transformers=transformers,
             layer=DisplacementTreeLayers.Root,
@@ -165,12 +157,12 @@ class DisplacementTree(LinearTree):
     transformations).
     """
 
-    def __init__(self, base_scatterers):
+    def __init__(self, base_scatterers, name, root_node_name):
         self.base_scatterers = base_scatterers
         self.site_elements = self.base_scatterers.site_elements
 
         self._offsets_have_been_added = False
-        super().__init__()
+        super().__init__(name, root_node_name)
 
     @property
     def leaves(self):

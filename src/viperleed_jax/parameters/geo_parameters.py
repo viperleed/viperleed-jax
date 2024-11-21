@@ -357,15 +357,11 @@ class GeoLinkedConstraint(GeoConstraintNode):
 
 class GeoTree(DisplacementTree):
     def __init__(self, base_scatterers):
-        super().__init__(base_scatterers)
-
-    @property
-    def name(self):
-        return 'Geometric Parameters'
-
-    @property
-    def subtree_root_name(self):
-        return 'geo root'
+        super().__init__(
+            base_scatterers,
+            name='Geometric Parameters',
+            root_node_name='geo root',
+        )
 
     def build_tree(self):
         # create leaf nodes
