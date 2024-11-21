@@ -5,13 +5,14 @@ __created__ = '2024-10-01'
 
 from jax import numpy as jnp
 
+from .displacement_tree_layers import DisplacementTreeLayers
+
 from .displacement_range import DisplacementRange
 
 from .linear_tree_nodes import LinearConstraintNode, LinearLeafNode
 
 from .hierarchical_linear_tree import (
     LinearTree,
-    DisplacementTreeLayers,
 )
 from .linear_transformer import LinearTransformer
 

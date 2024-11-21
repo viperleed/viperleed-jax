@@ -18,7 +18,7 @@ from .parameters import (
     occ_parameters,
     vib_parameters,
 )
-from .parameters.hierarchical_linear_tree import DisplacementTreeLayers
+from .parameters.displacement_tree_layers import DisplacementTreeLayers
 
 _ATOM_Z_DIR_ID = 2
 _DISP_Z_DIR_ID = 0

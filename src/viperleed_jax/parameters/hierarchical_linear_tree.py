@@ -4,7 +4,6 @@ __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-10-07'
 
 from abc import ABC, abstractmethod
-from enum import Enum
 from itertools import compress
 
 import anytree
@@ -13,6 +12,9 @@ from anytree import RenderTree
 from anytree.exporter import UniqueDotExporter
 
 from viperleed_jax.files.displacements.lines import ConstraintLine
+from viperleed_jax.parameters.displacement_tree_layers import (
+    DisplacementTreeLayers,
+)
 from viperleed_jax.parameters.linear_tree_nodes import (
     ImplicitLinearConstraintNode,
     LinearConstraintNode,
@@ -23,19 +25,6 @@ from .linear_transformer import LinearTransformer, stack_transformers
 # Enable checks for the anytree library; we don't deal with huge trees so this
 # should not be a performance issue.
 anytree.config.ASSERTIONS = True
-
-
-DisplacementTreeLayers = Enum(
-    'HLTreeLayers',
-    [
-        'Base',
-        'Symmetry',
-        'Backend_Constraints',
-        'User_Constraints',
-        'Implicit_Constraints',
-        'Root',
-    ],
-)
 
 
 class TransformationTree(ABC):

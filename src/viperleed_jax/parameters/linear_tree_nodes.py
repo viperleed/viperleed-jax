@@ -13,7 +13,7 @@ from anytree import Node
 from anytree.walker import Walker
 
 from viperleed_jax.parameters.displacement_range import DisplacementRange
-from viperleed_jax.parameters.hierarchical_linear_tree import (
+from viperleed_jax.parameters.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
 from viperleed_jax.parameters.linear_transformer import (
