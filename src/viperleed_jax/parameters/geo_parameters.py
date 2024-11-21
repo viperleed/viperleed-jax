@@ -17,7 +17,7 @@ from .linear_transformer import LinearMap
 from .linear_tree_nodes import AtomicLinearNode, LinearConstraintNode
 
 
-class GeoHLLeafNode(AtomicLinearNode):
+class GeoLeafNode(AtomicLinearNode):
     """Represents a leaf node with geometric parameters."""
 
     _Z_DIR_ID = 0  # TODO: unify and move to a common place
@@ -72,7 +72,7 @@ class GeoHLLeafNode(AtomicLinearNode):
         origin = self
         while origin.parent:
             if (
-                isinstance(origin.parent, GeoHLConstraintNode)
+                isinstance(origin.parent, GeoConstraintNode)
                 and origin.parent.shared_propagator
             ):
                 origin = origin.parent
@@ -125,7 +125,7 @@ class GeoHLLeafNode(AtomicLinearNode):
         return np.linalg.multi_dot(operations)
 
 
-class GeoHLConstraintNode(LinearConstraintNode):
+class GeoConstraintNode(LinearConstraintNode):
     """Base constraint node for geometric parameters."""
 
     def __init__(
@@ -171,12 +171,12 @@ class GeoHLConstraintNode(LinearConstraintNode):
            and their transformers are the same
         """
         # first case
-        if all(isinstance(child, GeoHLLeafNode) for child in children):
+        if all(isinstance(child, GeoLeafNode) for child in children):
             # choose first child as reference node
             return children[0]
         # check node type
         for child in children:
-            if not isinstance(child, GeoHLConstraintNode):
+            if not isinstance(child, GeoConstraintNode):
                 raise ValueError(
                     'Shared propagator nodes must have shared propagator '
                     'children.'
@@ -206,7 +206,7 @@ class GeoHLConstraintNode(LinearConstraintNode):
             return children[0].propagator_reference_node
 
 
-class GeoSymmetryHLConstraint(GeoHLConstraintNode):
+class GeoSymmetryConstraint(GeoConstraintNode):
     """Constraint node for symmetry constraints on geometric parameters.
 
     Symmetry constraints are the first layer of constraints applied to the
@@ -227,7 +227,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
             raise ValueError('Symmetry constraints must have children')
 
         # make sure that all children are leaf nodes
-        if not all(isinstance(child, GeoHLLeafNode) for child in children):
+        if not all(isinstance(child, GeoLeafNode) for child in children):
             raise ValueError(
                 'Symmetry constraints can only be applied to '
                 'geometric leaf nodes.'
@@ -325,7 +325,7 @@ class GeoSymmetryHLConstraint(GeoHLConstraintNode):
         )
 
 
-class GeoLinkedHLConstraint(GeoHLConstraintNode):
+class GeoLinkedConstraint(GeoConstraintNode):
     """Class for explicit links of geometric parameters."""
 
     # TODO: if we implement linking of nodes with different dof (directional),
@@ -370,7 +370,7 @@ class GeoHLSubtree(DisplacementTree):
     def build_tree(self):
         # create leaf nodes
         geo_leaf_nodes = [
-            GeoHLLeafNode(base_scatterer)
+            GeoLeafNode(base_scatterer)
             for base_scatterer in self.base_scatterers
         ]
         self.nodes.extend(geo_leaf_nodes)
@@ -387,13 +387,11 @@ class GeoHLSubtree(DisplacementTree):
                 node for node in self.leaves if node.base_scatterer in link
             ]
             if nodes_to_link:
-                self.nodes.append(
-                    GeoSymmetryHLConstraint(children=nodes_to_link)
-                )
+                self.nodes.append(GeoSymmetryConstraint(children=nodes_to_link))
 
         unlinked_site_el_nodes = [node for node in self.leaves if node.is_root]
         for node in unlinked_site_el_nodes:
-            self.nodes.append(GeoSymmetryHLConstraint(children=[node]))
+            self.nodes.append(GeoSymmetryConstraint(children=[node]))
 
     def apply_explicit_constraint(self, constraint_line):
         # self._check_constraint_line_type(constraint_line, "geo")
@@ -409,7 +407,7 @@ class GeoHLSubtree(DisplacementTree):
                 )
             # create a constraint node for the selected roots
             self.nodes.append(
-                GeoLinkedHLConstraint(
+                GeoLinkedConstraint(
                     children=selected_roots, name=constraint_line.line
                 )
             )
