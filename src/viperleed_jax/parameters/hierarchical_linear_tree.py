@@ -14,7 +14,7 @@ from anytree.exporter import UniqueDotExporter
 
 from viperleed_jax.files.displacements.lines import ConstraintLine
 from viperleed_jax.parameters.linear_tree_nodes import (
-    ImplicitLinearConstraint,
+    ImplicitLinearConstraintNode,
     LinearConstraintNode,
 )
 
@@ -372,5 +372,5 @@ class DisplacementTree(LinearTree):
 
     def apply_implicit_constraints(self):
         for root in self.roots:
-            implicit_node = ImplicitLinearConstraint([root])
+            implicit_node = ImplicitLinearConstraintNode([root])
             self.nodes.append(implicit_node)

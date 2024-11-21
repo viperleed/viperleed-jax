@@ -312,7 +312,7 @@ class LinearConstraintNode(LinearTreeNode):
         return np.logical_or.reduce(partial_free)
 
 
-class ImplicitLinearConstraint(LinearConstraintNode):
+class ImplicitLinearConstraintNode(LinearConstraintNode):
     """Class representing implicit constraints in the hierarchical linear tree.
 
     Implicit constraints are constraints that are not explicitly defined by the
