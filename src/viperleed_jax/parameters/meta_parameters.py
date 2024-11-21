@@ -26,12 +26,12 @@ class MetaParameterSubtree(LinearTree):
         super().__init__()
 
     def build_tree(self):
-        # called in init
-        # V0r
+        """Build the meta parameters subtree."""
         self.v0r_node = V0rLeafNode()
         self.nodes.append(self.v0r_node)
 
     def read_from_rpars(self, rpars):
+        """Read and update the bounds of the meta parameters from Rparams."""
         self.v0r_node.update_bounds(rpars)
         bound_node = V0rBoundNode(self.v0r_node)
         self.nodes.append(bound_node)
