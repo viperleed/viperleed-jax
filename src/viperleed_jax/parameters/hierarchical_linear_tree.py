@@ -473,7 +473,10 @@ class HLBound:
         return f'HLBound(lower={self.lower}, upper={self.upper})'
 
 
-class HLSubtree(ABC):
+# TODO: abstraction Tree -> invertible tree -> linear tree
+
+
+class LinearTree(ABC):  # TODO: further abstract to a tree
     def __init__(self):
         self.nodes = []
         self._subtree_root_has_been_created = False
@@ -577,7 +580,7 @@ class HLSubtree(ABC):
         return np.array(is_dynamic, dtype=bool)
 
 
-class ParameterHLSubtree(HLSubtree):
+class ParameterHLSubtree(LinearTree):  # Displacement Tree
     """Base class representing a subtree in the hierarchical linear tree.
 
     Subtrees are used to group nodes for a group of parameters (vib, geo, occ,

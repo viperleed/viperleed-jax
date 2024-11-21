@@ -9,7 +9,7 @@ from .hierarchical_linear_tree import (
     HLBound,
     HLConstraintNode,
     HLLeafNode,
-    HLSubtree,
+    LinearTree,
     HLTreeLayers,
 )
 from .linear_transformer import LinearTransformer
@@ -21,7 +21,7 @@ from .linear_transformer import LinearTransformer
 # (e.g. incidence angle, etc.).
 
 
-class MetaParameterSubtree(HLSubtree):
+class MetaParameterSubtree(LinearTree):
     """Subtree for meta parameters."""
 
     def __init__(self):
