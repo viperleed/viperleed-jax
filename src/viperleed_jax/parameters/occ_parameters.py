@@ -9,7 +9,7 @@ from .hierarchical_linear_tree import (
     HLConstraintNode,
     HLScattererLeafNode,
     HLTreeLayers,
-    ParameterHLSubtree,
+    DisplacementTree,
 )
 from .linear_transformer import LinearTransformer
 
@@ -130,7 +130,7 @@ class OccLinkedHLConstraint(OccHLConstraintNode):
         )
 
 
-class OccHLSubtree(ParameterHLSubtree):
+class OccHLSubtree(DisplacementTree):
     def __init__(self, base_scatterers):
         super().__init__(base_scatterers)
 

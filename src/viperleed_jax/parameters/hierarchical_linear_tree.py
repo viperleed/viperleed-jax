@@ -582,10 +582,10 @@ class LinearTree(ABC):  # TODO: further abstract to a tree
         return np.array(is_dynamic, dtype=bool)
 
 
-class ParameterHLSubtree(LinearTree):  # Displacement Tree
-    """Base class representing a subtree in the hierarchical linear tree.
+class DisplacementTree(LinearTree):
+    """Represents a tree handling displacement parameters.
 
-    Subtrees are used to group nodes for a group of parameters (vib, geo, occ,
+    Trees are used to group nodes for a group of parameters (vib, geo, occ,
     V0r). This allows implementing constraints more easily and makes it possible
     to extract additional information from the tree (e.g. propagator
     transformations).

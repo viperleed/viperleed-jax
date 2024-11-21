@@ -9,7 +9,7 @@ from .hierarchical_linear_tree import (
     HLConstraintNode,
     HLScattererLeafNode,
     HLTreeLayers,
-    ParameterHLSubtree,
+    DisplacementTree,
 )
 from .linear_transformer import LinearTransformer
 
@@ -137,7 +137,7 @@ class VibHLSiteConstraint(VibHLConstraintNode):
         )
 
 
-class VibHLSubtree(ParameterHLSubtree):
+class VibHLSubtree(DisplacementTree):
     def __init__(self, base_scatterers):
         super().__init__(base_scatterers)
 
