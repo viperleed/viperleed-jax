@@ -97,4 +97,4 @@ class DisplacementRange:
 
     def __repr__(self):
         """Return a string representation of the DisplacementRange object."""
-        return f'HLBound(lower={self.lower}, upper={self.upper})'
+        return f'DisplacementRange(lower={self.lower}, upper={self.upper})'

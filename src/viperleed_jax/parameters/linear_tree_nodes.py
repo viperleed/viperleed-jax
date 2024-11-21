@@ -95,7 +95,7 @@ class LinearTreeNode(TransformationTreeNode):
         # check that the parent is a ConstraintNode
         if not isinstance(parent, LinearConstraintNode):
             msg = (
-                f'Parent must be an instance of HLConstraintNode. '
+                f'Parent must be an instance of LinearConstraintNode. '
                 f'Invalid parent: {parent}'
             )
             raise TypeError(msg)

@@ -7,7 +7,7 @@ from enum import Enum
 
 
 DisplacementTreeLayers = Enum(
-    'HLTreeLayers',
+    'DisplacementTreeLayers',
     [
         'Base',
         'Symmetry',
