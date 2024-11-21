@@ -59,6 +59,8 @@ class InvertibleTransformationTree(ABC):
 
 
 class LinearTree(InvertibleTransformationTree):
+    """Represents a transformation tree where all transformations are linear."""
+
     def __init__(self):
         super().__init__()
 
@@ -78,6 +80,7 @@ class LinearTree(InvertibleTransformationTree):
     @property
     @abstractmethod
     def subtree_root_name(self):
+        """Return the name of the tree root node."""
         pass
 
     def create_subtree_root(self):
@@ -108,6 +111,7 @@ class LinearTree(InvertibleTransformationTree):
         self.nodes.append(self.subtree_root)
 
     def __repr__(self):
+        """Return a string representation of the tree."""
         if not self._tree_root_has_been_created:
             partial_trees = [RenderTree(root).by_attr() for root in self.roots]
             trees_str = '\n'.join(partial_trees)
@@ -116,6 +120,7 @@ class LinearTree(InvertibleTransformationTree):
         return RenderTree(self.subtree_root).by_attr()
 
     def roots_up_to_layer(self, layer):
+        """Return all root nodes up to a given layer."""
         _layer = DisplacementTreeLayers(layer)
         return [
             node
@@ -125,6 +130,7 @@ class LinearTree(InvertibleTransformationTree):
         ]
 
     def graphical_export(self, filename):
+        """Create and save a graphical representation of the tree to file."""
         if not self._tree_root_has_been_created:
             raise ValueError('Subtree root has not yet been created.')
         UniqueDotExporter(self.subtree_root).to_picture(filename)
@@ -134,12 +140,13 @@ class LinearTree(InvertibleTransformationTree):
 
     @property
     def leaf_is_dynamic(self):
-        """To check which of the leaves are dynamic, we use the collapsed
-        transformer.
+        """Return an array indicating which leaves are dynamic.
+
         We first take the transformer, and create a new transformer without any
         biases. We then boolify this weights transformer and feed in a vector of
         true boolean values. The resulting vector will be true for all dynamic
-        leaves."""
+        leaves.
+        """
         is_dynamic = []
         for leaf in self.leaves:
             dummy_transformer = self.subtree_root.transformer_to_descendent(
