@@ -116,7 +116,10 @@ class LinearTransformer(Transformer):
         return LinearTransformer(new_weights, new_biases, (_bool_mask.sum(),))
 
     def __repr__(self):
-        return f'LinearTransformer(weights={self.weights.shape}, biases={self.biases.shape}, out_reshape={self.out_reshape})'
+        return (
+            f'LinearTransformer(weights={self.weights.shape}, '
+            f'biases={self.biases.shape}, out_reshape={self.out_reshape})'
+        )
 
     def tree_flatten(self):
         aux_data = {
