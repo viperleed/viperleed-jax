@@ -3,12 +3,38 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-10-07'
 
+from abc import ABC, abstractmethod
+
 import jax.numpy as jnp
 import numpy as np
 
 
-class LinearTransformer:
-    """Linear transformation class that applies a weight matrix and a bias vector to an input."""
+class Transformer(ABC):
+    """Abstract base class for transformations."""
+
+    @abstractmethod
+    def __call__(self, input_params):
+        """Apply the transformation to the input parameters."""
+
+    @abstractmethod
+    def in_dim(self):
+        """Input dimensionality of the transformer."""
+
+    @abstractmethod
+    def out_dim(self):
+        """Output dimensionality of the transformer."""
+
+    @abstractmethod
+    def compose(self, other):
+        """Compose this transformer with another transformer."""
+
+    @abstractmethod
+    def __eq__(self, other):
+        """Check equality between two transformers."""
+
+
+class LinearTransformer(Transformer):
+    """Linear transformation class that implements an affine transformation."""
 
     def __init__(self, weights, biases, out_reshape=None):
         self.weights = np.array(weights)
