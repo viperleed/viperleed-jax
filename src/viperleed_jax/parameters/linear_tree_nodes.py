@@ -5,8 +5,6 @@ __created__ = '2024-11-21'
 
 # TODO: rename base to atoms
 
-# Abstraction: TreeNode -> LinearTreeNode -> LinearLeafNode/LinearConstraintNode
-
 
 from abc import abstractmethod
 
