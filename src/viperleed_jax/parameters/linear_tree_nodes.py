@@ -1,3 +1,8 @@
+"""Module linear_tree_nodes."""
+
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-11-21'
+
 # TODO: rename base to atoms
 
 # Abstraction: TreeNode -> LinearTreeNode -> LinearLeafNode/LinearConstraintNode
@@ -7,7 +12,7 @@ from abc import abstractmethod
 
 import numpy as np
 from anytree.walker import Walker
-from viperleed_jax.parameters.DisplacementRange import DisplacementRange
+from viperleed_jax.parameters.displacement_range import DisplacementRange
 from viperleed_jax.parameters.hierarchical_linear_tree import (
     DisplacementTreeLayers,
 )
