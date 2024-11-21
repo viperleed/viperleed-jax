@@ -226,20 +226,21 @@ class DisplacementTree(LinearTree):
 
     def _check_constraint_line_type(self, constraint_line, constraint_type):
         if not isinstance(constraint_line, ConstraintLine):
-            raise ValueError('Constraint must be a ConstraintLine.')
+            msg = 'Constraint must be a ConstraintLine.'
+            raise TypeError(msg)
         if constraint_line.constraint_type != constraint_type:
-            raise ValueError(
-                f'Constraint must be a {constraint_type} constraint.'
-            )
+            msg = f'Constraint must be a {constraint_type} constraint.'
+            raise ValueError(msg)
 
     def _target_nodes(self, targets):
-        """Takes a BSTarget and returns the corresponding leaves and roots."""
+        """Take a BSTarget and returns the corresponding leaves and roots."""
         # gets the leaves that are affected by the targets
         explicitly_selected_leaves = list(
             compress(self.leaves, targets.select(self.base_scatterers))
         )
         if not explicitly_selected_leaves:
-            raise ValueError(f'No leaf nodes found for target {targets}.')
+            msg = f'No leaf nodes found for target {targets}.'
+            raise ValueError(msg)
 
         # get the corresponding root nodes
         selected_roots = list(
