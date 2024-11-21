@@ -44,7 +44,7 @@ DisplacementTreeLayers = Enum(
 class LinearTree(ABC):  # TODO: further abstract to a tree
     def __init__(self):
         self.nodes = []
-        self._subtree_root_has_been_created = False
+        self._tree_root_has_been_created = False
         self.build_tree()
 
     @property
@@ -72,9 +72,9 @@ class LinearTree(ABC):  # TODO: further abstract to a tree
 
     def create_subtree_root(self):
         """Create a root node that aggregates all root nodes in the subtree."""
-        if self._subtree_root_has_been_created:
+        if self._tree_root_has_been_created:
             raise ValueError('Subtree root has already been created.')
-        self._subtree_root_has_been_created = True
+        self._tree_root_has_been_created = True
         if not self.roots:
             raise ValueError('No root nodes found in subtree.')
         root_dof = sum(node.dof for node in self.roots)
@@ -98,7 +98,7 @@ class LinearTree(ABC):  # TODO: further abstract to a tree
         self.nodes.append(self.subtree_root)
 
     def __repr__(self):
-        if not self._subtree_root_has_been_created:
+        if not self._tree_root_has_been_created:
             partial_trees = [RenderTree(root).by_attr() for root in self.roots]
             trees_str = '\n'.join(partial_trees)
 
@@ -115,7 +115,7 @@ class LinearTree(ABC):  # TODO: further abstract to a tree
         ]
 
     def graphical_export(self, filename):
-        if not self._subtree_root_has_been_created:
+        if not self._tree_root_has_been_created:
             raise ValueError('Subtree root has not yet been created.')
         UniqueDotExporter(self.subtree_root).to_picture(filename)
 
