@@ -5,9 +5,9 @@ __created__ = '2024-09-08'
 
 import numpy as np
 
+from .linear_tree_nodes import AtomicLinearNode, LinearConstraintNode
+
 from .hierarchical_linear_tree import (
-    LinearConstraintNode,
-    AtomicLinearNode,
     DisplacementTreeLayers,
     DisplacementTree,
 )

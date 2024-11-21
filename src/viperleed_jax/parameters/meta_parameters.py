@@ -5,10 +5,10 @@ __created__ = '2024-10-01'
 
 from jax import numpy as jnp
 
+from .linear_tree_nodes import LinearConstraintNode, LinearLeafNode
+
 from .hierarchical_linear_tree import (
     HLBound,
-    LinearConstraintNode,
-    LinearLeafNode,
     LinearTree,
     DisplacementTreeLayers,
 )

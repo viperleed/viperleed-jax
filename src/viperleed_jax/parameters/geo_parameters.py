@@ -11,10 +11,9 @@ from anytree.walker import Walker, WalkError
 
 from viperleed_jax import atomic_units
 from viperleed_jax.files.displacements.lines import ConstraintLine
+from .linear_tree_nodes import AtomicLinearNode, LinearConstraintNode
 
 from .hierarchical_linear_tree import (
-    LinearConstraintNode,
-    AtomicLinearNode,
     DisplacementTreeLayers,
     DisplacementTree,
 )
