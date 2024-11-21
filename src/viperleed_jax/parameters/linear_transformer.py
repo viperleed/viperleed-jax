@@ -47,16 +47,19 @@ class LinearTransformer(Transformer):
 
         # consistency check of dimensions
         if self.weights.shape[0] != self._out_dim:
-            raise ValueError(
+            msg = (
                 f'Weight matrix shape {self.weights.shape} does not match '
                 f'bias shape {self.biases.shape}'
             )
-        if self.out_reshape is not None:
-            if self._out_dim != np.prod(self.out_reshape):
-                raise ValueError(
-                    f'Output reshape {self.out_reshape} does not match bias '
-                    f'shape {self.biases.shape}'
-                )
+            raise ValueError(msg)
+        if self.out_reshape is not None and self._out_dim != np.prod(
+            self.out_reshape
+        ):
+            msg = (
+                f'Output reshape {self.out_reshape} does not match '
+                f'output dimension {self._out_dim}'
+            )
+            raise ValueError(msg)
 
     @property
     def in_dim(self):
@@ -71,7 +74,8 @@ class LinearTransformer(Transformer):
             return self.biases
         free_params = jnp.asarray(free_params)
         if len(free_params) != self.n_free_params:
-            raise ValueError('Free parameters have wrong shape')
+            msg = 'Free parameters have wrong shape'
+            raise ValueError(msg)
         result = self.weights @ free_params + self.biases  # Ax + b
         if self.out_reshape is not None:
             result = result.reshape(self.out_reshape)
@@ -99,11 +103,14 @@ class LinearTransformer(Transformer):
         l3(l2(l1(x))) == l1.compose(l2).compose(l3)(x)
         """
         if not isinstance(other, LinearTransformer):
-            raise ValueError('Can only compose with another LinearTransformer')
+            msg = 'Can only compose with another LinearTransformer'
+            raise TypeError(msg)
         if self.out_dim != other.in_dim:
-            raise ValueError(
-                f'Cannot compose transformers with shapes {self._out_dim} and {other.in_dim}'
+            msg = (
+                f'Cannot compose transformers with shapes {self._out_dim} '
+                'and {other.in_dim}'
             )
+            raise ValueError(msg)
         new_weights = other.weights @ self.weights
         new_biases = other.weights @ self.biases + other.biases
         return LinearTransformer(new_weights, new_biases, other.out_reshape)
