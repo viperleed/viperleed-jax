@@ -70,7 +70,7 @@ class TransformationTree(ABC):
         UniqueDotExporter(self.subtree_root).to_picture(filename)
 
 
-class InvertibleTransformationTree(ABC):
+class InvertibleTransformationTree(TransformationTree):
     """Abstract base class for an invertible transformation tree."""
 
     def __init__(self):
