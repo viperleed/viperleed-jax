@@ -38,7 +38,7 @@ DisplacementTreeLayers = Enum(
 )
 
 
-class HLBound:  # DisplacementRange or DisplacementBounds
+class DisplacementRange:
     """Class representing a bound in the hierarchical linear tree.
 
     Bounds are used to represent the lower and upper bounds of values that can

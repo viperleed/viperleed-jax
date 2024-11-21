@@ -9,7 +9,7 @@ import numpy as np
 from anytree.walker import Walker
 from viperleed_jax.parameters.hierarchical_linear_tree import (
     DisplacementTreeLayers,
-    HLBound,
+    DisplacementRange,
 )
 from viperleed_jax.parameters.linear_transformer import (
     LinearMap,
@@ -89,7 +89,7 @@ class LinearTreeNode(Node):
 class LinearLeafNode(LinearTreeNode):
     def __init__(self, dof, name=None, parent=None):
         # initialize bounds
-        self._bounds = HLBound(dof)
+        self._bounds = DisplacementRange(dof)
         super().__init__(
             dof=dof, name=name, parent=parent, layer=DisplacementTreeLayers.Base
         )

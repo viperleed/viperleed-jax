@@ -8,7 +8,7 @@ from jax import numpy as jnp
 from .linear_tree_nodes import LinearConstraintNode, LinearLeafNode
 
 from .hierarchical_linear_tree import (
-    HLBound,
+    DisplacementRange,
     LinearTree,
     DisplacementTreeLayers,
 )
@@ -52,7 +52,7 @@ class V0rHLLeafNode(LinearLeafNode):
     def __init__(self):
         dof = 1  # V0r is a single scalar parameter
         name = 'V0r'
-        self.bound = HLBound(1)
+        self.bound = DisplacementRange(1)
         self.num = 1
         super().__init__(dof=dof, name=name)
 
