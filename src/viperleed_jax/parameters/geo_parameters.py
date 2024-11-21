@@ -84,44 +84,44 @@ class GeoLeafNode(AtomicLinearNode):
     def symmetry_operation_to_reference_propagator(self):
         """Return the symmetry operation that links this leaf to the reference
         propagator."""
-        node_walker = Walker()
-        target = self.propagator_origin.propagator_reference_node
-        try:
-            (upwards, common, downwards) = node_walker.walk(self, target)
-        except WalkError as err:
-            raise RuntimeError(
-                f'Node {self} cannot be reached from '
-                f'{self.propagator_origin}.'
-            ) from err
-        if target is self:  # identity
+        origin_node = self.propagator_origin.propagator_reference_node
+        if origin_node is self:  # identity
             return np.eye(3)
+
+        # get the path from origin to self
+        node_walker = Walker()
+        try:
+            (upwards, common, downwards) = node_walker.walk(origin_node, self)
+        except WalkError as err:
+            msg = (
+                f'Node {self} cannot be reached from {self.propagator_origin}.'
+            )
+            raise RuntimeError(msg) from err
 
         # sanity check
         if not common.shared_propagator:
             raise ValueError('Common node must have shared propagator')
 
-        # traverse the tree and add up symmetry operations
-        operations = deque()
-        for up, down in zip_longest(
-            upwards, reversed(downwards), fillvalue=None
+        # operations up to origin
+        up_transformers = [up.transformer for up in upwards]
+        down_transformers = [down.transformer for down in downwards]
+
+        # check that none of the transformers have bias
+        if any(np.any(trafo.biases != 0) for trafo in up_transformers) or any(
+            np.any(trafo.biases != 0) for trafo in down_transformers
         ):
-            if (
-                up is not None
-                and down is not None
-                and up.transformer == down.transformer
-            ):
-                continue
-            if up is not None:
-                if np.any(up.transformer.biases != 0):
-                    raise ValueError('Bias must be zero')
-                inverse = np.linalg.inv(up.transformer.weights)
-                operations.appendleft(inverse)
-            if down is not None:
-                if np.any(down.transformer.biases != 0):
-                    raise ValueError('Bias must be zero')
-                operations.append(down.transformer.weights)
-        operations.appendleft(np.eye(3))
-        operations.append(np.eye(3))
+            raise ValueError('Bias must be zero')
+
+        # get the symmetry operations
+        up_operations = [
+            np.linalg.pinv(trafo.weights) for trafo in up_transformers
+        ]
+        down_operations = [trafo.weights for trafo in down_transformers]
+
+        # combine the operations
+        operations = up_operations + down_operations
+        # they must be applied in reverse order
+        operations.reverse()
         return np.linalg.multi_dot(operations)
 
 
