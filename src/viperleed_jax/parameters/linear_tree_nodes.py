@@ -114,6 +114,8 @@ class LinearTreeNode(TransformationTreeNode):
 
 
 class LinearLeafNode(LinearTreeNode):
+    """Base class for leaf nodes for the linear transformation tree."""
+
     def __init__(self, dof, name=None, parent=None):
         # initialize bounds
         self._bounds = DisplacementRange(dof)
@@ -135,6 +137,8 @@ class LinearLeafNode(LinearTreeNode):
 
 
 class AtomicLinearNode(LinearLeafNode):
+    """Base class for leaf nodes representing parameters indexed by atom."""
+
     def __init__(self, dof, base_scatterer, name=None, parent=None):
         # base scatterer based attributes
         self.base_scatterer = base_scatterer
@@ -365,9 +369,9 @@ class ImplicitLinearConstraintNode(LinearConstraintNode):
         weights = (weights.astype(float)).T
         implicit_trafo = LinearMap(weights, (child.dof,))
 
-        # TODO: does this automaticall raise if we have bound conflicts?
+        # TODO: does this automatically raise if we have bound conflicts?
 
-        # now get a transfomer that enforces the bounds
+        # now get a transformer that enforces the bounds
         free, lower, upper = child.stacked_bounds()
         if np.any(free):
             partial_trafo = child.collapse_transformer().select_rows(free)
@@ -388,7 +392,7 @@ class ImplicitLinearConstraintNode(LinearConstraintNode):
 
         super().__init__(
             dof=dof,
-            name=f'Bounds Constraint',
+            name='Bounds Constraint',
             children=[child],
             transformers=[composed_transformer],
             layer=DisplacementTreeLayers.Implicit_Constraints,
