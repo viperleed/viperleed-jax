@@ -13,7 +13,7 @@ from .linear_transformer import LinearTransformer
 from .linear_tree_nodes import AtomicLinearNode, LinearConstraintNode
 
 
-class OccHLLeafNode(AtomicLinearNode):
+class OccLeafNode(AtomicLinearNode):
     """Represents a leaf node with occupational parameters."""
 
     def __init__(self, base_scatterer):
@@ -35,7 +35,7 @@ class OccHLLeafNode(AtomicLinearNode):
         self._bounds.update_range(_range=None, offset=offset, enforce=True)
 
 
-class OccHLConstraintNode(LinearConstraintNode):
+class OccConstraintNode(LinearConstraintNode):
     """Represents a constraint node for occupational parameters."""
 
     def __init__(self, dof, children, name, layer, transformers=None):
@@ -52,15 +52,15 @@ class OccHLConstraintNode(LinearConstraintNode):
         )
 
 
-class OccSharedHLConstraint(OccHLConstraintNode):
+class OccSharedConstraint(OccConstraintNode):
     """Constraint for sharing occupation to 100%."""
 
     def __init__(self, children):
         name = 'shared occ'
         dof = len(children)
 
-        if any(not isinstance(child, OccHLLeafNode) for child in children):
-            raise ValueError('Children must be OccHLLeaf nodes.')
+        if any(not isinstance(child, OccLeafNode) for child in children):
+            raise ValueError('Children must be OccLeaf nodes.')
 
         if any(child.num != children[0].num for child in children):
             raise ValueError('Children must be of the same atom.')
@@ -82,7 +82,7 @@ class OccSharedHLConstraint(OccHLConstraintNode):
         )
 
 
-class OccSymmetryHLConstraint(OccHLConstraintNode):
+class OccSymmetryConstraint(OccConstraintNode):
     """Constraint for enforcing symmetry in occupation."""
 
     def __init__(self, children, name):
@@ -106,7 +106,7 @@ class OccSymmetryHLConstraint(OccHLConstraintNode):
         )
 
 
-class OccLinkedHLConstraint(OccHLConstraintNode):
+class OccLinkedConstraint(OccConstraintNode):
     """Class for explicit links of occupational parameters."""
 
     def __init__(self, children, name):
@@ -144,7 +144,7 @@ class OccHLSubtree(DisplacementTree):
     def build_tree(self):
         # initially, every atom-site-element has a free chemical weight
         # to allow for (partial) vacancies
-        occ_leaf_nodes = [OccHLLeafNode(ase) for ase in self.base_scatterers]
+        occ_leaf_nodes = [OccLeafNode(ase) for ase in self.base_scatterers]
         self.nodes.extend(occ_leaf_nodes)
 
         # iterate over atom-site-elements and link ones from the same atom
@@ -158,7 +158,7 @@ class OccHLSubtree(DisplacementTree):
             atom_nodes = [node for node in self.leaves if node.num == num]
             if not atom_nodes:
                 continue
-            linked_node = OccSharedHLConstraint(children=atom_nodes)
+            linked_node = OccSharedConstraint(children=atom_nodes)
             self.nodes.append(linked_node)
             linked_nodes.append(linked_node)
 
@@ -169,14 +169,14 @@ class OccHLSubtree(DisplacementTree):
             nodes_to_link = [node for node in linked_nodes if node.num in link]
             if not nodes_to_link:
                 continue
-            symmetry_node = OccSymmetryHLConstraint(
+            symmetry_node = OccSymmetryConstraint(
                 children=nodes_to_link, name='Symmetry'
             )
             self.nodes.append(symmetry_node)
 
         unlinked_site_el_nodes = [node for node in linked_nodes if node.is_root]
         for node in unlinked_site_el_nodes:
-            symmetry_node = OccSymmetryHLConstraint(
+            symmetry_node = OccSymmetryConstraint(
                 children=[node], name='Symmetry'
             )
             self.nodes.append(symmetry_node)
@@ -193,7 +193,7 @@ class OccHLSubtree(DisplacementTree):
             )
         # create a constraint node for the selected roots
         self.nodes.append(
-            OccLinkedHLConstraint(
+            OccLinkedConstraint(
                 children=selected_roots, name=constraint_line.line
             )
         )
