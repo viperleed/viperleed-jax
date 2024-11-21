@@ -104,9 +104,9 @@ class LinearTreeNode(TransformationTreeNode):
                 f'must match parent dof ({parent.dof}).'
             )
 
-    def _pre_detach(self, parent):
+    def _pre_detach(self):
         raise RuntimeError(
-            'The hierarchical linear tree does not support ' 'detaching nodes.'
+            'The hierarchical linear tree does not support detaching nodes.'
         )
 
 
