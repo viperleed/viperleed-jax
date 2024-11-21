@@ -15,7 +15,7 @@ from .linear_tree_nodes import AtomicLinearNode, LinearConstraintNode
 EPS = 1e-6  # TODO: move to constants
 
 
-class VibHLLeafNode(AtomicLinearNode):
+class VibLeafNode(AtomicLinearNode):
     """Represents a leaf node with vibrational parameters."""
 
     def __init__(self, base_scatterer):
@@ -41,7 +41,7 @@ class VibHLLeafNode(AtomicLinearNode):
         self._bounds.update_range(_range=None, offset=offset, enforce=True)
 
 
-class VibHLConstraintNode(LinearConstraintNode):
+class VibConstraintNode(LinearConstraintNode):
     """Represents a constraint node for vibrational parameters."""
 
     def __init__(self, children, name, layer, dof=1, transformers=None):
@@ -63,7 +63,7 @@ class VibHLConstraintNode(LinearConstraintNode):
         )
 
 
-class VibLinkedHLConstraint(VibHLConstraintNode):
+class VibLinkedConstraint(VibConstraintNode):
     """Class for explicit links of vibrational parameters."""
 
     def __init__(self, children, name):
@@ -109,13 +109,13 @@ class VibLinkedHLConstraint(VibHLConstraintNode):
         )
 
 
-class VibHLSiteConstraint(VibHLConstraintNode):
+class VibSiteConstraint(VibConstraintNode):
     """Class for linking vibrations of the same site."""
 
     def __init__(self, children):
         # check that all children are leaf nodes and share a site-element
-        if not all(isinstance(child, VibHLLeafNode) for child in children):
-            raise ValueError('Children must be VibHLLeaf nodes.')
+        if not all(isinstance(child, VibLeafNode) for child in children):
+            raise ValueError('Children must be VibLeaf nodes.')
         if not all(
             child.site_element == children[0].site_element for child in children
         ):
@@ -149,7 +149,7 @@ class VibHLSubtree(DisplacementTree):
         return 'vib root'
 
     def build_tree(self):
-        leaf_nodes = [VibHLLeafNode(ase) for ase in self.base_scatterers]
+        leaf_nodes = [VibLeafNode(ase) for ase in self.base_scatterers]
 
         self.nodes.extend(leaf_nodes)
 
@@ -160,7 +160,7 @@ class VibHLSubtree(DisplacementTree):
             ]
             if not nodes_to_link:
                 continue
-            site_link_node = VibHLSiteConstraint(
+            site_link_node = VibSiteConstraint(
                 children=nodes_to_link,
             )
             self.nodes.append(site_link_node)
@@ -181,7 +181,7 @@ class VibHLSubtree(DisplacementTree):
             )
         # create a constraint node for the selected roots
         self.nodes.append(
-            VibLinkedHLConstraint(
+            VibLinkedConstraint(
                 children=selected_roots, name=constraint_line.line
             )
         )
