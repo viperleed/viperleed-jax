@@ -25,10 +25,39 @@ from viperleed_jax.parameters.linear_transformer import (
 )
 
 
-class LinearTreeNode(Node):
-    """Base class for hierarchical linear tree nodes."""
+class TransformationTreeNode(Node):
+    """Base class for nodes for transformation trees.
+
+    Transformation trees are used to represent hierarchical and composable
+    transformations. Each node in the tree represents data that is related to
+    it's parent node through a transformation (the edge).
+    The transformation is represented by a transformer that is stored in the
+    child node.
+    """
 
     separator = '/'
+
+    def __init__(self, name, parent=None, children=None):
+        self.name = name
+        self._transformer = None
+        self.parent = parent
+        if children:
+            self.children = children
+
+    @property
+    def transformer(self):
+        """Transformer of the edge connecting this node to its parent."""
+        if self._transformer is None:
+            raise ValueError('Node does not have a transformer.')
+        return self._transformer
+
+    @abstractmethod
+    def set_transformer(self, transformer):
+        """Set the transformer describing the edge."""
+
+
+class LinearTreeNode(TransformationTreeNode):
+    """Base class for hierarchical linear tree nodes."""
 
     def __init__(self, dof, layer, name=None, parent=None, children=None):
         self.dof = dof  # Number of degrees of freedom
@@ -36,9 +65,7 @@ class LinearTreeNode(Node):
         self.layer = DisplacementTreeLayers(layer)
 
         self.name = f'({self.dof}) {name}' if name else f'({self.dof})'
-        self.parent = parent
-        if self.children:
-            self.children = children
+        super().__init__(name=name, parent=parent, children=children)
 
     def set_transformer(self, transformer):
         # check if the transformer is valid
