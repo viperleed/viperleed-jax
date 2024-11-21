@@ -38,14 +38,29 @@ DisplacementTreeLayers = Enum(
 )
 
 
-# TODO: abstraction Tree -> invertible tree -> linear tree
+class TransformationTree(ABC):
+    """Abstract base class for a transformation tree."""
 
-
-class LinearTree(ABC):  # TODO: further abstract to a tree
     def __init__(self):
         self.nodes = []
         self._tree_root_has_been_created = False
         self.build_tree()
+
+    @abstractmethod
+    def build_tree(self):
+        """Build the tree."""
+
+
+class InvertibleTransformationTree(ABC):
+    """Abstract base class for an invertible transformation tree."""
+
+    def __init__(self):
+        super().__init__()
+
+
+class LinearTree(InvertibleTransformationTree):
+    def __init__(self):
+        super().__init__()
 
     @property
     def roots(self):
@@ -63,11 +78,6 @@ class LinearTree(ABC):  # TODO: further abstract to a tree
     @property
     @abstractmethod
     def subtree_root_name(self):
-        pass
-
-    @abstractmethod
-    def build_tree(self):
-        """Method to build the subtree for the parameter group."""
         pass
 
     def create_subtree_root(self):
