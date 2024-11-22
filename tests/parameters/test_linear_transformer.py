@@ -1,4 +1,3 @@
-import jax.numpy as jnp
 import numpy as np
 import pytest
 
@@ -27,7 +26,7 @@ class TestLinearTransformer:
         transformer = LinearTransformer(weights, biases)
         free_params = [0.5, 0.25]
         result = transformer(free_params)
-        expected = jnp.array(
+        expected = np.array(
             [6.0, 8.5]
         )  # [1*0.5 + 2*0.25 + 5, 3*0.5 + 4*0.25 + 6]
         assert result == pytest.approx(expected)
@@ -43,11 +42,11 @@ class TestLinearTransformer:
             transformer(free_params)
 
     def test_call_without_free_params(self):
-        weights = jnp.zeros(shape=(2, 0))
+        weights = np.zeros(shape=(2, 0))
         biases = [5, 6]
         transformer = LinearTransformer(weights, biases)
         result = transformer([])  # Empty list should just return biases
-        assert result == pytest.approx(jnp.array([5, 6]))
+        assert result == pytest.approx(np.array([5, 6]))
 
     def test_call_with_out_reshape(self):
         weights = [[1, 2], [3, 4]]
@@ -55,7 +54,7 @@ class TestLinearTransformer:
         transformer = LinearTransformer(weights, biases, out_reshape=(2, 1))
         free_params = [0.5, 0.25]
         result = transformer(free_params)
-        expected = jnp.array([[6], [8.5]])
+        expected = np.array([[6], [8.5]])
         assert result.shape == (2, 1)
         assert result == pytest.approx(expected)
 
@@ -127,7 +126,7 @@ class TestLinearMap:
         linear_map = LinearMap(weights)
         assert linear_map.n_free_params == 2
         assert linear_map.weights.shape == (2, 2)
-        assert jnp.allclose(linear_map.biases, 0)  # Biases must be zero
+        assert linear_map.biases == pytest.approx(0)  # Biases must be zero
         assert linear_map.out_reshape is None
 
     def test_call_with_correct_shape(self):
@@ -135,7 +134,7 @@ class TestLinearMap:
         linear_map = LinearMap(weights)
         free_params = [0.5, 0.25]
         result = linear_map(free_params)
-        expected = jnp.array([1.0, 2.5])  # [1*0.5 + 2*0.25, 3*0.5 + 4*0.25]
+        expected = np.array([1.0, 2.5])  # [1*0.5 + 2*0.25, 3*0.5 + 4*0.25]
         assert result == pytest.approx(expected)
 
     def test_call_with_incorrect_shape(self):
@@ -152,7 +151,7 @@ class TestLinearMap:
         linear_map = LinearMap(weights, out_reshape=(2, 1))
         free_params = [0.5, 0.25]
         result = linear_map(free_params)
-        expected = jnp.array([[1.0], [2.5]])
+        expected = np.array([[1.0], [2.5]])
         assert result.shape == (2, 1)
         assert result == pytest.approx(expected)
 
