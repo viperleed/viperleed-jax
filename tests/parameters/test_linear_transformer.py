@@ -1,4 +1,5 @@
 import jax.numpy as jnp
+import numpy as np
 import pytest
 
 from viperleed_jax.parameters.linear_transformer import (
@@ -162,3 +163,31 @@ class TestLinearMap:
             repr(linear_map)
             == 'LinearTransformer(weights=(2, 2), biases=(2,), out_reshape=None)'
         )
+
+    def test_composition_with_linear_transformer(self):
+        weights1 = np.array([[1, 2], [3, 4]])
+        weights2 = np.array([[0.5, 0.25], [0.75, 1.5]])
+        biases2 = np.array([1, -1])
+        linear_map = LinearMap(weights1)
+        transformer = LinearTransformer(weights2, biases2)
+
+        composed_transformer = transformer.compose(linear_map)
+
+        # Validate composition
+        expected_weights = weights1 @ weights2
+        expected_biases = weights1 @ biases2
+        assert composed_transformer.weights == pytest.approx(expected_weights)
+        assert composed_transformer.biases == pytest.approx(expected_biases)
+
+    def test_composition_with_linear_map(self):
+        weights1 = np.array([[1, 2], [3, 4]])
+        weights2 = np.array([[0.5, 0.25], [0.75, 1.5]])
+        linear_map1 = LinearMap(weights1)
+        linear_map2 = LinearMap(weights2)
+
+        composed_map = linear_map2.compose(linear_map1)
+
+        # Validate composition
+        expected_weights = weights1 @ weights2
+        assert composed_map.weights == pytest.approx(expected_weights)
+        assert composed_map.biases == pytest.approx(0)
