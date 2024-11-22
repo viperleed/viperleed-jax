@@ -157,6 +157,7 @@ class LinearMap(LinearTransformer):
     """A linear map is a LinearTransformer with biases set to zero."""
 
     def __init__(self, weights, out_reshape=None):
+        weights = np.array(weights)
         super().__init__(weights, np.zeros(weights.shape[0]), out_reshape)
 
 
