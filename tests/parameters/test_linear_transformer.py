@@ -2,6 +2,7 @@ import jax.numpy as jnp
 import pytest
 
 from viperleed_jax.parameters.linear_transformer import (
+    LinearMap,
     LinearTransformer,
     Transformer,
 )
@@ -115,3 +116,49 @@ class TestAdheresToTransformerABC:
 
         assert composed_transformer.in_dim == transformer1.in_dim
         assert composed_transformer.out_dim == transformer2.out_dim
+
+
+class TestLinearMap:
+    """Test the functionality of the LinearMap class."""
+
+    def test_linear_map_initialization(self):
+        weights = [[1, 2], [3, 4]]
+        linear_map = LinearMap(weights)
+        assert linear_map.n_free_params == 2
+        assert linear_map.weights.shape == (2, 2)
+        assert jnp.allclose(linear_map.biases, 0)  # Biases must be zero
+        assert linear_map.out_reshape is None
+
+    def test_call_with_correct_shape(self):
+        weights = [[1, 2], [3, 4]]
+        linear_map = LinearMap(weights)
+        free_params = [0.5, 0.25]
+        result = linear_map(free_params)
+        expected = jnp.array([1.0, 2.5])  # [1*0.5 + 2*0.25, 3*0.5 + 4*0.25]
+        assert result == pytest.approx(expected)
+
+    def test_call_with_incorrect_shape(self):
+        weights = [[1, 2], [3, 4]]
+        linear_map = LinearMap(weights)
+        free_params = [0.5]  # Incorrect length
+        with pytest.raises(
+            ValueError, match='Free parameters have wrong shape'
+        ):
+            linear_map(free_params)
+
+    def test_call_with_out_reshape(self):
+        weights = [[1, 2], [3, 4]]
+        linear_map = LinearMap(weights, out_reshape=(2, 1))
+        free_params = [0.5, 0.25]
+        result = linear_map(free_params)
+        expected = jnp.array([[1.0], [2.5]])
+        assert result.shape == (2, 1)
+        assert result == pytest.approx(expected)
+
+    def test_repr(self):
+        weights = [[1, 2], [3, 4]]
+        linear_map = LinearMap(weights)
+        assert (
+            repr(linear_map)
+            == 'LinearTransformer(weights=(2, 2), biases=(2,), out_reshape=None)'
+        )
