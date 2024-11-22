@@ -59,7 +59,10 @@ class TransformationTree(ABC):
         """Create and save a graphical representation of the tree to file."""
         if not self._tree_root_has_been_created:
             raise ValueError('Subtree root has not yet been created.')
-        UniqueDotExporter(self.subtree_root).to_picture(filename)
+        # Left-to-right orientation looks better for broad trees like we have
+        UniqueDotExporter(self.subtree_root, options=['rankdir=LR']).to_picture(
+            filename,
+        )
 
 
 class InvertibleTransformationTree(TransformationTree):
