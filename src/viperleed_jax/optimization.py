@@ -90,8 +90,7 @@ class LBFGSBOptimizer(GradOptimizer):
         runtime (duration).
         
         Args:
-            start_point: Starting point of the algorithm. Usually it start at
-                0.5 for each dimension, since it is in the middle of the bounds.
+            start_point: Starting point of the algorithm.
         """
         # Setting up Callback function to save function history in fun_history
         fun_history = []
@@ -170,8 +169,7 @@ class SLSQPOptimizer(GradOptimizer):
         runtime (duration).
         
         Args:
-            start_point: Starting point of the algorithm. Usually it start at
-                0.5 for each dimension, since it is in the middle of the bounds.
+            start_point: Starting point of the algorithm.
         """
         # Setting up Callback function to save function history in fun_history
         fun_history = []
@@ -211,13 +209,13 @@ class SLSQPOptimizer(GradOptimizer):
 
 class CMAESOptimizer(NonGradOptimizer):
     """Class for setting up the CMA-ES optimizer for global exploration.
-    In each evolution a number of individuals are drawn from a distribution
-    and the distribution is updated depending on the fanction values of the
-    individuals. For the normalized vector a step size of 0.5 showed very
-    good results. A population size of 30 for 33 dimensions showed success.
-    However, the population size should increase with the number of
-    dimensions (not linear, more like logarithmical). For such a big step
-    size 100-200 generations showed great success.
+    In each evolution, a number of individuals are drawn from a distribution,
+    and the distribution is updated based on the fanction values of the
+    individuals. For the normalized vector, a step size of 0.5 showed very
+    good results. A population size of 30 for 33 dimensions has proven 
+    successful. However, the population size should increase with the number 
+    of dimensions (not linearly, but more logarithmically). For such a large
+    step size, 100-200 generations have showen great success.
 
     Args:
         fun: Objective function.
@@ -225,9 +223,9 @@ class CMAESOptimizer(NonGradOptimizer):
         n_generations: Maximum number of generations to be performed.
         step_size: The standard deviatian in the initial step and a
             parameter for how much the algorithm should focus on exploring.
-            0.5 is quite big, but showed the best results
+            A step size of 0.5 is quite large, but showed the best results.
         ftol: Convergence condition on the standard deviation of the minimum
-            function value of the last five generations
+            function value of the last five generations.
     """
     def __init__(self, fun, pop_size, n_generations, step_size=0.5, ftol=1e-4):
         self.fun = fun
@@ -239,17 +237,17 @@ class CMAESOptimizer(NonGradOptimizer):
 
     def __call__(self, start_point):
         """With the call, the algorithm starts with the given parameters.
-        This function prints a termination message and returns the following
-        values
+        This function prints a termination message, and the return values
+        are explained below.
         
         Args:
             start_point: Starting point of the algorithm. Usually it start at
-                0.5 for each dimension, since it is in the middle of the bounds.
+                0.5 for each dimension, as this is in the middle of the bounds.
         
         Return:
             x: Parameters of the individual with the smallest function value.
             fun: Smallest function value.
-            message: A message, that tells is the algorithm finished due to 
+            message: A message indicating wether the algorithm finished due to 
                 convergence or reaching the maximum nuber of generations.
             current_generation: Number of performed generations.
             duration: Total runtime.
@@ -326,7 +324,7 @@ class CMAESResult:
         Args:
             x: Parameters of the individual with the smallest function value.
             fun: Smallest function value.
-            message: A message, that tells is the algorithm finished due to 
+            message: A message indicating wether the algorithm finished due to 
                 convergence or reaching the maximum nuber of generations.
             current_generation: Number of performed generations.
             duration: Total runtime.
@@ -380,7 +378,7 @@ class SequentialOptimizer(Optimizer):
 
         logger.info('Global optimization finished.\n')
         logger.info('Starting local optimization')
-        # Use the result of the global optimizer as the starting point for the local optimizer
+        # Use the result of the global optimizer for the local optimizer
         local_result = self.local_optimizer(global_result.x)
 
         logger.info('Local optimization finished.')
