@@ -3,6 +3,17 @@ from abc import ABC, abstractmethod
 from scipy.optimize import minimize
 from viperleed.calc import LOGGER as logger
 
+import numpy.typing as npt
+import numpy as np
+
+from clinamen2.cmaes.params_and_state import (
+    create_sample_and_sequential_evaluate,
+    create_sample_from_state,
+    create_update_algorithm_state,
+    AlgorithmState,
+)
+from clinamen2.utils.script_functions import cma_setup
+
 
 class Optimizer(ABC):
     """Class for all the optimizers.
@@ -197,3 +208,229 @@ class SLSQPOptimizer(GradOptimizer):
         logger.info('Optimization Result:\n')
         logger.info(f'{str(result)} \n\n')
         return result
+
+class CMAESOptimizer(NonGradOptimizer):
+    """Class for setting up the CMA-ES optimizer for global exploration.
+    In each evolution a number of individuals are drawn from a distribution
+    and the distribution is updated depending on the fanction values of the
+    individuals. For the normalized vector a step size of 0.5 showed very
+    good results. A population size of 30 for 33 dimensions showed success.
+    However, the population size should increase with the number of
+    dimensions (not linear, more like logarithmical). For such a big step
+    size 100-200 generations showed great success.
+
+    Args:
+        fun: Objective function.
+        pop_size: Number of individuals in each generation.
+        n_generations: Maximum number of generations to be performed.
+        step_size: The standard deviatian in the initial step and a
+            parameter for how much the algorithm should focus on exploring.
+            0.5 is quite big, but showed the best results
+        ftol: Convergence condition on the standard deviation of the minimum
+            function value of the last five generations
+    """
+    def __init__(self, fun, pop_size, n_generations, step_size=0.5, ftol=1e-4):
+        self.fun = fun
+        self.step_size = step_size
+        self.pop_size = pop_size
+        self.n_generations = n_generations
+        self.ftol = ftol
+        super().__init__(fun=fun)
+
+    def __call__(self, start_point):
+        """With the call, the algorithm starts with the given parameters.
+        This function prints a termination message and returns the following
+        values
+        
+        Args:
+            start_point: Starting point of the algorithm. Usually it start at
+                0.5 for each dimension, since it is in the middle of the bounds.
+        
+        Return:
+            x: Parameters of the individual with the smallest function value.
+            fun: Smallest function value.
+            message: A message, that tells is the algorithm finished due to 
+                convergence or reaching the maximum nuber of generations.
+            current_generation: Number of performed generations.
+            duration: Total runtime.
+            fun_history: All function values of all generations stored in a 
+                2D array.
+            step_size_history: Step size of each generation stored.
+        """
+        # Set up functions for the algorithm
+        parameters, initial_state = cma_setup(mean=start_point,
+                                      step_size=self.step_size,
+                                      pop_size=self.pop_size)
+        sample_individuals = create_sample_from_state(parameters)
+        update_state = create_update_algorithm_state(parameters=parameters)
+        sample_and_evaluate = create_resample_and_evaluate(
+            sample_individuals=sample_individuals,
+            evaluate_single=self.fun,
+        )
+        state = initial_state
+
+        start_time = time.time()
+        fun_history = []
+        step_size_history = []
+        loss_min = np.full((5,), fill_value=10.0)
+        termination_message = 'Maximum number of generations reached'
+        # Perform the optimization
+        for g in range(self.n_generations):
+            # Perform one generation
+            generation, state, fun_value = sample_and_evaluate(
+                state=state, n_samples=parameters.pop_size
+            )
+            fun_history.append(fun_value)
+            step_size_history.append(state.step_size)
+            # To update the AlgorithmState pass in the sorted generation
+            state = update_state(state, generation[np.argsort(fun_value)])
+            i = g % 5
+            loss_min[i]=fun_value.min()
+            if np.std(loss_min) < self.ftol:
+                termination_message = (
+                    f'Evolution terminated early at generation {g}.'
+                )
+                break
+
+        end_time = time.time()
+        duration = end_time - start_time
+        if (
+            (generation[fun_value.argmin()] < 0.1).any()
+            or (generation[fun_value.argmin()] > 0.9).any()
+        ):
+            logger.warning(f'Parameter(s) close to the bounds!')
+        # Create result object
+        result = CMAESResult(
+            x=generation[fun_value.argmin()],
+            fun=fun_value.min(),
+            message=termination_message,
+            current_generation=g,
+            duration=duration,
+            fun_history=fun_history,
+            step_size_history=step_size_history
+        )
+        # print the minimum function value in the final generation
+        logger.info(
+            f'Loss {fun_value.min()} for individual '
+            f'{fun_value.argmin()} in generation {g}. '
+            f'With Parameters: {generation[fun_value.argmin()]} \n'
+            f'evaluation time: {duration} seconds'
+        )
+        return result
+
+class CMAESResult:
+    def __init__(self, x, fun, message, current_generation,
+                 duration, fun_history, step_size_history):
+        """Class for the output of the CMA-ES algorithm.
+        
+        Args:
+            x: Parameters of the individual with the smallest function value.
+            fun: Smallest function value.
+            message: A message, that tells is the algorithm finished due to 
+                convergence or reaching the maximum nuber of generations.
+            current_generation: Number of performed generations.
+            duration: Total runtime.
+            fun_history: All function values of all generations stored in a 
+                2D array.
+            step_size_history: Step size of each generation stored.
+        """
+        self.x = x
+        self.fun = fun
+        self.message = message
+        self.current_generation = current_generation
+        self.duration = duration
+        self.fun_history = fun_history
+        self.step_size_history = step_size_history
+
+    def __repr__(self):
+        return (f'OptimizationResult(x = {self.x}\n'
+                f'fun = {self.fun}\n'
+                f'message = {self.message}\n'
+                f'current_generation = {self.current_generation}\n'
+                f'duration = {self.duration:.2f}s)'
+                )
+
+
+def create_resample_and_evaluate(
+    sample_individuals,
+    evaluate_single,
+):
+    """Create function that samples a population and evaluates its funktion
+    value. Samples that are outside the bounds are partially resampled, which
+    means that only the components which are outside are resampled.
+
+    Args:
+        sample_individuals: Function that samples a number of individuals from
+            a state.
+        evaluate_single: Function that returns a tuple containing the loss of
+            an individual and additional information in a dictionary (at least
+            exception if applicable).
+
+    Returns:
+        A function to sample (with resampling) and evaluate a population from a
+        state.
+    """
+    def resample_and_evaluate(
+        state,
+        n_samples,
+        n_attempts=int(1e6),
+    ):
+        """Function for sampling a population from a state and evaluating
+           the value of the objective function.
+
+        Args:
+            state: State of the previous CMA step.
+            n_samples: Number of successfully evaluated individuals to be
+                returned.
+            n_attempts: Maximum number of attempts to reach n_samples.
+                Default is 1e6 to avoid infinite loops.
+
+        Returns:
+            tuple containing
+
+            - A population of individuals sampled from the AlgorithmState.
+            - The new AlgorithmState.
+            - An array containing the function value of all passing individuals.
+        """
+        population = []
+        loss = []
+        attempts = 0
+
+        # resample and single evaluate individuals
+        while attempts <= n_attempts and len(population) < n_samples:
+            attempts += 1
+            resampled_population, state = sample_individuals(
+                state, n_samples=1
+            )
+            while (
+                (resampled_population[0] < 0.0).any() 
+                or (resampled_population[0] > 1.0).any()
+            ):
+                resampled_population2, state = sample_individuals(
+                    state, n_samples=1
+                )
+                condition = np.logical_or(
+                    resampled_population[0] > 1,
+                    resampled_population[0] < 0
+                )
+                resampled_population = np.where(
+                    condition,
+                    resampled_population2,
+                    resampled_population
+                )
+            population.append(resampled_population[0])
+            loss.append(evaluate_single(resampled_population[0]))
+
+        if len(population) < n_samples:
+            raise OverflowError(
+                f"Evaluation attempt limit of {n_attempts} reached "
+            )
+
+        else:
+            return (
+                np.asarray(population),
+                state,
+                np.asarray(loss),
+            )
+
+    return resample_and_evaluate
