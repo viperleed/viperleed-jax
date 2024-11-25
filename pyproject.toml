@@ -138,6 +138,7 @@ namespaces = false
         'D',        # ignore docstring checks in tests
         'S101',     # allow asserts
         'PLR2004',  # allow magic value comparison in tests
+        'SLF001',   # allow checking private members
     ]
 
     [tool.ruff.lint.pydocstyle]
