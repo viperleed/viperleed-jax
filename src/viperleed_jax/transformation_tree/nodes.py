@@ -77,6 +77,7 @@ class LinearTreeNode(TransformationTreeNode):
         return f'({self.dof}) {self._name}' if self._name else f'({self.dof})'
 
     def set_transformer(self, transformer):
+        """Set transformer for the edge connecting this node to its parent."""
         # check if the transformer is valid
         if not isinstance(transformer, LinearTransformer):
             msg = (
