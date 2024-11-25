@@ -487,15 +487,13 @@ def create_resample_and_evaluate(
             loss.append(evaluate_single(resampled_population[0]))
 
         if len(population) < n_samples:
-            raise OverflowError(
-                f'Evaluation attempt limit of {n_attempts} reached '
-            )
+            msg = f'Evaluation attempt limit of {n_attempts} reached '
+            raise OverflowError(msg)
 
-        else:
-            return (
-                np.asarray(population),
-                state,
-                np.asarray(loss),
-            )
+        return (
+            np.asarray(population),
+            state,
+            np.asarray(loss),
+        )
 
     return resample_and_evaluate
