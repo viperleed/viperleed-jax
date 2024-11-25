@@ -34,6 +34,8 @@ class Optimizer(ABC):
     def __call__(self):
         """Start the optimization."""
 
+    # TODO @Paul: maybe make the __repr_ method an abstract method here too
+
 
 class GradOptimizer(Optimizer):
     """Class for optimizers that use a gradient.
@@ -143,7 +145,7 @@ class LBFGSBOptimizer(GradOptimizer):
         result.fun_history = fun_history
         result.duration = duration
         logger.info('Optimization Result:\n')
-        logger.info(f'{str(result)} \n\n')
+        logger.info(f'{str(result)}\n\n')
         return result
 
 
@@ -173,7 +175,7 @@ class SLSQPOptimizer(GradOptimizer):
             algorithm stops earlier due to convergence.
     """
 
-    def __init__(
+    def __init__(  # TODO @Paul: add docstring
         self, fun, grad, bounds=None, damp_fact=1, ftol=1e-6, maxiter=1000
     ):
         self.fun = fun
@@ -189,7 +191,7 @@ class SLSQPOptimizer(GradOptimizer):
 
         This function prints a termination message and returns all the values
         that are also returned by the SciPy function, plus a list of the
-        function values for each iteration (fun_hystory) and the
+        function values for each iteration (fun_history) and the
         runtime (duration).
 
         Parameters
@@ -232,7 +234,7 @@ class SLSQPOptimizer(GradOptimizer):
         result.fun_history = fun_history
         result.duration = duration
         logger.info('Optimization Result:\n')
-        logger.info(f'{str(result)} \n\n')
+        logger.info(f'{str(result)}\n\n')
         return result
 
 
@@ -280,8 +282,7 @@ class CMAESOptimizer(NonGradOptimizer):
 
         Returns
         -------
-            x: Parameters of the individual with the smallest function value.
-            fun: Smallest function value.
+            x: Parameters of the individual with the smallest function value. # TODO @Paul: avoid using single letter variable names
             message: A message indicating wether the algorithm finished due to
                 convergence or reaching the maximum nuber of generations.
             current_generation: Number of performed generations.
@@ -330,7 +331,7 @@ class CMAESOptimizer(NonGradOptimizer):
         if (generation[fun_value.argmin()] < 0.1).any() or (
             generation[fun_value.argmin()] > 0.9
         ).any():
-            logger.warning(f'Parameter(s) close to the bounds!')
+            logger.warning('Parameter(s) close to the bounds!')
         # Create result object
         result = CMAESResult(
             x=generation[fun_value.argmin()],
@@ -351,6 +352,7 @@ class CMAESOptimizer(NonGradOptimizer):
         return result
 
 
+# TODO @Paul: add docstring
 class CMAESResult:
     def __init__(
         self,
@@ -376,7 +378,7 @@ class CMAESResult:
                 2D array.
             step_size_history: Step size of each generation stored.
         """
-        self.x = x
+        self.x = x  # TODO @Paul: avoid using single letter variable names; maybe use min_individual or similar
         self.fun = fun
         self.message = message
         self.current_generation = current_generation
@@ -384,7 +386,7 @@ class CMAESResult:
         self.fun_history = fun_history
         self.step_size_history = step_size_history
 
-    def __repr__(self):
+    def __repr__(self):  # TODO @Paul: add docstring
         return (
             f'OptimizationResult(x = {self.x}\n'
             f'fun = {self.fun}\n'
@@ -440,6 +442,7 @@ class SequentialOptimizer(Optimizer):
         }
 
 
+# TODO @Paul: add raised exceptions to docstring
 def create_resample_and_evaluate(
     sample_individuals,
     evaluate_single,
