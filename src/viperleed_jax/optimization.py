@@ -1,18 +1,17 @@
 import time
 from abc import ABC, abstractmethod
-from scipy.optimize import minimize
-from viperleed.calc import LOGGER as logger
 
-import numpy.typing as npt
 import numpy as np
-
+import numpy.typing as npt
 from clinamen2.cmaes.params_and_state import (
+    AlgorithmState,
     create_sample_and_sequential_evaluate,
     create_sample_from_state,
     create_update_algorithm_state,
-    AlgorithmState,
 )
 from clinamen2.utils.script_functions import cma_setup
+from scipy.optimize import minimize
+from viperleed.calc import LOGGER as logger
 
 
 class Optimizer(ABC):
