@@ -3,23 +3,21 @@
 __authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
 __created__ = '2024-08-14'
 
-from functools import partial
-
-from jax import config
-
-config.update('jax_enable_x64', True)
 import jax
 import jax.numpy as jnp
+from jax import config
 
 from viperleed_jax.constants import BOHR
 from viperleed_jax.gaunt_coefficients import PRE_CALCULATED_CPPP
 from viperleed_jax.lib_math import bessel
 
+config.update('jax_enable_x64', True)
+
 
 # vmap over sites for which to calculate the t-matrix
 # @partial(jax.profiler.annotate_function, name="vib_dependent_tmatrix")
 def vib_dependent_tmatrix(l_max, phaseshifts, e_inside, vib_amp):
-    """Computes the temperature-dependent t-matrix elements.
+    """Compute the temperature-dependent t-matrix elements.
 
     Takes the interpolated phase shifts and computes the atomic t-matrix
     elements. Thermal vibrations are taken into account through a Debye-Waller
