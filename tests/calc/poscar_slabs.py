@@ -1,0 +1,1 @@
+../../../viperleed/tests/calc/poscar_slabs.py
