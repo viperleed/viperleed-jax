@@ -12,7 +12,7 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
 from viperleed_jax.transformation_tree.linear_transformer import (
     LinearTransformer,
 )
-from viperleed_jax.transformation_tree.linear_tree_nodes import (
+from viperleed_jax.transformation_tree.nodes import (
     LinearTreeNode,
     TransformationTreeNode,
 )

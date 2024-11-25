@@ -14,7 +14,7 @@ from .tree import (
     DisplacementTree,
 )
 from .linear_transformer import LinearMap
-from .linear_tree_nodes import AtomicLinearNode, LinearConstraintNode
+from .nodes import AtomicLinearNode, LinearConstraintNode
 
 
 class GeoLeafNode(AtomicLinearNode):

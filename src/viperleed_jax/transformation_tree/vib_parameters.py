@@ -10,7 +10,7 @@ from .tree import (
     DisplacementTree,
 )
 from .linear_transformer import LinearTransformer
-from .linear_tree_nodes import AtomicLinearNode, LinearConstraintNode
+from .nodes import AtomicLinearNode, LinearConstraintNode
 
 EPS = 1e-6  # TODO: move to constants
 

@@ -10,7 +10,7 @@ from .tree import (
     LinearTree,
 )
 from .linear_transformer import LinearTransformer
-from .linear_tree_nodes import LinearConstraintNode, LinearLeafNode
+from .nodes import LinearConstraintNode, LinearLeafNode
 
 # Note: currently, V0r is (and can only be) a single parameter, which makes
 # it much simpler than the other parameters. Further constraints are not
