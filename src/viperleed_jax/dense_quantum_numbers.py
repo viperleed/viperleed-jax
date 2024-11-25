@@ -1,4 +1,4 @@
-"""Module for dense quantum number indexing"""
+"""Module for dense quantum number indexing."""
 
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-02-17'
@@ -54,7 +54,9 @@ MINUS_ONE_POW_M = {
 
 
 def map_l_array_to_compressed_quantum_index(array, LMAX):
-    """Takes an array of shape (LMAX+1) with values for each L and maps it to a
+    """Map an array of shape (LMAX+1) to a compressed quantum number index.
+
+    Takes an array of shape (LMAX+1) with values for each L and maps it to a
     dense form of shape (LMAX+1)*(LMAX+1) with the values for each L replicated
     (2L+1) times. I.e. an array
     [val(l=0), val(l=1), val(l=2), ...] is mapped to

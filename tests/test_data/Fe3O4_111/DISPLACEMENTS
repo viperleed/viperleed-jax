@@ -1,0 +1,15 @@
+<loop>
+
+== SEARCH L1-3 z+vib
+  = GEO_DELTA
+  * L(1-3) z = -0.05 0.05 0.005
+
+ = VIB_DELTA
+  *surf* = -0.03 0.03 0.01 
+
+== SEARCH L1-2 inplane
+  = GEO_DELTA
+  O 2 4 5 [2 1] = -0.05 0.05 0.01  # L1-2 O, fully linked
+  Fe 28 [2 1] = -0.05 0.05 0.01   # L1-2 Fe, fully linked
+
+</loop>

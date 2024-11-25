@@ -1,3 +1,9 @@
+"""Module displacements/regex."""
+
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-10-03'
+
+import contextlib
 import re
 
 SEARCH_HEADER_PATTERN = re.compile(r'^=+\s+(?i:search)\s+(.*)$')
@@ -7,13 +13,13 @@ SECTION_HEADER_PATTERN = re.compile(
 
 OFFSETS_LINE_PATTERN = re.compile(
     r'^(?P<type>geo|vib|occ)\s+'
-    r'(?P<targets>[^\s=,]+(?:\s+\d+|\s+\d+-\d+)*(?:\s*,\s*[^\s=,]+(?:\s+\d+|\s+\d+-\d+)*)*)'
+    r'(?P<targets>[^\s=,]+(?:\s+\d+|\s+\d+-\d+)*'
+    r'(?:\s*,\s*[^\s=,]+(?:\s+\d+|\s+\d+-\d+)*)*)'
     r'(?:\s+(?P<direction>[a-zA-Z]+(?:\[[^\]]+\]|\([^\)]+\))?))?\s*=\s*'
     r'(?P<value>-?\d+(\.\d+)?)$'
 )
-
 GEO_LINE_PATTERN = re.compile(
-    r'^(?P<label>\*?\w+)'
+    r'^(?P<label>\*|\*?\w+)'
     r'(?:\s+(?P<which>L\(\d+(-\d+)?\)|\d+(-\d+)?(\s+\d+(-\d+)?)*)?)?'
     r'\s+(?P<dir>[a-zA-Z]+(?:\[[^\]]+\]|\([^\)]+\))?)'
     r'\s*=\s*(?P<start>-?\d+(\.\d+)?)'
@@ -21,13 +27,14 @@ GEO_LINE_PATTERN = re.compile(
     r'(?:\s+(?P<step>-?\d+(\.\d+)?))?$'
 )
 VIB_LINE_PATTERN = re.compile(
-    r'^(?P<label>\*?\w+)(?:\s+(?P<which>L\(\d+(-\d+)?\)|\d+(-\d+)?(\s+\d+(-\d+)?)*)?)?'
+    r'^(?P<label>\*|\*?\w+)'
+    r'(?:\s+(?P<which>L\(\d+(-\d+)?\)|\d+(-\d+)?(\s+\d+(-\d+)?)*)?)?'
     r'\s*=\s*(?P<start>-?\d+(\.\d+)?)'
     r'\s+(?P<stop>-?\d+(\.\d+)?)'
     r'(?:\s+(?P<step>-?\d+(\.\d+)?))?$'
 )
 OCC_LINE_PATTERN = re.compile(
-    r'^(?P<label>\*?\w+)'
+    r'^(?P<label>\*|\*?\w+)'
     r'(?:\s+(?P<which>L\(\d+(-\d+)?\)|\d+(-\d+)?(\s+\d+(-\d+)?)*)?)?'
     r'\s*=\s*(?P<chem_blocks>(?P<chem>\w+)\s+(?P<start>-?\d+(\.\d+)?)'
     r'\s+(?P<stop>-?\d+(\.\d+)?)(?:\s+(?P<step>-?\d+(\.\d+)?))?'
@@ -40,14 +47,20 @@ CONSTRAIN_LINE_PATTERN = re.compile(
     r'\s*=\s*(?P<value>linked|-?\d+(\.\d+)?)$'
 )
 
+CHEM_BLOCK_PATTERN = re.compile(
+    r'(?P<chem>\w+)\s+(?P<start>-?\d+(\.\d+)?)(?:\s+(?P<stop>-?\d+(\.\d+)?)'
+    r'(?:\s+(?P<step>-?\d+(\.\d+)?))?)?'
+)
+
 
 def match_geo_line(line):
+    """Match and parse a GEO_DELTA line, returning the values."""
     match = GEO_LINE_PATTERN.match(line)
     if match is None:
         return None
     label = match.group('label')
     which = match.group('which')  # optional, can be None
-    dir = match.group('dir')
+    direction = match.group('dir')
     start = float(match.group('start'))
     stop = (
         float(match.group('stop')) if match.group('stop') is not None else None
@@ -55,7 +68,7 @@ def match_geo_line(line):
     step = (
         float(match.group('step')) if match.group('step') is not None else None
     )
-    return label, which, dir, start, stop, step
+    return label, which, direction, start, stop, step
 
 
 def match_vib_line(line):
@@ -78,7 +91,7 @@ def match_vib_line(line):
 
 
 def match_occ_line(line):
-    """Match and parse an OCC_DELTA line, returning chemical blocks and their ranges."""
+    """Match and parse OCC_DELTA line, returning chemical blocks and ranges."""
     match = OCC_LINE_PATTERN.match(line)
     if match is None:
         return None
@@ -102,11 +115,8 @@ def match_occ_line(line):
     additional_blocks = match.group('additional_blocks')
     if additional_blocks:
         for block in additional_blocks.split(','):
-            block = block.strip()
-            m = re.match(
-                r'(?P<chem>\w+)\s+(?P<start>-?\d+(\.\d+)?)(?:\s+(?P<stop>-?\d+(\.\d+)?)(?:\s+(?P<step>-?\d+(\.\d+)?))?)?',
-                block,
-            )
+            _block = block.strip()
+            m = re.match(CHEM_BLOCK_PATTERN, _block)
             if m:
                 chem = m.group('chem')
                 start = float(m.group('start'))
@@ -126,7 +136,7 @@ def match_occ_line(line):
 
 
 def match_constrain_line(line):
-    """Match and parse an OFFSETS line, returning the type, targets, direction, and value."""
+    """Match and parse line, returning type, targets, direction, and value."""
     match = CONSTRAIN_LINE_PATTERN.match(line)
     if match is None:
         return None
@@ -139,16 +149,14 @@ def match_constrain_line(line):
     value = match.group('value')
 
     # Convert `value` to float if it's a number; otherwise, keep it as a string
-    try:
+    with contextlib.suppress(ValueError):
         value = float(value)
-    except ValueError:
-        pass  # Keep value as a string if it is not a float
 
     return offset_type, targets, direction, value
 
 
 def match_offsets_line(line):
-    """Match and parse an OFFSETS line, returning the type, targets, direction, and value."""
+    """Match and parse line, returning type, targets, direction, and value."""
     match = OFFSETS_LINE_PATTERN.match(line)
     if match is None:
         return None
@@ -159,9 +167,7 @@ def match_offsets_line(line):
     value = match.group('value')
 
     # Convert `value` to float if it's a number; otherwise, keep it as a string
-    try:
+    with contextlib.suppress(ValueError):
         value = float(value)
-    except ValueError:
-        pass  # Keep value as a string if it is not a float
 
     return offset_type, targets, direction, value

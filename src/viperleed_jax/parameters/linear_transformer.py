@@ -3,12 +3,38 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-10-07'
 
+from abc import ABC, abstractmethod
+
 import jax.numpy as jnp
 import numpy as np
 
 
-class LinearTransformer:
-    """Linear transformation class that applies a weight matrix and a bias vector to an input."""
+class Transformer(ABC):
+    """Abstract base class for transformations."""
+
+    @abstractmethod
+    def __call__(self, input_params):
+        """Apply the transformation to the input parameters."""
+
+    @abstractmethod
+    def in_dim(self):
+        """Input dimensionality of the transformer."""
+
+    @abstractmethod
+    def out_dim(self):
+        """Output dimensionality of the transformer."""
+
+    @abstractmethod
+    def compose(self, other):
+        """Compose this transformer with another transformer."""
+
+    @abstractmethod
+    def __eq__(self, other):
+        """Check equality between two transformers."""
+
+
+class LinearTransformer(Transformer):
+    """Linear transformation class that implements an affine transformation."""
 
     def __init__(self, weights, biases, out_reshape=None):
         self.weights = np.array(weights)
@@ -21,16 +47,19 @@ class LinearTransformer:
 
         # consistency check of dimensions
         if self.weights.shape[0] != self._out_dim:
-            raise ValueError(
+            msg = (
                 f'Weight matrix shape {self.weights.shape} does not match '
                 f'bias shape {self.biases.shape}'
             )
-        if self.out_reshape is not None:
-            if self._out_dim != np.prod(self.out_reshape):
-                raise ValueError(
-                    f'Output reshape {self.out_reshape} does not match bias '
-                    f'shape {self.biases.shape}'
-                )
+            raise ValueError(msg)
+        if self.out_reshape is not None and self._out_dim != np.prod(
+            self.out_reshape
+        ):
+            msg = (
+                f'Output reshape {self.out_reshape} does not match '
+                f'output dimension {self._out_dim}'
+            )
+            raise ValueError(msg)
 
     @property
     def in_dim(self):
@@ -45,7 +74,8 @@ class LinearTransformer:
             return self.biases
         free_params = jnp.asarray(free_params)
         if len(free_params) != self.n_free_params:
-            raise ValueError('Free parameters have wrong shape')
+            msg = 'Free parameters have wrong shape'
+            raise ValueError(msg)
         result = self.weights @ free_params + self.biases  # Ax + b
         if self.out_reshape is not None:
             result = result.reshape(self.out_reshape)
@@ -73,11 +103,14 @@ class LinearTransformer:
         l3(l2(l1(x))) == l1.compose(l2).compose(l3)(x)
         """
         if not isinstance(other, LinearTransformer):
-            raise ValueError('Can only compose with another LinearTransformer')
+            msg = 'Can only compose with another LinearTransformer'
+            raise TypeError(msg)
         if self.out_dim != other.in_dim:
-            raise ValueError(
-                f'Cannot compose transformers with shapes {self._out_dim} and {other.in_dim}'
+            msg = (
+                f'Cannot compose transformers with shapes {self._out_dim} '
+                'and {other.in_dim}'
             )
+            raise ValueError(msg)
         new_weights = other.weights @ self.weights
         new_biases = other.weights @ self.biases + other.biases
         return LinearTransformer(new_weights, new_biases, other.out_reshape)
@@ -90,7 +123,10 @@ class LinearTransformer:
         return LinearTransformer(new_weights, new_biases, (_bool_mask.sum(),))
 
     def __repr__(self):
-        return f'LinearTransformer(weights={self.weights.shape}, biases={self.biases.shape}, out_reshape={self.out_reshape})'
+        return (
+            f'LinearTransformer(weights={self.weights.shape}, '
+            f'biases={self.biases.shape}, out_reshape={self.out_reshape})'
+        )
 
     def tree_flatten(self):
         aux_data = {
@@ -121,6 +157,7 @@ class LinearMap(LinearTransformer):
     """A linear map is a LinearTransformer with biases set to zero."""
 
     def __init__(self, weights, out_reshape=None):
+        weights = np.array(weights)
         super().__init__(weights, np.zeros(weights.shape[0]), out_reshape)
 
 

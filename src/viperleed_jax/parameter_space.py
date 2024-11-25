@@ -18,7 +18,7 @@ from .parameters import (
     occ_parameters,
     vib_parameters,
 )
-from .parameters.hierarchical_linear_tree import HLTreeLayers
+from .parameters.displacement_tree_layers import DisplacementTreeLayers
 
 _ATOM_Z_DIR_ID = 2
 _DISP_Z_DIR_ID = 0
@@ -36,15 +36,15 @@ class ParameterSpace:
 
         # create the parameter subtrees - this automatically sets up all the
         # symmetry constraints
-        self.vib_subtree = vib_parameters.VibHLSubtree(base_scatterers)
-        self.geo_subtree = geo_parameters.GeoHLSubtree(base_scatterers)
-        self.occ_subtree = occ_parameters.OccHLSubtree(base_scatterers)
+        self.vib_tree = vib_parameters.VibTree(base_scatterers)
+        self.geo_tree = geo_parameters.GeoTree(base_scatterers)
+        self.occ_tree = occ_parameters.OccTree(base_scatterers)
 
         self.subtrees = (
             self.meta_param_subtree,
-            self.geo_subtree,
-            self.vib_subtree,
-            self.occ_subtree,
+            self.geo_tree,
+            self.vib_tree,
+            self.occ_tree,
         )
 
         # atom-site-element reference z positions
@@ -80,7 +80,7 @@ class ParameterSpace:
             self._parse_constraints(search_block)
 
         # apply the implicit constraints & create the subtree root
-        for subtree in (self.geo_subtree, self.vib_subtree, self.occ_subtree):
+        for subtree in (self.geo_tree, self.vib_tree, self.occ_tree):
             subtree.apply_implicit_constraints()
             subtree.create_subtree_root()
 
@@ -93,7 +93,7 @@ class ParameterSpace:
         This method checks for inconsistencies in the parameter space, such as
         symmetry violations, and raises a ValueError if any are found.
         """
-        for subtree in (self.geo_subtree, self.vib_subtree, self.occ_subtree):
+        for subtree in (self.geo_tree, self.vib_tree, self.occ_tree):
             subtree.check_for_inconsistencies()
 
     def _parse_offsets(self, offsets_block):
@@ -106,11 +106,11 @@ class ParameterSpace:
         """
         for line in offsets_block.lines:
             if line.offset_type == 'geo':
-                self.geo_subtree.apply_offsets(line)
+                self.geo_tree.apply_offsets(line)
             elif line.offset_type == 'vib':
-                self.vib_subtree.apply_offsets(line)
+                self.vib_tree.apply_offsets(line)
             elif line.offset_type == 'occ':
-                self.occ_subtree.apply_offsets(line)
+                self.occ_tree.apply_offsets(line)
             else:
                 raise ValueError('Unknown offset type: ' f'{line.offset_type}')
         self.check_for_inconsistencies()
@@ -122,7 +122,7 @@ class ParameterSpace:
         occ_block = search_block.sections[DisplacementFileSections.OCC_DELTA]
 
         for subtree, block in zip(
-            (self.geo_subtree, self.vib_subtree, self.occ_subtree),
+            (self.geo_tree, self.vib_tree, self.occ_tree),
             (geo_block, vib_block, occ_block),
         ):
             for line in block:
@@ -143,11 +143,11 @@ class ParameterSpace:
         ]
         for constraint in constraints_block:
             if constraint.constraint_type == 'geo':  # TODO: make into Enum
-                self.geo_subtree.apply_explicit_constraint(constraint)
+                self.geo_tree.apply_explicit_constraint(constraint)
             elif constraint.constraint_type == 'vib':
-                self.vib_subtree.apply_explicit_constraint(constraint)
+                self.vib_tree.apply_explicit_constraint(constraint)
             elif constraint.constraint_type == 'occ':
-                self.occ_subtree.apply_explicit_constraint(constraint)
+                self.occ_tree.apply_explicit_constraint(constraint)
             else:
                 raise ValueError(
                     'Unknown constraint type: ' f'{constraint.constraint_type}'
@@ -170,23 +170,23 @@ class ParameterSpace:
 
     @property
     def all_displacements_transformer(self):
-        return self.geo_subtree.all_displacements_transformer
+        return self.geo_tree.all_displacements_transformer
 
     @property
     def dynamic_displacements_transformers(self):
-        return self.geo_subtree.dynamic_displacements_transformers()
+        return self.geo_tree.dynamic_displacements_transformers()
 
     @property
     def all_vib_amps_transformer(self):
-        return self.vib_subtree.all_vib_amps_transformer()
+        return self.vib_tree.all_vib_amps_transformer()
 
     @property
     def dynamic_t_matrix_transformers(self):
-        return self.vib_subtree.dynamic_t_matrix_transformers()
+        return self.vib_tree.dynamic_t_matrix_transformers()
 
     @property
     def occ_weight_transformer(self):
-        return self.occ_subtree.collapsed_transformer_scatterer_order
+        return self.occ_tree.collapsed_transformer_scatterer_order
 
     @property
     def v0r_transformer(self):
@@ -200,7 +200,7 @@ class ParameterSpace:
                 'Displacements must be applied before counting '
                 'free parameters.'
             )
-        return sum(self._free_params_up_to_layer(HLTreeLayers.Root))
+        return sum(self._free_params_up_to_layer(DisplacementTreeLayers.Root))
 
     @property
     def n_user_constrained_params(self):
@@ -210,7 +210,11 @@ class ParameterSpace:
                 'Displacements must be applied before counting '
                 'user constrained parameters.'
             )
-        return sum(self._free_params_up_to_layer(HLTreeLayers.User_Constraints))
+        return sum(
+            self._free_params_up_to_layer(
+                DisplacementTreeLayers.User_Constraints
+            )
+        )
 
     @property
     def n_symmetry_constrained_params(self):
@@ -223,7 +227,9 @@ class ParameterSpace:
         Returns:
             int: The total number of symmetry constrained parameters.
         """
-        return sum(self._free_params_up_to_layer(HLTreeLayers.Symmetry))
+        return sum(
+            self._free_params_up_to_layer(DisplacementTreeLayers.Symmetry)
+        )
 
     @property
     def n_base_params(self):
@@ -235,7 +241,7 @@ class ParameterSpace:
         Returns:
             int: The total number of base parameters.
         """
-        return sum(self._free_params_up_to_layer(HLTreeLayers.Base))
+        return sum(self._free_params_up_to_layer(DisplacementTreeLayers.Base))
 
     @property
     def n_base_scatterers(self):
@@ -243,19 +249,19 @@ class ParameterSpace:
 
     @property
     def n_dynamic_propagators(self):
-        return self.geo_subtree.n_dynamic_propagators
+        return self.geo_tree.n_dynamic_propagators
 
     @property
     def n_static_propagators(self):
-        return self.geo_subtree.n_static_propagators
+        return self.geo_tree.n_static_propagators
 
     @property
     def propagator_map(self):
-        return self.geo_subtree.propagator_map
+        return self.geo_tree.propagator_map
 
     @property
     def propagator_plane_symmetry_operations(self):
-        return self.geo_subtree.leaf_plane_symmetry_operations
+        return self.geo_tree.leaf_plane_symmetry_operations
 
     @property
     def site_elements(self):
@@ -263,27 +269,27 @@ class ParameterSpace:
 
     @property
     def static_propagator_inputs(self):
-        return self.geo_subtree.static_propagator_inputs
+        return self.geo_tree.static_propagator_inputs
 
     @property
     def n_dynamic_t_matrices(self):
-        return self.vib_subtree.n_dynamic_t_matrices
+        return self.vib_tree.n_dynamic_t_matrices
 
     @property
     def n_static_t_matrices(self):
-        return self.vib_subtree.n_static_t_matrices
+        return self.vib_tree.n_static_t_matrices
 
     @property
     def static_t_matrix_inputs(self):
-        return self.vib_subtree.static_t_matrix_inputs
+        return self.vib_tree.static_t_matrix_inputs
 
     @property
     def dynamic_t_matrix_site_elements(self):
-        return self.vib_subtree.dynamic_site_elements
+        return self.vib_tree.dynamic_site_elements
 
     @property
     def t_matrix_map(self):
-        return self.vib_subtree.t_matrix_map
+        return self.vib_tree.t_matrix_map
 
     @property
     def is_dynamic_t_matrix(self):
@@ -336,9 +342,9 @@ class ParameterSpace:
         return np.array(
             [
                 self.meta_param_subtree.subtree_root.dof,
-                self.vib_subtree.subtree_root.dof,
-                self.geo_subtree.subtree_root.dof,
-                self.occ_subtree.subtree_root.dof,
+                self.vib_tree.subtree_root.dof,
+                self.geo_tree.subtree_root.dof,
+                self.occ_tree.subtree_root.dof,
             ]
         )
 
@@ -351,12 +357,18 @@ class ParameterSpace:
         Returns:
             str: Information about the parameters.
         """
-        n_root_params = self._free_params_up_to_layer(HLTreeLayers.Root)
-        n_user_params = self._free_params_up_to_layer(
-            HLTreeLayers.User_Constraints
+        n_root_params = self._free_params_up_to_layer(
+            DisplacementTreeLayers.Root
         )
-        n_sym_params = self._free_params_up_to_layer(HLTreeLayers.Symmetry)
-        n_base_params = self._free_params_up_to_layer(HLTreeLayers.Base)
+        n_user_params = self._free_params_up_to_layer(
+            DisplacementTreeLayers.User_Constraints
+        )
+        n_sym_params = self._free_params_up_to_layer(
+            DisplacementTreeLayers.Symmetry
+        )
+        n_base_params = self._free_params_up_to_layer(
+            DisplacementTreeLayers.Base
+        )
 
         def format(n_params):
             return (
