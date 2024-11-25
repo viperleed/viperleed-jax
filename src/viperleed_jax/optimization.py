@@ -2,10 +2,7 @@ import time
 from abc import ABC, abstractmethod
 
 import numpy as np
-import numpy.typing as npt
 from clinamen2.cmaes.params_and_state import (
-    AlgorithmState,
-    create_sample_and_sequential_evaluate,
     create_sample_from_state,
     create_update_algorithm_state,
 )
