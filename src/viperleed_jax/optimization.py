@@ -1,3 +1,11 @@
+"""Module optimization."""
+
+__authors__ = (
+    'Paul Haidegger (@PaulHai7)',
+    'Alexander M. Imre (@amimre)',
+)
+__created__ = '2024-11-20'
+
 import time
 from abc import ABC, abstractmethod
 
