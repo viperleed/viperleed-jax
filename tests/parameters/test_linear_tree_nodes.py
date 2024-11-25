@@ -6,11 +6,13 @@ __created__ = '2024-11-23'
 import numpy as np
 import pytest
 
-from viperleed_jax.parameters.displacement_tree_layers import (
+from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
-from viperleed_jax.parameters.linear_transformer import LinearTransformer
-from viperleed_jax.parameters.linear_tree_nodes import (
+from viperleed_jax.transformation_tree.linear_transformer import (
+    LinearTransformer,
+)
+from viperleed_jax.transformation_tree.linear_tree_nodes import (
     LinearTreeNode,
     TransformationTreeNode,
 )

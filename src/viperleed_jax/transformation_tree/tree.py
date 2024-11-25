@@ -12,10 +12,10 @@ from anytree import RenderTree
 from anytree.exporter import UniqueDotExporter
 
 from viperleed_jax.files.displacements.lines import ConstraintLine
-from viperleed_jax.parameters.displacement_tree_layers import (
+from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
-from viperleed_jax.parameters.linear_tree_nodes import (
+from viperleed_jax.transformation_tree.linear_tree_nodes import (
     ImplicitLinearConstraintNode,
     LinearConstraintNode,
 )

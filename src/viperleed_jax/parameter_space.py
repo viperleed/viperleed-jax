@@ -12,13 +12,13 @@ from jax import numpy as jnp
 from jax.tree_util import register_pytree_node_class
 
 from .files.displacements.reader import DisplacementFileSections
-from .parameters import (
+from .transformation_tree import (
     geo_parameters,
     meta_parameters,
     occ_parameters,
     vib_parameters,
 )
-from .parameters.displacement_tree_layers import DisplacementTreeLayers
+from .transformation_tree.displacement_tree_layers import DisplacementTreeLayers
 
 _ATOM_Z_DIR_ID = 2
 _DISP_Z_DIR_ID = 0

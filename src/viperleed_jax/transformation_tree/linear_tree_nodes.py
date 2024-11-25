@@ -12,11 +12,13 @@ import numpy as np
 from anytree import Node
 from anytree.walker import Walker
 
-from viperleed_jax.parameters.displacement_range import DisplacementRange
-from viperleed_jax.parameters.displacement_tree_layers import (
+from viperleed_jax.transformation_tree.displacement_range import (
+    DisplacementRange,
+)
+from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
-from viperleed_jax.parameters.linear_transformer import (
+from viperleed_jax.transformation_tree.linear_transformer import (
     LinearMap,
     LinearTransformer,
     stack_transformers,

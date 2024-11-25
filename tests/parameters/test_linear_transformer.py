@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from viperleed_jax.parameters.linear_transformer import (
+from viperleed_jax.transformation_tree.linear_transformer import (
     LinearMap,
     LinearTransformer,
     Transformer,
