@@ -62,3 +62,14 @@ def test_linear_tree_node_transformer_validation():
         node.set_transformer(
             invalid_transformer
         )  # Mismatched transformer output dimension
+
+
+def test_detaching_parent_not_allowed():
+    """Test that detaching parents in TransformationTreeNode is not allowed."""
+    # Create a mock node
+    node = MockTransformationTreeNode(name='child')
+    with pytest.raises(
+        RuntimeError,
+        match='Transformation trees do not support detaching nodes.',
+    ):
+        node._pre_detach()
