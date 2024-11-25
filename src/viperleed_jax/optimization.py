@@ -17,12 +17,14 @@ class Optimizer(ABC):
     Args:
         fun: Objective function
     """
+
     def __init__(self, fun):
         self.fun = fun
 
     @abstractmethod
     def __call__(self):
         """Start the optimization."""
+
 
 class GradOptimizer(Optimizer):
     """Class for optimizers that use a gradient.
@@ -31,21 +33,25 @@ class GradOptimizer(Optimizer):
         fun: Objective function.
         grad: Gradient of the objective function.
         fun_and_grad: Function value and gradient together. This approach
-            is faster, but it only makes sense, if they are always or almost 
-            always computed together (e.g., in L-BFGS-B). Avoid using it when 
+            is faster, but it only makes sense, if they are always or almost
+            always computed together (e.g., in L-BFGS-B). Avoid using it when
             having a lot function calls without the gradient (e.g., in SLSQP).
     """
+
     def __init__(self, fun, grad, fun_and_grad):
         self.fun = fun
         self.grad = grad
         self.fun_and_grad = fun_and_grad
         super().__init__(fun=fun)
 
+
 class NonGradOptimizer(Optimizer):
     """Class for optimizers that don't use a gradient."""
+
     def __init__(self, fun):
         self.fun = fun
         super().__init__(fun=fun)
+
 
 class LBFGSBOptimizer(GradOptimizer):
     """Class for setting up the L-BFGS-B algorithm for local minimization.
@@ -58,19 +64,20 @@ class LBFGSBOptimizer(GradOptimizer):
 
     Args:
         fun_and_grad: Function value and gradient together. This approach
-            is faster, but it only makes sense, if they are always or almost 
-            always computed together (e.g., in L-BFGS-B). Avoid using it when 
+            is faster, but it only makes sense, if they are always or almost
+            always computed together (e.g., in L-BFGS-B). Avoid using it when
             having a lot function calls without the gradient (e.g., in SLSQP).
         bounds: Since the parameters are normalized, all bounds are by default
             set to [0,1].
         ftol: Convergence condition that sets a lower limit on the difference
             in function value between two iterations. A higher value has been
-            shown to lead to a faster termination without significantly 
-            changeing the R factor. It can even be set to 1e-6 for a faster 
+            shown to lead to a faster termination without significantly
+            changeing the R factor. It can even be set to 1e-6 for a faster
             converence, but this slightly worsens the R factor.
         maxiter: Maximal number of iterations for the algorithm. Usually, the
             algorithm stops earlier due to convergence.
     """
+
     def __init__(self, fun_and_grad, bounds=None, ftol=1e-7, maxiter=1000):
         self.fun_and_grad = fun_and_grad
         self.bounds = bounds
@@ -82,9 +89,9 @@ class LBFGSBOptimizer(GradOptimizer):
         """With the call, the algorithm starts with the given parameters.
         This function prints a termination message and returns all the values
         that are also returned by the SciPy function, plus a list of the
-        function values for each iteration (fun_hystory) and the 
+        function values for each iteration (fun_hystory) and the
         runtime (duration).
-        
+
         Args:
             start_point: Starting point of the algorithm.
         """
@@ -92,9 +99,11 @@ class LBFGSBOptimizer(GradOptimizer):
         fun_history = []
         current_fun = [None]
         current_grad = [None]
+
         def fun_with_storage(x):
             current_fun[0], current_grad[0] = self.fun_and_grad(x)
             return current_fun[0], current_grad[0]
+
         def callback_function(x):
             fun_history.append(current_fun[0])
 
@@ -113,7 +122,7 @@ class LBFGSBOptimizer(GradOptimizer):
             jac=True,
             bounds=bounds,
             callback=callback_function,
-            options={'maxiter': self.maxiter,'ftol': self.ftol}
+            options={'maxiter': self.maxiter, 'ftol': self.ftol},
         )
         end_time = time.time()
         duration = end_time - start_time
@@ -123,16 +132,17 @@ class LBFGSBOptimizer(GradOptimizer):
         logger.info(f'{str(result)} \n\n')
         return result
 
+
 class SLSQPOptimizer(GradOptimizer):
     """Class for setting up the SLSQP algorithm for local minimization.
-    The SLSQP algorithm uses a quadratic approximation of the Lagrangian to 
-    include equality constraints. Inequality constraints are incorporated by 
-    defining active and passive sets, as well as an upper limit of the step 
-    size. For the Hessian, the BFGS approximation is used, and the line search 
-    cannot satisfy the Wolfe conditions. Due to a poor Hessian approximation in 
-    the initial iterations, the algorithm tends to overshoot during these 
+    The SLSQP algorithm uses a quadratic approximation of the Lagrangian to
+    include equality constraints. Inequality constraints are incorporated by
+    defining active and passive sets, as well as an upper limit of the step
+    size. For the Hessian, the BFGS approximation is used, and the line search
+    cannot satisfy the Wolfe conditions. Due to a poor Hessian approximation in
+    the initial iterations, the algorithm tends to overshoot during these
     iterations. To address this issue, a damping factor (damp_fact) is used to
-    reduce the gradient at the beginning. A damping factor of 0.1 has shown good 
+    reduce the gradient at the beginning. A damping factor of 0.1 has shown good
     results.
 
     Args:
@@ -147,13 +157,14 @@ class SLSQPOptimizer(GradOptimizer):
             algorithm stops earlier due to convergence.
     """
 
-    def __init__(self, fun, grad, bounds=None,
-                 damp_fact=1, ftol=1e-6, maxiter=1000):
+    def __init__(
+        self, fun, grad, bounds=None, damp_fact=1, ftol=1e-6, maxiter=1000
+    ):
         self.fun = fun
         self.grad = grad
         self.bounds = bounds
         self.damp_fact = damp_fact
-        self.ftol = ftol*damp_fact
+        self.ftol = ftol * damp_fact
         self.maxiter = maxiter
         super().__init__(fun_and_grad=None, grad=grad, fun=fun)
 
@@ -161,20 +172,23 @@ class SLSQPOptimizer(GradOptimizer):
         """With the call, the algorithm starts with the given parameters.
         This function prints a termination message and returns all the values
         that are also returned by the SciPy function, plus a list of the
-        function values for each iteration (fun_hystory) and the 
+        function values for each iteration (fun_hystory) and the
         runtime (duration).
-        
+
         Args:
             start_point: Starting point of the algorithm.
         """
         # Setting up Callback function to save function history in fun_history
         fun_history = []
         current_fun = [None]
+
         def dampened_grad(x):
-            return self.damp_fact*self.grad(x)
+            return self.damp_fact * self.grad(x)
+
         def dampened_fun_storage(x):
             current_fun[0] = self.fun(x)
-            return current_fun[0]*self.damp_fact
+            return current_fun[0] * self.damp_fact
+
         def callback_function(x):
             fun_history.append(current_fun[0])
 
@@ -193,7 +207,7 @@ class SLSQPOptimizer(GradOptimizer):
             jac=dampened_grad,
             bounds=bounds,
             callback=callback_function,
-            options={'maxiter': self.maxiter,'ftol': self.ftol}
+            options={'maxiter': self.maxiter, 'ftol': self.ftol},
         )
         end_time = time.time()
         duration = end_time - start_time
@@ -203,13 +217,14 @@ class SLSQPOptimizer(GradOptimizer):
         logger.info(f'{str(result)} \n\n')
         return result
 
+
 class CMAESOptimizer(NonGradOptimizer):
     """Class for setting up the CMA-ES optimizer for global exploration.
     In each evolution, a number of individuals are drawn from a distribution,
     and the distribution is updated based on the fanction values of the
     individuals. For the normalized vector, a step size of 0.5 showed very
-    good results. A population size of 30 for 33 dimensions has proven 
-    successful. However, the population size should increase with the number 
+    good results. A population size of 30 for 33 dimensions has proven
+    successful. However, the population size should increase with the number
     of dimensions (not linearly, but more logarithmically). For such a large
     step size, 100-200 generations have showen great success.
 
@@ -223,6 +238,7 @@ class CMAESOptimizer(NonGradOptimizer):
         ftol: Convergence condition on the standard deviation of the minimum
             function value of the last five generations.
     """
+
     def __init__(self, fun, pop_size, n_generations, step_size=0.5, ftol=1e-4):
         self.fun = fun
         self.step_size = step_size
@@ -235,26 +251,26 @@ class CMAESOptimizer(NonGradOptimizer):
         """With the call, the algorithm starts with the given parameters.
         This function prints a termination message, and the return values
         are explained below.
-        
+
         Args:
             start_point: Starting point of the algorithm. Usually it start at
                 0.5 for each dimension, as this is in the middle of the bounds.
-        
+
         Return:
             x: Parameters of the individual with the smallest function value.
             fun: Smallest function value.
-            message: A message indicating wether the algorithm finished due to 
+            message: A message indicating wether the algorithm finished due to
                 convergence or reaching the maximum nuber of generations.
             current_generation: Number of performed generations.
             duration: Total runtime.
-            fun_history: All function values of all generations stored in a 
+            fun_history: All function values of all generations stored in a
                 2D array.
             step_size_history: Step size of each generation stored.
         """
         # Set up functions for the algorithm
-        parameters, initial_state = cma_setup(mean=start_point,
-                                      step_size=self.step_size,
-                                      pop_size=self.pop_size)
+        parameters, initial_state = cma_setup(
+            mean=start_point, step_size=self.step_size, pop_size=self.pop_size
+        )
         sample_individuals = create_sample_from_state(parameters)
         update_state = create_update_algorithm_state(parameters=parameters)
         sample_and_evaluate = create_resample_and_evaluate(
@@ -279,7 +295,7 @@ class CMAESOptimizer(NonGradOptimizer):
             # To update the AlgorithmState pass in the sorted generation
             state = update_state(state, generation[np.argsort(fun_value)])
             i = g % 5
-            loss_min[i]=fun_value.min()
+            loss_min[i] = fun_value.min()
             if np.std(loss_min) < self.ftol:
                 termination_message = (
                     f'Evolution terminated early at generation {g}.'
@@ -288,10 +304,9 @@ class CMAESOptimizer(NonGradOptimizer):
 
         end_time = time.time()
         duration = end_time - start_time
-        if (
-            (generation[fun_value.argmin()] < 0.1).any()
-            or (generation[fun_value.argmin()] > 0.9).any()
-        ):
+        if (generation[fun_value.argmin()] < 0.1).any() or (
+            generation[fun_value.argmin()] > 0.9
+        ).any():
             logger.warning(f'Parameter(s) close to the bounds!')
         # Create result object
         result = CMAESResult(
@@ -301,7 +316,7 @@ class CMAESOptimizer(NonGradOptimizer):
             current_generation=g,
             duration=duration,
             fun_history=fun_history,
-            step_size_history=step_size_history
+            step_size_history=step_size_history,
         )
         # print the minimum function value in the final generation
         logger.info(
@@ -312,19 +327,28 @@ class CMAESOptimizer(NonGradOptimizer):
         )
         return result
 
+
 class CMAESResult:
-    def __init__(self, x, fun, message, current_generation,
-                 duration, fun_history, step_size_history):
+    def __init__(
+        self,
+        x,
+        fun,
+        message,
+        current_generation,
+        duration,
+        fun_history,
+        step_size_history,
+    ):
         """Class for the output of the CMA-ES algorithm.
-        
+
         Args:
             x: Parameters of the individual with the smallest function value.
             fun: Smallest function value.
-            message: A message indicating wether the algorithm finished due to 
+            message: A message indicating wether the algorithm finished due to
                 convergence or reaching the maximum nuber of generations.
             current_generation: Number of performed generations.
             duration: Total runtime.
-            fun_history: All function values of all generations stored in a 
+            fun_history: All function values of all generations stored in a
                 2D array.
             step_size_history: Step size of each generation stored.
         """
@@ -337,23 +361,26 @@ class CMAESResult:
         self.step_size_history = step_size_history
 
     def __repr__(self):
-        return (f'OptimizationResult(x = {self.x}\n'
-                f'fun = {self.fun}\n'
-                f'message = {self.message}\n'
-                f'current_generation = {self.current_generation}\n'
-                f'duration = {self.duration:.2f}s)'
-                )
+        return (
+            f'OptimizationResult(x = {self.x}\n'
+            f'fun = {self.fun}\n'
+            f'message = {self.message}\n'
+            f'current_generation = {self.current_generation}\n'
+            f'duration = {self.duration:.2f}s)'
+        )
+
 
 class SequentialOptimizer(Optimizer):
     """Class to run two optimizers sequentially.
 
-    First, a global optimizer (e.g., CMA-ES) is run, followed by a local 
+    First, a global optimizer (e.g., CMA-ES) is run, followed by a local
     optimizer (e.g., SLSQP) for refining the result.
 
     Args:
         global_optimizer: Instance of a global optimizer.
         local_optimizer: Instance of a local optimizer.
     """
+
     def __init__(self, global_optimizer, local_optimizer):
         self.global_optimizer = global_optimizer
         self.local_optimizer = local_optimizer
@@ -405,6 +432,7 @@ def create_resample_and_evaluate(
         A function to sample (with resampling) and evaluate a population from a
         state.
     """
+
     def resample_and_evaluate(
         state,
         n_samples,
@@ -434,31 +462,25 @@ def create_resample_and_evaluate(
         # resample and single evaluate individuals
         while attempts <= n_attempts and len(population) < n_samples:
             attempts += 1
-            resampled_population, state = sample_individuals(
-                state, n_samples=1
-            )
-            while (
-                (resampled_population[0] < 0.0).any() 
-                or (resampled_population[0] > 1.0).any()
-            ):
+            resampled_population, state = sample_individuals(state, n_samples=1)
+            while (resampled_population[0] < 0.0).any() or (
+                resampled_population[0] > 1.0
+            ).any():
                 resampled_population2, state = sample_individuals(
                     state, n_samples=1
                 )
                 condition = np.logical_or(
-                    resampled_population[0] > 1,
-                    resampled_population[0] < 0
+                    resampled_population[0] > 1, resampled_population[0] < 0
                 )
                 resampled_population = np.where(
-                    condition,
-                    resampled_population2,
-                    resampled_population
+                    condition, resampled_population2, resampled_population
                 )
             population.append(resampled_population[0])
             loss.append(evaluate_single(resampled_population[0]))
 
         if len(population) < n_samples:
             raise OverflowError(
-                f"Evaluation attempt limit of {n_attempts} reached "
+                f'Evaluation attempt limit of {n_attempts} reached '
             )
 
         else:
@@ -469,4 +491,3 @@ def create_resample_and_evaluate(
             )
 
     return resample_and_evaluate
-
