@@ -10,7 +10,7 @@ import numpy as np
 from anytree.walker import Walker, WalkError
 
 from .displacement_tree_layers import DisplacementTreeLayers
-from .hierarchical_linear_tree import (
+from .tree import (
     DisplacementTree,
 )
 from .linear_transformer import LinearMap

@@ -6,7 +6,7 @@ __created__ = '2024-10-01'
 
 from .displacement_range import DisplacementRange
 from .displacement_tree_layers import DisplacementTreeLayers
-from .hierarchical_linear_tree import (
+from .tree import (
     LinearTree,
 )
 from .linear_transformer import LinearTransformer
