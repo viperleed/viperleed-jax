@@ -1,11 +1,7 @@
-import os
 import pickle
 from pathlib import Path
 
-import numpy as np
 import pytest
-from pytest_cases import case, fixture
-from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
 from tests.fixtures.base import LARGE_FILE_PATH
 from tests.fixtures.cu_111_dynamic_l_max import *
@@ -15,7 +11,6 @@ from viperleed_jax.data_structures import ReferenceData
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.from_state import run_viperleed_initialization
-from viperleed_jax.tensor_calculator import TensorLEEDCalculator
 
 FE2O3_UNRELAXED_INPUT_PATH = (
     Path(__file__).parent / 'test_data' / 'Fe2O3_012' / 'unrelaxed'
