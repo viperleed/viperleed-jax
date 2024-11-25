@@ -79,10 +79,12 @@ class BaseScatterers:
     def _get_site_elements(slab):
         """Get the site elements from the slab.
 
-        Parameters:
+        Parameters
+        ----------
         slab (Slab): The slab object for which to retrieve the site-elements.
 
-        Returns:
+        Returns
+        -------
         tuple: A tuple of SiteEl namedtuples representing the site elements.
         """
         site_elements = []
@@ -98,11 +100,13 @@ class BaseScatterers:
     def _get_base_scatterers(self, slab):
         """Get the atom site elements for a given slab.
 
-        Parameters:
+        Parameters
+        ----------
         slab (Slab): The slab object for which to retrieve the
             atom-site-elements.
 
-        Returns:
+        Returns
+        -------
         tuple: A tuple of BaseScatterer objects representing the atom site
             elements.
         """
