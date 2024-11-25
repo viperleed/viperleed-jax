@@ -1,3 +1,8 @@
+"""Tests for the abstract linear tree node."""
+
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2024-11-23'
+
 import numpy as np
 import pytest
 
