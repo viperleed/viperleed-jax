@@ -22,7 +22,8 @@ from viperleed.calc import LOGGER as logger
 class Optimizer(ABC):
     """Class for all the optimizers.
 
-    Args:
+    Parameters
+    ----------
         fun: Objective function
     """
 
@@ -37,7 +38,8 @@ class Optimizer(ABC):
 class GradOptimizer(Optimizer):
     """Class for optimizers that use a gradient.
 
-    Args:
+    Parameters
+    ----------
         fun: Objective function.
         grad: Gradient of the objective function.
         fun_and_grad: Function value and gradient together. This approach
@@ -63,6 +65,7 @@ class NonGradOptimizer(Optimizer):
 
 class LBFGSBOptimizer(GradOptimizer):
     """Class for setting up the L-BFGS-B algorithm for local minimization.
+
     The BFGS algorithm uses the BFGS approximation of the Hessian, which is
     always positive definite. Gradient and Hessian (approximation) are used to
     determine search direction. A line search is performed along this direction,
@@ -70,7 +73,8 @@ class LBFGSBOptimizer(GradOptimizer):
     and lower limit for the step size, and one condition also ensures that the
     function value decreases for each iteration.
 
-    Args:
+    Parameters
+    ----------
         fun_and_grad: Function value and gradient together. This approach
             is faster, but it only makes sense, if they are always or almost
             always computed together (e.g., in L-BFGS-B). Avoid using it when
@@ -94,13 +98,15 @@ class LBFGSBOptimizer(GradOptimizer):
         super().__init__(fun_and_grad=fun_and_grad, grad=None, fun=None)
 
     def __call__(self, start_point):
-        """With the call, the algorithm starts with the given parameters.
+        """Start the optimization algorithm.
+
         This function prints a termination message and returns all the values
         that are also returned by the SciPy function, plus a list of the
         function values for each iteration (fun_hystory) and the
         runtime (duration).
 
-        Args:
+        Parameters
+        ----------
             start_point: Starting point of the algorithm.
         """
         # Setting up Callback function to save function history in fun_history
@@ -143,6 +149,7 @@ class LBFGSBOptimizer(GradOptimizer):
 
 class SLSQPOptimizer(GradOptimizer):
     """Class for setting up the SLSQP algorithm for local minimization.
+
     The SLSQP algorithm uses a quadratic approximation of the Lagrangian to
     include equality constraints. Inequality constraints are incorporated by
     defining active and passive sets, as well as an upper limit of the step
@@ -153,7 +160,8 @@ class SLSQPOptimizer(GradOptimizer):
     reduce the gradient at the beginning. A damping factor of 0.1 has shown good
     results.
 
-    Args:
+    Parameters
+    ----------
         fun: Objective function.
         grad: Gradient of the objective function.
         bounds: Since the parameters are normalized, all bounds are by default
@@ -177,13 +185,15 @@ class SLSQPOptimizer(GradOptimizer):
         super().__init__(fun_and_grad=None, grad=grad, fun=fun)
 
     def __call__(self, start_point):
-        """With the call, the algorithm starts with the given parameters.
+        """Start the optimization.
+
         This function prints a termination message and returns all the values
         that are also returned by the SciPy function, plus a list of the
         function values for each iteration (fun_hystory) and the
         runtime (duration).
 
-        Args:
+        Parameters
+        ----------
             start_point: Starting point of the algorithm.
         """
         # Setting up Callback function to save function history in fun_history
@@ -228,6 +238,7 @@ class SLSQPOptimizer(GradOptimizer):
 
 class CMAESOptimizer(NonGradOptimizer):
     """Class for setting up the CMA-ES optimizer for global exploration.
+
     In each evolution, a number of individuals are drawn from a distribution,
     and the distribution is updated based on the fanction values of the
     individuals. For the normalized vector, a step size of 0.5 showed very
@@ -236,7 +247,8 @@ class CMAESOptimizer(NonGradOptimizer):
     of dimensions (not linearly, but more logarithmically). For such a large
     step size, 100-200 generations have showen great success.
 
-    Args:
+    Parameters
+    ----------
         fun: Objective function.
         pop_size: Number of individuals in each generation.
         n_generations: Maximum number of generations to be performed.
@@ -256,15 +268,18 @@ class CMAESOptimizer(NonGradOptimizer):
         super().__init__(fun=fun)
 
     def __call__(self, start_point):
-        """With the call, the algorithm starts with the given parameters.
+        """Start the optimization.
+
         This function prints a termination message, and the return values
         are explained below.
 
-        Args:
+        Parameters
+        ----------
             start_point: Starting point of the algorithm. Usually it start at
                 0.5 for each dimension, as this is in the middle of the bounds.
 
-        Return:
+        Returns
+        -------
             x: Parameters of the individual with the smallest function value.
             fun: Smallest function value.
             message: A message indicating wether the algorithm finished due to
@@ -349,7 +364,8 @@ class CMAESResult:
     ):
         """Class for the output of the CMA-ES algorithm.
 
-        Args:
+        Parameters
+        ----------
             x: Parameters of the individual with the smallest function value.
             fun: Smallest function value.
             message: A message indicating wether the algorithm finished due to
@@ -384,7 +400,8 @@ class SequentialOptimizer(Optimizer):
     First, a global optimizer (e.g., CMA-ES) is run, followed by a local
     optimizer (e.g., SLSQP) for refining the result.
 
-    Args:
+    Parameters
+    ----------
         global_optimizer: Instance of a global optimizer.
         local_optimizer: Instance of a local optimizer.
     """
@@ -397,10 +414,12 @@ class SequentialOptimizer(Optimizer):
     def __call__(self, start_point):
         """Run the optimization pipeline.
 
-        Args:
+        Parameters
+        ----------
             start_point: Starting point for the global optimizer.
 
-        Returns:
+        Returns
+        -------
             A dictionary containing the results of both optimizations.
         """
         logger.info('Starting global optimization (CMA-ES)...')
@@ -425,18 +444,21 @@ def create_resample_and_evaluate(
     sample_individuals,
     evaluate_single,
 ):
-    """Create function that samples a population and evaluates its funktion
-    value. Samples that are outside the bounds are partially resampled, which
+    """Create function that samples a population and evaluates its function.
+
+    Samples that are outside the bounds are partially resampled, which
     means that only the components which are outside are resampled.
 
-    Args:
+    Parameters
+    ----------
         sample_individuals: Function that samples a number of individuals from
             a state.
         evaluate_single: Function that returns a tuple containing the loss of
             an individual and additional information in a dictionary (at least
             exception if applicable).
 
-    Returns:
+    Returns
+    -------
         A function to sample (with resampling) and evaluate a population from a
         state.
     """
@@ -446,19 +468,19 @@ def create_resample_and_evaluate(
         n_samples,
         n_attempts=int(1e6),
     ):
-        """Function for sampling a population from a state and evaluating
-           the value of the objective function.
+        """Sample a population from a state and evaluate the objective function.
 
-        Args:
+        Parameters
+        ----------
             state: State of the previous CMA step.
             n_samples: Number of successfully evaluated individuals to be
                 returned.
             n_attempts: Maximum number of attempts to reach n_samples.
                 Default is 1e6 to avoid infinite loops.
 
-        Returns:
-            tuple containing
-
+        Returns
+        -------
+            tuple containing the following elements:
             - A population of individuals sampled from the AlgorithmState.
             - The new AlgorithmState.
             - An array containing the function value of all passing individuals.
