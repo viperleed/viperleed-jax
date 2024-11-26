@@ -3,11 +3,17 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-11-26'
 
+from collections import namedtuple
+from dataclasses import dataclass
+from enum import IntEnum, auto
 from pathlib import Path
+from typing import Optional
 
-from pytest_cases import parametrize
+from pytest_cases import case
 
+from viperleed_jax.base_scatterers import BaseScatterers
 from viperleed_jax.from_state import run_viperleed_initialization
+from viperleed_jax.parameter_space import ParameterSpace
 
 DATA_PATH = Path(__file__).parent / 'test_data'
 
@@ -18,21 +24,74 @@ INPUTS_FE2O3_012_UNRELAXED = DATA_PATH / 'Fe2O3_012' / 'unrelaxed'
 INPUTS_FE3O4_111 = DATA_PATH / 'Fe3O4_111'
 INPUTS_PT_111_10x10_TE = DATA_PATH / 'Pt_111_10x10_Te' / 'converged'
 
-INPUT_PATHS = (
-    INPUTS_CU_111_DYNAMIC_LMAX,
-    INPUTS_CU_111_FIXED_LMAX,
-    INPUTS_FE2O3_012_CONVERGED,
-    INPUTS_FE2O3_012_UNRELAXED,
-    INPUTS_FE3O4_111,
-    INPUTS_PT_111_10x10_TE,
+
+class Tag(IntEnum):
+    """Enumeration of tags to use for cases."""
+
+    PARAMETER_SPACE_SIZE_TOTAL = auto()
+    PARAMETER_SPACE_SIZE_SYMMETRY = auto()
+    Z_ONLY_ATOM = auto()
+    IN_PLANE_1D_ATOMS = auto()
+    FREE_ATOMS = auto()
+
+
+ParameterSpaceSize = namedtuple(
+    'parameter_space_size',
+    [
+        'n_v0r',
+        'n_geo',
+        'n_vib',
+        'n_occ',
+    ],
 )
+
+
+@dataclass
+class ParameterSpaceInfo:
+    """Information about parameter space."""
+
+    total_size: Optional[ParameterSpaceSize] = None
+    symmetry_size: Optional[ParameterSpaceSize] = None
+    user_constrained_size: Optional[ParameterSpaceSize] = None
+    free_size: Optional[ParameterSpaceSize] = None
+
+
+CU_111_INFO = ParameterSpaceInfo(
+    total_size=ParameterSpaceSize(1, 15, 5, 5),
+    symmetry_size=ParameterSpaceSize(1, 5, 2, 5),
+)
+
+
+def _get_state_and_space(inputs_path):
+    state = run_viperleed_initialization(inputs_path)
+    base_scatterers = BaseScatterers(state.slab)
+    parameter_space = ParameterSpace(base_scatterers, state.rpars)
+    return parameter_space, state
 
 
 class CaseStatesAfterInit:
     """Collection of cases with structures after viperleed.calc init."""
 
-    @parametrize(calc_path=INPUT_PATHS)
-    def case_state_after_init(self, calc_path):
-        # returns states after initialization
-        # slab and rpars can be accessed as state.slab, state.rpars
-        return run_viperleed_initialization(calc_path)
+    @case(
+        tags=[
+            Tag.PARAMETER_SPACE_SIZE_TOTAL,
+            Tag.PARAMETER_SPACE_SIZE_SYMMETRY,
+            Tag.Z_ONLY_ATOM,
+        ]
+    )
+    def case_cu_111_dynamic_l_max(self):
+        parameter_space, state = _get_state_and_space(
+            INPUTS_CU_111_DYNAMIC_LMAX
+        )
+        return parameter_space, state, CU_111_INFO
+
+    @case(
+        tags=[
+            Tag.PARAMETER_SPACE_SIZE_TOTAL,
+            Tag.PARAMETER_SPACE_SIZE_SYMMETRY,
+            Tag.Z_ONLY_ATOM,
+        ]
+    )
+    def case_cu_111_fixed_l_max(self):
+        parameter_space, state = _get_state_and_space(INPUTS_CU_111_FIXED_LMAX)
+        return parameter_space, state, CU_111_INFO
