@@ -40,5 +40,5 @@ def test_symmetrized_parameter_size(test_case):
     _compare_parameter_space_size(
         parameter_space,
         layer=DisplacementTreeLayers.Symmetry,
-        expected_size=info.total_size,
+        expected_size=info.symmetry_size,
     )
