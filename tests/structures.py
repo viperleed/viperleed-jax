@@ -61,6 +61,15 @@ CU_111_INFO = ParameterSpaceInfo(
     symmetry_size=ParameterSpaceSize(1, 5, 5, 5),
 )
 
+Fe2O3_012_INFO = ParameterSpaceInfo(
+    total_size=ParameterSpaceSize(1, 90, 30, 30),
+    symmetry_size=ParameterSpaceSize(1, 45, 15, 15),
+)
+
+Fe3O4_111_INFO = ParameterSpaceInfo(
+    total_size=ParameterSpaceSize(1, 66, 22, 22),
+)
+
 
 def _get_state_and_space(inputs_path):
     state = run_viperleed_initialization(inputs_path)
@@ -95,3 +104,21 @@ class CaseStatesAfterInit:
     def case_cu_111_fixed_l_max(self):
         parameter_space, state = _get_state_and_space(INPUTS_CU_111_FIXED_LMAX)
         return parameter_space, state, CU_111_INFO
+
+    @case(
+        tags=[
+            Tag.PARAMETER_SPACE_SIZE_TOTAL,
+            Tag.PARAMETER_SPACE_SIZE_SYMMETRY,
+            Tag.FREE_ATOMS,
+        ]
+    )
+    def case_fe2o3_012_converged(self):
+        parameter_space, state = _get_state_and_space(
+            INPUTS_FE2O3_012_CONVERGED
+        )
+        return parameter_space, state, Fe2O3_012_INFO
+
+    @case(tags=[Tag.PARAMETER_SPACE_SIZE_TOTAL, Tag.IN_PLANE_1D_ATOMS])
+    def case_fe3o4_111(self):
+        parameter_space, state = _get_state_and_space(INPUTS_FE3O4_111)
+        return parameter_space, state, Fe3O4_111_INFO
