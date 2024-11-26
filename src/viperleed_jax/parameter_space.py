@@ -351,10 +351,14 @@ class ParameterSpace:
     @property
     def info(self):
         """
-        Returns a string containing information about the free parameters,
-        symmetry constrained parameters, and total parameters.
+        Return a string containing information about the parameter space size.
 
-        Returns:
+        Returns a string containing information about the number of free
+        parameters, user constrained parameters, symmetry constrained
+        parameters, and total parameters.
+
+        Returns
+        -------
             str: Information about the parameters.
         """
         n_root_params = self._free_params_up_to_layer(
