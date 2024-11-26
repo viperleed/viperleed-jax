@@ -1,10 +1,16 @@
-import pytest
-from pytest_cases import parametrize_with_cases
+from pytest_cases import fixture, parametrize_with_cases
 
-from tests.structures import CaseStatesAfterInit, ParameterSpaceSize, Tag
+from tests.structures import CaseStatesAfterInit, ParameterSpaceSize
+from viperleed_jax.base_scatterers import BaseScatterers
+from viperleed_jax.parameter_space import ParameterSpace
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
+
+
+def _get_space(state):
+    base_scatterers = BaseScatterers(state.slab)
+    return ParameterSpace(base_scatterers, state.rpars)
 
 
 def _compare_parameter_space_size(parameter_space, layer, expected_size):
@@ -13,29 +19,28 @@ def _compare_parameter_space_size(parameter_space, layer, expected_size):
     assert size_at_layer == expected_size
 
 
+@fixture
 @parametrize_with_cases(
     'test_case',
     cases=CaseStatesAfterInit,
-    has_tag=Tag.PARAMETER_SPACE_SIZE_TOTAL,
 )
-def test_total_parameter_size(test_case):
-    parameter_space, _, info = test_case
-    _compare_parameter_space_size(
-        parameter_space,
-        layer=DisplacementTreeLayers.Base,
-        expected_size=info.total_size,
-    )
+def space_with_info(test_case):
+    state, info = test_case
+    parameter_space = _get_space(state)
+    return parameter_space, state, info
 
 
-@parametrize_with_cases(
-    'test_case',
-    cases=CaseStatesAfterInit,
-    has_tag=Tag.PARAMETER_SPACE_SIZE_SYMMETRY,
-)
-def test_symmetrized_parameter_size(test_case):
-    parameter_space, _, info = test_case
-    _compare_parameter_space_size(
-        parameter_space,
-        layer=DisplacementTreeLayers.Symmetry,
-        expected_size=info.symmetry_size,
-    )
+def test_parameter_space_size(space_with_info, subtests):
+    parameter_space, _, info = space_with_info
+    with subtests.test('Base layer parameter space size'):
+        _compare_parameter_space_size(
+            parameter_space,
+            layer=DisplacementTreeLayers.Base,
+            expected_size=info.total_size,
+        )
+    with subtests.test('Symmetry layer parameter space size'):
+        _compare_parameter_space_size(
+            parameter_space,
+            layer=DisplacementTreeLayers.Symmetry,
+            expected_size=info.symmetry_size,
+        )

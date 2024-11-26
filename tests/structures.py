@@ -63,6 +63,7 @@ Fe3O4_111_INFO = ParameterSpaceInfo(
 
 PT_111_10x10_TE_INFO = ParameterSpaceInfo(
     total_size=ParameterSpaceSize(1, 1245, 415, 415),
+    symmetry_size=ParameterSpaceSize(1, 229, 92, 92),
 )
 
 
@@ -84,8 +85,7 @@ class CaseStatesAfterInit:
     )
     def case_cu_111_dynamic_l_max(self, state_cu_111_dynamic_l_max):
         state = state_cu_111_dynamic_l_max
-        parameter_space = _get_space(state_cu_111_dynamic_l_max)
-        return parameter_space, state, CU_111_INFO
+        return state, CU_111_INFO
 
     @case(
         tags=[
@@ -96,8 +96,7 @@ class CaseStatesAfterInit:
     )
     def case_cu_111_fixed_l_max(self, state_cu_111_fixed_l_max):
         state = state_cu_111_fixed_l_max
-        parameter_space = _get_space(state_cu_111_fixed_l_max)
-        return parameter_space, state, CU_111_INFO
+        return state, CU_111_INFO
 
     @case(
         tags=[
@@ -108,8 +107,7 @@ class CaseStatesAfterInit:
     )
     def case_fe2o3_012_converged(self, state_fe2o3_012_converged):
         state = state_fe2o3_012_converged
-        parameter_space = _get_space(state)
-        return parameter_space, state, Fe2O3_012_INFO
+        return state, Fe2O3_012_INFO
 
     @case(
         tags=[
@@ -120,11 +118,9 @@ class CaseStatesAfterInit:
     )
     def case_fe3o4_111(self, state_fe3o4_111):
         state = state_fe3o4_111
-        parameter_space = _get_space(state)
-        return parameter_space, state, Fe3O4_111_INFO
+        return state, Fe3O4_111_INFO
 
     @case(tags=[Tag.PARAMETER_SPACE_SIZE_TOTAL, Tag.IN_PLANE_1D_ATOMS])
     def case_pt_111_10x10_te(self, state_pt_111_10x10_te):
         state = state_pt_111_10x10_te
-        parameter_space = _get_space(state)
-        return parameter_space, state, PT_111_10x10_TE_INFO
+        return state, PT_111_10x10_TE_INFO
