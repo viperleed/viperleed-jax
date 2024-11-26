@@ -279,7 +279,8 @@ class CMAESOptimizer(NonGradOptimizer):
 
         Returns
         -------
-            x: Parameters of the individual with the smallest function value. # TODO @Paul: avoid using single letter variable names
+            min_individual: Parameters of the individual with the smallest 
+                function value.
             message: A message indicating wether the algorithm finished due to
                 convergence or reaching the maximum nuber of generations.
             current_generation: Number of performed generations.
@@ -331,7 +332,7 @@ class CMAESOptimizer(NonGradOptimizer):
             logger.warning('Parameter(s) close to the bounds!')
         # Create result object
         result = CMAESResult(
-            x=generation[fun_value.argmin()],
+            min_individual=generation[fun_value.argmin()],
             fun=fun_value.min(),
             message=termination_message,
             current_generation=g,
@@ -354,7 +355,8 @@ class CMAESResult:
 
     Parameters
     ----------
-        x: Parameters of the individual with the smallest function value.
+        min_individual: Parameters of the individual with the smallest 
+            function value.
         fun: Smallest function value.
         message: A message indicating wether the algorithm finished due to
             convergence or reaching the maximum nuber of generations.
@@ -366,7 +368,7 @@ class CMAESResult:
     """
     def __init__(
         self,
-        x,
+        min_individual,
         fun,
         message,
         current_generation,
@@ -374,7 +376,7 @@ class CMAESResult:
         fun_history,
         step_size_history,
     ):
-        self.x = x  # TODO @Paul: avoid using single letter variable names; maybe use min_individual or similar
+        self.min_individual = min_individual
         self.fun = fun
         self.message = message
         self.current_generation = current_generation
@@ -385,7 +387,7 @@ class CMAESResult:
     def __repr__(self):
         """Returns a string representation of the optimization result."""
         return (
-            f'OptimizationResult(x = {self.x}\n'
+            f'OptimizationResult(x = {self.min_individual}\n'
             f'fun = {self.fun}\n'
             f'message = {self.message}\n'
             f'current_generation = {self.current_generation}\n'
