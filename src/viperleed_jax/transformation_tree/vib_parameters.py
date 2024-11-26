@@ -109,8 +109,8 @@ class VibLinkedConstraint(VibConstraintNode):
         )
 
 
-class VibSiteConstraint(VibConstraintNode):
-    """Class for linking vibrations of the same site."""
+class VibSymmetryConstraint(VibConstraintNode):
+    """Class for linking vibrations of symmetry equivalent atoms."""
 
     def __init__(self, children):
         # check that all children are leaf nodes and share a site-element
@@ -128,10 +128,7 @@ class VibSiteConstraint(VibConstraintNode):
             dof=dof,
             children=children,
             transformers=None,  # transformers default to identity
-            name=(
-                f'vib ({children[0].site_element.site},'
-                f'{children[0].site_element.element})'
-            ),
+            name='Symmetry',
             layer=DisplacementTreeLayers.Symmetry,
         )
 
@@ -149,17 +146,24 @@ class VibTree(DisplacementTree):
 
         self.nodes.extend(leaf_nodes)
 
-        # link site-elements together
-        for site_el in self.site_elements:
-            nodes_to_link = [
-                node for node in self.leaves if node.site_element == site_el
-            ]
+        # vibrations need to fulfill symmetry constraints
+        for link in self.base_scatterers.atom_number_symmetry_links:
+            # put all linked atoms in the same symmetry group
+
+            nodes_to_link = [node for node in leaf_nodes if node.num in link]
             if not nodes_to_link:
                 continue
-            site_link_node = VibSiteConstraint(
+            symmetry_node = VibSymmetryConstraint(
                 children=nodes_to_link,
             )
-            self.nodes.append(site_link_node)
+            self.nodes.append(symmetry_node)
+
+        unlinked_vib_leaves = [node for node in leaf_nodes if not node.parent]
+        for node in unlinked_vib_leaves:
+            dummy_symmetry_node = VibSymmetryConstraint(
+                children=[node],
+            )
+            self.nodes.append(dummy_symmetry_node)
 
         # check that all bounds are valid
         for node in self.roots:
