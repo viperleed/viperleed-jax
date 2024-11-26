@@ -34,9 +34,6 @@ class Optimizer(ABC):
     def __call__(self):
         """Start the optimization."""
 
-    # TODO @Paul: maybe make the __repr_ method an abstract method here too
-
-
 class GradOptimizer(Optimizer):
     """Class for optimizers that use a gradient.
 
@@ -175,7 +172,7 @@ class SLSQPOptimizer(GradOptimizer):
             algorithm stops earlier due to convergence.
     """
 
-    def __init__(  # TODO @Paul: add docstring
+    def __init__(
         self, fun, grad, bounds=None, damp_fact=1, ftol=1e-6, maxiter=1000
     ):
         self.fun = fun
@@ -352,8 +349,21 @@ class CMAESOptimizer(NonGradOptimizer):
         return result
 
 
-# TODO @Paul: add docstring
 class CMAESResult:
+    """Class for the output of the CMA-ES algorithm.
+
+    Parameters
+    ----------
+        x: Parameters of the individual with the smallest function value.
+        fun: Smallest function value.
+        message: A message indicating wether the algorithm finished due to
+            convergence or reaching the maximum nuber of generations.
+        current_generation: Number of performed generations.
+        duration: Total runtime.
+        fun_history: All function values of all generations stored in a
+            2D array.
+        step_size_history: Step size of each generation stored.
+    """
     def __init__(
         self,
         x,
@@ -364,20 +374,6 @@ class CMAESResult:
         fun_history,
         step_size_history,
     ):
-        """Class for the output of the CMA-ES algorithm.
-
-        Parameters
-        ----------
-            x: Parameters of the individual with the smallest function value.
-            fun: Smallest function value.
-            message: A message indicating wether the algorithm finished due to
-                convergence or reaching the maximum nuber of generations.
-            current_generation: Number of performed generations.
-            duration: Total runtime.
-            fun_history: All function values of all generations stored in a
-                2D array.
-            step_size_history: Step size of each generation stored.
-        """
         self.x = x  # TODO @Paul: avoid using single letter variable names; maybe use min_individual or similar
         self.fun = fun
         self.message = message
@@ -386,7 +382,8 @@ class CMAESResult:
         self.fun_history = fun_history
         self.step_size_history = step_size_history
 
-    def __repr__(self):  # TODO @Paul: add docstring
+    def __repr__(self):
+        """Returns a string representation of the optimization result."""
         return (
             f'OptimizationResult(x = {self.x}\n'
             f'fun = {self.fun}\n'
@@ -442,7 +439,6 @@ class SequentialOptimizer(Optimizer):
         }
 
 
-# TODO @Paul: add raised exceptions to docstring
 def create_resample_and_evaluate(
     sample_individuals,
     evaluate_single,
@@ -472,6 +468,8 @@ def create_resample_and_evaluate(
         n_attempts=int(1e6),
     ):
         """Sample a population from a state and evaluate the objective function.
+        When the resampling number reaches n_attempts an OverflowError is 
+        raised.
 
         Parameters
         ----------
