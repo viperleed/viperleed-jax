@@ -20,7 +20,7 @@ from viperleed.calc import LOGGER as logger
 
 
 class Optimizer(ABC):
-    """Class for all the optimizers.
+    """Base class for all the optimizers.
 
     Parameters
     ----------
@@ -34,12 +34,15 @@ class Optimizer(ABC):
     def __call__(self):
         """Start the optimization."""
 
-class GradOptimizer(Optimizer):
+
+class GradOptimizer(
+    Optimizer
+):  # TODO @Paul: would it make sense to make a .prefer_fun_and_grad attribute?
     """Class for optimizers that use a gradient.
 
     Parameters
     ----------
-        fun: Objective function.
+        fun: Objective function to be optimized.
         grad: Gradient of the objective function.
         fun_and_grad: Function value and gradient together. This approach
             is faster, but it only makes sense, if they are always or almost
@@ -47,15 +50,25 @@ class GradOptimizer(Optimizer):
             having a lot function calls without the gradient (e.g., in SLSQP).
     """
 
-    def __init__(self, fun, grad, fun_and_grad):
+    def __init__(self, fun=None, grad=None, fun_and_grad=None):
         self.fun = fun
-        self.grad = grad
-        self.fun_and_grad = fun_and_grad
+        if grad is None and fun_and_grad is None:
+            raise ValueError(
+                'At least one of grad or fun_and_grad must be set.'
+            )
+        if grad is None and fun_and_grad is None:
+            raise ValueError(
+                'At least one of grad or fun_and_grad must be set.'
+            )
+        # if only one of the two is set, the other one is set to the default
+        self.grad = grad or (lambda arg: fun_and_grad(arg)[1])
+        self.fun_and_grad = fun_and_grad or (lambda arg: (fun(arg), grad(arg)))
+
         super().__init__(fun=fun)
 
 
 class NonGradOptimizer(Optimizer):
-    """Class for optimizers that don't use a gradient."""
+    """Class for optimizers that do not use gradients."""
 
     def __init__(self, fun):
         self.fun = fun
@@ -66,11 +79,11 @@ class LBFGSBOptimizer(GradOptimizer):
     """Class for setting up the L-BFGS-B algorithm for local minimization.
 
     The BFGS algorithm uses the BFGS approximation of the Hessian, which is
-    always positive definite. Gradient and Hessian (approximation) are used to
-    determine search direction. A line search is performed along this direction,
-    which must satisfy the Wolfe conditions. These conditions provide an upper
-    and lower limit for the step size, and one condition also ensures that the
-    function value decreases for each iteration.
+    always positive definite. Gradients and Hessians (approximation) are used to
+    determine teh search direction. A line search is performed along this
+    direction, which must satisfy the Wolfe conditions. These conditions provide
+    an upper and lower limit for the step size, and one condition also ensures
+    that the function value monotonically decreases for each iteration.
 
     Parameters
     ----------
@@ -101,7 +114,7 @@ class LBFGSBOptimizer(GradOptimizer):
 
         This function prints a termination message and returns all the values
         that are also returned by the SciPy function, plus a list of the
-        function values for each iteration (fun_hystory) and the
+        function values for each iteration (fun_history) and the
         runtime (duration).
 
         Parameters
@@ -110,14 +123,16 @@ class LBFGSBOptimizer(GradOptimizer):
         """
         # Setting up Callback function to save function history in fun_history
         fun_history = []
-        current_fun = [None]
+        current_fun = [None]  # TODO: @Paul: do these have to be lists?
         current_grad = [None]
 
-        def fun_with_storage(x):
-            current_fun[0], current_grad[0] = self.fun_and_grad(x)
+        # TODO @Paul:
+        # these storage tricks can be abstracted at least one level higher
+        def fun_with_storage(arg):
+            current_fun[0], current_grad[0] = self.fun_and_grad(arg)
             return current_fun[0], current_grad[0]
 
-        def callback_function(x):
+        def callback_function(arg):
             fun_history.append(current_fun[0])
 
         # Setting up the bounds
@@ -132,7 +147,7 @@ class LBFGSBOptimizer(GradOptimizer):
             fun_with_storage,
             x0=start_point,
             method='L-BFGS-B',
-            jac=True,
+            jac=True,  # assume that the function returns the (val, grad) tuple
             bounds=bounds,
             callback=callback_function,
             options={'maxiter': self.maxiter, 'ftol': self.ftol},
@@ -221,7 +236,7 @@ class SLSQPOptimizer(GradOptimizer):
             fun=dampened_fun_storage,
             x0=start_point,
             method='L-BFGS-B',
-            jac=dampened_grad,
+            jac=dampened_grad,  # use separate call for gradient
             bounds=bounds,
             callback=callback_function,
             options={'maxiter': self.maxiter, 'ftol': self.ftol},
@@ -279,7 +294,7 @@ class CMAESOptimizer(NonGradOptimizer):
 
         Returns
         -------
-            min_individual: Parameters of the individual with the smallest 
+            min_individual: Parameters of the individual with the smallest
                 function value.
             message: A message indicating wether the algorithm finished due to
                 convergence or reaching the maximum nuber of generations.
@@ -302,7 +317,7 @@ class CMAESOptimizer(NonGradOptimizer):
         state = initial_state
 
         start_time = time.time()
-        fun_history = []
+        fun_history = []  # TODO @Paul: this is shared across grad and non-grad optimizers; can be abstracted to the base class
         step_size_history = []
         loss_min = np.full((5,), fill_value=10.0)
         termination_message = 'Maximum number of generations reached'
@@ -355,7 +370,7 @@ class CMAESResult:
 
     Parameters
     ----------
-        min_individual: Parameters of the individual with the smallest 
+        min_individual: Parameters of the individual with the smallest
             function value.
         fun: Smallest function value.
         message: A message indicating wether the algorithm finished due to
@@ -366,6 +381,7 @@ class CMAESResult:
             2D array.
         step_size_history: Step size of each generation stored.
     """
+
     def __init__(
         self,
         min_individual,
@@ -385,7 +401,7 @@ class CMAESResult:
         self.step_size_history = step_size_history
 
     def __repr__(self):
-        """Returns a string representation of the optimization result."""
+        """Return a string representation of the optimization result."""
         return (
             f'OptimizationResult(x = {self.min_individual}\n'
             f'fun = {self.fun}\n'
@@ -470,7 +486,8 @@ def create_resample_and_evaluate(
         n_attempts=int(1e6),
     ):
         """Sample a population from a state and evaluate the objective function.
-        When the resampling number reaches n_attempts an OverflowError is 
+
+        When the resampling number reaches n_attempts an OverflowError is
         raised.
 
         Parameters
