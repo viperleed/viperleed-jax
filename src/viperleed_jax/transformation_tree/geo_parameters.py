@@ -10,11 +10,11 @@ import numpy as np
 from anytree.walker import Walker, WalkError
 
 from .displacement_tree_layers import DisplacementTreeLayers
+from .linear_transformer import LinearMap
+from .nodes import AtomicLinearNode, LinearConstraintNode
 from .tree import (
     DisplacementTree,
 )
-from .linear_transformer import LinearMap
-from .nodes import AtomicLinearNode, LinearConstraintNode
 
 
 class GeoLeafNode(AtomicLinearNode):
