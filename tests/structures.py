@@ -10,10 +10,6 @@ from typing import Optional
 
 from pytest_cases import case
 
-from viperleed_jax.base_scatterers import BaseScatterers
-from viperleed_jax.from_state import run_viperleed_initialization
-from viperleed_jax.parameter_space import ParameterSpace
-
 
 class Tag(IntEnum):
     """Enumeration of tags to use for cases."""
@@ -65,12 +61,6 @@ PT_111_10x10_TE_INFO = ParameterSpaceInfo(
     total_size=ParameterSpaceSize(1, 1245, 415, 415),
     symmetry_size=ParameterSpaceSize(1, 229, 92, 92),
 )
-
-
-def _get_space(state):
-    base_scatterers = BaseScatterers(state.slab)
-    parameter_space = ParameterSpace(base_scatterers, state.rpars)
-    return parameter_space
 
 
 class CaseStatesAfterInit:
