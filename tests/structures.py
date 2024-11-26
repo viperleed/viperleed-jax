@@ -58,7 +58,7 @@ class ParameterSpaceInfo:
 
 CU_111_INFO = ParameterSpaceInfo(
     total_size=ParameterSpaceSize(1, 15, 5, 5),
-    symmetry_size=ParameterSpaceSize(1, 5, 2, 5),
+    symmetry_size=ParameterSpaceSize(1, 5, 5, 5),
 )
 
 
