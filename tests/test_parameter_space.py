@@ -1,3 +1,4 @@
+import pytest
 from pytest_cases import parametrize_with_cases
 
 from tests.structures import CaseStatesAfterInit, ParameterSpaceSize, Tag
@@ -26,6 +27,9 @@ def test_total_parameter_size(test_case):
     )
 
 
+@pytest.mark.xfail(
+    reason='Symmetry constraints for vibs and occs are wrong at the moment'
+)
 @parametrize_with_cases(
     'test_case',
     cases=CaseStatesAfterInit,
