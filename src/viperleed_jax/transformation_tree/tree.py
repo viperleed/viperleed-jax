@@ -169,6 +169,7 @@ class DisplacementTree(LinearTree):
 
     @property
     def leaves(self):
+        """Nodes that are leaves, i.e., that have no children."""
         unordered_leaves = super().leaves
         indices_by_base_scatterers = np.array(
             [
