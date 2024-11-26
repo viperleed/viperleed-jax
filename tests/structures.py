@@ -6,7 +6,6 @@ __created__ = '2024-11-26'
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import IntEnum, auto
-from pathlib import Path
 from typing import Optional
 
 from pytest_cases import case
@@ -14,15 +13,6 @@ from pytest_cases import case
 from viperleed_jax.base_scatterers import BaseScatterers
 from viperleed_jax.from_state import run_viperleed_initialization
 from viperleed_jax.parameter_space import ParameterSpace
-
-DATA_PATH = Path(__file__).parent / 'test_data'
-
-INPUTS_CU_111_DYNAMIC_LMAX = DATA_PATH / 'Cu_111' / 'dynamic_l_max'
-INPUTS_CU_111_FIXED_LMAX = DATA_PATH / 'Cu_111' / 'fixed_l_max'
-INPUTS_FE2O3_012_CONVERGED = DATA_PATH / 'Fe2O3_012' / 'converged'
-INPUTS_FE2O3_012_UNRELAXED = DATA_PATH / 'Fe2O3_012' / 'unrelaxed'
-INPUTS_FE3O4_111 = DATA_PATH / 'Fe3O4_111'
-INPUTS_PT_111_10x10_TE = DATA_PATH / 'Pt_111_10x10_Te' / 'converged'
 
 
 class Tag(IntEnum):
@@ -76,11 +66,10 @@ PT_111_10x10_TE_INFO = ParameterSpaceInfo(
 )
 
 
-def _get_state_and_space(inputs_path):
-    state = run_viperleed_initialization(inputs_path)
+def _get_space(state):
     base_scatterers = BaseScatterers(state.slab)
     parameter_space = ParameterSpace(base_scatterers, state.rpars)
-    return parameter_space, state
+    return parameter_space
 
 
 class CaseStatesAfterInit:
@@ -93,10 +82,9 @@ class CaseStatesAfterInit:
             Tag.Z_ONLY_ATOM,
         ]
     )
-    def case_cu_111_dynamic_l_max(self):
-        parameter_space, state = _get_state_and_space(
-            INPUTS_CU_111_DYNAMIC_LMAX
-        )
+    def case_cu_111_dynamic_l_max(self, state_cu_111_dynamic_l_max):
+        state = state_cu_111_dynamic_l_max
+        parameter_space = _get_space(state_cu_111_dynamic_l_max)
         return parameter_space, state, CU_111_INFO
 
     @case(
@@ -106,8 +94,9 @@ class CaseStatesAfterInit:
             Tag.Z_ONLY_ATOM,
         ]
     )
-    def case_cu_111_fixed_l_max(self):
-        parameter_space, state = _get_state_and_space(INPUTS_CU_111_FIXED_LMAX)
+    def case_cu_111_fixed_l_max(self, state_cu_111_fixed_l_max):
+        state = state_cu_111_fixed_l_max
+        parameter_space = _get_space(state_cu_111_fixed_l_max)
         return parameter_space, state, CU_111_INFO
 
     @case(
@@ -117,10 +106,9 @@ class CaseStatesAfterInit:
             Tag.FREE_ATOMS,
         ]
     )
-    def case_fe2o3_012_converged(self):
-        parameter_space, state = _get_state_and_space(
-            INPUTS_FE2O3_012_CONVERGED
-        )
+    def case_fe2o3_012_converged(self, state_fe2o3_012_converged):
+        state = state_fe2o3_012_converged
+        parameter_space = _get_space(state)
         return parameter_space, state, Fe2O3_012_INFO
 
     @case(
@@ -130,11 +118,13 @@ class CaseStatesAfterInit:
             Tag.IN_PLANE_1D_ATOMS,
         ]
     )
-    def case_fe3o4_111(self):
-        parameter_space, state = _get_state_and_space(INPUTS_FE3O4_111)
+    def case_fe3o4_111(self, state_fe3o4_111):
+        state = state_fe3o4_111
+        parameter_space = _get_space(state)
         return parameter_space, state, Fe3O4_111_INFO
 
     @case(tags=[Tag.PARAMETER_SPACE_SIZE_TOTAL, Tag.IN_PLANE_1D_ATOMS])
-    def case_pt_111_10x10_te(self):
-        parameter_space, state = _get_state_and_space(INPUTS_PT_111_10x10_TE)
+    def case_pt_111_10x10_te(self, state_pt_111_10x10_te):
+        state = state_pt_111_10x10_te
+        parameter_space = _get_space(state)
         return parameter_space, state, PT_111_10x10_TE_INFO

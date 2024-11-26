@@ -12,6 +12,15 @@ from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.from_state import run_viperleed_initialization
 
+from tests.viper_init_states import (
+    state_cu_111_dynamic_l_max,
+    state_cu_111_fixed_l_max,
+    state_fe2o3_012_converged,
+    state_fe2o3_012_unrelaxed,
+    state_fe3o4_111,
+    state_pt_111_10x10_te,
+)
+
 FE2O3_UNRELAXED_INPUT_PATH = (
     Path(__file__).parent / 'test_data' / 'Fe2O3_012' / 'unrelaxed'
 )
