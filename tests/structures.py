@@ -68,6 +68,11 @@ Fe2O3_012_INFO = ParameterSpaceInfo(
 
 Fe3O4_111_INFO = ParameterSpaceInfo(
     total_size=ParameterSpaceSize(1, 66, 22, 22),
+    symmetry_size=ParameterSpaceSize(1, 17, 12, 12),
+)
+
+PT_111_10x10_TE_INFO = ParameterSpaceInfo(
+    total_size=ParameterSpaceSize(1, 1245, 415, 415),
 )
 
 
@@ -118,7 +123,18 @@ class CaseStatesAfterInit:
         )
         return parameter_space, state, Fe2O3_012_INFO
 
-    @case(tags=[Tag.PARAMETER_SPACE_SIZE_TOTAL, Tag.IN_PLANE_1D_ATOMS])
+    @case(
+        tags=[
+            Tag.PARAMETER_SPACE_SIZE_TOTAL,
+            Tag.PARAMETER_SPACE_SIZE_SYMMETRY,
+            Tag.IN_PLANE_1D_ATOMS,
+        ]
+    )
     def case_fe3o4_111(self):
         parameter_space, state = _get_state_and_space(INPUTS_FE3O4_111)
         return parameter_space, state, Fe3O4_111_INFO
+
+    @case(tags=[Tag.PARAMETER_SPACE_SIZE_TOTAL, Tag.IN_PLANE_1D_ATOMS])
+    def case_pt_111_10x10_te(self):
+        parameter_space, state = _get_state_and_space(INPUTS_PT_111_10x10_TE)
+        return parameter_space, state, PT_111_10x10_TE_INFO
