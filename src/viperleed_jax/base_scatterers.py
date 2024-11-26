@@ -7,7 +7,6 @@ from collections import namedtuple
 
 SiteEl = namedtuple('SiteEl', ['site', 'element'])
 
-# TODO: To discuss
 # Currently, the internal numbering is a bit inconsitent.
 # Atom numbers start at 1, but layer numbers start at 0.
 
