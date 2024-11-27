@@ -11,6 +11,19 @@ from viperleed_jax.transformation_tree.geo_parameters import GeoTree
 from ..structures import CaseStatesAfterInit, Tag
 
 
+@parametrize_with_cases('test_case', cases=CaseStatesAfterInit)
+def test_tree_creation(test_case, subtests):
+    """Test tree creation."""
+    state, info = test_case
+    base_scatterers = BaseScatterers(state.slab)
+    # create the geometry tree
+    tree = GeoTree(base_scatterers)
+    assert len(tree.leaves) == len(base_scatterers)
+
+    with subtests.test('tree root creation'):
+        tree.create_root()
+        assert tree.subtree_root.is_root
+        assert tree.subtree_root.is_leaf is False
 
 @parametrize_with_cases('test_case', cases=CaseStatesAfterInit)
 def test_symmetry_operations_determinant(test_case):
