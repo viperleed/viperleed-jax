@@ -52,9 +52,9 @@ class MockLinearTree(LinearTree):
 
         self.nodes.extend([leaf1, leaf2, leaf3])
 
-    def create_subtree_root(self):
+    def create_root(self):
         """Mock implementation of create_subtree_root."""
-        super().create_subtree_root()
+        super().create_root()
 
 
 @pytest.fixture

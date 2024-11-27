@@ -52,7 +52,7 @@ class TransformationTree(ABC):
         return [node for node in self.nodes if node.is_leaf]
 
     @abstractmethod
-    def create_subtree_root(self):
+    def create_root(self):
         """Create a root node that aggregates all root nodes in the subtree."""
 
     def graphical_export(self, filename):
@@ -78,7 +78,7 @@ class LinearTree(InvertibleTransformationTree):
     def __init__(self, name, root_node_name):
         super().__init__(name, root_node_name)
 
-    def create_subtree_root(self):
+    def create_root(self):
         """Create a root node that aggregates all root nodes in the subtree."""
         if self._tree_root_has_been_created:
             raise ValueError('Subtree root has already been created.')
