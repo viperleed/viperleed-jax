@@ -161,7 +161,8 @@ class LinearConstraintNode(LinearTreeNode):
 
     Any non-leaf node in the tree is a constraint node. Constraint nodes must
     be initialized with a list of child nodes and their corresponding
-    transformers."""
+    transformers.
+    """
 
     def __init__(self, dof, layer, name=None, children=[], transformers=None):
         _children = list(children)
@@ -252,7 +253,6 @@ class LinearConstraintNode(LinearTreeNode):
 
     def _stacked_transformer(self):
         """Return the stacked transformer of the children."""
-
         child_weights = [child.transformer.weights for child in self.children]
         child_biases = [child.transformer.biases for child in self.children]
 
@@ -270,11 +270,11 @@ class LinearConstraintNode(LinearTreeNode):
         try:
             (upwards, common, downwards) = walker.walk(self, node)
         except walker.WalkError as err:
-            raise ValueError(
-                f'Node {node} cannot be reached from {self}.'
-            ) from err
+            msg = f'Node {node} cannot be reached from {self}.'
+            raise ValueError(msg) from err
         if upwards:
-            raise ValueError(f'Node {node} is not a descendent of {self}.')
+            msg = f'Node {node} is not a descendent of {self}.'
+            raise ValueError(msg)
         transformers = [node.transformer for node in downwards]
         composed_transformer = transformers[0]
         for trafo in transformers[1:]:
@@ -283,7 +283,10 @@ class LinearConstraintNode(LinearTreeNode):
 
     def down_collapse_transformers(self, stop_condition):
         if stop_condition is None:
-            stop_condition = lambda node: node.is_leaf
+
+            def stop_condition(node):
+                return node.is_leaf
+
         collapsed_transformers = []
         for child in self.children:
             if stop_condition(child):
