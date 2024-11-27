@@ -218,7 +218,8 @@ class GeoSymmetryConstraint(GeoConstraintNode):
     The viperleed.calc symmetry recognition gives atoms the attributes `symrefm`
     and `freedir`. `freedir` determines the allowed directions of movement, and
     `symrefm` is the symmetry operation that links the atoms that are symmetry
-    linked."""
+    linked.
+    """
 
     def __init__(self, children):
         # transformers may not be provided, as they must be determined from the
