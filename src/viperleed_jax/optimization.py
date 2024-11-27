@@ -29,6 +29,8 @@ class Optimizer(ABC):
 
     def __init__(self, fun):
         self.fun = fun
+        self.fun_history = []
+
 
     @abstractmethod
     def __call__(self):
@@ -37,7 +39,7 @@ class Optimizer(ABC):
 
 class GradOptimizer(
     Optimizer
-):  # TODO @Paul: would it make sense to make a .prefer_fun_and_grad attribute?
+):
     """Class for optimizers that use a gradient.
 
     Parameters
@@ -65,6 +67,20 @@ class GradOptimizer(
         self.fun_and_grad = fun_and_grad or (lambda arg: (fun(arg), grad(arg)))
 
         super().__init__(fun=fun)
+
+        self.current_fun = 0
+        self.current_grad = 0
+
+    def fun_and_grad_with_storage(self, arg):
+        """Save function value and grad in variables."""
+        self.current_fun, self.current_grad = self.fun_and_grad(arg)
+        return self.current_fun, self.current_grad
+
+    def callback_function(self, arg):
+        """This function is called in every iteration to save the function 
+        value.
+        """
+        self.fun_history.append(self.current_fun)
 
 
 class NonGradOptimizer(Optimizer):
@@ -121,19 +137,6 @@ class LBFGSBOptimizer(GradOptimizer):
         ----------
             start_point: Starting point of the algorithm.
         """
-        # Setting up Callback function to save function history in fun_history
-        fun_history = []
-        current_fun = [None]  # TODO: @Paul: do these have to be lists?
-        current_grad = [None]
-
-        # TODO @Paul:
-        # these storage tricks can be abstracted at least one level higher
-        def fun_with_storage(arg):
-            current_fun[0], current_grad[0] = self.fun_and_grad(arg)
-            return current_fun[0], current_grad[0]
-
-        def callback_function(arg):
-            fun_history.append(current_fun[0])
 
         # Setting up the bounds
         if self.bounds is None:
@@ -144,17 +147,17 @@ class LBFGSBOptimizer(GradOptimizer):
         # Performing the optimization
         start_time = time.time()
         result = minimize(
-            fun_with_storage,
+            self.fun_and_grad_with_storage,
             x0=start_point,
             method='L-BFGS-B',
             jac=True,  # assume that the function returns the (val, grad) tuple
             bounds=bounds,
-            callback=callback_function,
+            callback=self.callback_function,
             options={'maxiter': self.maxiter, 'ftol': self.ftol},
         )
         end_time = time.time()
         duration = end_time - start_time
-        result.fun_history = fun_history
+        result.fun_history = self.fun_history
         result.duration = duration
         logger.info('Optimization Result:\n')
         logger.info(f'{str(result)}\n\n')
@@ -210,40 +213,35 @@ class SLSQPOptimizer(GradOptimizer):
         ----------
             start_point: Starting point of the algorithm.
         """
-        # Setting up Callback function to save function history in fun_history
-        fun_history = []
-        current_fun = [None]
 
         def dampened_grad(x):
             return self.damp_fact * self.grad(x)
-
+    
         def dampened_fun_storage(x):
-            current_fun[0] = self.fun(x)
-            return current_fun[0] * self.damp_fact
-
-        def callback_function(x):
-            fun_history.append(current_fun[0])
+            self.current_fun = self.fun(x)
+            return self.current_fun * self.damp_fact
 
         # Setting up the bounds
         if self.bounds is None:
             bounds = [(0, 1) for _ in range(len(start_point))]
         else:
             bounds = self.bounds
+            
 
         # Performing the optimization
         start_time = time.time()
         result = minimize(
             fun=dampened_fun_storage,
             x0=start_point,
-            method='L-BFGS-B',
+            method='SLSQP',
             jac=dampened_grad,  # use separate call for gradient
             bounds=bounds,
-            callback=callback_function,
+            callback=self.callback_function,
             options={'maxiter': self.maxiter, 'ftol': self.ftol},
         )
         end_time = time.time()
         duration = end_time - start_time
-        result.fun_history = fun_history
+        result.fun_history = self.fun_history
         result.duration = duration
         logger.info('Optimization Result:\n')
         logger.info(f'{str(result)}\n\n')
@@ -317,7 +315,6 @@ class CMAESOptimizer(NonGradOptimizer):
         state = initial_state
 
         start_time = time.time()
-        fun_history = []  # TODO @Paul: this is shared across grad and non-grad optimizers; can be abstracted to the base class
         step_size_history = []
         loss_min = np.full((5,), fill_value=10.0)
         termination_message = 'Maximum number of generations reached'
@@ -327,7 +324,7 @@ class CMAESOptimizer(NonGradOptimizer):
             generation, state, fun_value = sample_and_evaluate(
                 state=state, n_samples=parameters.pop_size
             )
-            fun_history.append(fun_value)
+            self.fun_history.append(fun_value)
             step_size_history.append(state.step_size)
             # To update the AlgorithmState pass in the sorted generation
             state = update_state(state, generation[np.argsort(fun_value)])
@@ -352,7 +349,7 @@ class CMAESOptimizer(NonGradOptimizer):
             message=termination_message,
             current_generation=g,
             duration=duration,
-            fun_history=fun_history,
+            fun_history=self.fun_history,
             step_size_history=step_size_history,
         )
         # print the minimum function value in the final generation
@@ -446,7 +443,7 @@ class SequentialOptimizer(Optimizer):
         logger.info('Global optimization finished.\n')
         logger.info('Starting local optimization')
         # Use the result of the global optimizer for the local optimizer
-        local_result = self.local_optimizer(global_result.x)
+        local_result = self.local_optimizer(global_result.min_individual)
 
         logger.info('Local optimization finished.')
 
