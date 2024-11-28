@@ -54,14 +54,17 @@ class Transformable(ABC):  # name: transformabel
         """Return a mapping of the property values to the leaves."""
 
     def analyze_tree(self, tree):
+        # Step 1) Map all leaves to their shared origin
         leaf_to_origin_map = {
             leaf: self._get_shared_origin(leaf) for leaf in tree.leaves
         }
+        # Step 2) Map all origin nodes to a reference leaf node
         origins = list(dict.fromkeys(leaf_to_origin_map.values()).keys())
         origins_to_reference_map = {
             origin: origins.sort(key=self._node_sorting_key)[0]
             for origin in origins
         }
+        # Step 3) Map all leaves to a reference leaf node
         leaf_to_reference_map = {
             leaf: origins_to_reference_map[leaf_to_origin_map[leaf]]
             for leaf in tree.leaves
