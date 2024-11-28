@@ -69,6 +69,18 @@ class LinearTransformer(Transformer):
     def out_dim(self):
         return self._out_dim
 
+    @property
+    def is_injective(self):
+        return np.linalg.matrix_rank(self.weights) == self.in_dim
+
+    @property
+    def is_surjective(self):
+        return np.linalg.matrix_rank(self.weights.T) == self.out_dim
+
+    @property
+    def is_bijective(self):
+        return self.is_injective and self.is_surjective
+
     def __call__(self, free_params):
         if self.n_free_params == 0:
             return self.biases
