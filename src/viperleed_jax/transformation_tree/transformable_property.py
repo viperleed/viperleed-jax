@@ -96,17 +96,11 @@ class LinearTransformable(Transformable):
         super().__init__(name)
 
     def transformation_from_to(self, source, target):
-        # TODO: various checks
-
         try:
-            (upwards, common, downwards) = self.walker.walk(source, target)
+            (upwards, _, downwards) = self.walker.walk(source, target)
         except WalkError as err:
             msg = f'Node {target} cannot be reached from {source}.'
             raise RuntimeError(msg) from err
-
-        # sanity check # TODO
-        if not common.shared_propagator:
-            raise ValueError('Common node must have shared propagator')
 
         # operations up to origin
         up_transformers = [up.transformer for up in upwards]
