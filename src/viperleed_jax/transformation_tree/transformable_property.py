@@ -9,11 +9,14 @@ from viperleed_jax.transformation_tree.linear_transformer import LinearMap
 class Transformable(ABC):
     """Base class for all transformable properties.
 
-    Transformable properties are properties calculated based on a transformation
-    tree. Every leaf node in the transformation tree must have a value for each
-    transformable property. The calculation of the value of a transformable
-    property may be linked across many nodes in the tree via the transformations
-    associated with the edges.
+    Transformables are functions of the quantity described in the transformation
+    tree (e.g. geometrical displacements).
+    Transformables can be used to minimize the number of required evaluations of
+    expensive functions by enabling sharing the results of the function
+    evaluations across the tree.
+    Every leaf node in the transformation tree has value for each
+    transformable property. By analyzing the tree, we can determine which nodes
+    share values for a given transformable property, and how they are related.
 
     Parameters
     ----------
@@ -27,6 +30,26 @@ class Transformable(ABC):
         A callable that takes a node as an argument and returns True if the
         node can be used to propagate the property. This can be used to restrict
         the types of nodes that can be used for sharing the property.
+
+
+    # TODO move to method docstrings
+    Returns
+    -------
+    dynamic_reference_nodes : (Nodes)
+        Leaf nodes that serve as reference values for all dynamically calculated
+        values. The expensive calculations only need to be performed for these
+        nodes. Empty if no values are dynamic.
+    static_reference_nodes : (Nodes)
+        Leaf nodes that serve as reference values for all statically calculated
+        values. The expensive calculations only need to be performed for these
+        nodes. Empty if no values are static.
+    ...
+    _arg_transformers : Tuple(Transformer)
+        A tuple of transformers, one for each leaf node. The transformers
+        transform the values of the reference nodes to the values for each leaf.
+    func_transformers : Tuple(Transformer)
+        A tuple of transformers, one for each leaf node. The transformers
+        transform the values of the reference nodes to the values for each leaf.
     """
 
     def __init__(self, name, transformer_class=None, node_requirement=None):
