@@ -4,7 +4,7 @@ import numpy as np
 from anytree.walker import Walker, WalkError
 
 
-class Transformable(ABC):  # name: transformabel
+class Transformable(ABC):
     """Base class for all transformable properties.
 
     Transformable properties are properties calculated based on a transformation
