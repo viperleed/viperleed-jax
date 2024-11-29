@@ -15,6 +15,16 @@ from .nodes import AtomicLinearNode, LinearConstraintNode
 from .tree import (
     DisplacementTree,
 )
+from viperleed_jax.transformation_tree.transformable_property import (
+    LinearTreeFunctional,
+)
+
+
+class DisplacementFunctional(LinearTreeFunctional):
+    def __init__(
+        self,
+    ):
+        super().__init__(name='displacement', transformer_class=LinearMap)
 
 
 class GeoLeafNode(AtomicLinearNode):
@@ -366,6 +376,7 @@ class GeoTree(DisplacementTree):
             name='Geometric Parameters',
             root_node_name='geo root',
         )
+        self.displacememt_transformable = DisplacementFunctional()
 
     def build_tree(self):
         # create leaf nodes

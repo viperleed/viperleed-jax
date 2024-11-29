@@ -6,7 +6,7 @@ from anytree.walker import Walker, WalkError
 from viperleed_jax.transformation_tree.linear_transformer import LinearMap
 
 
-class Transformable(ABC):
+class TreeFunctional(ABC):
     """Base class for all transformable properties.
 
     Transformables are functions of the quantity described in the transformation
@@ -140,7 +140,7 @@ class Transformable(ABC):
         """Return a sorting key for the nodes in the tree."""
 
 
-class LinearTransformable(Transformable):
+class LinearTreeFunctional(TreeFunctional):
     """Base class for transformables on linear transformation trees."""
 
     def __init__(
@@ -208,10 +208,3 @@ class LinearTransformable(Transformable):
         # Compute the Frobenius norm of the difference
         difference = matrix - diagonal_projection
         return np.linalg.norm(difference, 'fro')
-
-
-class DisplacementTransformable(LinearTransformable):
-    def __init__(
-        self,
-    ):
-        super().__init__(name='displacement', transformer_class=LinearMap)
