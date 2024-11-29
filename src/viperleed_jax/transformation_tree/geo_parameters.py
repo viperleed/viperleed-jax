@@ -87,14 +87,8 @@ class GeoConstraintNode(LinearConstraintNode):
         transformers,
         layer,
         name='unnamed',
-        shared_propagator=False,
     ):
         self.dof = dof
-        if shared_propagator:
-            self.propagator_reference_node = self._check_reference_node(
-                children, transformers
-            )
-            self.shared_propagator = shared_propagator
 
         if transformers is None:
             raise ValueError(
@@ -229,7 +223,6 @@ class GeoSymmetryConstraint(GeoConstraintNode):
             transformers=transformers,
             name=name,
             layer=DisplacementTreeLayers.Symmetry,
-            shared_propagator=True,  # symmetry nodes always share propagators
         )
 
 
@@ -259,7 +252,6 @@ class GeoLinkedConstraint(GeoConstraintNode):
             transformers=transformers,
             name=f"CONSTRAIN '{name}'",
             layer=DisplacementTreeLayers.User_Constraints,
-            shared_propagator=True,  # see comment above
         )
 
 
