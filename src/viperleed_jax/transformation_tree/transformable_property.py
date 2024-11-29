@@ -160,33 +160,28 @@ class LinearTransformable(Transformable):
 
     def _node_sorting_key(self, node):
         """Return a sorting key for the nodes in the tree."""
-        return non_diagonality_measure(node.transformer.weights)
+        return self.non_diagonality_measure(node.transformer.weights)
 
+    @staticmethod
+    def non_diagonality_measure(matrix):
+        """
 
-def non_diagonality_measure(matrix):
-    """
-    Compute the non-diagonality measure of a general real matrix.
+        Parameters
+        ----------
+        matrix : numpy.ndarray
 
-    Parameters
-    ----------
-    matrix : numpy.ndarray
-        A 2D real matrix (can be non-square).
+        Returns
+        -------
+        float
+            The Frobenius norm of the off-diagonal part of the matrix.
+        """
+        # Ensure input is a numpy array
 
-    Returns
-    -------
-    float
-        The Frobenius norm of the off-diagonal part of the matrix.
-    """
-    # Ensure input is a numpy array
-    matrix = np.array(matrix)
+        # Create the diagonal projection of the matrix
+        diagonal_projection = np.zeros_like(matrix)
 
-    # Create the diagonal projection of the matrix
-    diagonal_projection = np.zeros_like(matrix)
-    np.fill_diagonal(diagonal_projection, np.diag(matrix))
-
-    # Compute the Frobenius norm of the difference
-    difference = matrix - diagonal_projection
-    return np.linalg.norm(difference, 'fro')
+        # Compute the Frobenius norm of the difference
+        difference = matrix - diagonal_projection
 
 
 class DisplacementTransformable(LinearTransformable):
