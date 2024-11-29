@@ -15,7 +15,7 @@ from .nodes import AtomicLinearNode, LinearConstraintNode
 from .tree import (
     DisplacementTree,
 )
-from viperleed_jax.transformation_tree.transformable_property import (
+from viperleed_jax.transformation_tree.functionals import (
     LinearTreeFunctional,
 )
 
