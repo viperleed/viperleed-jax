@@ -22,8 +22,8 @@ def test_tree_creation(test_case, subtests):
 
     with subtests.test('tree root creation'):
         tree.create_root()
-        assert tree.subtree_root.is_root
-        assert tree.subtree_root.is_leaf is False
+        assert tree.root.is_root
+        assert tree.root.is_leaf is False
 
 
 @parametrize_with_cases('test_case', cases=CaseStatesAfterInit)

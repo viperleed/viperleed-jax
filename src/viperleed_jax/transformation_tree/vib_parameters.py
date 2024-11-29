@@ -205,7 +205,7 @@ class VibTree(DisplacementTree):
         return list(
             reversed(
                 [
-                    self.subtree_root.transformer_to_descendent(node)
+                    self.root.transformer_to_descendent(node)
                     for node in dynamic_reference_nodes.values()
                 ]
             )

@@ -341,10 +341,10 @@ class ParameterSpace:
     def n_param_split(self):
         return np.array(
             [
-                self.meta_param_subtree.subtree_root.dof,
-                self.vib_tree.subtree_root.dof,
-                self.geo_tree.subtree_root.dof,
-                self.occ_tree.subtree_root.dof,
+                self.meta_param_subtree.root.dof,
+                self.vib_tree.root.dof,
+                self.geo_tree.root.dof,
+                self.occ_tree.root.dof,
             ]
         )
 

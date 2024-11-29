@@ -74,4 +74,4 @@ def test_linear_tree_create_subtree_root(linear_tree):
     assert not linear_tree._tree_root_has_been_created
     linear_tree.create_subtree_root()
     assert linear_tree._tree_root_has_been_created
-    assert linear_tree.subtree_root.dof == 3
+    assert linear_tree.root.dof == 3

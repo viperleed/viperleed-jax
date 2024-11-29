@@ -60,7 +60,7 @@ class TransformationTree(ABC):
         if not self._tree_root_has_been_created:
             raise ValueError('Subtree root has not yet been created.')
         # Left-to-right orientation looks better for broad trees like we have
-        UniqueDotExporter(self.subtree_root, options=['rankdir=LR']).to_picture(
+        UniqueDotExporter(self.root, options=['rankdir=LR']).to_picture(
             filename,
         )
 
@@ -96,14 +96,14 @@ class LinearTree(InvertibleTransformationTree):
             bias = np.zeros(node.dof)
             transformers.append(LinearTransformer(weights, bias, (node.dof,)))
             cum_node_dof += node.dof
-        self.subtree_root = LinearConstraintNode(
+        self.root = LinearConstraintNode(
             dof=root_dof,
             name=self.root_node_name,
             children=self.roots,
             transformers=transformers,
             layer=DisplacementTreeLayers.Root,
         )
-        self.nodes.append(self.subtree_root)
+        self.nodes.append(self.root)
 
     def __repr__(self):
         """Return a string representation of the tree."""
@@ -112,7 +112,7 @@ class LinearTree(InvertibleTransformationTree):
             trees_str = '\n'.join(partial_trees)
 
             return f'{trees_str}'
-        return RenderTree(self.subtree_root).by_attr()
+        return RenderTree(self.root).by_attr()
 
     def roots_up_to_layer(self, layer):
         """Return all root nodes up to a given layer."""
@@ -125,7 +125,7 @@ class LinearTree(InvertibleTransformationTree):
         ]
 
     def collapsed_transformer(self):
-        return self.subtree_root.collapse_transformer()
+        return self.root.collapse_transformer()
 
     @property
     def leaf_is_dynamic(self):
@@ -138,9 +138,7 @@ class LinearTree(InvertibleTransformationTree):
         """
         is_dynamic = []
         for leaf in self.leaves:
-            dummy_transformer = self.subtree_root.transformer_to_descendent(
-                leaf
-            )
+            dummy_transformer = self.root.transformer_to_descendent(leaf)
             dummy_transformer.biases = np.zeros_like(dummy_transformer.biases)
             dummy_transformer = dummy_transformer.boolify()
             input = np.full(
@@ -214,8 +212,7 @@ class DisplacementTree(LinearTree):
     def collapsed_transformer_scatterer_order(self):
         """Return the collapsed transformer in the order of the base scatterers."""
         transformers = [
-            self.subtree_root.transformer_to_descendent(leaf)
-            for leaf in self.leaves
+            self.root.transformer_to_descendent(leaf) for leaf in self.leaves
         ]
         return stack_transformers(transformers)
 

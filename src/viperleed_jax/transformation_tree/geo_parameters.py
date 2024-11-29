@@ -430,9 +430,7 @@ class GeoTree(DisplacementTree):
         """Return a list of transformers that give the reference displacements
         for the dynamic propagators."""
         return [
-            self.subtree_root.transformer_to_descendent(
-                node.propagator_reference_node
-            )
+            self.root.transformer_to_descendent(node.propagator_reference_node)
             for node in self.dynamic_origin_nodes
         ]
 
@@ -451,7 +449,7 @@ class GeoTree(DisplacementTree):
     @property
     def transformers_for_dynamic_propagator_inputs(self):
         return [
-            self.subtree_root.transformer_to_descendent(node)
+            self.root.transformer_to_descendent(node)
             for node in self.dynamic_origin_nodes
         ]
 
@@ -471,13 +469,13 @@ class GeoTree(DisplacementTree):
     def static_propagator_inputs(self):
         """Return the displacements for the static propagators."""
         static_propagator_transformers = [
-            self.subtree_root.transformer_to_descendent(node)
+            self.root.transformer_to_descendent(node)
             for node in self.static_origin_nodes
         ]
         # since the transformers are static, we can evaluate them
         # first, get the input values for the transformers
         input_vals = [
-            transformer(np.full(self.subtree_root.dof, 0.5))
+            transformer(np.full(self.root.dof, 0.5))
             for transformer in static_propagator_transformers
         ]
 
