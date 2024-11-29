@@ -371,10 +371,3 @@ class GeoTree(DisplacementTree):
     @property
     def n_static_propagators(self):
         return self.displacement_functional.n_static_values
-
-
-def geo_sym_linking(atom):
-    linking = np.zeros(shape=(3, 3))
-    linking[1:3, 1:3] = atom.symrefm  # TODO: round off the 1e-16 contributions
-    linking[0, 0] = 1.0  # all symmetry linked atoms move together is z directon
-    return linking
