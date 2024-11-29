@@ -32,7 +32,6 @@ class Transformable(ABC):
         the types of nodes that can be used for sharing the property.
 
 
-    # TODO move to method docstrings
     Returns
     -------
     dynamic_reference_nodes : (Nodes)
@@ -60,19 +59,26 @@ class Transformable(ABC):
             if node_requirement is not None
             else lambda node: True
         )
+        self._tree_analyzed = False
 
-    # @property
-    # def n_independent_values(self):
-    #     """Return the number of independent values of the property."""
-    #     return self.n_dynamic_values + self.n_static_values
+    @property
+    def n_independent_values(self):
+        """Return the number of independent values of the property."""
+        return self.n_dynamic_values + self.n_static_values
 
-    # @abstractmethod
-    # def n_dynamic_values(self):
-    #     """Return the number of indep. dynamic values of the transformable."""
+    @property
+    def n_dynamic_values(self):
+        """Return the number of indep. dynamic values of the transformable."""
+        if not self._tree_analyzed:
+            raise RuntimeError('The tree has not been analyzed yet.')
+        return len(self.dynamic_reference_nodes)
 
-    # @abstractmethod
-    # def n_static_values(self):
-    #     """Return the number of indep. static values of the transformable."""
+    @property
+    def n_static_values(self):
+        """Return the number of indep. static values of the transformable."""
+        if not self._tree_analyzed:
+            raise RuntimeError('The tree has not been analyzed yet.')
+        return len(self.static_reference_nodes)
 
     def analyze_tree(self, tree):
         # Step 1) Map all leaves to their shared origin
@@ -108,7 +114,7 @@ class Transformable(ABC):
             if leaf in tree.leaves[~tree.leaf_is_dynamic]
         )
 
-        return self.leaf_to_reference_map, self._arg_transformers
+        self._tree_analyzed = True
 
     def _can_propagate_up(self, node):
         if not node.parent or not node.transformer:
@@ -135,6 +141,8 @@ class Transformable(ABC):
 
 
 class LinearTransformable(Transformable):
+    """Base class for transformables on linear transformation trees."""
+
     def __init__(
         self, name, transformer_class=LinearMap, node_requirement=None
     ):
