@@ -76,26 +76,39 @@ class Transformable(ABC):
 
     def analyze_tree(self, tree):
         # Step 1) Map all leaves to their shared origin
-        leaf_to_origin_map = {
+        self.leaf_to_origin_map = {
             leaf: self._get_shared_origin(leaf) for leaf in tree.leaves
         }
         # Step 2) Map all origin nodes to a reference leaf node
-        origins = list(dict.fromkeys(leaf_to_origin_map.values()).keys())
+        self.origins = list(
+            dict.fromkeys(self.leaf_to_origin_map.values()).keys()
+        )
         origins_to_reference_map = {
             origin: sorted(origin.leaves, key=self._node_sorting_key)[0]
-            for origin in origins
+            for origin in self.origins
         }
         # Step 3) Map all leaves to a reference leaf node
-        leaf_to_reference_map = {
-            leaf: origins_to_reference_map[leaf_to_origin_map[leaf]]
+        self.leaf_to_reference_map = {
+            leaf: origins_to_reference_map[self.leaf_to_origin_map[leaf]]
             for leaf in tree.leaves
         }
 
-        transformers_to_reference = [
+        self._arg_transformers = [
             self._transformation_from_to(reference, leaf)
-            for leaf, reference in leaf_to_reference_map.items()
+            for leaf, reference in self.leaf_to_reference_map.items()
         ]
-        return leaf_to_reference_map, transformers_to_reference
+        self.dynamic_reference_nodes = tuple(
+            leaf
+            for leaf in origins_to_reference_map.values()
+            if leaf in tree.leaves[tree.leaf_is_dynamic]
+        )
+        self.static_reference_nodes = tuple(
+            leaf
+            for leaf in origins_to_reference_map.values()
+            if leaf in tree.leaves[~tree.leaf_is_dynamic]
+        )
+
+        return self.leaf_to_reference_map, self._arg_transformers
 
     def _can_propagate_up(self, node):
         if not node.parent or not node.transformer:
@@ -156,7 +169,7 @@ class LinearTransformable(Transformable):
         operations = up_operations + down_operations
         # they must be applied in reverse order
         operations.reverse()
-        return np.linalg.multi_dot(operations)
+        return LinearMap(np.linalg.multi_dot(operations))
 
     def _node_sorting_key(self, node):
         """Return a sorting key for the nodes in the tree."""
@@ -165,10 +178,12 @@ class LinearTransformable(Transformable):
     @staticmethod
     def non_diagonality_measure(matrix):
         """
+        Compute the non-diagonality measure of a general real matrix.
 
         Parameters
         ----------
         matrix : numpy.ndarray
+            A 2D real matrix (can be non-square).
 
         Returns
         -------
@@ -176,16 +191,19 @@ class LinearTransformable(Transformable):
             The Frobenius norm of the off-diagonal part of the matrix.
         """
         # Ensure input is a numpy array
+        matrix = np.array(matrix)
 
         # Create the diagonal projection of the matrix
         diagonal_projection = np.zeros_like(matrix)
+        np.fill_diagonal(diagonal_projection, np.diag(matrix))
 
         # Compute the Frobenius norm of the difference
         difference = matrix - diagonal_projection
+        return np.linalg.norm(difference, 'fro')
 
 
 class DisplacementTransformable(LinearTransformable):
     def __init__(
         self,
     ):
-        super().__init__(name='displacement')
+        super().__init__(name='displacement', transformer_class=LinearMap)
