@@ -76,64 +76,6 @@ class GeoLeafNode(AtomicLinearNode):
             raise NotImplementedError('TODO')
         self._bounds.update_range(_range=None, offset=offset, enforce=user_set)
 
-    @property
-    def propagator_origin(self):
-        """Return the node that is the origin of the propagator for this leaf"""
-        origin = self
-        while origin.parent:
-            if (
-                isinstance(origin.parent, GeoConstraintNode)
-                and origin.parent.shared_propagator
-            ):
-                origin = origin.parent
-            else:
-                break
-        return origin
-
-    @property
-    def symmetry_operation_to_reference_propagator(self):
-        """Return the symmetry operation that links this leaf to the reference
-        propagator."""
-        origin_node = self.propagator_origin.propagator_reference_node
-        if origin_node is self:  # identity
-            return np.eye(3)
-
-        # get the path from origin to self
-        node_walker = Walker()
-        try:
-            (upwards, common, downwards) = node_walker.walk(origin_node, self)
-        except WalkError as err:
-            msg = (
-                f'Node {self} cannot be reached from {self.propagator_origin}.'
-            )
-            raise RuntimeError(msg) from err
-
-        # sanity check
-        if not common.shared_propagator:
-            raise ValueError('Common node must have shared propagator')
-
-        # operations up to origin
-        up_transformers = [up.transformer for up in upwards]
-        down_transformers = [down.transformer for down in downwards]
-
-        # check that none of the transformers have bias
-        if any(np.any(trafo.biases != 0) for trafo in up_transformers) or any(
-            np.any(trafo.biases != 0) for trafo in down_transformers
-        ):
-            raise ValueError('Bias must be zero')
-
-        # get the symmetry operations
-        up_operations = [
-            np.linalg.pinv(trafo.weights) for trafo in up_transformers
-        ]
-        down_operations = [trafo.weights for trafo in down_transformers]
-
-        # combine the operations
-        operations = up_operations + down_operations
-        # they must be applied in reverse order
-        operations.reverse()
-        return np.linalg.multi_dot(operations)
-
 
 class GeoConstraintNode(LinearConstraintNode):
     """Base constraint node for geometric parameters."""
@@ -166,54 +108,6 @@ class GeoConstraintNode(LinearConstraintNode):
             transformers=transformers,
             layer=layer,
         )
-
-    def _check_reference_node(self, children, transformers):
-        """Checks if a shared propagator is allowed and if so, selects the
-        reference node.
-
-        For the shared propagator to be allowed, one of these conditions
-        must be met:
-        1. all children are leaf nodes (i.e. self is a symmetry node)
-        2. all children are constraint nodes with shared propagators
-           and all their transformers have 0 bias, invertible weights
-           and det(weights) = 1
-        3. all children are constraint nodes with shared propagators
-           and their transformers are the same
-        """
-        # first case
-        if all(isinstance(child, GeoLeafNode) for child in children):
-            # choose first child as reference node
-            return children[0]
-        # check node type
-        for child in children:
-            if not isinstance(child, GeoConstraintNode):
-                raise ValueError(
-                    'Shared propagator nodes must have shared propagator '
-                    'children.'
-                )
-        # second case
-        if all(
-            [
-                np.any(trafo.biases == 0)
-                and np.linalg.det(trafo.weights) == 1.0  # TODO: use EPS
-                for trafo in transformers
-            ]
-        ):
-            try:
-                inverted_weights = [
-                    np.linalg.inv(trafo.weights) for trafo in transformers
-                ]
-            except np.linalg.LinAlgError:
-                raise ValueError(
-                    'Shared propagator transformers must have invertible '
-                    'weights.'
-                )
-            # select the reference node of the first child
-            return children[0].propagator_reference_node
-        # third case
-        if all([trafo == transformers[0] for trafo in transformers]):
-            # select the reference node of the first child
-            return children[0].propagator_reference_node
 
 
 class GeoSymmetryConstraint(GeoConstraintNode):
@@ -376,7 +270,7 @@ class GeoTree(DisplacementTree):
             name='Geometric Parameters',
             root_node_name='geo root',
         )
-        self.displacememt_transformable = DisplacementFunctional()
+        self.displacement_functional = DisplacementFunctional()
 
     def build_tree(self):
         # create leaf nodes
@@ -403,6 +297,11 @@ class GeoTree(DisplacementTree):
         unlinked_site_el_nodes = [node for node in self.leaves if node.is_root]
         for node in unlinked_site_el_nodes:
             self.nodes.append(GeoSymmetryConstraint(children=[node]))
+
+    def get_functionals(self):
+        if not self.root:
+            raise ValueError('Root node must be created first.')
+        self.displacement_functional.analyze_tree(self)
 
     def apply_explicit_constraint(self, constraint_line):
         # self._check_constraint_line_type(constraint_line, "geo")
@@ -441,124 +340,37 @@ class GeoTree(DisplacementTree):
         """Return a list of transformers that give the reference displacements
         for the dynamic propagators."""
         return [
-            self.root.transformer_to_descendent(node.propagator_reference_node)
-            for node in self.dynamic_origin_nodes
-        ]
-
-    def _dynamic_origin_dict(self):
-        dynamic_leaves = [
-            leaf for leaf in np.array(self.leaves)[self.leaf_is_dynamic]
-        ]
-        origin_dict = {leaf: leaf.propagator_origin for leaf in dynamic_leaves}
-        return origin_dict
-
-    @property
-    def dynamic_origin_nodes(self):
-        """Return nodes that are the origin of the propagator for dynamic leaves."""
-        return list(dict.fromkeys(list(self._dynamic_origin_dict().values())))
-
-    @property
-    def transformers_for_dynamic_propagator_inputs(self):
-        return [
             self.root.transformer_to_descendent(node)
-            for node in self.dynamic_origin_nodes
+            for node in self.displacement_functional.dynamic_reference_nodes
         ]
-
-    def _static_origin_dict(self):
-        static_leaves = [
-            leaf for leaf in np.array(self.leaves)[~self.leaf_is_dynamic]
-        ]
-        origin_dict = {leaf: leaf.propagator_origin for leaf in static_leaves}
-        return origin_dict
-
-    @property
-    def static_origin_nodes(self):
-        """Return nodes that are the origin of the propagator for static leaves."""
-        return list(dict.fromkeys(list(self._static_origin_dict().values())))
 
     @property
     def static_propagator_inputs(self):
-        """Return the displacements for the static propagators."""
-        static_propagator_transformers = [
-            self.root.transformer_to_descendent(node)
-            for node in self.static_origin_nodes
-        ]
-        # since the transformers are static, we can evaluate them
-        # first, get the input values for the transformers
-        input_vals = [
-            transformer(np.full(self.root.dof, 0.5))
-            for transformer in static_propagator_transformers
-        ]
-
-        # then evaluate the transformers
-        return np.array(
-            [
-                origin_node.transformer_to_descendent(
-                    origin_node.propagator_reference_node
-                )(input)
-                for origin_node, input in zip(
-                    self.static_origin_nodes, input_vals
-                )
-            ]
-        )
+        """Return the displacements for the static reference propagators."""
+        return self.displacement_functional.static_reference_nodes_values
 
     @property
     def propagator_map(self):
         """Return a mapping of base scatterers to propagators."""
-        return [
-            (
-                (
-                    'static',
-                    self.static_origin_nodes.index(
-                        self._static_origin_dict()[leaf]
-                    ),
-                )
-                if not dynamic
-                else (
-                    'dynamic',
-                    self.dynamic_origin_nodes.index(
-                        self._dynamic_origin_dict()[leaf]
-                    ),
-                )
-            )
-            for leaf, dynamic in zip(self.leaves, self.leaf_is_dynamic)
-        ]
-
-    def _leaf_symmetry_operations(self):
-        """Return the symmetry operations for each leaf in respect to the
-        reference displacement (the one for which the propagator is calculated).
-        """
-        return tuple(
-            [
-                leaf.symmetry_operation_to_reference_propagator
-                for leaf in self.leaves
-            ]
-        )
+        return self.displacement_functional.static_dynamic_map
 
     @property
     def leaf_plane_symmetry_operations(self):
         """Return the in-plane symmetry operations for each leaf in respect to the
         reference displacement (the one for which the propagator is calculated).
         """
-        for (
-            sym_op
-        ) in self._leaf_symmetry_operations():  # TODO: can this even happen?
-            if np.any(sym_op[0, :] != np.array([1.0, 0, 0])):
-                raise ValueError(
-                    'Symmetry operation must be in-plane! '
-                    'This should not happen!'
-                )
         return tuple(
-            [sym_op[1:, 1:] for sym_op in self._leaf_symmetry_operations()]
+            sym_op.weights[1:, 1:]
+            for sym_op in self.displacement_functional._arg_transformers
         )
 
     @property
     def n_dynamic_propagators(self):
-        return len(self.dynamic_origin_nodes)
+        return self.displacement_functional.n_dynamic_values
 
     @property
     def n_static_propagators(self):
-        return len(self.static_origin_nodes)
+        return self.displacement_functional.n_static_values
 
 
 def geo_sym_linking(atom):

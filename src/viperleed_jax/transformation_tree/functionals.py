@@ -114,6 +114,36 @@ class TreeFunctional(ABC):
             if leaf in tree.leaves[~tree.leaf_is_dynamic]
         )
 
+        transformers_to_static_reference_leaves = [
+            tree.root.transformer_to_descendent(static_ref_node)
+            for static_ref_node in self.static_reference_nodes
+        ]
+        self.static_reference_nodes_values = np.array(
+            [
+                transformer(np.full(transformer.in_dim, 0.5))
+                for transformer in transformers_to_static_reference_leaves
+            ]
+        )
+
+        self.static_dynamic_map = [
+            (
+                (
+                    'static',
+                    self.static_reference_nodes.index(
+                        self.leaf_to_reference_map[leaf]
+                    ),
+                )
+                if not dynamic
+                else (
+                    'dynamic',
+                    self.dynamic_reference_nodes.index(
+                        self.leaf_to_reference_map[leaf]
+                    ),
+                )
+            )
+            for leaf, dynamic in zip(tree.leaves, tree.leaf_is_dynamic)
+        ]
+
         self._tree_analyzed = True
 
     def _can_propagate_up(self, node):
