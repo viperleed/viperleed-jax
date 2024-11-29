@@ -47,6 +47,22 @@ def calculator_from_state(
     disp_file = DisplacementsFile()
     disp_file.read(displacements_file)
 
+    # Create the parameter space.
+    # We do this now, because if anything fails here, we don't want to waste
+    # time reading the tensor files.
+    logger.debug('Creating parameter space.')
+    base_scatterers = BaseScatterers(slab)
+    parameter_space = ParameterSpace(base_scatterers, rpars)
+
+    # take the blocks from the displacements file
+    # TODO: take care of multiple blocks!
+
+    offsets_block = disp_file.offsets_block()
+    search_block = disp_file.blocks[
+        0
+    ]  # TODO,FIXME: can only do first block for now
+    parameter_space.apply_displacements(offsets_block, search_block)
+
     # parameters needed to interpret the tensor data
     ref_calc_lmax = rpars.LMAX.max
     n_beams = len(rpars.ivbeams)
@@ -100,20 +116,6 @@ def calculator_from_state(
     del sorted_tensors
     del tensors
     del raw_phaseshifts
-
-    # create the parameter space
-    logger.debug('Creating parameter space.')
-    base_scatterers = BaseScatterers(slab)
-    parameter_space = ParameterSpace(base_scatterers, rpars)
-
-    # take the blocks from the displacements file
-    # TODO: take care of multiple blocks!
-
-    offsets_block = disp_file.offsets_block()
-    search_block = disp_file.blocks[
-        0
-    ]  # TODO,FIXME: can only do first block for now
-    parameter_space.apply_displacements(offsets_block, search_block)
 
     calculator.set_parameter_space(parameter_space)
     logger.debug(
