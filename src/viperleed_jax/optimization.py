@@ -71,17 +71,6 @@ class GradOptimizer(
         self.current_fun = 0
         self.current_grad = 0
 
-    def fun_and_grad_with_storage(self, arg):
-        """Save function value and grad in variables."""
-        self.current_fun, self.current_grad = self.fun_and_grad(arg)
-        return self.current_fun, self.current_grad
-
-    def callback_function(self, arg):
-        """This function is called in every iteration to save the function 
-        value.
-        """
-        self.fun_history.append(self.current_fun)
-
 
 class NonGradOptimizer(Optimizer):
     """Class for optimizers that do not use gradients."""
@@ -138,6 +127,17 @@ class LBFGSBOptimizer(GradOptimizer):
             start_point: Starting point of the algorithm.
         """
 
+        def fun_and_grad_with_storage(arg):
+            """Save function value and grad in variables."""
+            self.current_fun, self.current_grad = self.fun_and_grad(arg)
+            return self.current_fun, self.current_grad
+
+        def callback_function(arg):
+            """This function is called in every iteration to save the function 
+            value.
+            """
+            self.fun_history.append(self.current_fun)
+
         # Setting up the bounds
         if self.bounds is None:
             bounds = [(0, 1) for _ in range(len(start_point))]
@@ -147,12 +147,12 @@ class LBFGSBOptimizer(GradOptimizer):
         # Performing the optimization
         start_time = time.time()
         result = minimize(
-            self.fun_and_grad_with_storage,
+            fun_and_grad_with_storage,
             x0=start_point,
             method='L-BFGS-B',
             jac=True,  # assume that the function returns the (val, grad) tuple
             bounds=bounds,
-            callback=self.callback_function,
+            callback=callback_function,
             options={'maxiter': self.maxiter, 'ftol': self.ftol},
         )
         end_time = time.time()
@@ -213,8 +213,9 @@ class SLSQPOptimizer(GradOptimizer):
         ----------
             start_point: Starting point of the algorithm.
         """
-
+        
         def dampened_grad(x):
+            self.fun_history.append(self.current_fun)
             return self.damp_fact * self.grad(x)
     
         def dampened_fun_storage(x):
@@ -236,7 +237,6 @@ class SLSQPOptimizer(GradOptimizer):
             method='SLSQP',
             jac=dampened_grad,  # use separate call for gradient
             bounds=bounds,
-            callback=self.callback_function,
             options={'maxiter': self.maxiter, 'ftol': self.ftol},
         )
         end_time = time.time()
