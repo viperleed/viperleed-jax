@@ -290,11 +290,6 @@ class GeoTree(DisplacementTree):
         for node in unlinked_site_el_nodes:
             self.nodes.append(GeoSymmetryConstraint(children=[node]))
 
-    def get_functionals(self):
-        if not self.root:
-            raise ValueError('Root node must be created first.')
-        self.displacement_functional.analyze_tree(self)
-
     def apply_explicit_constraint(self, constraint_line):
         # self._check_constraint_line_type(constraint_line, "geo")
         *_, selected_roots = self._select_constraint(constraint_line)

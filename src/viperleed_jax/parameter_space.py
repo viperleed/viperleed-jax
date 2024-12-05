@@ -85,7 +85,6 @@ class ParameterSpace:
             subtree.finalize_tree()
 
         self._displacements_applied = True
-        self.geo_tree.get_functionals()
 
     def check_for_inconsistencies(self):
         """
