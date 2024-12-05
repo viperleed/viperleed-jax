@@ -6,7 +6,7 @@ __created__ = '2024-09-09'
 import numpy as np
 
 from .displacement_tree_layers import DisplacementTreeLayers
-from .linear_transformer import LinearTransformer
+from .linear_transformer import LinearMap, LinearTransformer
 from .nodes import AtomicLinearNode, LinearConstraintNode
 from .tree import (
     DisplacementTree,
@@ -49,9 +49,9 @@ class VibConstraintNode(LinearConstraintNode):
             raise ValueError('Vibrational constraints must have dof=1.')
 
         if transformers is None:
-            # default to identity transformers
+            # default to identity
             transformers = [
-                LinearTransformer(np.eye(1), np.zeros(1), (1,))
+                LinearMap(np.eye(1), (1,))
                 for _ in children
             ]
         super().__init__(
