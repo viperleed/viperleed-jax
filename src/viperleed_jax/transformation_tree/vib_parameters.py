@@ -6,6 +6,7 @@ __created__ = '2024-09-09'
 import numpy as np
 
 from .displacement_tree_layers import DisplacementTreeLayers
+from .functionals import LinearTreeFunctional
 from .linear_transformer import LinearMap, LinearTransformer
 from .nodes import AtomicLinearNode, LinearConstraintNode
 from .tree import (
@@ -13,6 +14,13 @@ from .tree import (
 )
 
 EPS = 1e-6  # TODO: move to constants
+
+
+class VibrationFunctional(LinearTreeFunctional):
+    def __init__(
+        self,
+    ):
+        super().__init__(name='vibration', transformer_class=LinearMap)
 
 
 class VibLeafNode(AtomicLinearNode):
