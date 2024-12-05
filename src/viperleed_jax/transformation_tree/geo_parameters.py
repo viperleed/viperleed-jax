@@ -3,20 +3,18 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-08-30'
 
-from collections import deque
-from itertools import zip_longest
 
 import numpy as np
-from anytree.walker import Walker, WalkError
+
+from viperleed_jax.transformation_tree.functionals import (
+    LinearTreeFunctional,
+)
 
 from .displacement_tree_layers import DisplacementTreeLayers
 from .linear_transformer import LinearMap
 from .nodes import AtomicLinearNode, LinearConstraintNode
 from .tree import (
     DisplacementTree,
-)
-from viperleed_jax.transformation_tree.functionals import (
-    LinearTreeFunctional,
 )
 
 
