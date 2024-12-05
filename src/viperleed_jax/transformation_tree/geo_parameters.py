@@ -264,7 +264,7 @@ class GeoTree(DisplacementTree):
         )
         self.displacement_functional = DisplacementFunctional()
 
-    def build_tree(self):
+    def _initialize_tree(self):
         # create leaf nodes
         geo_leaf_nodes = [
             GeoLeafNode(base_scatterer)

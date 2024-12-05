@@ -27,7 +27,7 @@ class MetaParameterSubtree(LinearTree):
             name='Meta Parameters (V0r)', root_node_name='V0r (root)'
         )
 
-    def build_tree(self):
+    def _initialize_tree(self):
         """Build the meta parameters subtree."""
         self.v0r_node = V0rLeafNode()
         self.nodes.append(self.v0r_node)

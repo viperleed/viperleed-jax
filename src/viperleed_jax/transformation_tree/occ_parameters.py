@@ -137,7 +137,7 @@ class OccTree(DisplacementTree):
             root_node_name='occ root',
         )
 
-    def build_tree(self):
+    def _initialize_tree(self):
         # initially, every atom-site-element has a free chemical weight
         # to allow for (partial) vacancies
         occ_leaf_nodes = [OccLeafNode(ase) for ase in self.base_scatterers]

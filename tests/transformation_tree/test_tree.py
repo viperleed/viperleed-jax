@@ -44,7 +44,7 @@ class MockLeafNode(MockNode):
 class MockLinearTree(LinearTree):
     """Mock implementation of LinearTree."""
 
-    def build_tree(self):
+    def _initialize_tree(self):
         """Mock implementation of build_tree."""
         leaf1 = MockLeafNode(dof=1, base_scatterer='Atom1')
         leaf2 = MockLeafNode(dof=1, base_scatterer='Atom2')

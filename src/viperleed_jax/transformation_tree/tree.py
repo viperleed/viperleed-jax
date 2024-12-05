@@ -35,11 +35,11 @@ class TransformationTree(ABC):
         self.name = name
         self.root_node_name = root_node_name
         self._tree_root_has_been_created = False
-        self.build_tree()
+        self._initialize_tree()
 
     @abstractmethod
-    def build_tree(self):
-        """Build the tree."""
+    def _initialize_tree(self):
+        """Set up the tree."""
 
     @property
     def roots(self):

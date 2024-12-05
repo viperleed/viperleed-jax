@@ -141,7 +141,7 @@ class VibTree(DisplacementTree):
             root_node_name='vib root',
         )
 
-    def build_tree(self):
+    def _initialize_tree(self):
         leaf_nodes = [VibLeafNode(ase) for ase in self.base_scatterers]
 
         self.nodes.extend(leaf_nodes)
