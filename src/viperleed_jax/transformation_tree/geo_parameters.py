@@ -263,6 +263,8 @@ class GeoTree(DisplacementTree):
             root_node_name='geo root',
         )
         self.displacement_functional = DisplacementFunctional()
+        self.functionals.append(self.displacement_functional)
+
 
     def _initialize_tree(self):
         # create leaf nodes

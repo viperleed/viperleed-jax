@@ -54,6 +54,7 @@ class TransformationTree(ABC):
         constraints, creates the root node and performs tree analysis.
         """
         self._create_root()
+        self._analyze_tree()
 
     @property
     def roots(self):
@@ -69,6 +70,10 @@ class TransformationTree(ABC):
     def _create_root(self):
         """Create a root node that aggregates all root nodes in the subtree."""
         self._tree_root_has_been_created = True
+
+    @abstractmethod
+    def _analyze_tree(self):
+        """Analyze the finalized tree to extract additional information."""
 
     def graphical_export(self, filename):
         """Create and save a graphical representation of the tree to file."""
@@ -182,6 +187,7 @@ class DisplacementTree(LinearTree):
         self.site_elements = self.base_scatterers.site_elements
 
         self._offsets_have_been_added = False
+        self.functionals = []
         super().__init__(name, root_node_name)
 
     @property
@@ -195,6 +201,13 @@ class DisplacementTree(LinearTree):
             ]
         )
         return np.array(unordered_leaves)[indices_by_base_scatterers]
+
+    def _analyze_tree(self):
+        """Analyze the finalized tree and calculate the functionals."""
+        if not self._tree_root_has_been_created:
+            raise ValueError('Root node must be created first.')
+        for functional in self.functionals:
+            functional.analyze_tree(self)
 
     def apply_bounds(self, line):
         targets = line.targets

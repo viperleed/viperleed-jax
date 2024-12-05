@@ -32,6 +32,9 @@ class MetaParameterSubtree(LinearTree):
         self.v0r_node = V0rLeafNode()
         self.nodes.append(self.v0r_node)
 
+    def _analyze_tree(self):
+        return super()._analyze_tree()
+
     def read_from_rpars(self, rpars):
         """Read and update the bounds of the meta parameters from Rparams."""
         self.v0r_node.update_bounds(rpars)
