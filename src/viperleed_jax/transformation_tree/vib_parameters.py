@@ -148,6 +148,8 @@ class VibTree(DisplacementTree):
             name='Vibrational Parameters',
             root_node_name='vib root',
         )
+        self.vibration_functional = VibrationFunctional()
+        self.functionals.append(self.vibration_functional)
 
     def _initialize_tree(self):
         leaf_nodes = [VibLeafNode(ase) for ase in self.base_scatterers]
