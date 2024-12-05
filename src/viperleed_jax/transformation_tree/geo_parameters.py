@@ -6,11 +6,8 @@ __created__ = '2024-08-30'
 
 import numpy as np
 
-from viperleed_jax.transformation_tree.functionals import (
-    LinearTreeFunctional,
-)
-
 from .displacement_tree_layers import DisplacementTreeLayers
+from .functionals import LinearTreeFunctional
 from .linear_transformer import LinearMap
 from .nodes import AtomicLinearNode, LinearConstraintNode
 from .tree import (
