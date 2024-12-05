@@ -37,7 +37,7 @@ class MetaParameterSubtree(LinearTree):
         self.v0r_node.update_bounds(rpars)
         bound_node = V0rBoundNode(self.v0r_node)
         self.nodes.append(bound_node)
-        self.create_root()
+        self.finalize_tree()
 
 
 class V0rLeafNode(LinearLeafNode):

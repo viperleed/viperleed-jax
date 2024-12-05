@@ -42,6 +42,20 @@ class TransformationTree(ABC):
         """Set up the tree."""
 
     @property
+    def finalized(self):
+        """Return whether the tree has been finalized."""
+        return self._tree_root_has_been_created
+
+    @abstractmethod
+    def finalize_tree(self):
+        """Finish setting up the tree.
+
+        Called after all user constraints have been applied. Applies implicit
+        constraints, creates the root node and performs tree analysis.
+        """
+        self._create_root()
+
+    @property
     def roots(self):
         """Return all root nodes in the tree."""
         return [node for node in self.nodes if node.is_root]
@@ -52,8 +66,9 @@ class TransformationTree(ABC):
         return [node for node in self.nodes if node.is_leaf]
 
     @abstractmethod
-    def create_root(self):
+    def _create_root(self):
         """Create a root node that aggregates all root nodes in the subtree."""
+        self._tree_root_has_been_created = True
 
     def graphical_export(self, filename):
         """Create and save a graphical representation of the tree to file."""
@@ -78,11 +93,14 @@ class LinearTree(InvertibleTransformationTree):
     def __init__(self, name, root_node_name):
         super().__init__(name, root_node_name)
 
-    def create_root(self):
+    def finalize_tree(self):
+        """Finish setting up the tree."""
+        super().finalize_tree()
+
+    def _create_root(self):
         """Create a root node that aggregates all root nodes in the subtree."""
         if self._tree_root_has_been_created:
             raise ValueError('Subtree root has already been created.')
-        self._tree_root_has_been_created = True
         if not self.roots:
             raise ValueError('No root nodes found in subtree.')
         root_dof = sum(node.dof for node in self.roots)
@@ -104,10 +122,11 @@ class LinearTree(InvertibleTransformationTree):
             layer=DisplacementTreeLayers.Root,
         )
         self.nodes.append(self.root)
+        super()._create_root()
 
     def __repr__(self):
         """Return a string representation of the tree."""
-        if not self._tree_root_has_been_created:
+        if not self.finalized:
             partial_trees = [RenderTree(root).by_attr() for root in self.roots]
             trees_str = '\n'.join(partial_trees)
 

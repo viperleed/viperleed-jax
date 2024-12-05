@@ -21,7 +21,7 @@ def test_tree_creation(test_case, subtests):
     assert len(tree.leaves) == len(base_scatterers)
 
     with subtests.test('tree root creation'):
-        tree.create_root()
+        tree.finalize_tree()
         assert tree.root.is_root
         assert tree.root.is_leaf is False
 
@@ -33,7 +33,7 @@ def test_symmetry_operations_determinant(test_case, subtests):
     base_scatterers = BaseScatterers(state.slab)
     # create the geometry tree
     tree = GeoTree(base_scatterers)
-    tree.create_root()
+    tree.finalize_tree()
 
     symmetry_roots = tree.roots_up_to_layer(DisplacementTreeLayers.Symmetry)
     z_only_roots = [root for root in symmetry_roots if root.dof == 1]

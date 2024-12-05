@@ -82,7 +82,7 @@ class ParameterSpace:
         # apply the implicit constraints & create the subtree root
         for subtree in (self.geo_tree, self.vib_tree, self.occ_tree):
             subtree.apply_implicit_constraints()
-            subtree.create_root()
+            subtree.finalize_tree()
 
         self._displacements_applied = True
         self.geo_tree.get_functionals()
