@@ -223,42 +223,33 @@ class VibTree(DisplacementTree):
 
     @property
     def dynamic_site_elements(self):
-        dynamic_site_elements = [
+        return tuple(
             node.site_element
-            for node in np.array(self.leaves)[self.leaf_is_dynamic]
-        ]
-        # make unique
-        return tuple(dict.fromkeys(dynamic_site_elements))
+            for node in self.vibration_functional.dynamic_reference_nodes
+        )
 
     @property
     def static_t_matrix_inputs(self):
-        static_t_matrix_inputs = {
-            node.site_element: node.ref_vib_amp
-            for node in np.array(self.leaves)[~self.leaf_is_dynamic]
-        }
-        return static_t_matrix_inputs
+        return {node.site_element:float(value) for node, value
+                in zip(self.vibration_functional.static_reference_nodes,
+                       self.vibration_functional.static_reference_nodes_values)}
 
     @property
     def static_site_elements(self):
-        return tuple(self.static_t_matrix_inputs.keys())
+        return tuple(
+            node.site_element
+            for node in self.vibration_functional.static_reference_nodes
+        )
 
     @property
     def t_matrix_map(self):
         # return a tuple with the site_elements for each base parameter
-        return [
-            ('static', self.static_site_elements.index(leaf.site_element))
-            if leaf.site_element in self.static_site_elements
-            else (
-                'dynamic',
-                self.dynamic_site_elements.index(leaf.site_element),
-            )
-            for leaf in self.leaves
-        ]
+        return self.vibration_functional.static_dynamic_map
 
     @property
     def n_dynamic_t_matrices(self):
-        return len(self.dynamic_site_elements)
+        return self.vibration_functional.n_dynamic_values
 
     @property
     def n_static_t_matrices(self):
-        return len(self.static_site_elements)
+        return self.vibration_functional.n_static_values
