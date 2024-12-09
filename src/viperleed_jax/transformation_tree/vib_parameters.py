@@ -207,19 +207,10 @@ class VibTree(DisplacementTree):
     def dynamic_t_matrix_transformers(self):
         """Return a transformer that maps the free parameters to the dynamic
         vibrational amplitudes."""
-        dynamic_reference_nodes = {
-            node.site_element: node
-            for node in reversed(np.array(self.leaves)[self.leaf_is_dynamic])
-        }
-        # un-reverse the order
-        return list(
-            reversed(
-                [
-                    self.root.transformer_to_descendent(node)
-                    for node in dynamic_reference_nodes.values()
-                ]
-            )
-        )
+        return [
+            self.root.transformer_to_descendent(node)
+            for node in self.vibration_functional.dynamic_reference_nodes
+        ]
 
     @property
     def dynamic_site_elements(self):
