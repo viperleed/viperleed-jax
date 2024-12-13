@@ -402,7 +402,7 @@ class ImplicitLinearConstraintNode(LinearConstraintNode):
 
         super().__init__(
             dof=dof,
-            name='Bounds Constraint',
+            name='Implicit Constraint' if dof > 0 else 'Implicit Fixed',
             children=[child],
             transformers=[composed_transformer],
             layer=DisplacementTreeLayers.Implicit_Constraints,
