@@ -14,9 +14,10 @@ dependencies = [
     'jax',
     'numpy<2',
     'viperleed>0.12.1',
-    'spbessax',
+    'spbessax>=0.1.3',
     'tqdm',
     'interpax',
+    'anytree',
     ]
 
 keywords = [
