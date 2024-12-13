@@ -58,9 +58,7 @@ def calculator_from_state(
     # TODO: take care of multiple blocks!
 
     offsets_block = disp_file.offsets_block()
-    search_block = disp_file.blocks[
-        0
-    ]  # TODO,FIXME: can only do first block for now
+    search_block = disp_file.first_block()  # TODO,FIXME: can only do first block for now
     parameter_space.apply_displacements(offsets_block, search_block)
 
     # parameters needed to interpret the tensor data
