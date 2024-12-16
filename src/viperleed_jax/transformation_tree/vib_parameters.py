@@ -26,11 +26,11 @@ class VibrationFunctional(LinearTreeFunctional):
 class VibLeafNode(AtomicLinearNode):
     """Represents a leaf node with vibrational parameters."""
 
-    def __init__(self, base_scatterer):
+    def __init__(self, atom):
         dof = 1
-        super().__init__(dof=dof, base_scatterer=base_scatterer)
+        super().__init__(dof=dof, atom=atom)
         self._name = f'vib (At_{self.num},{self.site},{self.element})'
-        self.ref_vib_amp = base_scatterer.atom.site.vibamp[self.element]
+        self.ref_vib_amp = atom.atom.site.vibamp[self.element]
 
         # apply reference vibrational amplitudes as non-enforced bounds
         self._bounds.update_range(

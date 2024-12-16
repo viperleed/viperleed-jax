@@ -146,13 +146,13 @@ class LinearLeafNode(LinearTreeNode):
 class AtomicLinearNode(LinearLeafNode):
     """Base class for leaf nodes representing parameters indexed by atom."""
 
-    def __init__(self, dof, base_scatterer, name=None, parent=None):
+    def __init__(self, dof, atom, name=None, parent=None):
         # base scatterer based attributes
-        self.base_scatterer = base_scatterer
-        self.element = base_scatterer.site_element.element
-        self.num = base_scatterer.num
-        self.site = base_scatterer.site_element.site
-        self.site_element = base_scatterer.site_element
+        self.atom = atom
+        self.element = atom.site_element.element
+        self.num = atom.num
+        self.site = atom.site_element.site
+        self.site_element = atom.site_element
         super().__init__(dof=dof, name=name, parent=parent)
 
 

@@ -196,7 +196,7 @@ class DisplacementTree(LinearTree):
         unordered_leaves = super().leaves
         indices_by_atom_basis = np.array(
             [
-                self.atom_basis.scatterers.index(leaf.base_scatterer)
+                self.atom_basis.scatterers.index(leaf.atom)
                 for leaf in unordered_leaves
             ]
         )

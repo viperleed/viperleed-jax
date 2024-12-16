@@ -27,10 +27,10 @@ class GeoLeafNode(AtomicLinearNode):
 
     _Z_DIR_ID = 0  # TODO: unify and move to a common place
 
-    def __init__(self, base_scatterer):
+    def __init__(self, atom):
         dof = 3
-        super().__init__(dof=dof, base_scatterer=base_scatterer)
-        self.symrefm = base_scatterer.atom.symrefm
+        super().__init__(dof=dof, atom=atom)
+        self.symrefm = atom.atom.symrefm
         self._name = f'geo (At_{self.num},{self.site},{self.element})'
 
     def _update_bounds(self, line):
@@ -128,9 +128,9 @@ class GeoSymmetryConstraint(GeoConstraintNode):
             )
 
         # check that all children are in the same linklist
-        linklist = children[0].base_scatterer.atom.linklist
+        linklist = children[0].atom.atom.linklist
         if not all(
-            [child.base_scatterer.atom in linklist for child in children]
+            [child.atom.atom in linklist for child in children]
         ):
             raise ValueError(
                 'Symmetry linked atoms must be in the same ' 'linklist'
@@ -144,11 +144,11 @@ class GeoSymmetryConstraint(GeoConstraintNode):
         # Currently freedir can be either an int (specifically 0 or 1, implying
         # z-only or completely free movement) or a 1D array of shape (2,)
         # (implying 1D in-plane movement in addition to z)
-        freedir = children[0].base_scatterer.atom.freedir
+        freedir = children[0].atom.atom.freedir
         if isinstance(freedir, int) and freedir == 0:
             # check that all children have the same freedir
             if not all(
-                child.base_scatterer.atom.freedir == 0 for child in children
+                child.atom.atom.freedir == 0 for child in children
             ):
                 raise ValueError(
                     'All symmetry linked atoms must have the same '
@@ -165,7 +165,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
         elif isinstance(freedir, int) and freedir == 1:
             # check that all children have the same freedir
             if not all(
-                child.base_scatterer.atom.freedir == 1 for child in children
+                child.atom.atom.freedir == 1 for child in children
             ):
                 raise ValueError(
                     'All symmetry linked atoms must have the same '
@@ -184,7 +184,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
         elif freedir.shape == (2,):
             # check that all children have the same freedir
             if not all(
-                child.base_scatterer.atom.freedir.shape == (2,)
+                child.atom.atom.freedir.shape == (2,)
                 for child in children
             ):
                 raise ValueError(
@@ -196,10 +196,10 @@ class GeoSymmetryConstraint(GeoConstraintNode):
             name = 'Symmetry (1D in-plane)'
 
             # plane unit cell
-            ab_cell = children[0].base_scatterer.atom.slab.ab_cell
+            ab_cell = children[0].atom.atom.slab.ab_cell
 
             for child in children:
-                at_freedir = child.base_scatterer.atom.freedir
+                at_freedir = child.atom.atom.freedir
                 movement_vector = ab_cell.T @ at_freedir
                 movement_vector = movement_vector / np.linalg.norm(
                     movement_vector
@@ -264,8 +264,8 @@ class GeoTree(DisplacementTree):
     def _initialize_tree(self):
         # create leaf nodes
         geo_leaf_nodes = [
-            GeoLeafNode(base_scatterer)
-            for base_scatterer in self.atom_basis
+            GeoLeafNode(atom)
+            for atom in self.atom_basis
         ]
         self.nodes.extend(geo_leaf_nodes)
 
@@ -278,7 +278,7 @@ class GeoTree(DisplacementTree):
         for link in self.atom_basis.symmetry_links:
             # put all linked atoms in the same symmetry group
             nodes_to_link = [
-                node for node in self.leaves if node.base_scatterer in link
+                node for node in self.leaves if node.atom in link
             ]
             if nodes_to_link:
                 self.nodes.append(GeoSymmetryConstraint(children=nodes_to_link))

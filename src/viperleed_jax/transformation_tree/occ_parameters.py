@@ -16,9 +16,9 @@ from .nodes import AtomicLinearNode, LinearConstraintNode
 class OccLeafNode(AtomicLinearNode):
     """Represents a leaf node with occupational parameters."""
 
-    def __init__(self, base_scatterer):
+    def __init__(self, atom):
         dof = 1
-        super().__init__(dof=dof, base_scatterer=base_scatterer)
+        super().__init__(dof=dof, atom=atom)
         self._name = f'occ (At_{self.num},{self.site},{self.element})'
 
         # apply reference occupation as non-enforced bounds
