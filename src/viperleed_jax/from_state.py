@@ -20,7 +20,7 @@ from viperleed.calc import LOGGER as logger
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from viperleed.calc.run import run_calc
 
-from viperleed_jax.base_scatterers import AtomBasis
+from viperleed_jax.atom_basis import AtomBasis
 from viperleed_jax.data_structures import ReferenceData
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.displacements.file import DisplacementsFile

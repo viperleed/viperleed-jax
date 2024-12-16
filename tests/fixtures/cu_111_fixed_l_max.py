@@ -8,7 +8,7 @@ from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
 from tests.fixtures.base import LARGE_FILE_PATH
 from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo
-from viperleed_jax.base_scatterers import AtomBasis
+from viperleed_jax.atom_basis import AtomBasis
 from viperleed_jax.data_structures import ReferenceData
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.deltas import Transform as delta_transform

@@ -20,7 +20,7 @@ import scipy
 from jax import numpy as jnp
 from jax.tree_util import register_pytree_node_class
 
-from viperleed_jax.base_scatterers import SiteEl
+from viperleed_jax.atom_basis import SiteEl
 
 logger = logging.getLogger(__name__)
 

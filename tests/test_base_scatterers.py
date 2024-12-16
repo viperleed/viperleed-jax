@@ -8,7 +8,7 @@ from tests.calc import poscar_slabs
 from tests.calc.tags import CaseTag as Tag
 from pytest_cases import parametrize_with_cases
 
-from viperleed_jax.base_scatterers import Atom, AtomBasis
+from viperleed_jax.atom_basis import Atom, AtomBasis
 
 infoless = parametrize_with_cases(
     'test_slab', cases=poscar_slabs, has_tag=Tag.NO_INFO

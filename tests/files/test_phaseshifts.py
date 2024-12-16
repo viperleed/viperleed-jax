@@ -2,7 +2,7 @@
 import pytest
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
-from viperleed_jax.base_scatterers import SiteEl
+from viperleed_jax.atom_basis import SiteEl
 from viperleed_jax.files.phaseshifts import (
     Phaseshifts,
     phaseshift_site_el_order,
