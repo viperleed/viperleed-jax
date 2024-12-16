@@ -34,11 +34,11 @@ class MockRootNode(MockNode):
 
 
 class MockLeafNode(MockNode):
-    def __init__(self, dof, base_scatterer):
+    def __init__(self, dof, atom):
         self.dof = dof
         self.is_leaf = True
         self.is_root = True
-        self.base_scatterer = base_scatterer
+        self.atom = atom
 
 
 class MockLinearTree(LinearTree):
@@ -46,9 +46,9 @@ class MockLinearTree(LinearTree):
 
     def _initialize_tree(self):
         """Mock implementation of build_tree."""
-        leaf1 = MockLeafNode(dof=1, base_scatterer='Atom1')
-        leaf2 = MockLeafNode(dof=1, base_scatterer='Atom2')
-        leaf3 = MockLeafNode(dof=1, base_scatterer='Atom3')
+        leaf1 = MockLeafNode(dof=1, atom='Atom1')
+        leaf2 = MockLeafNode(dof=1, atom='Atom2')
+        leaf3 = MockLeafNode(dof=1, atom='Atom3')
 
         self.nodes.extend([leaf1, leaf2, leaf3])
 
