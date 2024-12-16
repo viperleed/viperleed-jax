@@ -373,18 +373,19 @@ def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
     file_reader = prepare_tensor_file_reader(lmax, n_beams, n_energies)
 
     # read the contents of the zip file
-    tensor_zip_path = zipfile.Path(tensor_path)
-    tensor_files = [f.name for f in tensor_zip_path.glob('T_*')]
+    tensors = {}
 
-    # read raw contents from the zip file
-    tensor_raw_contents = {
-        f: (tensor_zip_path / f).read_text() for f in tensor_files
-    }
+    with zipfile.ZipFile(tensor_path, 'r') as zip_ref:
+        # List all files in the archive
+        all_files = zip_ref.namelist()
 
-    # process the contents
-    tensors = {
-        f: file_reader(content)
-        for f, content in tqdm.tqdm(tensor_raw_contents.items())
-    }
+        # Filter files that start with 'T_'
+        tensor_files = [f for f in all_files if f.startswith('T_')]
+
+        # Read and process each tensor file
+        for f in tqdm.tqdm(tensor_files, desc='Processing tensor files'):
+            with zip_ref.open(f) as file:
+                content = file.read().decode('utf-8')
+                tensors[f] = file_reader(content)
 
     return tensors
