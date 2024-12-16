@@ -44,7 +44,7 @@ class TensorLEEDCalculator:
     """Main class for calculating tensor LEED intensities and R-factors.
 
     Parameters:
-    -----------
+    ----------
     ref_data : ReferenceData
         The reference data for LEED calculations.
     phaseshifts : ndarray
@@ -746,6 +746,7 @@ class TensorLEEDCalculator:
         return symmetry_tensors, mirror_propagators
 
     def delta_amplitude(self, free_params):
+        """Calculate the delta amplitude for a given set of free parameters."""
         _free_params = jnp.asarray(free_params)
         # split free parameters
         (_, vib_params, geo_parms, occ_params) = (
@@ -784,6 +785,8 @@ class TensorLEEDCalculator:
 
         # Loop over batches
         # -----------------
+
+        # Use python for loop here, as batches can have different array sizes
 
         batched_delta_amps = []
         for batch in self.batching.batches:
