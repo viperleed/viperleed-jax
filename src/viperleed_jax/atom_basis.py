@@ -1,4 +1,4 @@
-"""Module base_scatterers of viperleed_jax."""
+"""Module atom_basis of viperleed_jax."""
 
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-10-14'
@@ -37,7 +37,7 @@ class Atom:
 class AtomBasis:
     def __init__(self, slab):
         self.site_elements = self._get_site_elements(slab)
-        self.scatterers = self._get_base_scatterers(slab)
+        self.scatterers = self._get_atom_basis(slab)
         symmetry_links, atom_number_symmetry_links = [], []
         for linklist in slab.linklists:
             link_numbers = [at.num for at in linklist]
@@ -96,7 +96,7 @@ class AtomBasis:
                 site_elements.append(SiteEl(site.label, site.el))
         return tuple(site_elements)  # read only from here on out
 
-    def _get_base_scatterers(self, slab):
+    def _get_atom_basis(self, slab):
         """Get the atom site elements for a given slab.
 
         Parameters
@@ -109,7 +109,7 @@ class AtomBasis:
         tuple: A tuple of BaseScatterer objects representing the atom site
             elements.
         """
-        base_scatterers = []
+        atom_basis = []
         non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
 
         for at in non_bulk_atoms:
@@ -118,5 +118,5 @@ class AtomBasis:
                     break
             for siteel in self.site_elements:
                 if siteel.site == at.site.label:
-                    base_scatterers.append(Atom(at, siteel))
-        return tuple(base_scatterers)  # read only from here on out
+                    atom_basis.append(Atom(at, siteel))
+        return tuple(atom_basis)  # read only from here on out

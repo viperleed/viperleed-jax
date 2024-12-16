@@ -130,9 +130,9 @@ class OccLinkedConstraint(OccConstraintNode):
 
 
 class OccTree(DisplacementTree):
-    def __init__(self, base_scatterers):
+    def __init__(self, atom_basis):
         super().__init__(
-            base_scatterers,
+            atom_basis,
             name='Occupational Parameters',
             root_node_name='occ root',
         )
@@ -140,7 +140,7 @@ class OccTree(DisplacementTree):
     def _initialize_tree(self):
         # initially, every atom-site-element has a free chemical weight
         # to allow for (partial) vacancies
-        occ_leaf_nodes = [OccLeafNode(ase) for ase in self.base_scatterers]
+        occ_leaf_nodes = [OccLeafNode(ase) for ase in self.atom_basis]
         self.nodes.extend(occ_leaf_nodes)
 
         # iterate over atom-site-elements and link ones from the same atom
@@ -149,7 +149,7 @@ class OccTree(DisplacementTree):
         # requirement that we need to enforce
         linked_nodes = []
         for num in range(
-            self.base_scatterers.max_atom_number + 1
+            self.atom_basis.max_atom_number + 1
         ):  # inclusive range
             atom_nodes = [node for node in self.leaves if node.num == num]
             if not atom_nodes:
@@ -159,7 +159,7 @@ class OccTree(DisplacementTree):
             linked_nodes.append(linked_node)
 
         # occupational parameters need to fulfill symmetry constraints
-        for link in self.base_scatterers.atom_number_symmetry_links:
+        for link in self.atom_basis.atom_number_symmetry_links:
             # put all linked atoms in the same symmetry group
 
             nodes_to_link = [node for node in linked_nodes if node.num in link]

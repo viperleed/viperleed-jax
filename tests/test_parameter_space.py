@@ -9,8 +9,8 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
 
 
 def _get_space(state):
-    base_scatterers = AtomBasis(state.slab)
-    return ParameterSpace(base_scatterers, state.rpars)
+    atom_basis = AtomBasis(state.slab)
+    return ParameterSpace(atom_basis, state.rpars)
 
 
 def _compare_parameter_space_size(parameter_space, layer, expected_size):

@@ -142,9 +142,9 @@ class VibSymmetryConstraint(VibConstraintNode):
 
 
 class VibTree(DisplacementTree):
-    def __init__(self, base_scatterers):
+    def __init__(self, atom_basis):
         super().__init__(
-            base_scatterers,
+            atom_basis,
             name='Vibrational Parameters',
             root_node_name='vib root',
         )
@@ -152,12 +152,12 @@ class VibTree(DisplacementTree):
         self.functionals.append(self.vibration_functional)
 
     def _initialize_tree(self):
-        leaf_nodes = [VibLeafNode(ase) for ase in self.base_scatterers]
+        leaf_nodes = [VibLeafNode(ase) for ase in self.atom_basis]
 
         self.nodes.extend(leaf_nodes)
 
         # vibrations need to fulfill symmetry constraints
-        for link in self.base_scatterers.atom_number_symmetry_links:
+        for link in self.atom_basis.atom_number_symmetry_links:
             # put all linked atoms in the same symmetry group
 
             nodes_to_link = [node for node in leaf_nodes if node.num in link]

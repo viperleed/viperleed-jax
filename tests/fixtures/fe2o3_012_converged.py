@@ -377,8 +377,8 @@ def fe2o3_012_converged_parameter_space(
     fe2o3_012_converged_state_after_init, fe2o3_012_converged_info
 ):
     slab, rparams = fe2o3_012_converged_state_after_init
-    base_scatterers = AtomBasis(slab)
-    parameter_space = ParameterSpace(base_scatterers, rparams)
+    atom_basis = AtomBasis(slab)
+    parameter_space = ParameterSpace(atom_basis, rparams)
 
     # displacements file
     disp_file = DisplacementsFile()

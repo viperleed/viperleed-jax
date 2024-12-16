@@ -433,7 +433,7 @@ class TensorLEEDCalculator:
     def _calculate_propagators(
         self, displacements, displacements_components, energy_indices
     ):
-        # return propagators indexed as (base_scatterers, energies, lm, l'm')
+        # return propagators indexed as (atom_basis, energies, lm, l'm')
         dynamic_propagators = self._calculate_dynamic_propagators(
             displacements, displacements_components, energy_indices
         )
@@ -480,7 +480,7 @@ class TensorLEEDCalculator:
 
     @partial(jax.jit, static_argnums=(0,))
     def _calculate_propagators_new(self, displacements):
-        # return propagators indexed as (energies, base_scatterers, lm, l'm')
+        # return propagators indexed as (energies, atom_basis, lm, l'm')
 
         dynamic_propagators = self._calculate_dynamic_propagators(displacements)
 
@@ -497,7 +497,7 @@ class TensorLEEDCalculator:
             self.parameter_space.n_dynamic_propagators,
         )
         mapping = jnp.zeros(
-            shape=(self.parameter_space.n_base_scatterers, mapping_size)
+            shape=(self.parameter_space.n_atom_basis, mapping_size)
         )
         for base_id, prop_id in enumerate(self.parameter_space.propagator_id):
             mapping = mapping.at[base_id, prop_id].set(1.0)
@@ -780,7 +780,7 @@ class TensorLEEDCalculator:
         )
 
         # atom ids that will be batched over
-        atom_ids = jnp.arange(self.parameter_space.n_base_scatterers)
+        atom_ids = jnp.arange(self.parameter_space.n_atom_basis)
 
         # Loop over batches
         # -----------------

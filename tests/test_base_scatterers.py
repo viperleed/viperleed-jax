@@ -16,7 +16,7 @@ infoless = parametrize_with_cases(
 
 
 @infoless
-def test_base_scatterers_from_slab(test_slab):
+def test_atom_basis_from_slab(test_slab):
     slab, *_ = test_slab
-    base_scatterers = AtomBasis(slab)
-    assert len(base_scatterers) > 0
+    atom_basis = AtomBasis(slab)
+    assert len(atom_basis) > 0

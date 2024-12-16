@@ -182,9 +182,9 @@ class DisplacementTree(LinearTree):
     transformations).
     """
 
-    def __init__(self, base_scatterers, name, root_node_name):
-        self.base_scatterers = base_scatterers
-        self.site_elements = self.base_scatterers.site_elements
+    def __init__(self, atom_basis, name, root_node_name):
+        self.atom_basis = atom_basis
+        self.site_elements = self.atom_basis.site_elements
 
         self._offsets_have_been_added = False
         self.functionals = []
@@ -194,13 +194,13 @@ class DisplacementTree(LinearTree):
     def leaves(self):
         """Nodes that are leaves, i.e., that have no children."""
         unordered_leaves = super().leaves
-        indices_by_base_scatterers = np.array(
+        indices_by_atom_basis = np.array(
             [
-                self.base_scatterers.scatterers.index(leaf.base_scatterer)
+                self.atom_basis.scatterers.index(leaf.base_scatterer)
                 for leaf in unordered_leaves
             ]
         )
-        return np.array(unordered_leaves)[indices_by_base_scatterers]
+        return np.array(unordered_leaves)[indices_by_atom_basis]
 
     def _analyze_tree(self):
         """Analyze the finalized tree and calculate the functionals."""
@@ -269,7 +269,7 @@ class DisplacementTree(LinearTree):
         """Take a BSTarget and returns the corresponding leaves and roots."""
         # gets the leaves that are affected by the targets
         explicitly_selected_leaves = list(
-            compress(self.leaves, targets.select(self.base_scatterers))
+            compress(self.leaves, targets.select(self.atom_basis))
         )
         if not explicitly_selected_leaves:
             msg = f'No leaf nodes found for target {targets}.'

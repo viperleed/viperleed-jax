@@ -25,9 +25,9 @@ _DISP_Z_DIR_ID = 0
 
 
 class ParameterSpace:
-    def __init__(self, base_scatterers, rpars):
+    def __init__(self, atom_basis, rpars):
         self._displacements_applied = False
-        self.base_scatterers = base_scatterers
+        self.atom_basis = atom_basis
 
         # create the meta parameter subtree
         self.meta_param_subtree = meta_parameters.MetaParameterSubtree()
@@ -36,9 +36,9 @@ class ParameterSpace:
 
         # create the parameter subtrees - this automatically sets up all the
         # symmetry constraints
-        self.vib_tree = vib_parameters.VibTree(base_scatterers)
-        self.geo_tree = geo_parameters.GeoTree(base_scatterers)
-        self.occ_tree = occ_parameters.OccTree(base_scatterers)
+        self.vib_tree = vib_parameters.VibTree(atom_basis)
+        self.geo_tree = geo_parameters.GeoTree(atom_basis)
+        self.occ_tree = occ_parameters.OccTree(atom_basis)
 
         self.subtrees = (
             self.meta_param_subtree,
@@ -49,7 +49,7 @@ class ParameterSpace:
 
         # atom-site-element reference z positions
         self._ats_ref_z_pos = jnp.array(
-            [bs.atom.cartpos[_ATOM_Z_DIR_ID] for bs in self.base_scatterers]
+            [bs.atom.cartpos[_ATOM_Z_DIR_ID] for bs in self.atom_basis]
         )
 
     def apply_displacements(self, offset_block=None, search_block=None):
@@ -244,8 +244,8 @@ class ParameterSpace:
         return sum(self._free_params_up_to_layer(DisplacementTreeLayers.Base))
 
     @property
-    def n_base_scatterers(self):
-        return len(self.base_scatterers)
+    def n_atom_basis(self):
+        return len(self.atom_basis)
 
     @property
     def n_dynamic_propagators(self):
@@ -265,7 +265,7 @@ class ParameterSpace:
 
     @property
     def site_elements(self):
-        return self.base_scatterers.site_elements
+        return self.atom_basis.site_elements
 
     @property
     def static_propagator_inputs(self):
@@ -315,11 +315,11 @@ class ParameterSpace:
 
     @property
     def dynamic_scatterer_id(self):
-        return np.arange(self.n_base_scatterers)[self.is_dynamic_scatterer]
+        return np.arange(self.n_atom_basis)[self.is_dynamic_scatterer]
 
     @property
     def static_scatterer_id(self):
-        return np.arange(self.n_base_scatterers)[~self.is_dynamic_scatterer]
+        return np.arange(self.n_atom_basis)[~self.is_dynamic_scatterer]
 
     @property
     def dynamic_scatterer_propagator_id(self):
@@ -412,7 +412,7 @@ class FrozenParameterSpace:
         'is_dynamic_propagator',
         'is_dynamic_t_matrix',
         'n_base_params',
-        'n_base_scatterers',
+        'n_atom_basis',
         'n_dynamic_scatterers',
         'n_dynamic_propagators',
         'n_dynamic_t_matrices',

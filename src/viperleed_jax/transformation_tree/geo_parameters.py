@@ -251,9 +251,9 @@ class GeoLinkedConstraint(GeoConstraintNode):
 
 
 class GeoTree(DisplacementTree):
-    def __init__(self, base_scatterers):
+    def __init__(self, atom_basis):
         super().__init__(
-            base_scatterers,
+            atom_basis,
             name='Geometric Parameters',
             root_node_name='geo root',
         )
@@ -265,7 +265,7 @@ class GeoTree(DisplacementTree):
         # create leaf nodes
         geo_leaf_nodes = [
             GeoLeafNode(base_scatterer)
-            for base_scatterer in self.base_scatterers
+            for base_scatterer in self.atom_basis
         ]
         self.nodes.extend(geo_leaf_nodes)
 
@@ -275,7 +275,7 @@ class GeoTree(DisplacementTree):
                 node for node in self.leaves if node.site_element == siteel
             ]
 
-        for link in self.base_scatterers.symmetry_links:
+        for link in self.atom_basis.symmetry_links:
             # put all linked atoms in the same symmetry group
             nodes_to_link = [
                 node for node in self.leaves if node.base_scatterer in link

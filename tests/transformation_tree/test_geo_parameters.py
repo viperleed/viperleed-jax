@@ -15,10 +15,10 @@ from ..structures import CaseStatesAfterInit
 def test_tree_creation(test_case, subtests):
     """Test tree creation."""
     state, info = test_case
-    base_scatterers = AtomBasis(state.slab)
+    atom_basis = AtomBasis(state.slab)
     # create the geometry tree
-    tree = GeoTree(base_scatterers)
-    assert len(tree.leaves) == len(base_scatterers)
+    tree = GeoTree(atom_basis)
+    assert len(tree.leaves) == len(atom_basis)
 
     with subtests.test('tree root creation'):
         tree.finalize_tree()
@@ -30,9 +30,9 @@ def test_tree_creation(test_case, subtests):
 def test_symmetry_operations_determinant(test_case, subtests):
     """The abs of the determinant of symmetry operations should be 1."""
     state, _ = test_case
-    base_scatterers = AtomBasis(state.slab)
+    atom_basis = AtomBasis(state.slab)
     # create the geometry tree
-    tree = GeoTree(base_scatterers)
+    tree = GeoTree(atom_basis)
     tree.finalize_tree()
 
     symmetry_roots = tree.roots_up_to_layer(DisplacementTreeLayers.Symmetry)

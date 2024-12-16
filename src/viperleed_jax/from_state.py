@@ -51,8 +51,8 @@ def calculator_from_state(
     # We do this now, because if anything fails here, we don't want to waste
     # time reading the tensor files.
     logger.debug('Creating parameter space.')
-    base_scatterers = AtomBasis(slab)
-    parameter_space = ParameterSpace(base_scatterers, rpars)
+    atom_basis = AtomBasis(slab)
+    parameter_space = ParameterSpace(atom_basis, rpars)
 
     # take the blocks from the displacements file
     # TODO: take care of multiple blocks!
@@ -128,7 +128,7 @@ def calculator_from_state(
         rpars,
         ref_data,
         phaseshifts,
-        base_scatterers,
+        atom_basis,
         disp_file,
         parameter_space,
     )
