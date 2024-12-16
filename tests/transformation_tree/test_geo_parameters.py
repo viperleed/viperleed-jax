@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from pytest_cases import parametrize_with_cases
 
-from viperleed_jax.base_scatterers import BaseScatterers
+from viperleed_jax.base_scatterers import AtomBasis
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
@@ -15,7 +15,7 @@ from ..structures import CaseStatesAfterInit
 def test_tree_creation(test_case, subtests):
     """Test tree creation."""
     state, info = test_case
-    base_scatterers = BaseScatterers(state.slab)
+    base_scatterers = AtomBasis(state.slab)
     # create the geometry tree
     tree = GeoTree(base_scatterers)
     assert len(tree.leaves) == len(base_scatterers)
@@ -30,7 +30,7 @@ def test_tree_creation(test_case, subtests):
 def test_symmetry_operations_determinant(test_case, subtests):
     """The abs of the determinant of symmetry operations should be 1."""
     state, _ = test_case
-    base_scatterers = BaseScatterers(state.slab)
+    base_scatterers = AtomBasis(state.slab)
     # create the geometry tree
     tree = GeoTree(base_scatterers)
     tree.finalize_tree()

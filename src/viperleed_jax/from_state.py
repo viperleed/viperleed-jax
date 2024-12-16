@@ -20,7 +20,7 @@ from viperleed.calc import LOGGER as logger
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from viperleed.calc.run import run_calc
 
-from viperleed_jax.base_scatterers import BaseScatterers
+from viperleed_jax.base_scatterers import AtomBasis
 from viperleed_jax.data_structures import ReferenceData
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.displacements.file import DisplacementsFile
@@ -51,7 +51,7 @@ def calculator_from_state(
     # We do this now, because if anything fails here, we don't want to waste
     # time reading the tensor files.
     logger.debug('Creating parameter space.')
-    base_scatterers = BaseScatterers(slab)
+    base_scatterers = AtomBasis(slab)
     parameter_space = ParameterSpace(base_scatterers, rpars)
 
     # take the blocks from the displacements file

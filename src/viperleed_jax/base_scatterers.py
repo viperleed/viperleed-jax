@@ -11,7 +11,7 @@ SiteEl = namedtuple('SiteEl', ['site', 'element'])
 # Atom numbers start at 1, but layer numbers start at 0.
 
 
-class BaseScatterer:
+class Atom:
     def __init__(self, atom, site_element):
         self.atom = atom
         self.site_element = site_element
@@ -34,7 +34,7 @@ class BaseScatterer:
         )
 
 
-class BaseScatterers:
+class AtomBasis:
     def __init__(self, slab):
         self.site_elements = self._get_site_elements(slab)
         self.scatterers = self._get_base_scatterers(slab)
@@ -118,5 +118,5 @@ class BaseScatterers:
                     break
             for siteel in self.site_elements:
                 if siteel.site == at.site.label:
-                    base_scatterers.append(BaseScatterer(at, siteel))
+                    base_scatterers.append(Atom(at, siteel))
         return tuple(base_scatterers)  # read only from here on out

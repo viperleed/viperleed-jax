@@ -1,7 +1,7 @@
 from pytest_cases import fixture, parametrize_with_cases
 
 from tests.structures import CaseStatesAfterInit, ParameterSpaceSize
-from viperleed_jax.base_scatterers import BaseScatterers
+from viperleed_jax.base_scatterers import AtomBasis
 from viperleed_jax.parameter_space import ParameterSpace
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
@@ -9,7 +9,7 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
 
 
 def _get_space(state):
-    base_scatterers = BaseScatterers(state.slab)
+    base_scatterers = AtomBasis(state.slab)
     return ParameterSpace(base_scatterers, state.rpars)
 
 

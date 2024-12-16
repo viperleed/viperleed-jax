@@ -8,7 +8,7 @@ from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
 from tests.fixtures.base import LARGE_FILE_PATH
 from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo
-from viperleed_jax.base_scatterers import BaseScatterers
+from viperleed_jax.base_scatterers import AtomBasis
 from viperleed_jax.data_structures import ReferenceData
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.deltas import Transform as delta_transform
@@ -240,7 +240,7 @@ def cu_111_fixed_l_max_parameter_space(
     cu_111_fixed_l_max_state_after_init, cu_111_fixed_l_max_info
 ):
     slab, rparams = cu_111_fixed_l_max_state_after_init
-    base_scatterers = BaseScatterers(slab)
+    base_scatterers = AtomBasis(slab)
     parameter_space = ParameterSpace(base_scatterers, rparams)
 
     # displacements file

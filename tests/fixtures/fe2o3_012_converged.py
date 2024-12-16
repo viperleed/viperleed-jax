@@ -8,7 +8,7 @@ from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
 from tests.fixtures.base import LARGE_FILE_PATH
 from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo
-from viperleed_jax.base_scatterers import BaseScatterers
+from viperleed_jax.base_scatterers import AtomBasis
 from viperleed_jax.data_structures import ReferenceData
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.displacements.file import DisplacementsFile
@@ -377,7 +377,7 @@ def fe2o3_012_converged_parameter_space(
     fe2o3_012_converged_state_after_init, fe2o3_012_converged_info
 ):
     slab, rparams = fe2o3_012_converged_state_after_init
-    base_scatterers = BaseScatterers(slab)
+    base_scatterers = AtomBasis(slab)
     parameter_space = ParameterSpace(base_scatterers, rparams)
 
     # displacements file
