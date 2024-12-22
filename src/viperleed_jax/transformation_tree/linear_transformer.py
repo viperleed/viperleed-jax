@@ -82,8 +82,13 @@ class LinearTransformer(Transformer):
         return self.is_injective and self.is_surjective
 
     def __call__(self, free_params):
+        """Apply the transformation to the input parameters."""
         if self.n_free_params == 0:
-            return self.biases
+            result = self.biases
+            if self.out_reshape is not None:
+                return result.reshape(self.out_reshape)
+            return result
+
         free_params = jnp.asarray(free_params)
         if len(free_params) != self.n_free_params:
             msg = 'Free parameters have wrong shape'
