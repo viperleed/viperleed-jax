@@ -434,9 +434,14 @@ class TensorLEEDCalculator:
         self, displacements, displacements_components, energy_indices
     ):
         # return propagators indexed as (atom_basis, energies, lm, l'm')
-        dynamic_propagators = self._calculate_dynamic_propagators(
-            displacements, displacements_components, energy_indices
-        )
+        if len(displacements) > 0:
+            dynamic_propagators = self._calculate_dynamic_propagators(
+                displacements, displacements_components, energy_indices
+            )
+        else:
+            dynamic_propagators = jnp.array(
+                [jnp.zeros_like(self._static_propagators[0])]
+            )
 
         # if there are 0 static propagators, indexing would raise Error
         if len(self._static_propagators) == 0:
