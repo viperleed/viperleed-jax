@@ -3,13 +3,16 @@
 __authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
 __created__ = '2024-05-03'
 
+import copy
 import time
 
 import jax
 import jax.numpy as jnp
 from jax.tree_util import register_pytree_node_class
 from viperleed.calc import LOGGER as logger
+from viperleed.calc.files import poscar
 from viperleed.calc.files.iorfactor import beamlist_to_array
+from viperleed.calc.files.vibrocc import writeVIBROCC
 
 from viperleed_jax import atomic_units, lib_math, rfactor
 from viperleed_jax.batching import Batching
@@ -1041,6 +1044,77 @@ class TensorLEEDCalculator:
         calculator.set_rfactor(dynamic_elements['rfactor_name'])
 
         return calculator
+
+
+    # TODO: needs tests
+    def write_to_slab(self,
+        rpars, slab, atom_basis, params, write_to_file=True
+    ):
+        for atom in slab:
+            atom.storeOriState()
+        for site in slab.sitelist:
+            if site.oriState is None:
+                tmp = copy.deepcopy(site)
+                site.oriState = tmp
+
+        # update geometries just in case
+        slab.collapse_fractional_coordinates()
+        slab.update_cartesian_from_fractional()
+        slab.update_layer_coordinates()
+
+        # expand the reduced paramter vector
+        v0r, vibrations, displacements, occupations = (
+            self.parameter_space.expand_params(params)
+        )
+
+        # update V0r in rpars
+        rpars.best_v0r = v0r
+
+        # Geometric displacements
+        for scatterer, displacement in zip(atom_basis, displacements):
+            scatterer.atom.offset_geo[scatterer.element] = displacement
+
+        # Vibrations
+        for scatterer, vib_amp in zip(atom_basis, vibrations):
+            scatterer.atom.offset_vib[scatterer.element] = vib_amp
+
+        # Occupations
+        for scatterer, occ in zip(atom_basis, occupations):
+            scatterer.atom.offset_occ[scatterer.element] = occ
+
+        # Update vibrations and occupations for the sites
+        for site in slab.sitelist:
+            site_atoms = [at for at in slab if at.site == site and not at.is_bulk]
+            for element in site.occ.keys():
+                element_occ_offsets = [at.offset_occ[element] for at in site_atoms]
+                element_vib_offsets = [at.offset_vib[element] for at in site_atoms]
+
+                # if not all the same, raise an error
+                if not all(
+                    [occ == element_occ_offsets[0] for occ in element_occ_offsets]
+                ):
+                    raise ValueError(
+                        'Occupations are not the same for all atoms in a site'
+                    )
+                if not all(
+                    [vib == element_vib_offsets[0] for vib in element_vib_offsets]
+                ):
+                    raise ValueError(
+                        'Vibrations are not the same for all atoms in a site'
+                    )
+
+                site.occ[element] = element_occ_offsets[0]
+                site.vibamp[element] = element_vib_offsets[0]
+
+        # Optionally write to file
+        if write_to_file:
+            tmpslab = copy.deepcopy(slab)
+            tmpslab.sort_original()
+
+            # write POSCAR
+            poscar.write(tmpslab, 'POSCAR_TL_optimized')
+            # write VIBROCC
+            writeVIBROCC(slab, rpars, 'VIBROCC_TL_optimized')
 
 
 def benchmark_calculator(calculator, free_params, n_repeats=10):
