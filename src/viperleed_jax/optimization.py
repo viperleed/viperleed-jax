@@ -257,7 +257,7 @@ class CMAESOptimizer(NonGradOptimizer):
     good results. A population size of 30 for 33 dimensions has proven
     successful. However, the population size should increase with the number
     of dimensions (not linearly, but more logarithmically). For such a large
-    step size, 100-200 generations have showen great success.
+    step size, 100-200 generations have shown great success.
 
     Parameters
     ----------
