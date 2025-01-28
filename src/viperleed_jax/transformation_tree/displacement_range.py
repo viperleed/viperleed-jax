@@ -69,12 +69,12 @@ class DisplacementRange:
             for idx in range(self.dimension):
                 if (
                     abs(self.lower[idx] - lower[idx]) > self._EPS
-                    and self.enforce[idx]
+                    and self.enforce[idx] and enforce[idx]
                 ):
                     raise ValueError('Cannot change enforced lower bound.')
                 if (
                     abs(self.upper[idx] - upper[idx]) > self._EPS
-                    and self.enforce[idx]
+                    and self.enforce[idx] and enforce[idx]
                 ):
                     raise ValueError('Cannot change enforced upper bound.')
                 self._lower = lower
