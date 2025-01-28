@@ -272,12 +272,14 @@ class CMAESOptimizer(NonGradOptimizer):
             function value of the last five generations.
     """
 
-    def __init__(self, fun, pop_size, n_generations, step_size=0.5, ftol=1e-4):
+    def __init__(self, fun, pop_size, n_generations, step_size=0.5, ftol=1e-4,
+                 convergence_gens=5):
         self.fun = fun
         self.step_size = step_size
         self.pop_size = pop_size
         self.n_generations = n_generations
         self.ftol = ftol
+        self.convergence_gens = convergence_gens
         super().__init__(fun=fun)
 
     def __call__(self, start_point):
@@ -318,6 +320,7 @@ class CMAESOptimizer(NonGradOptimizer):
         start_time = time.time()
         step_size_history = []
         loss_min = np.full((5,), fill_value=10.0)
+        loss_min = np.full((self.convergence_gens,), fill_value=10.0)
         termination_message = 'Maximum number of generations reached'
         # Perform the optimization
         for g in tqdm.trange(self.n_generations):
@@ -329,7 +332,7 @@ class CMAESOptimizer(NonGradOptimizer):
             step_size_history.append(state.step_size)
             # To update the AlgorithmState pass in the sorted generation
             state = update_state(state, generation[np.argsort(fun_value)])
-            i = g % 5
+            i = g % self.convergence_gens
             loss_min[i] = fun_value.min()
             if np.std(loss_min) < self.ftol:
                 termination_message = (
