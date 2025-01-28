@@ -346,7 +346,7 @@ class CMAESOptimizer(NonGradOptimizer):
         # Create result object
         result = CMAESResult(
             min_individual=generation[fun_value.argmin()],
-            fun=fun_value.min(),
+            best=fun_value.min(),
             message=termination_message,
             current_generation=g,
             duration=duration,
@@ -370,7 +370,7 @@ class CMAESResult:
     ----------
         min_individual: Parameters of the individual with the smallest
             function value.
-        fun: Smallest function value.
+        best: Smallest function value.
         message: A message indicating wether the algorithm finished due to
             convergence or reaching the maximum nuber of generations.
         current_generation: Number of performed generations.
@@ -383,7 +383,7 @@ class CMAESResult:
     def __init__(
         self,
         min_individual,
-        fun,
+        best,
         message,
         current_generation,
         duration,
@@ -391,7 +391,7 @@ class CMAESResult:
         step_size_history,
     ):
         self.min_individual = min_individual
-        self.fun = fun
+        self.best = best
         self.message = message
         self.current_generation = current_generation
         self.duration = duration
@@ -402,7 +402,7 @@ class CMAESResult:
         """Return a string representation of the optimization result."""
         return (
             f'OptimizationResult(x = {self.min_individual}\n'
-            f'fun = {self.fun}\n'
+            f'Best R = {self.fun}\n'
             f'message = {self.message}\n'
             f'current_generation = {self.current_generation}\n'
             f'duration = {self.duration:.2f}s)'
