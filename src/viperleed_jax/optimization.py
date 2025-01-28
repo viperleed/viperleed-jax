@@ -9,6 +9,7 @@ __created__ = '2024-11-20'
 import time
 from abc import ABC, abstractmethod
 
+import tqdm
 import numpy as np
 from clinamen2.cmaes.params_and_state import (
     create_sample_from_state,
@@ -319,7 +320,7 @@ class CMAESOptimizer(NonGradOptimizer):
         loss_min = np.full((5,), fill_value=10.0)
         termination_message = 'Maximum number of generations reached'
         # Perform the optimization
-        for g in range(self.n_generations):
+        for g in tqdm.trange(self.n_generations):
             # Perform one generation
             generation, state, fun_value = sample_and_evaluate(
                 state=state, n_samples=parameters.pop_size
