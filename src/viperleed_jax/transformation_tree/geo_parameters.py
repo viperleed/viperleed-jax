@@ -6,6 +6,7 @@ __created__ = '2024-08-30'
 
 import numpy as np
 
+from ..lib_math import EPS
 from .displacement_tree_layers import DisplacementTreeLayers
 from .functionals import LinearTreeFunctional
 from .linear_transformer import LinearMap
@@ -41,16 +42,16 @@ class GeoLeafNode(AtomicLinearNode):
         if direction._fractional:
             raise NotImplementedError('TODO')
 
-        if (
-            direction.num_free_directions == 1 and direction._vectors[0][2] == 1
-        ):  # TODO: index 2 here needs to be changed to LEED convention
-            # z-only movement
-            start = np.array([range.start, 0.0, 0.0])
-            stop = np.array([range.stop, 0.0, 0.0])
-            user_set = [True, False, False]
-        else:
-            raise NotImplementedError('TODO')
-        self._bounds.update_range((start, stop), enforce=user_set)
+        lower = np.sum(direction._vectors*range.start, axis=0)
+        upper = np.sum(direction._vectors*range.stop, axis=0)
+        user_set = abs(upper-lower) > EPS
+
+        # Swap indices to match LEED convention
+        # TODO: do this in a more general way
+        lower = lower[[2, 0, 1]]
+        upper = upper[[2, 0, 1]]
+        user_set = user_set[[2, 0, 1]]
+        self._bounds.update_range((lower, upper), enforce=user_set)
 
     def update_offsets(self, line):
         # geometric leaf bounds are 3D
