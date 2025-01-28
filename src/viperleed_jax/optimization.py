@@ -317,17 +317,18 @@ class CMAESOptimizer(NonGradOptimizer):
         )
         state = initial_state
 
-        start_time = time.time()
         step_size_history = []
-        loss_min = np.full((5,), fill_value=10.0)
+        generation_time_history = []
         loss_min = np.full((self.convergence_gens,), fill_value=10.0)
         termination_message = 'Maximum number of generations reached'
+        start_time = time.time()
         # Perform the optimization
         for g in tqdm.trange(self.n_generations):
             # Perform one generation
             generation, state, fun_value = sample_and_evaluate(
                 state=state, n_samples=parameters.pop_size
             )
+            generation_time_history.append(time.time() - start_time)
             self.fun_history.append(fun_value)
             step_size_history.append(state.step_size)
             # To update the AlgorithmState pass in the sorted generation
@@ -355,6 +356,7 @@ class CMAESOptimizer(NonGradOptimizer):
             duration=duration,
             fun_history=self.fun_history,
             step_size_history=step_size_history,
+            generation_time_history=generation_time_history,
         )
         # print the minimum function value in the final generation
         logger.info(
@@ -392,6 +394,7 @@ class CMAESResult:
         duration,
         fun_history,
         step_size_history,
+        generation_time_history,
     ):
         self.min_individual = min_individual
         self.best = best
@@ -399,7 +402,8 @@ class CMAESResult:
         self.current_generation = current_generation
         self.duration = duration
         self.fun_history = fun_history
-        self.step_size_history = step_size_history
+        self.step_size_history = np.array(step_size_history)
+        self.generation_time_history = np.array(generation_time_history)
 
     def __repr__(self):
         """Return a string representation of the optimization result."""
