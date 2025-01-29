@@ -358,7 +358,7 @@ class ImplicitLinearConstraintNode(LinearConstraintNode):
 
     Implicit constraints are constraints that are not explicitly defined by the
     user, but rather by not explicitly allowing certain degrees of freedom.
-    E.g. if a group of symmetry equivalent atoms is not given a displacement
+    If e.g. a group of symmetry equivalent atoms is not assigned a displacement
     range, they are assumed to be static and will be constrained through an
     implicit constraint node.
     Implicit constraints are above user constraints in the hierarchy and are the
