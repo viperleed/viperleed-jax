@@ -37,7 +37,7 @@ class DisplacementRange:
         return self._upper + self._offset
 
     @property
-    def offset(self):
+    def offset(self):  # TODO: are offsets treated correctly at the moment?
         """Return the offset of the displacement range."""
         return self._offset
 
@@ -58,42 +58,31 @@ class DisplacementRange:
             enforce = np.full(self.dimension, False)
         elif isinstance(enforce, bool):
             enforce = np.full(self.dimension, enforce, dtype=bool)
+        if enforce.sum() + self.enforce.sum() == 3:
+            pass
         if offset is not None:
             _offset = np.asarray(offset).reshape(self.dimension)
         else:  # offset is None
             _offset = np.zeros(self.dimension)
+        # mark the bounds that were user set;
+        if enforce is None:
+            enforce = np.full(self.dimension, False)
         if _range is not None:
             lower, upper = _range
             lower = np.asarray(lower).reshape(self.dimension) + _offset
             upper = np.asarray(upper).reshape(self.dimension) + _offset
-            for idx in range(self.dimension):
-                if (
-                    abs(self.lower[idx] - lower[idx]) > self._EPS
-                    and self.enforce[idx] and enforce[idx]
-                ):
-                    raise ValueError('Cannot change enforced lower bound.')
-                if (
-                    abs(self.upper[idx] - upper[idx]) > self._EPS
-                    and self.enforce[idx] and enforce[idx]
-                ):
-                    raise ValueError('Cannot change enforced upper bound.')
-                self._lower = lower
-                self._upper = upper
-                self.enforce[idx] = np.logical_or(
-                    self.enforce[idx], enforce[idx]
-                )
+            lower_changed = np.abs(self.lower - self.lower) > self._EPS
+            if any(np.logical_and(lower_changed,  self.enforce)):
+                raise ValueError('Cannot change enforced lower bound.')
+            upper_changed = np.abs(self.upper - self.upper) > self._EPS
+            if any(np.logical_and(upper_changed, self.enforce)):
+                raise ValueError('Cannot change enforced upper bound.')
+            self._lower = np.where(self.enforce, self._lower, lower)
+            self._upper = np.where(self.enforce, self._upper, upper)
+            # use logical_or to combine the user set flags
+            self._enforce = np.logical_or(self.enforce, enforce)
 
-            self._lower = lower
-            self._upper = upper
-        if offset is not None:
-            self._offset = np.asarray(offset).reshape(self.dimension)
-
-        # mark the bounds that were user set;
-        # use logical_or to combine the user set flags
-        if enforce is None:
-            enforce = np.full(self.dimension, False)
-        _enforce = np.asarray(enforce).reshape(self.dimension)
-        self._enforce = np.logical_or(self.enforce, _enforce)
+        self._offset = np.asarray(_offset).reshape(self.dimension)
 
     def __repr__(self):
         """Return a string representation of the DisplacementRange object."""
