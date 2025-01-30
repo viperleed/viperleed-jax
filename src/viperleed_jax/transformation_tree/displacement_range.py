@@ -37,7 +37,7 @@ class DisplacementRange:
         return self._upper + self._offset
 
     @property
-    def offset(self):  # TODO: are offsets treated correctly at the moment?
+    def offset(self):
         """Return the offset of the displacement range."""
         return self._offset
 
