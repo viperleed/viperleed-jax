@@ -70,7 +70,7 @@ class GeoLeafNode(AtomicLinearNode):
             user_set = np.array([True, False, False])
         else:
             raise NotImplementedError('TODO')
-        self._bounds.update_range(_range=None, offset=offset, enforce=user_set)
+        self._bounds.update_offset(offset=offset, enforce=user_set)
 
 
 class GeoConstraintNode(LinearConstraintNode):

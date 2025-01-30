@@ -23,7 +23,7 @@ class OccLeafNode(AtomicLinearNode):
 
         # apply reference occupation as non-enforced bounds
         # TODO: get non 100% reference occupation? Where is that stored?
-        self._bounds.update_range(_range=None, offset=1.0, enforce=False)
+        self._bounds.update_offset(offset=1.0, enforce=False)
 
     def _update_bounds(self, line):
         # occupational leaves are 1D, so bounds are scalars
@@ -32,7 +32,7 @@ class OccLeafNode(AtomicLinearNode):
 
     def update_offsets(self, line):
         offset = line.value
-        self._bounds.update_range(_range=None, offset=offset, enforce=True)
+        self._bounds.update_offset(offset=offset, enforce=True)
 
 
 class OccConstraintNode(LinearConstraintNode):

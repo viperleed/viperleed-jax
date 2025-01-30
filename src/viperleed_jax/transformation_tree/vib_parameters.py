@@ -33,20 +33,19 @@ class VibLeafNode(AtomicLinearNode):
         self.ref_vib_amp = atom.atom.site.vibamp[self.element]
 
         # apply reference vibrational amplitudes as non-enforced bounds
-        self._bounds.update_range(
-            _range=None, offset=self.ref_vib_amp, enforce=False
+        self._bounds.update_offset(
+            offset=self.ref_vib_amp, enforce=False
         )
 
     def _update_bounds(self, line):
-        # vibrational leaves are 1D, so bounds are scalars
-        range = line.range
+        # vibrational leaves are 1D, so bounds are scalars´
         self._bounds.update_range(
-            _range=(range.start, range.stop), offset=None, enforce=True
+            _range=(line.range.start, line.range.stop), enforce=True
         )
 
     def update_offsets(self, line):
         offset = line.value
-        self._bounds.update_range(_range=None, offset=offset, enforce=True)
+        self._bounds.update_offset( offset=offset, enforce=True)
 
 
 class VibConstraintNode(LinearConstraintNode):
