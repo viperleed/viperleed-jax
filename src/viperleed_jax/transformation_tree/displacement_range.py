@@ -52,6 +52,30 @@ class DisplacementRange:
         return np.logical_or(self._enforce_range, self._enforce_offset)
 
     def update_offset(self, offset, enforce=None):
+        """
+        Update the offset of the displacement range.
+
+        Parameters
+        ----------
+        offset : array_like
+            The new offset to be set. Must not be None.
+        enforce : array_like, optional
+            A boolean array indicating which dimensions should enforce the new
+            offset. If None, defaults to an array of False with the same
+            dimension as the offset.
+
+        Raises
+        ------
+        ValueError
+            If `offset` is None.
+            If attempting to change an enforced offset.
+
+        Notes
+        -----
+        The method updates the internal offset and enforce arrays. If any
+        dimension is enforced and the new offset differs from the current offset
+        by more than a small epsilon value, a ValueError is raised.
+        """
         """Update the offset of the displacement range."""
         if offset is None:
             raise ValueError('Offset must be set.')
@@ -65,6 +89,33 @@ class DisplacementRange:
         self._enforce_offset = np.logical_or(self._enforce_offset, enforce)
 
     def update_range(self, _range, enforce=None):
+        """
+        Update the range of the transformation tree.
+
+        Parameters
+        ----------
+        _range : tuple of array-like
+            A tuple containing the lower and upper bounds of the range. Each
+            bound should be an array-like object that can be reshaped to match
+            the dimension of the transformation tree.
+        enforce : bool or array-like, optional
+            A boolean or array-like object indicating whether to enforce the
+            range bounds. If None, defaults to an array of False with the same
+            dimension as the transformation tree. If a boolean is provided, it
+            will be broadcasted to an array of the same dimension.
+
+        Raises
+        ------
+        ValueError
+            If `_range` is None.
+            If attempting to change an enforced lower or upper bound.
+
+        Notes
+        -----
+        The method updates the lower and upper bounds of the range, ensuring
+        that enforced bounds cannot be changed. The `enforce` parameter allows
+        the user to specify which bounds should be enforced.
+        """
         if _range is None:
             raise ValueError('Range must be set.')
         if enforce is None:
