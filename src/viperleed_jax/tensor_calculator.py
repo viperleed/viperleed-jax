@@ -253,16 +253,16 @@ class TensorLEEDCalculator:
 
         if self.recalculate_ref_t_matrices:
             # calculate reference t-matrices for full LMAX
-            n_ref_vib_amps = len(parameter_space.vib_subtree.leaves)
+            n_ref_vib_amps = len(parameter_space.vib_tree.leaves)
             logger.debug(
                 f'Calculating {n_ref_vib_amps} reference t-matrices for '
                 f'LMAX={self.max_l_max}.'
             )
             ref_vib_amps = [
-                leaf.ref_vib_amp for leaf in parameter_space.vib_subtree.leaves
+                leaf.ref_vib_amp for leaf in parameter_space.vib_tree.leaves
             ]
             site_elements = [
-                leaf.site_element for leaf in parameter_space.vib_subtree.leaves
+                leaf.site_element for leaf in parameter_space.vib_tree.leaves
             ]
             self.ref_t_matrices = self._calculate_reference_t_matrices(
                 ref_vib_amps, site_elements
