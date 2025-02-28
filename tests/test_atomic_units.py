@@ -19,7 +19,7 @@ def test_to_internal_displacement_vector(
     result = atomic_units.to_internal_displacement_vector(
         displacement_vector_ang
     )
-    assert result == pytest.approx(expected_vector)
+    assert result.reshape(-1) == pytest.approx(expected_vector)
 
 
 @pytest.mark.parametrize(
