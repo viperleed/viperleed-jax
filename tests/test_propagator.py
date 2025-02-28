@@ -7,7 +7,7 @@ from viperleed.calc.lib.matrix import rotation_matrix_order
 
 from viperleed_jax.atomic_units import kappa
 from viperleed_jax.constants import BOHR
-from viperleed_jax.lib_math import EPS
+from viperleed_jax.lib_math import EPS, spherical_harmonics_components
 from viperleed_jax.propagator import calc_propagator, symmetry_operations
 
 
@@ -257,12 +257,26 @@ class TestSymmetryTensor:
             np.linalg.norm(disp_vector), abs=1e-8
         )
 
+        # calculate spherical harmonics components
+        disp_components = spherical_harmonics_components(
+            self.L_MAX, disp_vector
+        )
+        disp_sym_components = spherical_harmonics_components(
+            self.L_MAX, disp_vector_sym
+        )
+
         # calculate the propagator for both
         propagator_original = calc_propagator(
-            self.L_MAX, disp_vector, kappa(self.ENERGY, self.V_IMAG)
+            self.L_MAX,
+            disp_vector,
+            disp_components,
+            kappa(self.ENERGY, self.V_IMAG),
         )
         propagator_sym = calc_propagator(
-            self.L_MAX, disp_vector_sym, kappa(self.ENERGY, self.V_IMAG)
+            self.L_MAX,
+            disp_vector_sym,
+            disp_sym_components,
+            kappa(self.ENERGY, self.V_IMAG),
         )
 
         # get symmetry operations
