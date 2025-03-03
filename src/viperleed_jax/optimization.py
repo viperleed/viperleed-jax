@@ -409,7 +409,7 @@ class CMAESResult:
         """Return a string representation of the optimization result."""
         return (
             f'OptimizationResult(x = {self.min_individual}\n'
-            f'Best R = {self.fun}\n'
+            f'Best R = {self.best}\n'
             f'message = {self.message}\n'
             f'current_generation = {self.current_generation}\n'
             f'duration = {self.duration:.2f}s)'
