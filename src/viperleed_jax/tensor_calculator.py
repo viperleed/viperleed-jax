@@ -309,7 +309,7 @@ class TensorLEEDCalculator:
                     self.energies,
                     vib_amp,
                 )
-                for site_el, vib_amp in self._parameter_space.static_t_matrix_inputs.items()
+                for site_el, vib_amp in self._parameter_space.static_t_matrix_inputs
             ]
         )
         self._static_t_matrices = jnp.einsum('ael->eal', static_t_matrices)

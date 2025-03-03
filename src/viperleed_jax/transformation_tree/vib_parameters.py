@@ -220,9 +220,9 @@ class VibTree(DisplacementTree):
 
     @property
     def static_t_matrix_inputs(self):
-        return {node.site_element:float(value) for node, value
+        return [(node.site_element,float(value)) for node, value
                 in zip(self.vibration_functional.static_reference_nodes,
-                       self.vibration_functional.static_reference_nodes_values)}
+                       self.vibration_functional.static_reference_nodes_values)]
 
     @property
     def static_site_elements(self):
