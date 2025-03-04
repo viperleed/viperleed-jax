@@ -214,11 +214,11 @@ class SLSQPOptimizer(GradOptimizer):
         ----------
             start_point: Starting point of the algorithm.
         """
-        
+
         def dampened_grad(x):
             self.fun_history.append(self.current_fun)
             return self.damp_fact * self.grad(x)
-    
+
         def dampened_fun_storage(x):
             self.current_fun = self.fun(x)
             return self.current_fun * self.damp_fact
@@ -228,7 +228,7 @@ class SLSQPOptimizer(GradOptimizer):
             bounds = [(0, 1) for _ in range(len(start_point))]
         else:
             bounds = self.bounds
-            
+
 
         # Performing the optimization
         start_time = time.time()
