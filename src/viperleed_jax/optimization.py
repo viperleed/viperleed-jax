@@ -347,6 +347,7 @@ class CMAESOptimizer(NonGradOptimizer):
             generation[fun_value.argmin()] > 0.9
         ).any():
             logger.warning('Parameter(s) close to the bounds!')
+
         # Create result object
         result = CMAESResult(
             min_individual=generation[fun_value.argmin()],
@@ -357,6 +358,7 @@ class CMAESOptimizer(NonGradOptimizer):
             fun_history=self.fun_history,
             step_size_history=step_size_history,
             generation_time_history=generation_time_history,
+            covariance=state.cholesky_factor @ state.cholesky_factor.T
         )
         # print the minimum function value in the final generation
         logger.info(
@@ -395,6 +397,7 @@ class CMAESResult:
         fun_history,
         step_size_history,
         generation_time_history,
+        covariance,
     ):
         self.min_individual = min_individual
         self.best = best
@@ -404,6 +407,7 @@ class CMAESResult:
         self.fun_history = fun_history
         self.step_size_history = np.array(step_size_history)
         self.generation_time_history = np.array(generation_time_history)
+        self.covariance = covariance
 
     def __repr__(self):
         """Return a string representation of the optimization result."""
