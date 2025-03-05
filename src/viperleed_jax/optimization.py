@@ -315,7 +315,7 @@ class CMAESOptimizer(NonGradOptimizer):
             min_individual: Parameters of the individual with the smallest
                 function value.
             message: A message indicating wether the algorithm finished due to
-                convergence or reaching the maximum nuber of generations.
+                convergence or reaching the maximum number of generations.
             current_generation: Number of performed generations.
             duration: Total runtime.
             fun_history: All function values of all generations stored in a
@@ -396,7 +396,7 @@ class CMAESResult:
             function value.
         best: Smallest function value.
         message: A message indicating wether the algorithm finished due to
-            convergence or reaching the maximum nuber of generations.
+            convergence or reaching the maximum number of generations.
         current_generation: Number of performed generations.
         duration: Total runtime.
         fun_history: All function values of all generations stored in a
@@ -433,7 +433,7 @@ class CMAESResult:
             f'Best R = {self.best}\n'
             f'message = {self.message}\n'
             f'current_generation = {self.current_generation}\n'
-            f'duration = {self.duration:.2f}s)'
+            f'duration = {self.duration:.2f}s'
         )
 
 
