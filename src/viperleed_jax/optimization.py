@@ -252,11 +252,16 @@ class SLSQPOptimizer(SciPyGradOptimizer):
     combined_fun_and_grad = False
 
     def __init__(
-        self, fun, grad, bounds=None, damp_fact=1, ftol=1e-6, maxiter=1000
+        self,
+        fun=None,
+        grad=None,
+        fun_and_grad=None,
+        bounds=None,
+        damp_fact=1,
+        ftol=1e-6,
+        maxiter=1000,
     ):
-        self.fun = fun
-        self.grad = grad
-        super().__init__(fun_and_grad=None, grad=grad, fun=fun, bounds=bounds)
+        super().__init__(fun=fun, grad=grad, fun_and_grad=fun_and_grad, bounds=bounds)
         self.bounds = bounds
         self.damp_fact = damp_fact
         self.options = {'maxiter': maxiter, 'ftol': ftol * damp_fact}
