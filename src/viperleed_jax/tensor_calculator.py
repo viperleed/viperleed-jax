@@ -986,13 +986,14 @@ class TensorLEEDCalculator:
         jax.jit, static_argnames=('self')
     )  # TODO: not good, redo as pytree
     def jit_grad_R(self, free_params):
-        return jax.grad(self.R)(free_params)
+        return jnp.asarray(jax.grad(self.R)(free_params))
 
     @partial(
         jax.jit, static_argnames=('self')
     )  # TODO: not good, redo as pytree
     def jit_R_val_and_grad(self, free_params):
-        return jax.value_and_grad(self.R)(free_params)
+        val, grad =  jax.value_and_grad(self.R)(free_params)
+        return val, jnp.asarray(grad)
 
     # JAX PyTree methods
 
