@@ -53,25 +53,22 @@ class GradOptimizer(
             having a lot function calls without the gradient (e.g., in SLSQP).
     """
 
-    def __init__(self,
-                 fun=None,
-                 grad=None,
-                 fun_and_grad=None):
+    def __init__(self, fun, grad=None, fun_and_grad=None):
+        if grad is None and fun_and_grad is None:
+            raise ValueError(
+                'At least one of grad or fun_and_grad must be set.'
+            )
         self.fun = fun
-        if grad is None and fun_and_grad is None:
-            raise ValueError(
-                'At least one of grad or fun_and_grad must be set.'
-            )
-        if grad is None and fun_and_grad is None:
-            raise ValueError(
-                'At least one of grad or fun_and_grad must be set.'
-            )
-        # if only one of the two is set, the other one is set to the default
-        self.grad = grad or (lambda arg: fun_and_grad(arg)[1])
-        self.fun_and_grad = fun_and_grad or (lambda arg: (fun(arg), grad(arg)))
-
+        # Use the provided gradient or derive it from fun_and_grad
+        self.grad = (
+            grad if grad is not None else (lambda arg: fun_and_grad(arg)[1])
+        )
+        self.fun_and_grad = (
+            fun_and_grad
+            if fun_and_grad is not None
+            else (lambda arg: (fun(arg), grad(arg)))
+        )
         super().__init__(fun=fun)
-
         self.current_fun = 0
         self.current_grad = 0
 
