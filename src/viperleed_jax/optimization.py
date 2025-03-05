@@ -92,6 +92,32 @@ class SciPyGradOptimizer(GradOptimizer):
     def combined_fun_and_grad(self):
         pass
 
+    def transform_bounds(self, x0, L):
+        """Transform the bounds according to the current transformation.
+
+        Parameters
+        ----------
+        x0 : ndarray
+            The initial guess.
+        L : ndarray
+            The transformation matrix.
+
+        Returns
+        -------
+        list of tuple
+            Transformed bounds.
+        """
+        # If no bounds are set, default to [0, 1] for each dimension.
+        bounds = [(0, 1)] * len(x0) if self.bounds is None else self.bounds
+        x_min, x_max = np.array(bounds).T
+        # Transform the bounds
+        x_min_transformed = L.T @ (x_min - x0)
+        x_max_transformed = L.T @ (x_max - x0)
+        # Ensure lower bounds are always smaller than upper bounds
+        x_min_corrected = np.minimum(x_min_transformed, x_max_transformed)
+        x_max_corrected = np.maximum(x_min_transformed, x_max_transformed)
+        return list(zip(x_min_corrected, x_max_corrected))
+
 
     def __call__(self, x0, L=None):
         """Run the optimization."""
@@ -122,30 +148,15 @@ class SciPyGradOptimizer(GradOptimizer):
         # Transform initial guess
         y0 = np.zeros_like(x0)
 
-        # Set up the bounds
-        bounds = [(0, 1)] * len(x0) if self.bounds is None else self.bounds
-
-        x_min, x_max = np.array(bounds).T
-
-        # Apply transformation correctly
-        x_min_transformed = L.T @ (x_min - x0)
-        x_max_transformed = L.T @ (x_max - x0)
-
-        # Ensure lower bounds are always smaller than upper bounds
-        x_min_corrected, x_max_corrected = (
-            np.minimum(x_min_transformed, x_max_transformed),
-            np.maximum(x_min_transformed, x_max_transformed),
-        )
-
-        # Reconstruct transformed bounds
-        bounds = list(zip(x_min_corrected, x_max_corrected))
+        # get transformed bounds
+        transformed_bounds = self.transform_bounds(x0, L)
 
         scipy_result = minimize(
             fun=_fun_and_grad if self.combined_fun_and_grad else _fun,
             x0=y0,
             method=self.method,
             jac=True if self.combined_fun_and_grad else _grad,
-            bounds=bounds,
+            bounds=transformed_bounds,
             options=self.options,
         )
         total_duration = time.time() - self._start_time
