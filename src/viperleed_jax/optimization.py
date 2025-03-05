@@ -53,7 +53,10 @@ class GradOptimizer(
             having a lot function calls without the gradient (e.g., in SLSQP).
     """
 
-    def __init__(self, fun=None, grad=None, fun_and_grad=None):
+    def __init__(self,
+                 fun=None,
+                 grad=None,
+                 fun_and_grad=None):
         self.fun = fun
         if grad is None and fun_and_grad is None:
             raise ValueError(
@@ -73,6 +76,109 @@ class GradOptimizer(
         self.current_grad = 0
 
 
+class SciPyGradOptimizer(GradOptimizer):
+    """Gradient based optimizers that wrap SciPy's optimize.minimize.
+
+    TODO: docstring
+    """
+    def __init__(self, fun=None, grad=None, fun_and_grad=None, bounds=None, **kwargs):
+        super().__init__(fun, grad, fun_and_grad, **kwargs)
+        self.bounds = bounds
+        self.options={}
+        self.x_history = []
+
+    @abstractmethod
+    def method(self):
+        pass
+
+    @abstractmethod
+    def combined_fun_and_grad(self):
+        pass
+
+
+    def __call__(self, x0, L=None):
+        """Run the optimization."""
+
+        if L is None:
+            L = np.eye(len(x0))
+        L_inv = np.linalg.inv(L)
+
+        self._start_time = time.time()
+
+        def _fun(y):
+            x = x0 + L_inv.T @ y  # Transform y back to x
+            fun_val = self.fun(x)
+            self.x_history.append((x, fun_val, time.time() - self._start_time))
+            return fun_val
+
+        def _grad(y):
+            x = x0 + L_inv.T @ y
+            return L_inv @ self.grad(x)  # Transform gradient
+
+        def _fun_and_grad(y):
+            x = x0 + L_inv.T @ y
+            fun_val, grad_x = self.fun_and_grad(x)
+            grad_y = L_inv @ grad_x  # Transform gradient
+            self.x_history.append((x, fun_val, time.time() - self._start_time))
+            return fun_val, grad_y
+
+        # Transform initial guess
+        y0 = np.zeros_like(x0)
+
+        # Set up the bounds
+        bounds = [(0, 1)] * len(x0) if self.bounds is None else self.bounds
+
+        x_min, x_max = np.array(bounds).T
+
+        # Apply transformation correctly
+        x_min_transformed = L.T @ (x_min - x0)
+        x_max_transformed = L.T @ (x_max - x0)
+
+        # Ensure lower bounds are always smaller than upper bounds
+        x_min_corrected, x_max_corrected = (
+            np.minimum(x_min_transformed, x_max_transformed),
+            np.maximum(x_min_transformed, x_max_transformed),
+        )
+
+        # Reconstruct transformed bounds
+        bounds = list(zip(x_min_corrected, x_max_corrected))
+
+        scipy_result = minimize(
+            fun=_fun_and_grad if self.combined_fun_and_grad else _fun,
+            x0=y0,
+            method=self.method,
+            jac=True if self.combined_fun_and_grad else _grad,
+            bounds=bounds,
+            options=self.options,
+        )
+        total_duration = time.time() - self._start_time
+        return GradOptimizerResult(scipy_result, self.x_history, total_duration)
+
+
+class GradOptimizerResult:
+
+    def __init__(self, scipy_result, x_history, duration):
+        self.iterations = scipy_result.nit
+        self.message = scipy_result.message
+        self.duration = duration
+        self.x_history = x_history
+
+    @property
+    def x(self):
+        return self.x_history[-1][0]
+
+    @property
+    def fun(self):
+        return self.x_history[-1][1]
+
+    def __repr__(self):
+        return (
+            f'Best R = {self.fun}\n'
+            f'message = {self.message}\n'
+            f'iterations = {self.iterations}\n'
+            f'duration = {self.duration:.2f}s)'
+        )
+
 class NonGradOptimizer(Optimizer):
     """Class for optimizers that do not use gradients."""
 
@@ -81,12 +187,12 @@ class NonGradOptimizer(Optimizer):
         super().__init__(fun=fun)
 
 
-class LBFGSBOptimizer(GradOptimizer):
+class LBFGSBOptimizer(SciPyGradOptimizer):
     """Class for setting up the L-BFGS-B algorithm for local minimization.
 
     The BFGS algorithm uses the BFGS approximation of the Hessian, which is
     always positive definite. Gradients and Hessians (approximation) are used to
-    determine teh search direction. A line search is performed along this
+    determine the search direction. A line search is performed along this
     direction, which must satisfy the Wolfe conditions. These conditions provide
     an upper and lower limit for the step size, and one condition also ensures
     that the function value monotonically decreases for each iteration.
@@ -108,64 +214,15 @@ class LBFGSBOptimizer(GradOptimizer):
             algorithm stops earlier due to convergence.
     """
 
-    def __init__(self, fun_and_grad, bounds=None, ftol=1e-7, maxiter=1000):
-        self.fun_and_grad = fun_and_grad
-        self.bounds = bounds
-        self.ftol = ftol
-        self.maxiter = maxiter
-        super().__init__(fun_and_grad=fun_and_grad, grad=None, fun=None)
+    method='L-BFGS-B'
+    combined_fun_and_grad = True
 
-    def __call__(self, start_point):
-        """Start the optimization algorithm.
-
-        This function prints a termination message and returns all the values
-        that are also returned by the SciPy function, plus a list of the
-        function values for each iteration (fun_history) and the
-        runtime (duration).
-
-        Parameters
-        ----------
-            start_point: Starting point of the algorithm.
-        """
-
-        def fun_and_grad_with_storage(arg):
-            """Save function value and grad in variables."""
-            self.current_fun, self.current_grad = self.fun_and_grad(arg)
-            return self.current_fun, self.current_grad
-
-        def callback_function(arg):
-            """This function is called in every iteration to save the function 
-            value.
-            """
-            self.fun_history.append(self.current_fun)
-
-        # Setting up the bounds
-        if self.bounds is None:
-            bounds = [(0, 1) for _ in range(len(start_point))]
-        else:
-            bounds = self.bounds
-
-        # Performing the optimization
-        start_time = time.time()
-        result = minimize(
-            fun_and_grad_with_storage,
-            x0=start_point,
-            method='L-BFGS-B',
-            jac=True,  # assume that the function returns the (val, grad) tuple
-            bounds=bounds,
-            callback=callback_function,
-            options={'maxiter': self.maxiter, 'ftol': self.ftol},
-        )
-        end_time = time.time()
-        duration = end_time - start_time
-        result.fun_history = self.fun_history
-        result.duration = duration
-        logger.info('Optimization Result:\n')
-        logger.info(f'{str(result)}\n\n')
-        return result
+    def __init__(self, fun=None, grad=None, fun_and_grad=None, bounds=None, ftol=1e-7, maxiter=1000):
+        super().__init__(fun=fun, grad=grad, fun_and_grad=fun_and_grad, bounds=bounds)
+        self.options = {'maxiter': maxiter, 'ftol': ftol}
 
 
-class SLSQPOptimizer(GradOptimizer):
+class SLSQPOptimizer(SciPyGradOptimizer):
     """Class for setting up the SLSQP algorithm for local minimization.
 
     The SLSQP algorithm uses a quadratic approximation of the Lagrangian to
@@ -191,63 +248,18 @@ class SLSQPOptimizer(GradOptimizer):
             algorithm stops earlier due to convergence.
     """
 
+    method = 'SLSQP'
+    combined_fun_and_grad = False
+
     def __init__(
         self, fun, grad, bounds=None, damp_fact=1, ftol=1e-6, maxiter=1000
     ):
         self.fun = fun
         self.grad = grad
+        super().__init__(fun_and_grad=None, grad=grad, fun=fun, bounds=bounds)
         self.bounds = bounds
         self.damp_fact = damp_fact
-        self.ftol = ftol * damp_fact
-        self.maxiter = maxiter
-        super().__init__(fun_and_grad=None, grad=grad, fun=fun)
-
-    def __call__(self, start_point):
-        """Start the optimization.
-
-        This function prints a termination message and returns all the values
-        that are also returned by the SciPy function, plus a list of the
-        function values for each iteration (fun_history) and the
-        runtime (duration).
-
-        Parameters
-        ----------
-            start_point: Starting point of the algorithm.
-        """
-
-        def dampened_grad(x):
-            self.fun_history.append(self.current_fun)
-            return self.damp_fact * self.grad(x)
-
-        def dampened_fun_storage(x):
-            self.current_fun = self.fun(x)
-            return self.current_fun * self.damp_fact
-
-        # Setting up the bounds
-        if self.bounds is None:
-            bounds = [(0, 1) for _ in range(len(start_point))]
-        else:
-            bounds = self.bounds
-
-
-        # Performing the optimization
-        start_time = time.time()
-        result = minimize(
-            fun=dampened_fun_storage,
-            x0=start_point,
-            method='SLSQP',
-            jac=dampened_grad,  # use separate call for gradient
-            bounds=bounds,
-            options={'maxiter': self.maxiter, 'ftol': self.ftol},
-        )
-        end_time = time.time()
-        duration = end_time - start_time
-        result.fun_history = self.fun_history
-        result.duration = duration
-        logger.info('Optimization Result:\n')
-        logger.info(f'{str(result)}\n\n')
-        return result
-
+        self.options = {'maxiter': maxiter, 'ftol': ftol * damp_fact}
 
 class CMAESOptimizer(NonGradOptimizer):
     """Class for setting up the CMA-ES optimizer for global exploration.
@@ -358,7 +370,7 @@ class CMAESOptimizer(NonGradOptimizer):
             fun_history=self.fun_history,
             step_size_history=step_size_history,
             generation_time_history=generation_time_history,
-            covariance=state.cholesky_factor @ state.cholesky_factor.T
+            cholesky=state.cholesky_factor,
         )
         # print the minimum function value in the final generation
         logger.info(
@@ -397,7 +409,7 @@ class CMAESResult:
         fun_history,
         step_size_history,
         generation_time_history,
-        covariance,
+        cholesky,
     ):
         self.min_individual = min_individual
         self.best = best
@@ -407,7 +419,7 @@ class CMAESResult:
         self.fun_history = fun_history
         self.step_size_history = np.array(step_size_history)
         self.generation_time_history = np.array(generation_time_history)
-        self.covariance = covariance
+        self.cholesky = cholesky
 
     def __repr__(self):
         """Return a string representation of the optimization result."""
