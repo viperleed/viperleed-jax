@@ -1085,7 +1085,10 @@ class TensorLEEDCalculator:
         # Update vibrations and occupations for the sites
         for site in slab.sitelist:
             site_atoms = [at for at in slab if at.site == site and not at.is_bulk]
-            for element in site.occ.keys():
+            for element in site.occ:
+                if element not in site_atoms[0].offset_occ:
+                    # not on this site
+                    break
                 element_occ_offsets = [at.offset_occ[element] for at in site_atoms]
                 element_vib_offsets = [at.offset_vib[element] for at in site_atoms]
 
@@ -1106,13 +1109,17 @@ class TensorLEEDCalculator:
                 site.occ[element] = element_occ_offsets[0]
                 site.vibamp[element] = element_vib_offsets[0]
 
+                # TODO: check with Michele on this
+                # for at in site_atoms:
+                #     at.mergeDisp(element)
+
         # Optionally write to file
         if write_to_file:
             tmpslab = copy.deepcopy(slab)
             tmpslab.sort_original()
 
             # write POSCAR
-            poscar.write(tmpslab, 'POSCAR_TL_optimized')
+            poscar.write(slab, 'POSCAR_TL_optimized', comments='all')
             # write VIBROCC
             writeVIBROCC(slab, rpars, 'VIBROCC_TL_optimized')
 
