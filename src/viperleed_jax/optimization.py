@@ -184,7 +184,7 @@ class GradOptimizerResult:
             f'Best R = {self.fun}\n'
             f'message = {self.message}\n'
             f'iterations = {self.iterations}\n'
-            f'duration = {self.duration:.2f}s)'
+            f'duration = {self.duration:.2f}s'
         )
 
 class NonGradOptimizer(Optimizer):
