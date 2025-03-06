@@ -1092,6 +1092,8 @@ class TensorLEEDCalculator:
         # convert to numpy arrays
         v0r = np.array(v0r)
         displacements = np.array(displacements)
+        # convert displacements from zxy to xyz order
+        displacements = displacements[:, [1, 2, 0]]
         vibrations = np.array(vibrations)
         occupations = np.array(occupations)
 
@@ -1106,14 +1108,16 @@ class TensorLEEDCalculator:
             at_occupations = occupations[scatterer_indices]
 
             averaged_displacement = at_displacements * at_occupations
-            averaged_displacement = averaged_displacement.sum(axis=0) / occupations.sum()
+            averaged_displacement = averaged_displacement.sum(axis=0) / at_occupations.sum()
 
             rel_at_displacements = at_displacements - averaged_displacement
 
-            at.pos += averaged_displacement
+            at.cartpos += averaged_displacement
 
             for scatterer, rel_disp in zip(at_scatterers, rel_at_displacements):
-                atom.disp_geo[scatterer.element] = rel_disp
+                atom.disp_geo[scatterer.element] = rel_disp # TODO: fix to cartpos
+
+        slab.update_fractional_from_cartesian()
 
         for site in slab.sitelist:
             for element in site.vibamp.keys():
