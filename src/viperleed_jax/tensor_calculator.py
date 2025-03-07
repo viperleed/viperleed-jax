@@ -1044,10 +1044,9 @@ class TensorLEEDCalculator:
 
         return calculator
 
-
     # TODO: needs tests
-    def write_to_slab(self,
-        rpars, slab, base_scatterers, params, write_to_file=True
+    def write_to_slab(
+        self, rpars, slab, base_scatterers, params, write_to_file=True
     ):
         for atom in slab:
             atom.storeOriState()
@@ -1096,36 +1095,46 @@ class TensorLEEDCalculator:
         for at in slab.atlist:
             if at.is_bulk:
                 continue
-            at_scatterers = [s for s in base_scatterers.scatterers if s.num == at.num]
-            scatterer_indices = [base_scatterers.scatterers.index(s) for s in at_scatterers]
+            at_scatterers = [
+                s for s in base_scatterers.scatterers if s.num == at.num
+            ]
+            scatterer_indices = [
+                base_scatterers.scatterers.index(s) for s in at_scatterers
+            ]
             scatterer_indices = np.array(scatterer_indices)
 
             at_displacements = displacements[scatterer_indices]
             at_occupations = occupations[scatterer_indices]
 
             averaged_displacement = at_displacements * at_occupations
-            averaged_displacement = averaged_displacement.sum(axis=0) / at_occupations.sum()
+            averaged_displacement = (
+                averaged_displacement.sum(axis=0) / at_occupations.sum()
+            )
 
             rel_at_displacements = at_displacements - averaged_displacement
 
             at.cartpos += averaged_displacement
 
             for scatterer, rel_disp in zip(at_scatterers, rel_at_displacements):
-                atom.disp_geo[scatterer.element] = rel_disp # TODO: fix to cartpos
+                atom.disp_geo[scatterer.element] = (
+                    rel_disp  # TODO: fix to cartpos
+                )
 
         slab.update_fractional_from_cartesian()
 
         for site in slab.sitelist:
             for element in site.vibamp.keys():
                 siteel_scatterers = [
-                    s for s in base_scatterers.scatterers
+                    s
+                    for s in base_scatterers.scatterers
                     if s.site == site.label and s.element == element
                 ]
                 if len(siteel_scatterers) == 0:
                     continue
 
                 scatterer_indices = [
-                    base_scatterers.scatterers.index(s) for s in siteel_scatterers
+                    base_scatterers.scatterers.index(s)
+                    for s in siteel_scatterers
                 ]
                 scatterer_indices = np.array(scatterer_indices)
 
@@ -1133,8 +1142,12 @@ class TensorLEEDCalculator:
                 scatterer_occupations = occupations[scatterer_indices]
 
                 averaged_vib = scatterer_vibs * scatterer_occupations
-                averaged_vib = averaged_vib.sum(axis=0) / scatterer_occupations.sum()
-                averaged_occ = scatterer_occupations.sum() / len(scatterer_occupations)
+                averaged_vib = (
+                    averaged_vib.sum(axis=0) / scatterer_occupations.sum()
+                )
+                averaged_occ = scatterer_occupations.sum() / len(
+                    scatterer_occupations
+                )
 
                 rel_scatterer_vibs = scatterer_vibs - averaged_vib
                 rel_scatterer_occ = scatterer_occupations - averaged_occ
@@ -1142,7 +1155,9 @@ class TensorLEEDCalculator:
                 site.vibamp[element] = averaged_vib
                 site.occ[element] = averaged_occ
 
-                for scatterer, rel_vib in zip(siteel_scatterers, rel_scatterer_vibs):
+                for scatterer, rel_vib in zip(
+                    siteel_scatterers, rel_scatterer_vibs
+                ):
                     scatterer.atom.disp_vib[element] = rel_vib
                     scatterer.atom.disp_occ[element] = rel_scatterer_occ
 
