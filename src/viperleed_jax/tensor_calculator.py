@@ -412,31 +412,27 @@ class TensorLEEDCalculator:
         )
         return t_matrices
 
+    # @partial(jax.profiler.annotate_function, name="tc.calculate_dynamic_propagator")
     def _calculate_dynamic_propagators(
         self, displacements, components, energy_indices
     ):
-        # For a given displacement, map over energy indices to compute the propagator.
-        def compute_for_energy(energy_index, displacement_index):
-            return calc_propagator(
+        propagator_vmap_en = jax.vmap(
+            calc_propagator, in_axes=(None, None, None, 0)
+        )
+
+        def body_fn(carry, displacement_index):
+            # Compute the result for the current displacement
+            result = propagator_vmap_en(
                 self.max_l_max,
                 displacements[displacement_index],
                 components[displacement_index],
-                self.kappa[energy_index],
+                self.kappa[energy_indices],
             )
+            # No carry state needed, just passing through
+            return carry, result
 
-        # For a given displacement, map over energy indices.
-        def compute_for_displacement(displacement_index):
-            return jax.lax.map(
-                lambda energy_index: compute_for_energy(
-                    energy_index, displacement_index
-                ),
-                energy_indices,
-            )
-
-        # Map over all displacement indices.
-        results = jax.lax.map(
-            compute_for_displacement, jnp.arange(len(displacements))
-        )
+        # Initial carry state can be None if not needed
+        _, results = jax.lax.scan(body_fn, None, jnp.arange(len(displacements)))
         return results
 
     def _calculate_propagators(
