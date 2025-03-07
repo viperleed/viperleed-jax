@@ -864,6 +864,7 @@ class TensorLEEDCalculator:
                     )
 
                 # Use lax.map with a batch_size of 10
+                # Use lax.map with a batch_size of n_atom
                 contributions = jax.lax.map(
                     compute_atom_contrib, atom_ids, batch_size=self.n_atoms
                 )
