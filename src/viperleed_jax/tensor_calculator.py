@@ -869,12 +869,8 @@ class TensorLEEDCalculator:
                 batch_amps = jax.vmap(f_calc, in_axes=(0,), out_axes=0)(
                     atom_ids
                 )
-                amps = jnp.sum(batch_amps, axis=0)
 
-                del en_propagators
-                del en_t_matrix_vib
-                del en_t_matrix_ref
-                return amps
+                return jnp.sum(batch_amps, axis=0)
 
             # map over energies
             l_delta_amps = jax.lax.map(calc_energy, jnp.arange(len(batch)))
