@@ -998,7 +998,6 @@ class TensorLEEDCalculator:
             'interpolation_step': self.interpolation_step,
             'is_surface_atom': self.is_surface_atom,
             'kappa': self.kappa,
-            'n_atoms': self.n_atoms,
             'n_beams': self.n_beams,
             'origin_grid': self.origin_grid,
             'phaseshifts': self.phaseshifts,
