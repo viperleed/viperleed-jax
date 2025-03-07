@@ -246,7 +246,7 @@ class TensorLEEDCalculator:
             logger.debug('Overwriting parameter space.')
         # take delta_slab and set the parameter space
         self._parameter_space = parameter_space.freeze()
-        logger.info('Parameter space set.\n' f'{parameter_space.info}')
+        logger.info(f'Parameter space set.\n{parameter_space.info}')
         logger.info(
             'This parameter space requires dynamic calculation of '
             f'{self._parameter_space.n_dynamic_t_matrices} t-matrice(s) and '
