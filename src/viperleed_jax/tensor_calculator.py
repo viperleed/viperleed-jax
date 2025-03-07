@@ -28,20 +28,7 @@ from viperleed_jax.interpolation import interpolate_ragged_array
 from viperleed_jax.lib_intensity import intensity_prefactor, sum_intensity
 from viperleed_jax.propagator import calc_propagator, symmetry_operations
 from viperleed_jax.t_matrix import vib_dependent_tmatrix
-
-_R_FACTOR_SYNONYMS = {
-    rfactor.pendry_R: ('pendry', 'r_p', 'rp', 'pendry r-factor'),
-    rfactor.R_1: ('r1', 'r_1', 'r1 factor'),
-    rfactor.R_2: ('r2', 'r_2', 'r2 factor'),
-    rfactor.R_ms: ('ms', 'msr', 'rms', 'r_ms', 'r_ms factor'),
-    rfactor.R_zj: (
-        'zj',
-        'zj factor',
-        'zannazi',
-        'zannazi jona',
-        'zannazi-jona',
-    ),
-}
+from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
 
 
 @register_pytree_node_class
@@ -209,7 +196,7 @@ class TensorLEEDCalculator:
 
     def set_rfactor(self, rfactor_name):
         _rfactor_name = rfactor_name.lower().strip()
-        for func, synonyms in _R_FACTOR_SYNONYMS.items():
+        for func, synonyms in R_FACTOR_SYNONYMS.items():
             if _rfactor_name in synonyms:
                 self.rfactor_func = func
                 # TODO: log rfactor change
@@ -994,7 +981,7 @@ class TensorLEEDCalculator:
 
     def tree_flatten(self):
         dynamic_elements = {
-            'rfactor_name': _R_FACTOR_SYNONYMS[self.rfactor_func][0]
+            'rfactor_name': R_FACTOR_SYNONYMS[self.rfactor_func][0]
         }
         simple_elements = {
             'ref_data': self.ref_data,
