@@ -3,11 +3,14 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-02-27'
 
-import jax
-import time
+import csv
 import datetime
-
+import time
 from pathlib import Path
+
+import jax
+import numpy as np
+
 
 def benchmark_calculator(
     calculator, free_params=None, n_repeats=10, csv_file_path=None
