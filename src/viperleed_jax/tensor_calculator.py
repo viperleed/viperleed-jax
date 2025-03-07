@@ -4,7 +4,6 @@ __authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
 __created__ = '2024-05-03'
 
 import copy
-import time
 
 import numpy as np
 
@@ -1151,85 +1150,6 @@ class TensorLEEDCalculator:
             poscar.write(slab, 'POSCAR_TL_optimized', comments='all')
             # write VIBROCC
             writeVIBROCC(slab, rpars, 'VIBROCC_TL_optimized')
-
-
-def benchmark_calculator(
-    calculator, free_params=None, n_repeats=10, csv_file_path=None
-):
-    """
-    Benchmarks the execution of two methods on the given calculator object.
-
-    Parameters:
-      calculator: an object with methods jit_R and jit_grad_R.
-      free_params: parameters passed to the jit functions.
-      n_repeats: number of times to repeat the timed execution.
-      csv_file_path: (optional) path to a CSV file where benchmark results will be appended.
-
-    Returns:
-      A tuple of (r_fac_compile_time, r_fac_time, grad_compile_time, grad_time).
-    """
-    if n_repeats < 1:
-        raise ValueError('Number of repeats must be greater than 0.')
-
-    if free_params is None:
-        free_params = np.array([0.55] * calculator.n_free_parameters)
-
-    # timer object
-    perf = time.perf_counter
-
-    # --- Benchmark for jit_R (R factor) ---
-    # Measure compile time
-    start = perf()
-    calculator.jit_R(free_params).block_until_ready()
-    r_fac_compile_time = perf() - start
-
-    # Measure average execution time over n_repeats
-    start_total = perf()
-    for _ in range(n_repeats):
-        calculator.jit_R(free_params).block_until_ready()
-    r_fac_time = (perf() - start_total) / n_repeats
-
-    # If the compile time is less than 3x the average execution time,
-    # it likely means the function was already compiled.
-    if r_fac_compile_time < 3 * r_fac_time:
-        r_fac_compile_time = None
-
-    # --- Benchmark for jit_grad_R (gradients) ---
-    start = perf()
-    calculator.jit_grad_R(free_params).block_until_ready()
-    grad_compile_time = perf() - start
-
-    start_total = perf()
-    for _ in range(n_repeats):
-        calculator.jit_grad_R(free_params).block_until_ready()
-    grad_time = (perf() - start_total) / n_repeats
-
-    if grad_compile_time < 3 * grad_time:
-        grad_compile_time = None
-
-    # Prepare the results with a timestamp
-    results = {
-        'timestamp': datetime.datetime.now().isoformat(),
-        'r_fac_compile_time': r_fac_compile_time,
-        'r_fac_time': r_fac_time,
-        'grad_compile_time': grad_compile_time,
-        'grad_time': grad_time,
-    }
-
-    # Optionally append the results to a CSV file
-    if csv_file_path:
-        try:
-            file_path = Path(csv_file_path)
-            write_header = not file_path.exists()
-            with file_path.open('a', newline='') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=results.keys())
-                if write_header:
-                    writer.writeheader()
-                writer.writerow(results)
-        except Exception as e:
-            print(f'Error writing to CSV file: {e}')
-
-    return r_fac_compile_time, r_fac_time, grad_compile_time, grad_time
 
 
 def calculate_delta_t_matrix(
