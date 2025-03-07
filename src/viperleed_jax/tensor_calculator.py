@@ -844,19 +844,16 @@ class TensorLEEDCalculator:
             # for every energy
             def calc_energy(e_id):
                 en_propagators = propagators[e_id, :, ...]
-
                 en_t_matrix_vib = mapped_t_matrix_vib[e_id]
                 en_t_matrix_ref = mapped_t_matrix_ref[e_id]
 
-                def f_calc(a):
-                    # calculate delta t matrix which contains all perturbations
+                def compute_atom_contrib(a):
                     delta_t_matrix = calculate_delta_t_matrix(
                         en_propagators[a, :, :].conj(),
                         en_t_matrix_vib[a],
                         en_t_matrix_ref[a],
                         chem_weights[a],
                     )
-
                     # Sum from equation (41) in Rous, Pendry 1989
                     return jnp.einsum(
                         'bl,lk,k->b',
@@ -866,11 +863,11 @@ class TensorLEEDCalculator:
                         optimize='optimal',
                     )
 
-                batch_amps = jax.vmap(f_calc, in_axes=(0,), out_axes=0)(
-                    atom_ids
+                # Use lax.map with a batch_size of 10
+                contributions = jax.lax.map(
+                    compute_atom_contrib, atom_ids, batch_size=self.n_atoms
                 )
-
-                return jnp.sum(batch_amps, axis=0)
+                return jnp.sum(contributions, axis=0)
 
             # map over energies
             l_delta_amps = jax.lax.map(calc_energy, jnp.arange(len(batch)))
