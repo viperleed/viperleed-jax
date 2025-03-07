@@ -828,6 +828,7 @@ class TensorLEEDCalculator:
             )(ref_t_matrices, l_max)
 
             # for every energy
+            @jax.checkpoint # seems to be faster # TODO: test other checkpointing
             def calc_energy(e_id):
                 en_propagators = propagators[e_id, :, ...]
                 en_t_matrix_vib = mapped_t_matrix_vib[e_id]
