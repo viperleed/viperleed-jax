@@ -1163,13 +1163,7 @@ def calculate_delta_t_matrix(
     # delta_t_matrix is the change of the atomic t-matrix with new
     # vibrational amplitudes and after applying the displacement
     # Equation (33) in Rous, Pendry 1989
-    delta_t_matrix = jnp.einsum(
-        'mi, mn, ln-> il',
-        propagator,
-        jnp.diag(1j * t_matrix_vib),
-        propagator,
-        optimize='optimal',
-    )
+    delta_t_matrix = jnp.dot(propagator.T * (1j * t_matrix_vib), propagator.T)
     delta_t_matrix = delta_t_matrix - jnp.diag(1j * t_matrix_ref)
     delta_t_matrix = delta_t_matrix * chem_weight
     return delta_t_matrix
