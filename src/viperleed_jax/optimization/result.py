@@ -10,7 +10,23 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-class CMAESResult:
+
+class OptimizationResult(ABC):
+    
+    def best_R(self):
+        return self.best
+
+    def best_x(self):
+        return self.min_individual
+
+    @abstractmethod
+    def __repr__(self):
+        """Return a string representation of the optimization result."""
+
+    def write_to_file(self, file_path):
+        """Write the optimization result to a file."""
+
+class CMAESResult(OptimizationResult):
     """Class for the output of the CMA-ES algorithm.
 
     Parameters
@@ -60,20 +76,23 @@ class CMAESResult:
         )
 
 
-class GradOptimizerResult:
-    def __init__(self, scipy_result, x_history, duration):
+class GradOptimizerResult(OptimizationResult):
+    def __init__(self, scipy_result, history):
         self.iterations = scipy_result.nit
         self.message = scipy_result.message
-        self.duration = duration
-        self.x_history = x_history
+        self.history = history
 
     @property
-    def x(self):
+    def best_R(self):
+        return self.x_history[-1][1]
+
+    @property
+    def best_x(self):
         return self.x_history[-1][0]
 
     @property
-    def fun(self):
-        return self.x_history[-1][1]
+    def duration(self):
+        return self.history.duration
 
     def __repr__(self):
         return (

@@ -10,6 +10,7 @@ import time
 from abc import ABC, abstractmethod
 
 from .result import CMAESResult, GradOptimizerResult
+from .history import GradOptimizationHistory, EvolutionOptimizationHistory
 
 import tqdm
 import numpy as np
@@ -84,7 +85,7 @@ class SciPyGradOptimizer(GradOptimizer):
         super().__init__(fun, grad, fun_and_grad, **kwargs)
         self.bounds = bounds
         self.options={}
-        self.x_history = []
+        self.history = GradOptimizationHistory()
 
     @abstractmethod
     def method(self):
@@ -128,23 +129,23 @@ class SciPyGradOptimizer(GradOptimizer):
             L = np.eye(len(x0))
         L_inv = np.linalg.inv(L)
 
-        self._start_time = time.time()
-
         def _fun(y):
             x = x0 + L_inv.T @ y  # Transform y back to x
             fun_val = self.fun(x)
-            self.x_history.append((x, fun_val, time.time() - self._start_time))
+            self.history.append(x, R=fun_val, grad_R=None)
             return fun_val
 
         def _grad(y):
             x = x0 + L_inv.T @ y
-            return L_inv @ self.grad(x)  # Transform gradient
+            _grad_x = self.grad(x)
+            self.history.append(x, R=None, grad_R=_grad_x)
+            return L_inv @ _grad_x  # Transform gradient
 
         def _fun_and_grad(y):
             x = x0 + L_inv.T @ y
             fun_val, grad_x = self.fun_and_grad(x)
             grad_y = L_inv @ grad_x  # Transform gradient
-            self.x_history.append((x, fun_val, time.time() - self._start_time))
+            self.history.append(x, R=fun_val, grad_R=grad_y)
             return fun_val, grad_y
 
         # Transform initial guess
@@ -161,8 +162,7 @@ class SciPyGradOptimizer(GradOptimizer):
             bounds=transformed_bounds,
             options=self.options,
         )
-        total_duration = time.time() - self._start_time
-        return GradOptimizerResult(scipy_result, self.x_history, total_duration)
+        return GradOptimizerResult(scipy_result, self.history)
 
 
 class NonGradOptimizer(Optimizer):
@@ -371,9 +371,6 @@ class CMAESOptimizer(NonGradOptimizer):
             f'evaluation time: {duration} seconds'
         )
         return result
-
-
-
 
 
 class SequentialOptimizer(Optimizer):
