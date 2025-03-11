@@ -84,11 +84,11 @@ class GradOptimizerResult(OptimizationResult):
 
     @property
     def best_R(self):
-        return self.x_history[-1][1]
+        return self.history.R_history[-1]
 
     @property
     def best_x(self):
-        return self.x_history[-1][0]
+        return self.history.x_history[-1]
 
     @property
     def duration(self):
@@ -96,7 +96,7 @@ class GradOptimizerResult(OptimizationResult):
 
     def __repr__(self):
         return (
-            f'Best R = {self.fun}\n'
+            f'Best R = {self.best_R}\n'
             f'message = {self.message}\n'
             f'iterations = {self.iterations}\n'
             f'duration = {self.duration:.2f}s'
