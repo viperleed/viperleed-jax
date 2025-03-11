@@ -13,7 +13,7 @@ import numpy as np
 
 class OptimizationHistory(ABC):
     def __init__(self):
-        self._history = None
+        self._history = []
         self._start_time = time.time()
 
     @abstractmethod
@@ -29,49 +29,47 @@ class OptimizationHistory(ABC):
         """Return the duration of the optimization process."""
         return self.timestamp_history[-1] - self._start_time
 
-class GradOptimizationHistory:
+class GradOptimizationHistory(OptimizationHistory):
+    def __init__(self):
+        super().__init__()
 
     def append(self, x, R, grad_R):
         timestamp = time.time()
-        if self._history is None:
-            self._history = np.array([x, R, grad_R, timestamp])
-        else:
-            self._history.append([x, R, grad_R, timestamp])
+        self._history.append([x, R, grad_R, timestamp])
 
     @property
     def x_history(self):
-        return self._history[:, 0]
+        return np.array([h[0] for h in self._history])
 
     @property
     def R_history(self):
-        return self._history[:, 1]
+        return np.array([h[1] for h in self._history])
 
     @property
     def grad_R_history(self):
-        return self._history[:, 2]
+        return np.array([h[2] for h in self._history])
 
     @property
     def timestamp_history(self):
-        return self._history[:, 3]
+        return np.array([h[3] for h in self._history])
 
 
-class EvolutionOptimizationHistory:
+class EvolutionOptimizationHistory(OptimizationHistory):
+    def __init__(self):
+        super().__init__()
 
     def append(self, generation_x, generation_R):
         timestamp = time.time()
-        if self._history is None:
-            self._history = np.array([generation_x, generation_R, timestamp])
-        else:
-            self._history.append([generation_x, generation_R, timestamp])
+        self._history.append([generation_x, generation_R, timestamp])
 
     @property
     def x_history(self):
-        return self._history[:, 0]
+        return np.array([h[0] for h in self._history])
 
     @property
     def R_history(self):
-        return self._history[:, 1]
+        return np.array([h[1] for h in self._history])
 
     @property
     def timestamp_history(self):
-        return self._history[:, 2]
+        return np.array([h[2] for h in self._history])
