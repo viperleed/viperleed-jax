@@ -84,7 +84,6 @@ class CMAESResult(OptimizationResult):
             f'duration = {self.duration:.2f}s'
         )
 
-    @abstractmethod
     def write_to_file(self, file_path):
         """Write the optimization result to a file."""
         np.savez(
@@ -117,7 +116,6 @@ class GradOptimizerResult(OptimizationResult):
             f'duration = {self.duration:.2f}s'
         )
 
-    @abstractmethod
     def write_to_file(self, file_path):
         """Write the optimization result to a file."""
         np.savez(
