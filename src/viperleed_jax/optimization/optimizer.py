@@ -6,7 +6,6 @@ __authors__ = (
 )
 __created__ = '2024-11-20'
 
-import time
 from abc import ABC, abstractmethod
 
 from .result import CMAESResult, GradOptimizerResult
@@ -303,7 +302,6 @@ class CMAESOptimizer(NonGradOptimizer):
             message: A message indicating wether the algorithm finished due to
                 convergence or reaching the maximum number of generations.
             current_generation: Number of performed generations.
-            duration: Total runtime.
             fun_history: All function values of all generations stored in a
                 2D array.
             step_size_history: Step size of each generation stored.
@@ -323,13 +321,11 @@ class CMAESOptimizer(NonGradOptimizer):
         )
         state = initial_state
 
-        step_size_history = []
-        generation_time_history = []
         loss_min = np.full((self.convergence_gens,), fill_value=10.0)
         termination_message = 'Maximum number of generations reached'
-        start_time = time.time()
         # Perform the optimization
-        for g in tqdm.trange(self.n_generations):
+        gen_range = tqdm.trange(self.n_generations)
+        for g in gen_range:
             # Perform one generation
             generation, state, fun_value = sample_and_evaluate(
                 state=state, n_samples=parameters.pop_size
@@ -337,6 +333,7 @@ class CMAESOptimizer(NonGradOptimizer):
             opt_history.append(generation_x=generation,
                                generation_R=fun_value,
                                step_size=state.step_size)
+            gen_range.set_postfix({'R': np.min(opt_history.R_history[-1])})
 
             # To update the AlgorithmState pass in the sorted generation
             state = update_state(state, generation[np.argsort(fun_value)])
