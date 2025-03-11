@@ -29,6 +29,7 @@ class OptimizationResult(ABC):
     def __repr__(self):
         """Return a string representation of the optimization result."""
 
+    @abstractmethod
     def write_to_file(self, file_path):
         """Write the optimization result to a file."""
 
@@ -83,6 +84,16 @@ class CMAESResult(OptimizationResult):
             f'duration = {self.duration:.2f}s'
         )
 
+    @abstractmethod
+    def write_to_file(self, file_path):
+        """Write the optimization result to a file."""
+        np.savez(
+            file_path,
+            x_history=self.history.x_history,
+            R_history=self.history.R_history,
+            step_size_history=self.history.step_size_history,
+            timestamp_history=self.history.timestamp_history,
+        )
 
 class GradOptimizerResult(OptimizationResult):
     def __init__(self, scipy_result, history):
@@ -104,4 +115,15 @@ class GradOptimizerResult(OptimizationResult):
             f'message = {self.message}\n'
             f'iterations = {self.iterations}\n'
             f'duration = {self.duration:.2f}s'
+        )
+
+    @abstractmethod
+    def write_to_file(self, file_path):
+        """Write the optimization result to a file."""
+        np.savez(
+            file_path,
+            x_history=self.history.x_history,
+            R_history=self.history.R_history,
+            grad_R_history=self.history.grad_R_history,
+            timestamp_history=self.history.timestamp_history,
         )
