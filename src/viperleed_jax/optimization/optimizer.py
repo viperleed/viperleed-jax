@@ -85,7 +85,6 @@ class SciPyGradOptimizer(GradOptimizer):
         super().__init__(fun, grad, fun_and_grad, **kwargs)
         self.bounds = bounds
         self.options={}
-        self.history = GradOptimizationHistory()
 
     @abstractmethod
     def method(self):
@@ -124,6 +123,7 @@ class SciPyGradOptimizer(GradOptimizer):
 
     def __call__(self, x0, L=None):
         """Run the optimization."""
+        opt_history = GradOptimizationHistory()
 
         if L is None:
             L = np.eye(len(x0))
@@ -132,20 +132,20 @@ class SciPyGradOptimizer(GradOptimizer):
         def _fun(y):
             x = x0 + L_inv.T @ y  # Transform y back to x
             fun_val = self.fun(x)
-            self.history.append(x, R=fun_val, grad_R=None)
+            opt_history.append(x, R=fun_val, grad_R=None)
             return fun_val
 
         def _grad(y):
             x = x0 + L_inv.T @ y
             _grad_x = self.grad(x)
-            self.history.append(x, R=None, grad_R=_grad_x)
+            opt_history.append(x, R=None, grad_R=_grad_x)
             return L_inv @ _grad_x  # Transform gradient
 
         def _fun_and_grad(y):
             x = x0 + L_inv.T @ y
             fun_val, grad_x = self.fun_and_grad(x)
             grad_y = L_inv @ grad_x  # Transform gradient
-            self.history.append(x, R=fun_val, grad_R=grad_y)
+            opt_history.append(x, R=fun_val, grad_R=grad_y)
             return fun_val, grad_y
 
         # Transform initial guess
@@ -162,7 +162,7 @@ class SciPyGradOptimizer(GradOptimizer):
             bounds=transformed_bounds,
             options=self.options,
         )
-        return GradOptimizerResult(scipy_result, self.history)
+        return GradOptimizerResult(scipy_result, opt_history)
 
 
 class NonGradOptimizer(Optimizer):
@@ -308,6 +308,9 @@ class CMAESOptimizer(NonGradOptimizer):
                 2D array.
             step_size_history: Step size of each generation stored.
         """
+        # Initialize history
+        opt_history = EvolutionOptimizationHistory()
+
         # Set up functions for the algorithm
         parameters, initial_state = cma_setup(
             mean=start_point, step_size=self.step_size, pop_size=self.pop_size
@@ -331,9 +334,10 @@ class CMAESOptimizer(NonGradOptimizer):
             generation, state, fun_value = sample_and_evaluate(
                 state=state, n_samples=parameters.pop_size
             )
-            generation_time_history.append(time.time() - start_time)
-            self.fun_history.append(fun_value)
-            step_size_history.append(state.step_size)
+            opt_history.append(generation_x=generation,
+                               generation_R=fun_value,
+                               step_size=state.step_size)
+
             # To update the AlgorithmState pass in the sorted generation
             state = update_state(state, generation[np.argsort(fun_value)])
             i = g % self.convergence_gens
@@ -344,8 +348,6 @@ class CMAESOptimizer(NonGradOptimizer):
                 )
                 break
 
-        end_time = time.time()
-        duration = end_time - start_time
         if (generation[fun_value.argmin()] < 0.1).any() or (
             generation[fun_value.argmin()] > 0.9
         ).any():
@@ -353,23 +355,13 @@ class CMAESOptimizer(NonGradOptimizer):
 
         # Create result object
         result = CMAESResult(
-            min_individual=generation[fun_value.argmin()],
-            best=fun_value.min(),
+            evolution_history=opt_history,
             message=termination_message,
-            current_generation=g,
-            duration=duration,
-            fun_history=self.fun_history,
-            step_size_history=step_size_history,
-            generation_time_history=generation_time_history,
             cholesky=state.cholesky_factor,
+            convergence_generations=self.convergence_gens,
         )
         # print the minimum function value in the final generation
-        logger.info(
-            f'Loss {fun_value.min()} for individual '
-            f'{fun_value.argmin()} in generation {g}. '
-            f'With Parameters: {generation[fun_value.argmin()]} \n'
-            f'evaluation time: {duration} seconds'
-        )
+        logger.info(result.__repr__())
         return result
 
 

@@ -58,9 +58,9 @@ class EvolutionOptimizationHistory(OptimizationHistory):
     def __init__(self):
         super().__init__()
 
-    def append(self, generation_x, generation_R):
+    def append(self, generation_x, generation_R, step_size):
         timestamp = time.time()
-        self._history.append([generation_x, generation_R, timestamp])
+        self._history.append([generation_x, generation_R, step_size, timestamp])
 
     @property
     def x_history(self):
@@ -71,5 +71,9 @@ class EvolutionOptimizationHistory(OptimizationHistory):
         return np.array([h[1] for h in self._history])
 
     @property
-    def timestamp_history(self):
+    def step_size_history(self):
         return np.array([h[2] for h in self._history])
+
+    @property
+    def timestamp_history(self):
+        return np.array([h[3] for h in self._history])
