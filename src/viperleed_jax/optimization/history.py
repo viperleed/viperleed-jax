@@ -5,13 +5,34 @@ __authors__ = (
 )
 __created__ = '2025-03-11'
 
+from abc import ABC, abstractmethod
+import time
+
 import numpy as np
 
-class GradOptimizationHistory:
+
+class OptimizationHistory(ABC):
     def __init__(self):
         self._history = None
+        self._start_time = time.time()
 
-    def append(self, x, R, grad_R, timestamp):
+    @abstractmethod
+    def append(self, *args):
+        pass
+
+    @abstractmethod
+    def timestamp_history(self):
+        pass
+
+    @property
+    def duration(self):
+        """Return the duration of the optimization process."""
+        return self.timestamp_history[-1] - self._start_time
+
+class GradOptimizationHistory:
+
+    def append(self, x, R, grad_R):
+        timestamp = time.time()
         if self._history is None:
             self._history = np.array([x, R, grad_R, timestamp])
         else:
@@ -35,10 +56,9 @@ class GradOptimizationHistory:
 
 
 class EvolutionOptimizationHistory:
-    def __init__(self):
-        self._history = None
 
-    def append(self, generation_x, generation_R, timestamp):
+    def append(self, generation_x, generation_R):
+        timestamp = time.time()
         if self._history is None:
             self._history = np.array([generation_x, generation_R, timestamp])
         else:
