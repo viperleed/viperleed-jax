@@ -102,7 +102,9 @@ class GradOptimizerResult(OptimizationResult):
 
     @property
     def best_R(self):
-        return self.history.R_history[-1]
+        # get last non-nan value
+        non_nan_R = self.history.R_history[~np.isnan(self.history.R_history)]
+        return non_nan_R[-1]
 
     @property
     def best_x(self):
