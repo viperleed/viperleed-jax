@@ -130,6 +130,7 @@ namespaces = false
         'ISC001',   # avoids conflicts with formatter
         'TRY003',   # allow long error messages
         'EM101',    # allow string literals in errors
+        'N802',     # don't complain about name with upper case R (for R-factor)
     ]
     flake8-quotes.inline-quotes='single'
 
