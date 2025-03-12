@@ -266,7 +266,7 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         fun_and_grad=None,
         bounds=None,
         damp_fact=1,
-        ftol=1e-6,
+        ftol=5e-6,
         maxiter=1000,
     ):
         super().__init__(fun=fun, grad=grad, fun_and_grad=fun_and_grad, bounds=bounds)
@@ -297,7 +297,7 @@ class CMAESOptimizer(NonGradOptimizer):
             function value of the last five generations.
     """
 
-    def __init__(self, fun, pop_size, n_generations, step_size=0.5, ftol=1e-4,
+    def __init__(self, fun, pop_size, n_generations, step_size=0.5, ftol=5e-3,
                  convergence_gens=5):
         self.fun = fun
         self.step_size = step_size
