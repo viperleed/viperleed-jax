@@ -1041,7 +1041,8 @@ class TensorLEEDCalculator:
         bench_results = utils.benchmark_calculator(
             self, free_params, n_repeats, csv_file_path
         )
-        logger.debug(utils.format_benchmark_results(bench_results))
+        logger.info('Runnning timing benchmarks for tensor-LEED calculation...')
+        logger.info(utils.format_benchmark_results(bench_results))
 
     # TODO: needs tests
     def write_to_slab(
