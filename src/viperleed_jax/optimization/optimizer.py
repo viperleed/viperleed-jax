@@ -39,6 +39,17 @@ class Optimizer(ABC):
     def __call__(self):
         """Start the optimization."""
 
+    @abstractmethod
+    def _start_message(self):
+        """Return the start message for the optimizer."""
+
+    def _end_message(self, result):
+        """Return the end message for the optimizer."""
+        result_txt = result.__repr__()
+        msg = 'Optimization terminated.\n'
+        # add tabulation to the result text
+        msg += '\t' + result_txt.replace('\n', '\n\t')
+        return msg
 
 class GradOptimizer(
     Optimizer
@@ -122,6 +133,7 @@ class SciPyGradOptimizer(GradOptimizer):
 
     def __call__(self, x0, L=None):
         """Run the optimization."""
+        logger.info(self._start_message(L))
         opt_history = GradOptimizationHistory()
 
         if L is None:
@@ -161,7 +173,18 @@ class SciPyGradOptimizer(GradOptimizer):
             bounds=transformed_bounds,
             options=self.options,
         )
-        return GradOptimizerResult(scipy_result, opt_history)
+        result = GradOptimizerResult(scipy_result, opt_history)
+        logger.info(self._end_message(result))
+        return result
+
+    def _start_message(self, L):
+        """Return the start message for the optimizer."""
+        msg = 'Starting Optimization using SciPy...\n'
+        msg += f'\tMethod:\t\t{self.method}\n'
+        msg += f'\tPreconditioned:\t{L is not None}\n'
+        msg += f'\tftol:\t\t{self.options.get("ftol")}\n'
+        msg += f'\tmaxiter:\t{self.options.get("maxiter")}\n'
+        return msg
 
 
 class NonGradOptimizer(Optimizer):
@@ -306,6 +329,9 @@ class CMAESOptimizer(NonGradOptimizer):
                 2D array.
             step_size_history: Step size of each generation stored.
         """
+        # Print start message
+        logger.info(self._start_message())
+
         # Initialize history
         opt_history = EvolutionOptimizationHistory()
 
@@ -359,8 +385,18 @@ class CMAESOptimizer(NonGradOptimizer):
             convergence_generations=self.convergence_gens,
         )
         # print the minimum function value in the final generation
-        logger.info(result.__repr__())
+        logger.info(self._end_message(result))
         return result
+
+    def _start_message(self):
+        """Return the start message for the optimizer."""
+        msg = 'Starting CMA-ES optimization...\n'
+        msg += f'\tPop. size:\t{self.pop_size}\n'
+        msg += f'\tStep size:\t{self.step_size}\n'
+        msg += f'\tMax. gens.:\t{self.n_generations}\n'
+        msg += f'\tLookback gens.:\t{self.convergence_gens}\n'
+        msg += f'\tConv. tol.:\t{self.ftol}\n'
+        return msg
 
 
 class SequentialOptimizer(Optimizer):

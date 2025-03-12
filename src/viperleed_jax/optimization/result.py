@@ -78,10 +78,10 @@ class CMAESResult(OptimizationResult):
     def __repr__(self):
         """Return a string representation of the optimization result."""
         return (
-            f'Best R = {self.best_R}\n'
-            f'message = {self.message}\n'
-            f'generations = {self.n_generations}\n'
-            f'duration = {self.duration:.2f}s'
+            f'Best R:\t\t{self.best_R:.4f}\n'
+            f'Message:\t{self.message}\n'
+            f'Generations:\t{self.n_generations}\n'
+            f'Duration:\t{self.duration:.2f}s'
         )
 
     def write_to_file(self, file_path):
@@ -110,10 +110,10 @@ class GradOptimizerResult(OptimizationResult):
 
     def __repr__(self):
         return (
-            f'Best R = {self.best_R}\n'
-            f'message = {self.message}\n'
-            f'iterations = {self.iterations}\n'
-            f'duration = {self.duration:.2f}s'
+            f'Best R:\t\t{self.best_R:.4f}\n'
+            f'Message:\t{self.message}\n'
+            f'Iterations:\t{self.iterations}\n'
+            f'Duration:\t{self.duration:.2f}s'
         )
 
     def write_to_file(self, file_path):
