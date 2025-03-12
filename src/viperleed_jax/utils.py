@@ -105,10 +105,10 @@ def format_benchmark_results(results):
 
     return (
         'Benchmark results:\n'
-        f'\tR factor compile time: {r_fac_compile_time:.4f} s\n'
-        f'\tR factor time: {1000 * r_fac_time:.4f} ms\n'
-        f'\tGradient compile time: {grad_compile_time:.4f} s\n'
-        f'\tGradient time: {1000 * grad_time:.4f} ms'
+        f'\tR factor comp. time:\t{r_fac_compile_time:.4f} s\n'
+        f'\tR factor exec. time:\t{1000 * r_fac_time:.4f} ms\n'
+        f'\tGradient comp. time:\t{grad_compile_time:.4f} s\n'
+        f'\tGradient exec. time:\t{1000 * grad_time:.4f} ms'
     )
 
 def estimate_function_cost(f, *args):
