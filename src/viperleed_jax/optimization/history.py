@@ -35,6 +35,10 @@ class GradOptimizationHistory(OptimizationHistory):
 
     def append(self, x, R, grad_R):
         timestamp = time.time()
+        if R is None:
+            R = np.nan
+        if grad_R is None:
+            grad_R = np.full_like(x, np.nan)
         self._history.append([x, R, grad_R, timestamp])
 
     @property
