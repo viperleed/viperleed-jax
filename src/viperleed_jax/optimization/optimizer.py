@@ -333,7 +333,8 @@ class CMAESOptimizer(NonGradOptimizer):
             opt_history.append(generation_x=generation,
                                generation_R=fun_value,
                                step_size=state.step_size)
-            gen_range.set_postfix({'R': np.min(opt_history.R_history[-1])})
+            min_R_convergence_gens = np.min(opt_history.R_history[-1])
+            gen_range.set_postfix({'R': f'{min_R_convergence_gens:.4f}'})
 
             # To update the AlgorithmState pass in the sorted generation
             state = update_state(state, generation[np.argsort(fun_value)])
