@@ -1038,10 +1038,10 @@ class TensorLEEDCalculator:
 
     def benchmark(self, free_params=None, n_repeats=10, csv_file_path=None):
         """Run benchmarks and add log results."""
+        logger.info('Runnning timing benchmarks for tensor-LEED calculation...')
         bench_results = utils.benchmark_calculator(
             self, free_params, n_repeats, csv_file_path
         )
-        logger.info('Runnning timing benchmarks for tensor-LEED calculation...')
         logger.info(utils.format_benchmark_results(bench_results))
 
     # TODO: needs tests
