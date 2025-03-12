@@ -28,6 +28,7 @@ from viperleed_jax.lib_intensity import sum_intensity
 from viperleed_jax.propagator import calc_propagator, symmetry_operations
 from viperleed_jax.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
+from viperleed_jax import utils
 
 
 @register_pytree_node_class
@@ -1034,6 +1035,13 @@ class TensorLEEDCalculator:
         calculator.set_rfactor(dynamic_elements['rfactor_name'])
 
         return calculator
+
+    def benchmark_jit(self, free_params=None, n_repeats=10, csv_file_path=None):
+        """Run benchmarks and add log results."""
+        bench_results = utils.benchmark_calculator(
+            self, free_params, n_repeats, csv_file_path
+        )
+        logger.debug(utils.format_benchmark_results(bench_results))
 
     # TODO: needs tests
     def write_to_slab(

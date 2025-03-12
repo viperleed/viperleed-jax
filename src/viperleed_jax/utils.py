@@ -91,6 +91,25 @@ def benchmark_calculator(
 
     return r_fac_compile_time, r_fac_time, grad_compile_time, grad_time
 
+def format_benchmark_results(results):
+    """Format the benchmark results for display.
+
+    Parameters:
+      results: a tuple of (r_compile_time, r_time,
+        grad_compile_time, grad_time).
+
+    Returns:
+      A formatted string.
+    """
+    r_fac_compile_time, r_fac_time, grad_compile_time, grad_time = results
+
+    return (
+        'Benchmark results:\n'
+        f'\tR factor compile time: {r_fac_compile_time:.4f} s\n'
+        f'\tR factor time: {1000 * r_fac_time:.4f} ms\n'
+        f'\tGradient compile time: {grad_compile_time:.4f} s\n'
+        f'\tGradient time: {1000 * grad_time:.4f} ms'
+    )
 
 def estimate_function_cost(f, *args):
     fun_cost = jax.jit(f).lower(*args).compile().cost_analysis()
