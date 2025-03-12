@@ -1036,7 +1036,7 @@ class TensorLEEDCalculator:
 
         return calculator
 
-    def benchmark_jit(self, free_params=None, n_repeats=10, csv_file_path=None):
+    def benchmark(self, free_params=None, n_repeats=10, csv_file_path=None):
         """Run benchmarks and add log results."""
         bench_results = utils.benchmark_calculator(
             self, free_params, n_repeats, csv_file_path
