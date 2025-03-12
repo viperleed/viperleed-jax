@@ -22,7 +22,8 @@ def benchmark_calculator(
       calculator: an object with methods jit_R and jit_grad_R.
       free_params: parameters passed to the jit functions.
       n_repeats: number of times to repeat the timed execution.
-      csv_file_path: (optional) path to a CSV file where benchmark results will be appended.
+      csv_file_path: (optional) path to a CSV file where benchmark results will
+        be appended.
 
     Returns:
       A tuple of (r_fac_compile_time, r_fac_time, grad_compile_time, grad_time).
