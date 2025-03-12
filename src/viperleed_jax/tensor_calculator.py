@@ -24,7 +24,7 @@ from viperleed_jax.dense_quantum_numbers import (
 )
 from viperleed_jax.interpolation import *
 from viperleed_jax.interpolation import interpolate_ragged_array
-from viperleed_jax.lib_intensity import intensity_prefactor, sum_intensity
+from viperleed_jax.lib_intensity import sum_intensity
 from viperleed_jax.propagator import calc_propagator, symmetry_operations
 from viperleed_jax.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
@@ -962,20 +962,23 @@ class TensorLEEDCalculator:
         jax.jit, static_argnames=('self')
     )  # TODO: not good, redo as pytree
     def jit_R(self, free_params):
+        """JIT compiled R-factor calculation."""
         return self.R(free_params)
 
     @partial(
         jax.jit, static_argnames=('self')
     )  # TODO: not good, redo as pytree
-    def jit_grad_R(self, free_params):
-        return jnp.asarray(jax.grad(self.R)(free_params))
-
-    @partial(
-        jax.jit, static_argnames=('self')
-    )  # TODO: not good, redo as pytree
     def jit_R_val_and_grad(self, free_params):
+        """JIT compiled R-factor calculation with gradient."""
         val, grad = jax.value_and_grad(self.R)(free_params)
-        return val, jnp.asarray(grad)
+        grad = jnp.asarray(grad)
+        return val, grad
+
+    def jit_grad_R(self, free_params):
+        """JIT compiled R-factor gradient calculation."""
+        _, grad = self.jit_R_val_and_grad(free_params)
+        return grad
+        return jnp.asarray(jax.grad(self.R)(free_params))
 
     # JAX PyTree methods
 
