@@ -8,11 +8,8 @@ __created__ = '2024-11-20'
 
 from abc import ABC, abstractmethod
 
-from .result import CMAESResult, GradOptimizerResult
-from .history import GradOptimizationHistory, EvolutionOptimizationHistory
-
-import tqdm
 import numpy as np
+import tqdm
 from clinamen2.cmaes.params_and_state import (
     create_sample_from_state,
     create_update_algorithm_state,
@@ -20,6 +17,9 @@ from clinamen2.cmaes.params_and_state import (
 from clinamen2.utils.script_functions import cma_setup
 from scipy.optimize import minimize
 from viperleed.calc import LOGGER as logger
+
+from .history import EvolutionOptimizationHistory, GradOptimizationHistory
+from .result import CMAESResult, GradOptimizerResult
 
 
 class Optimizer(ABC):
