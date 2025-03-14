@@ -89,8 +89,42 @@ class GradOptimizer(
 class SciPyGradOptimizer(GradOptimizer):
     """Gradient based optimizers that wrap SciPy's optimize.minimize.
 
-    TODO: docstring
+    Parameters
+    ----------
+    fun : callable, optional
+        The objective function to be minimized.
+    grad : callable, optional
+        The gradient of the objective function.
+    fun_and_grad : callable, optional
+        A function that returns both the objective function value and its
+        gradient.
+    bounds : sequence, optional
+        Bounds on variables for the optimizer. (min, max) pairs for each element
+        in x.
+    **kwargs : dict, optional
+        Additional keyword arguments to pass to the optimizer.
+
+    Attributes
+    ----------
+    bounds : sequence
+        Bounds on variables for the optimizer.
+    options : dict
+        Options for the optimizer.
+
+    Methods
+    -------
+    method()
+        Abstract method to define the optimization method.
+    combined_fun_and_grad()
+        Abstract method to define if the function returns both value and gradient.
+    transform_bounds(x0, L)
+        Transform the bounds according to the current transformation.
+    __call__(x0, L=None)
+        Run the optimization.
+    _start_message(L)
+        Return the start message for the optimizer.
     """
+
     def __init__(self, fun=None, grad=None, fun_and_grad=None, bounds=None, **kwargs):
         super().__init__(fun, grad, fun_and_grad, **kwargs)
         self.bounds = bounds
@@ -98,11 +132,12 @@ class SciPyGradOptimizer(GradOptimizer):
 
     @abstractmethod
     def method(self):
-        pass
+        """Optimization algorithm as used by scipy.optimize.minimize."""
 
     @abstractmethod
     def combined_fun_and_grad(self):
-        pass
+        """Wether the optimizer uses a combined function and gradient."""
+
 
     def transform_bounds(self, x0, L):
         """Transform the bounds according to the current transformation.
@@ -225,8 +260,10 @@ class LBFGSBOptimizer(SciPyGradOptimizer):
     method='L-BFGS-B'
     combined_fun_and_grad = True
 
-    def __init__(self, fun=None, grad=None, fun_and_grad=None, bounds=None, ftol=1e-7, maxiter=1000):
-        super().__init__(fun=fun, grad=grad, fun_and_grad=fun_and_grad, bounds=bounds)
+    def __init__(self, fun=None, grad=None, fun_and_grad=None, bounds=None,
+                 ftol=1e-7, maxiter=1000):
+        super().__init__(fun=fun, grad=grad, fun_and_grad=fun_and_grad,
+                         bounds=bounds)
         self.options = {'maxiter': maxiter, 'ftol': ftol}
 
 
@@ -269,7 +306,8 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         ftol=5e-6,
         maxiter=1000,
     ):
-        super().__init__(fun=fun, grad=grad, fun_and_grad=fun_and_grad, bounds=bounds)
+        super().__init__(fun=fun, grad=grad, fun_and_grad=fun_and_grad,
+                         bounds=bounds)
         self.bounds = bounds
         self.damp_fact = damp_fact
         self.options = {'maxiter': maxiter, 'ftol': ftol * damp_fact}
