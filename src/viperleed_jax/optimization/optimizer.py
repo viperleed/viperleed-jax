@@ -312,6 +312,16 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         self.damp_fact = damp_fact
         self.options = {'maxiter': maxiter, 'ftol': ftol * damp_fact}
 
+    def grad(self, x):
+        """Return the gradient of the objective function."""
+        return self.damp_fact * super().grad(x)
+
+    def fun_and_grad(self, x):
+        """Return the function value and gradient of the objective function."""
+        fun, grad = super().fun_and_grad(x)
+        return fun, self.damp_fact * grad
+
+
 class CMAESOptimizer(NonGradOptimizer):
     """Class for setting up the CMA-ES optimizer for global exploration.
 
