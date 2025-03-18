@@ -191,7 +191,7 @@ class SciPyGradOptimizer(GradOptimizer):
             x = x0 + L_inv.T @ y
             fun_val, grad_x = self.fun_and_grad(x)
             grad_y = L_inv @ grad_x  # Transform gradient
-            opt_history.append(x, R=fun_val, grad_R=grad_y)
+            opt_history.append(x, R=fun_val, grad_R=grad_x)
             return fun_val, grad_y
 
         # Transform initial guess
