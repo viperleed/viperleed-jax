@@ -126,13 +126,16 @@ class SciPyGradOptimizer(GradOptimizer):
     """
 
     def __init__(self, fun=None, grad=None, fun_and_grad=None, bounds=None,
-                 grad_damp_factor=1.0, **kwargs):
+                 grad_damp_factor=1.0, 
+                 ftol=5e-6,
+                 maxiter=1000,
+                 **kwargs):
         super().__init__(fun, grad, fun_and_grad, **kwargs)
         self.bounds = bounds
         self.options={}
         self.grad_damp_factor = grad_damp_factor
-        self.options['ftol'] = kwargs.get('ftol', 5e-6) * self.grad_damp_factor
-        self.options['maxiter'] = kwargs.get('maxiter', 1000)
+        self.options['ftol'] = ftol * self.grad_damp_factor
+        self.options['maxiter'] = maxiter
 
     @abstractmethod
     def method(self):
