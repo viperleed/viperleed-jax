@@ -126,7 +126,7 @@ class SciPyGradOptimizer(GradOptimizer):
     """
 
     def __init__(self, fun=None, grad=None, fun_and_grad=None, bounds=None,
-                 grad_damp_factor=1.0, 
+                 grad_damp_factor=1.0,
                  ftol=5e-6,
                  maxiter=1000,
                  **kwargs):
@@ -309,12 +309,12 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         grad=None,
         fun_and_grad=None,
         bounds=None,
-        grad_damp_fact=0.1,
+        grad_damp_factor=0.1,
         **kwargs,
     ):
         super().__init__(
             fun=fun, grad=grad, fun_and_grad=fun_and_grad,
-            bounds=bounds, grad_damp_factor=grad_damp_fact,
+            bounds=bounds, grad_damp_factor=grad_damp_factor,
             **kwargs
         )
         self.bounds = bounds
