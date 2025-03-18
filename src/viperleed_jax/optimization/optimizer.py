@@ -134,7 +134,7 @@ class SciPyGradOptimizer(GradOptimizer):
         self.bounds = bounds
         self.options={}
         self.grad_damp_factor = grad_damp_factor
-        self.options['ftol'] = ftol * self.grad_damp_factor
+        self.options['ftol'] = ftol / self.grad_damp_factor
         self.options['maxiter'] = maxiter
 
     @abstractmethod
@@ -228,7 +228,7 @@ class SciPyGradOptimizer(GradOptimizer):
         msg = 'Starting Optimization using SciPy...\n'
         msg += f'\tMethod:\t\t{self.method}\n'
         msg += f'\tPreconditioned:\t{L is not None}\n'
-        msg += f'\tftol:\t\t{self.options.get("ftol")}\n'
+        msg += f'\tftol:\t\t{self.options.get("ftol")/self.grad_damp_factor}\n'
         msg += f'\tmaxiter:\t{self.options.get("maxiter")}\n'
         msg += f'\tGrad. damp. f.:\t{self.grad_damp_factor}\n'
         return msg
