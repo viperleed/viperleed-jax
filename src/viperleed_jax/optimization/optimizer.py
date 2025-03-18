@@ -125,10 +125,14 @@ class SciPyGradOptimizer(GradOptimizer):
         Return the start message for the optimizer.
     """
 
-    def __init__(self, fun=None, grad=None, fun_and_grad=None, bounds=None, **kwargs):
+    def __init__(self, fun=None, grad=None, fun_and_grad=None, bounds=None,
+                 grad_damp_factor=1.0, **kwargs):
         super().__init__(fun, grad, fun_and_grad, **kwargs)
         self.bounds = bounds
         self.options={}
+        self.grad_damp_factor = grad_damp_factor
+        self.options['ftol'] = kwargs.get('ftol', 5e-6) * self.grad_damp_factor
+        self.options['maxiter'] = kwargs.get('maxiter', 1000)
 
     @abstractmethod
     def method(self):
@@ -184,14 +188,18 @@ class SciPyGradOptimizer(GradOptimizer):
         def _grad(y):
             x = x0 + L_inv.T @ y
             _grad_x = self.grad(x)
-            opt_history.append(x, R=None, grad_R=_grad_x)
+            opt_history.append(
+                x, R=None, grad_R=_grad_x / self.grad_damp_factor
+            )
             return L_inv @ _grad_x  # Transform gradient
 
         def _fun_and_grad(y):
             x = x0 + L_inv.T @ y
             fun_val, grad_x = self.fun_and_grad(x)
             grad_y = L_inv @ grad_x  # Transform gradient
-            opt_history.append(x, R=fun_val, grad_R=grad_x)
+            opt_history.append(
+                x, R=fun_val, grad_R=grad_x / self.grad_damp_factor
+            )
             return fun_val, grad_y
 
         # Transform initial guess
@@ -219,6 +227,7 @@ class SciPyGradOptimizer(GradOptimizer):
         msg += f'\tPreconditioned:\t{L is not None}\n'
         msg += f'\tftol:\t\t{self.options.get("ftol")}\n'
         msg += f'\tmaxiter:\t{self.options.get("maxiter")}\n'
+        msg += f'\tGrad. damp. f.:\t{self.grad_damp_factor}\n'
         return msg
 
 
@@ -261,10 +270,10 @@ class LBFGSBOptimizer(SciPyGradOptimizer):
     combined_fun_and_grad = True
 
     def __init__(self, fun=None, grad=None, fun_and_grad=None, bounds=None,
-                 ftol=1e-7, maxiter=1000):
+                 **kwargs):
         super().__init__(fun=fun, grad=grad, fun_and_grad=fun_and_grad,
-                         bounds=bounds)
-        self.options = {'maxiter': maxiter, 'ftol': ftol}
+                         bounds=bounds, **kwargs)
+
 
 
 class SLSQPOptimizer(SciPyGradOptimizer):
@@ -286,11 +295,6 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         grad: Gradient of the objective function.
         bounds: Since the parameters are normalized, all bounds are by default
             set to [0,1].
-        damp_factor: Damping factor.
-        ftol: Convergence condition that sets a lower limit on the difference
-            in function value between two iterations.
-        maxiter: Maximal number of iterations for the algorithm. Usually, the
-            algorithm stops earlier due to convergence.
     """
 
     method = 'SLSQP'
@@ -302,24 +306,15 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         grad=None,
         fun_and_grad=None,
         bounds=None,
-        damp_fact=1,
-        ftol=5e-6,
-        maxiter=1000,
+        grad_damp_fact=0.1,
+        **kwargs,
     ):
-        super().__init__(fun=fun, grad=grad, fun_and_grad=fun_and_grad,
-                         bounds=bounds)
+        super().__init__(
+            fun=fun, grad=grad, fun_and_grad=fun_and_grad,
+            bounds=bounds, grad_damp_factor=grad_damp_fact,
+            **kwargs
+        )
         self.bounds = bounds
-        self.damp_fact = damp_fact
-        self.options = {'maxiter': maxiter, 'ftol': ftol * damp_fact}
-
-    def grad(self, x):
-        """Return the gradient of the objective function."""
-        return self.damp_fact * super().grad(x)
-
-    def fun_and_grad(self, x):
-        """Return the function value and gradient of the objective function."""
-        fun, grad = super().fun_and_grad(x)
-        return fun, self.damp_fact * grad
 
 
 class CMAESOptimizer(NonGradOptimizer):
