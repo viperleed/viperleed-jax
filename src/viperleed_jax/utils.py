@@ -52,7 +52,10 @@ def benchmark_calculator(
     # If the compile time is less than 3x the average execution time,
     # it likely means the function was already compiled.
     if r_fac_compile_time < 3 * r_fac_time:
-        r_fac_compile_time = None
+        print(
+            'R factor compilation time is suspiciously low. '
+            'The function may have been precompiled.'
+    )
 
     # --- Benchmark for jit_grad_R (gradients) ---
     start = perf()
@@ -65,7 +68,10 @@ def benchmark_calculator(
     grad_time = (perf() - start_total) / n_repeats
 
     if grad_compile_time < 3 * grad_time:
-        grad_compile_time = None
+        print(
+            'Gradient compilation time is suspiciously low. '
+            'The function may have been precompiled.'
+        )
 
     # Prepare the results with a timestamp
     results = {
