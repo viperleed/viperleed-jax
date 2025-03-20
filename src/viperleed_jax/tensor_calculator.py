@@ -201,7 +201,8 @@ class TensorLEEDCalculator:
                 self.rfactor_func = func
                 logger.info(f'R-factor set to {func.__name__}.')
                 return
-        raise ValueError(f'Unknown R-factor name: {rfactor_name}')
+        err_msg = f'Unknown R-factor name: {rfactor_name}'
+        raise ValueError(err_msg)
 
     def set_experiment_intensity(self, comp_intensity, comp_energies):
         logger.debug(
