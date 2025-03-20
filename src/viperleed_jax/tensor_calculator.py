@@ -199,7 +199,7 @@ class TensorLEEDCalculator:
         for func, synonyms in R_FACTOR_SYNONYMS.items():
             if _rfactor_name in synonyms:
                 self.rfactor_func = func
-                # TODO: log rfactor change
+                logger.info(f'R-factor set to {func.__name__}.')
                 return
         raise ValueError(f'Unknown R-factor name: {rfactor_name}')
 
