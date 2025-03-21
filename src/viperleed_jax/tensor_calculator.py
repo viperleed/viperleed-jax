@@ -427,58 +427,46 @@ class TensorLEEDCalculator:
                                  batch_size=self.batch_energies)
         return t_matrices
 
-    def _calculate_dynamic_propagators(self, displacements, components, energy_indices):
-        # Outer loop: iterate over energy indices
-        def energy_loop(energy_idx):
-            # Inner loop: iterate over atom indices (i.e. each displacement/component pair)
-            def atom_loop(atom_idx):
-                return calc_propagator(
-                    self.max_l_max,
-                    displacements[atom_idx],
-                    components[atom_idx],
-                    self.kappa[energy_idx],
-                )
+    def _calculate_dynamic_propagator(self, displacements, components, kappa):
+        """
+        Compute dynamic propagators for a single energy index.
 
-            return jax.lax.map(
-                atom_loop,
-                jnp.arange(len(displacements)),
-                batch_size=self.batch_atoms,
-            )
-
-        results = jax.lax.map(
-            energy_loop,
-            jnp.array(energy_indices),
-            batch_size=self.batch_energies,
+        Returns an array of shape (num_displacements, ...).
+        """
+        return jax.lax.map(
+            lambda atom_idx: calc_propagator(
+                self.max_l_max,
+                displacements[atom_idx],
+                components[atom_idx],
+                kappa,
+            ),
+            jnp.arange(len(displacements)),
+            batch_size=self.batch_atoms,
         )
-        # results has shape (num_energies, num_displacements, ...).
-        # Use einsum to transpose the first two axes:
-        return jnp.einsum('ed...->de...', results)
 
     def _calculate_propagators(
         self, displacements, displacements_components, energy_indices
     ):
-        # We want the final result to be indexed as (energies, atom_basis, lm, l'm')
+        # We want the final result indexed as (energies, atom_basis, lm, l'm')
         energy_indices = jnp.array(energy_indices)
 
         def process_energy(e_idx):
             # --- Dynamic propagators ---
             if len(displacements) > 0:
-                # Compute dynamic propagators for a single energy.
-                # _calculate_dynamic_propagators expects a list of energies, so we wrap e_idx.
-                dyn = self._calculate_dynamic_propagators(
-                    displacements, displacements_components, [e_idx]
+                # Now call the per-energy dynamic propagator.
+                dyn = self._calculate_dynamic_propagator(
+                    displacements,
+                    displacements_components,
+                    self.kappa[e_idx],
                 )
-                # Squeeze the energy axis (of length 1); result shape: (atom_basis, lm, m)
-                dyn = jnp.squeeze(dyn, axis=1)
             else:
-                # Fallback to zeros matching a static propagator’s shape.
                 dyn = jnp.zeros_like(self._static_propagators[0])
 
             # --- Static propagators ---
             if len(self._static_propagators) == 0:
                 stat = jnp.zeros_like(dyn)
             else:
-                # self._static_propagators assumed shape: (atom_basis, num_energies, lm, m)
+                # Assuming self._static_propagators is indexed as (atom_basis, num_energies, lm, m)
                 stat = self._static_propagators[:, e_idx, :, :]
 
             # --- Map to atom basis using propagator_id ---
@@ -486,31 +474,30 @@ class TensorLEEDCalculator:
             mapped_stat = stat[self.parameter_space.propagator_id]
 
             # --- Combine dynamic and static parts ---
-            # The condition is broadcast along the last two axes.
+            # Condition is broadcast along the last two axes.
             cond = self.parameter_space.is_dynamic_propagator[:, None, None]
             combined = jnp.where(cond, mapped_dyn, mapped_stat)
             # combined now has shape (atom_basis, lm, m)
 
             # --- Apply selective transposition ---
-            # For each atom basis, either leave as-is or swap the last two axes.
             trans_int = self.propagator_transpose_int[:, None, None]
-            combined = (1 - trans_int) * combined + trans_int * jnp.transpose(combined, (0, 2, 1))
-            # Resulting shape remains (atom_basis, lm, m)
+            combined = (1 - trans_int) * combined + trans_int * jnp.transpose(
+                combined, (0, 2, 1)
+            )
+            # combined remains (atom_basis, lm, m)
 
             return combined
 
-        # Process each energy one at a time (batched by self.batch_energies).
-        # Each call returns an array of shape (atom_basis, lm, m).
-        per_energy = jax.lax.map(process_energy, energy_indices, batch_size=self.batch_energies)
-        # per_energy has shape (num_energies, atom_basis, lm, m).
-        # To match the original code (which was written in atom_basis-first order before applying
-        # the symmetry operation), we transpose to (atom_basis, num_energies, lm, m).
+        # Process each energy individually.
+        # Each process_energy returns (atom_basis, lm, m); mapping over energies yields shape:
+        # (num_energies, atom_basis, lm, m)
+        per_energy = jax.lax.map(
+            process_energy, energy_indices, batch_size=self.batch_energies
+        )
+        # Transpose to (atom_basis, num_energies, lm, m) to match what the symmetry einsum expects.
         per_energy = jnp.transpose(per_energy, (1, 0, 2, 3))
 
         # --- Apply rotations (symmetry operations) and rearrange ---
-        # The einsum 'aelm,alm->ealm' takes the array of shape (atom_basis, energies, lm, m)
-        # and the symmetry operations (of shape (atom_basis, lm, m)) and produces an output with
-        # energies as the first axis.
         propagators = jnp.einsum(
             'aelm,alm->ealm',
             per_energy,
