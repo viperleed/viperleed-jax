@@ -520,60 +520,6 @@ class TensorLEEDCalculator:
         # Final shape is (energies, atom_basis, lm, m)
         return propagators
 
-    @partial(jax.jit, static_argnums=(0,))
-    def _calculate_propagators_new(self, displacements):
-        # return propagators indexed as (energies, atom_basis, lm, l'm')
-
-        dynamic_propagators = self._calculate_dynamic_propagators(displacements)
-
-        # if there are 0 static propagators, indexing would raise Error
-        if len(self._static_propagators) == 0:
-            static_propagators = jnp.array(
-                [jnp.zeros_like(dynamic_propagators[0])]
-            )
-        else:
-            static_propagators = self._static_propagators
-
-        mapping_size = max(
-            self.parameter_space.n_static_propagators,
-            self.parameter_space.n_dynamic_propagators,
-        )
-        mapping = jnp.zeros(
-            shape=(self.parameter_space.n_atom_basis, mapping_size)
-        )
-        for base_id, prop_id in enumerate(self.parameter_space.propagator_id):
-            mapping = mapping.at[base_id, prop_id].set(1.0)
-
-        mapping_static = mapping[:, : self.parameter_space.n_static_propagators]
-        mapping_dynamic = mapping[
-            :, : self.parameter_space.n_dynamic_propagators
-        ]
-
-        static_propagators = jnp.einsum(
-            'a,as,selm->ealm',
-            (1.0 - self.parameter_space.is_dynamic_propagator),  # d
-            mapping_static,  # ad
-            static_propagators,  # delm
-            optimize='optimal',
-        )
-
-        dynamic_propagators = jnp.einsum(
-            'a,as,selm->ealm',
-            self.parameter_space.is_dynamic_propagator,  # s
-            mapping_dynamic,  # as
-            dynamic_propagators,  # selm
-            optimize='optimal',
-        )
-
-        # TODO: transpositoin
-
-        return jnp.einsum(
-            'aelm,aelm,alm->ealm',
-            static_propagators,  # aelm
-            dynamic_propagators,  # aelm
-            self.propagator_symmetry_operations,  # alm
-            optimize='optimal',
-        )
 
     # TODO: for testing purposes: contrib should be exactly 0 for not pertubations and if recalculate_ref_t_matrices=True
     def _calculate_static_ase_contributions(self):
