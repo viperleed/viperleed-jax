@@ -313,34 +313,53 @@ class TensorLEEDCalculator:
         self._static_t_matrices = static_t_matrices
 
     def _calculate_static_propagators(self):
-        # this is only done once – perform for maximum lmax and crop later
-        propagator_vmap_en = jax.vmap(
-            calc_propagator, in_axes=(None, None, None, 0)
-        )
-        displacements_ang = jnp.asarray(
-            self._parameter_space.static_propagator_inputs
-        )
+        # Convert static propagator inputs to an array.
+        static_inputs = self._parameter_space.static_propagator_inputs
+        if len(static_inputs) == 0:
+            # If there are no static inputs, store an empty array.
+            self._static_propagators = jnp.array([])
+            return
+
+        displacements_ang = jnp.asarray(static_inputs)
         displacements_au = atomic_units.to_internal_displacement_vector(
             displacements_ang
         )
         spherical_harmonics_components = jnp.array(
             [
-                lib_math.spherical_harmonics_components(
-                    self.max_l_max, displacement
-                )
-                for displacement in displacements_au
+                lib_math.spherical_harmonics_components(self.max_l_max, disp)
+                for disp in displacements_au
             ]
         )
-        self._static_propagators = jnp.array(
-            [
-                propagator_vmap_en(
-                    self.max_l_max, displacement, components, self.kappa
+
+        # Outer loop: iterate over energy indices.
+        def energy_fn(e_idx):
+            # For each energy, iterate over all displacements.
+            def displacement_fn(i):
+                disp = displacements_au[i]
+                comps = spherical_harmonics_components[i]
+                return calc_propagator(
+                    self.max_l_max,
+                    disp,
+                    comps,
+                    self.kappa[e_idx],
                 )
-                for displacement, components in zip(
-                    displacements_au, spherical_harmonics_components
-                )
-            ]
+
+            return jax.lax.map(
+                displacement_fn,
+                jnp.arange(displacements_au.shape[0]),
+                batch_size=self.batch_atoms,
+            )
+
+        # Map over energies with the specified batch size.
+        static_propagators = jax.lax.map(
+            energy_fn,
+            jnp.arange(len(self.energies)),
+            batch_size=self.batch_energies,
         )
+        # The result has shape (num_energies, num_displacements, ...).
+        # Use einsum to swap axes so that the final shape is
+        # (num_displacements, num_energies, ...), matching the original ordering.
+        self._static_propagators = jnp.einsum('ed...->de...', static_propagators)
 
     def _calculate_dynamic_t_matrices(self, vib_amps, energy_indices):
         # Convert energy_indices to a JAX array for the outer mapping.
