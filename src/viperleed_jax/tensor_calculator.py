@@ -278,22 +278,39 @@ class TensorLEEDCalculator:
         self._calculate_static_propagators()
 
     def _calculate_static_t_matrices(self):
-        # this is only done once – perform for maximum lmax and crop later
-        t_matrix_vmap_en = jax.vmap(
-            vib_dependent_tmatrix, in_axes=(None, 0, 0, None), out_axes=0
-        )
-        static_t_matrices = jnp.array(
-            [
-                t_matrix_vmap_en(
+        # This is only done once – perform for maximum lmax and crop later
+        energy_indices = jnp.arange(len(self.energies))
+
+        # Outer loop: iterate over energy indices with batching
+        def energy_fn(e_idx):
+            # For each energy, compute t-matrices for all static input pairs.
+            # self._parameter_space.static_t_matrix_inputs is assumed to be a list
+            # of (site_el, vib_amp) pairs.
+            def compute_t(pair):
+                site_el, vib_amp = pair
+                return vib_dependent_tmatrix(
                     self.max_l_max,
-                    self.phaseshifts[site_el][:, : self.max_l_max + 1],
-                    self.energies,
+                    self.phaseshifts[site_el][e_idx, : self.max_l_max + 1],
+                    self.energies[e_idx],
                     vib_amp,
                 )
-                for site_el, vib_amp in self._parameter_space.static_t_matrix_inputs
-            ]
+
+            # Use a Python loop to compute for each pair and stack the results.
+            # This loop is over a typically small list so it shouldn't be a bottleneck.
+            return jnp.stack(
+                [
+                    compute_t(pair)
+                    for pair in self._parameter_space.static_t_matrix_inputs
+                ]
+            )
+
+        # Map over energies with the given batch size.
+        static_t_matrices = jax.lax.map(
+            energy_fn, energy_indices, batch_size=self.batch_energies
         )
-        self._static_t_matrices = jnp.einsum('ael->eal', static_t_matrices)
+        # static_t_matrices has shape (num_energies, num_static_inputs, lm, ...),
+        # which is equivalent to the original einsum('ael->eal') result.
+        self._static_t_matrices = static_t_matrices
 
     def _calculate_static_propagators(self):
         # this is only done once – perform for maximum lmax and crop later
