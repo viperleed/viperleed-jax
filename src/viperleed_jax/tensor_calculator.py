@@ -403,12 +403,21 @@ class TensorLEEDCalculator:
                     components[atom_idx],
                     self.kappa[energy_idx],
                 )
-            return jax.lax.map(atom_loop, jnp.arange(len(displacements)),
-                            batch_size=self.batch_atoms)
 
-        return jax.lax.map(energy_loop, jnp.array(energy_indices),
-                            batch_size=self.batch_energies)
+            return jax.lax.map(
+                atom_loop,
+                jnp.arange(len(displacements)),
+                batch_size=self.batch_atoms,
+            )
 
+        results = jax.lax.map(
+            energy_loop,
+            jnp.array(energy_indices),
+            batch_size=self.batch_energies,
+        )
+        # results has shape (num_energies, num_displacements, ...).
+        # Use einsum to transpose the first two axes:
+        return jnp.einsum('ed...->de...', results)
 
     def _calculate_propagators(
         self, displacements, displacements_components, energy_indices
