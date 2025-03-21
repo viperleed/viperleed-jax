@@ -457,54 +457,67 @@ class TensorLEEDCalculator:
     def _calculate_propagators(
         self, displacements, displacements_components, energy_indices
     ):
-        # return propagators indexed as (atom_basis, energies, lm, l'm')
-        if len(displacements) > 0:
-            dynamic_propagators = self._calculate_dynamic_propagators(
-                displacements, displacements_components, energy_indices
-            )
-        else:
-            dynamic_propagators = jnp.array(
-                [jnp.zeros_like(self._static_propagators[0])]
-            )
+        # We want the final result to be indexed as (energies, atom_basis, lm, l'm')
+        energy_indices = jnp.array(energy_indices)
 
-        # if there are 0 static propagators, indexing would raise Error
-        if len(self._static_propagators) == 0:
-            static_propagators = jnp.array(
-                [jnp.zeros_like(dynamic_propagators[0])]
-            )
-        else:
-            static_propagators = self._static_propagators[
-                :, energy_indices, :, :
-            ]
+        def process_energy(e_idx):
+            # --- Dynamic propagators ---
+            if len(displacements) > 0:
+                # Compute dynamic propagators for a single energy.
+                # _calculate_dynamic_propagators expects a list of energies, so we wrap e_idx.
+                dyn = self._calculate_dynamic_propagators(
+                    displacements, displacements_components, [e_idx]
+                )
+                # Squeeze the energy axis (of length 1); result shape: (atom_basis, lm, m)
+                dyn = jnp.squeeze(dyn, axis=1)
+            else:
+                # Fallback to zeros matching a static propagator’s shape.
+                dyn = jnp.zeros_like(self._static_propagators[0])
 
-        mapped_dynamic_propagators = dynamic_propagators[
-            self.parameter_space.propagator_id
-        ]
-        mapped_static_propagators = static_propagators[
-            self.parameter_space.propagator_id
-        ]
+            # --- Static propagators ---
+            if len(self._static_propagators) == 0:
+                stat = jnp.zeros_like(dyn)
+            else:
+                # self._static_propagators assumed shape: (atom_basis, num_energies, lm, m)
+                stat = self._static_propagators[:, e_idx, :, :]
 
-        propagators = jnp.where(
-            self.parameter_space.is_dynamic_propagator[
-                :, jnp.newaxis, jnp.newaxis, jnp.newaxis
-            ],
-            mapped_dynamic_propagators,
-            mapped_static_propagators,
-        )
-        # selective transpositions
-        propagators = (1 - self.propagator_transpose_int)[
-            :, np.newaxis, np.newaxis, np.newaxis
-        ] * propagators + self.propagator_transpose_int[
-            :, np.newaxis, np.newaxis, np.newaxis
-        ] * jnp.transpose(propagators, (0, 1, 3, 2))
-        # apply rotations and rearrange to make energy the first axis
+            # --- Map to atom basis using propagator_id ---
+            mapped_dyn = dyn[self.parameter_space.propagator_id]
+            mapped_stat = stat[self.parameter_space.propagator_id]
+
+            # --- Combine dynamic and static parts ---
+            # The condition is broadcast along the last two axes.
+            cond = self.parameter_space.is_dynamic_propagator[:, None, None]
+            combined = jnp.where(cond, mapped_dyn, mapped_stat)
+            # combined now has shape (atom_basis, lm, m)
+
+            # --- Apply selective transposition ---
+            # For each atom basis, either leave as-is or swap the last two axes.
+            trans_int = self.propagator_transpose_int[:, None, None]
+            combined = (1 - trans_int) * combined + trans_int * jnp.transpose(combined, (0, 2, 1))
+            # Resulting shape remains (atom_basis, lm, m)
+
+            return combined
+
+        # Process each energy one at a time (batched by self.batch_energies).
+        # Each call returns an array of shape (atom_basis, lm, m).
+        per_energy = jax.lax.map(process_energy, energy_indices, batch_size=self.batch_energies)
+        # per_energy has shape (num_energies, atom_basis, lm, m).
+        # To match the original code (which was written in atom_basis-first order before applying
+        # the symmetry operation), we transpose to (atom_basis, num_energies, lm, m).
+        per_energy = jnp.transpose(per_energy, (1, 0, 2, 3))
+
+        # --- Apply rotations (symmetry operations) and rearrange ---
+        # The einsum 'aelm,alm->ealm' takes the array of shape (atom_basis, energies, lm, m)
+        # and the symmetry operations (of shape (atom_basis, lm, m)) and produces an output with
+        # energies as the first axis.
         propagators = jnp.einsum(
             'aelm,alm->ealm',
-            propagators,
+            per_energy,
             self.propagator_symmetry_operations,
             optimize='optimal',
         )
-
+        # Final shape is (energies, atom_basis, lm, m)
         return propagators
 
     @partial(jax.jit, static_argnums=(0,))
