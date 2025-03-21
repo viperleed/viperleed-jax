@@ -326,22 +326,27 @@ class TensorLEEDCalculator:
         )
 
     def _calculate_dynamic_t_matrices(self, vib_amps, energy_indices):
-        t_matrix_vmap_en = jax.vmap(
-            vib_dependent_tmatrix, in_axes=(None, 0, 0, None), out_axes=0
-        )
-        dynamic_t_matrices = [
-            t_matrix_vmap_en(
-                self.max_l_max,
-                self.phaseshifts[site_el][energy_indices, : self.max_l_max + 1],
-                self.energies[energy_indices],
-                vib_amp.reshape(),  # cast shape from (1,) to (); required to play nicely with grad
-            )
-            for vib_amp, site_el in zip(
-                vib_amps, self.parameter_space.dynamic_t_matrix_site_elements
-            )
-        ]
-        dynamic_t_matrices = jnp.asarray(dynamic_t_matrices)
-        return jnp.einsum('ael->eal', dynamic_t_matrices)
+        # Convert energy_indices to a JAX array for the outer mapping.
+        energy_indices = jnp.array(energy_indices)
+        # Pre-build the static list of (vib_amp, site_element) pairs.
+        pairs = list(zip(vib_amps, self.parameter_space.dynamic_t_matrix_site_elements))
+
+        def energy_map_fn(e_idx):
+            # For each energy index, loop over the static pairs.
+            results = []
+            for vib_amp, site_el in pairs:
+                result = vib_dependent_tmatrix(
+                    self.max_l_max,
+                    self.phaseshifts[site_el][e_idx, : self.max_l_max + 1],
+                    self.energies[e_idx],
+                    vib_amp.reshape(),  # reshape from (1,) to scalar for grad compatibility
+                )
+                results.append(result)
+            return jnp.stack(results)
+
+        dynamic_t_matrices = jax.lax.map(energy_map_fn, energy_indices,
+                                         batch_size=self.batch_energies)
+        return jnp.asarray(dynamic_t_matrices)
 
     def _calculate_reference_t_matrices(self, ref_vib_amps, site_elements):
         def map_fn(pair):
@@ -358,37 +363,34 @@ class TensorLEEDCalculator:
         return jnp.einsum('ael->eal', ref_t_matrices)
 
     def _calculate_t_matrices(self, vib_amps, energy_indices):
-        # return t-matrices indexed as (energies, atom-site-elements, lm)
+        # Process one energy at a time to reduce memory usage.
+        energy_indices = jnp.array(energy_indices)
 
-        dynamic_t_matrices = self._calculate_dynamic_t_matrices(
-            vib_amps, energy_indices
-        )
-        # map t-matrices to atom-site-element basis
-        mapped_dynamic_t_matrices = dynamic_t_matrices[
-            :, self.parameter_space.t_matrix_id
-        ]  # TODO: clamp?
-
-        # if there are 0 static t-matrices, indexing would raise Error
-        if len(self._static_t_matrices) == 0:
-            static_t_matrices = jnp.array(
-                [jnp.zeros_like(dynamic_t_matrices[0])]
+        def energy_fn(e_idx):
+            # Compute the dynamic t-matrix for a single energy.
+            # _calculate_dynamic_t_matrices expects a sequence of energies; here we pass a list of one index.
+            dyn_t = self._calculate_dynamic_t_matrices(vib_amps, [e_idx])[0]
+            # Map the dynamic t-matrix to the atom-site-element basis.
+            dyn_mapped = dyn_t[self.parameter_space.t_matrix_id]
+            # Get the corresponding static t-matrix, or zeros if none exist.
+            if len(self._static_t_matrices) == 0:
+                stat_t = jnp.zeros_like(dyn_t)
+            else:
+                stat_t = self._static_t_matrices[e_idx, :, :]
+            stat_mapped = stat_t[self.parameter_space.t_matrix_id, :]
+            # Select between dynamic and static for this energy.
+            # The condition is broadcasted to shape (num_selected, lm)
+            return jnp.where(
+                self.parameter_space.is_dynamic_t_matrix[:, jnp.newaxis],
+                dyn_mapped,
+                stat_mapped,
             )
-        else:
-            static_t_matrices = self._static_t_matrices[energy_indices, :, :]
-        mapped_static_t_matrices = static_t_matrices[
-            :, self.parameter_space.t_matrix_id, :
-        ]
 
-        t_matrices = jnp.where(
-            self.parameter_space.is_dynamic_t_matrix[
-                jnp.newaxis, :, jnp.newaxis
-            ],
-            mapped_dynamic_t_matrices,
-            mapped_static_t_matrices,
-        )
+        # Process each energy one by one.
+        t_matrices = jax.lax.map(energy_fn, energy_indices,
+                                 batch_size=self.batch_energies)
         return t_matrices
 
-    # @partial(jax.profiler.annotate_function, name="tc.calculate_dynamic_propagator")
     def _calculate_dynamic_propagators(self, displacements, components, energy_indices):
         # Outer loop: iterate over energy indices
         def energy_loop(energy_idx):
