@@ -24,7 +24,7 @@ import numpy as np
 #    splitting the energy dimension.
 
 
-class Batch:
+class Batch:  # TODO: could be a dataclass
     """Represents a batch of energies with the same l_max.
 
     Batches are used to split the computation of delta-amplitudes into smaller
@@ -57,7 +57,7 @@ class Batch:
 
 
 class Batching:
-    def __init__(self, energies, l_max_per_energy, max_energies_per_batch=None):
+    def __init__(self, energies, l_max_per_energy):
         # l_max_per_energy must be in ascending order
         if not all(
             l_max_per_energy[i] <= l_max_per_energy[i + 1]
@@ -66,53 +66,23 @@ class Batching:
             raise ValueError('l_max_per_energy must be in ascending order')
         self.l_max_per_energy = l_max_per_energy
 
-        if (
-            not isinstance(max_energies_per_batch, int)
-            or max_energies_per_batch <= 0
-        ):
-            raise ValueError(
-                'max_energies_per_batch must be a positive integer'
-            )
 
         self.max_l_max = max(l_max_per_energy)
-        self.batches = self.create_batches(energies, max_energies_per_batch)
+        self.batches = self.create_batches(energies)
 
-    def create_batches(self, energies, max_energies_per_batch):
+    def create_batches(self, energies):
         batches = []
         # iterate over the energies and create batches
-        current_l_max = self.l_max_per_energy[0]
-        batch_energies = []
-        batch_indices = []
-
-        for en_id, energy in enumerate(energies):
-            next_batch_id = len(batches)
-            if (
-                self.l_max_per_energy[en_id] != current_l_max
-                or len(batch_energies) == max_energies_per_batch
-            ):
-                # finish the batch and start a new one
-                batches.append(
-                    Batch(
-                        current_l_max,
-                        batch_energies,
-                        batch_indices,
-                        next_batch_id,
-                    )
-                )
-                batch_energies = [
-                    energy,
-                ]
-                batch_indices = [en_id]
-            else:
-                batch_energies.append(energy)
-                batch_indices.append(en_id)
-            current_l_max = self.l_max_per_energy[en_id]
-
-        # finish the last batch if there are any energies left
-        if batch_energies:
+        needed_l_max = set(self.l_max_per_energy)
+        for batch_id, l_max in enumerate(sorted(needed_l_max)):
+            batch_indices = np.where(np.array(self.l_max_per_energy) == l_max)[0]
+            batch_energies = energies[batch_indices]
             batches.append(
                 Batch(
-                    current_l_max, batch_energies, batch_indices, next_batch_id
+                    l_max,
+                    batch_energies,
+                    batch_indices,
+                    batch_id,
                 )
             )
 
