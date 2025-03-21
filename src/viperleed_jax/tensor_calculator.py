@@ -73,10 +73,6 @@ class TensorLEEDCalculator:
         self.interpolation_deg = interpolation_deg
         self.bc_type = bc_type
 
-        # set batch sizes
-        self.batch_energies = batch_energies
-        self.batch_atoms = batch_atoms
-
         # beam indices
         beam_indices = [beam.hk for beam in rparams.ivbeams]
         self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
@@ -119,6 +115,11 @@ class TensorLEEDCalculator:
         self.delta_amp_prefactors = self._calc_delta_amp_prefactors()
 
         self.exp_spline = None
+
+        # set batch sizes
+        self.batch_energies = batch_energies
+        if batch_atoms is None:
+            self.batch_atoms = self.n_atoms
 
         # default R-factor is Pendry
         self.rfactor_func = rfactor.pendry_R
@@ -391,27 +392,23 @@ class TensorLEEDCalculator:
         return t_matrices
 
     # @partial(jax.profiler.annotate_function, name="tc.calculate_dynamic_propagator")
-    def _calculate_dynamic_propagators(
-        self, displacements, components, energy_indices
-    ):
-        propagator_vmap_en = jax.vmap(
-            calc_propagator, in_axes=(None, None, None, 0)
-        )
+    def _calculate_dynamic_propagators(self, displacements, components, energy_indices):
+        # Outer loop: iterate over energy indices
+        def energy_loop(energy_idx):
+            # Inner loop: iterate over atom indices (i.e. each displacement/component pair)
+            def atom_loop(atom_idx):
+                return calc_propagator(
+                    self.max_l_max,
+                    displacements[atom_idx],
+                    components[atom_idx],
+                    self.kappa[energy_idx],
+                )
+            return jax.lax.map(atom_loop, jnp.arange(len(displacements)),
+                            batch_size=self.batch_atoms)
 
-        def body_fn(carry, displacement_index):
-            # Compute the result for the current displacement
-            result = propagator_vmap_en(
-                self.max_l_max,
-                displacements[displacement_index],
-                components[displacement_index],
-                self.kappa[energy_indices],
-            )
-            # No carry state needed, just passing through
-            return carry, result
+        return jax.lax.map(energy_loop, jnp.array(energy_indices),
+                            batch_size=self.batch_energies)
 
-        # Initial carry state can be None if not needed
-        _, results = jax.lax.scan(body_fn, None, jnp.arange(len(displacements)))
-        return results
 
     def _calculate_propagators(
         self, displacements, displacements_components, energy_indices
