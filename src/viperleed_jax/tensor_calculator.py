@@ -51,8 +51,6 @@ class TensorLEEDCalculator:
         The degree of interpolation, by default 3.
     bc_type : str, optional
         The boundary condition type for interpolation, by default 'not-a-knot'.
-    batch_lmax : bool or int, optional
-        Whether to use batched calculation. By default True.
     """
 
     def __init__(
@@ -64,7 +62,8 @@ class TensorLEEDCalculator:
         interpolation_step=0.5,
         interpolation_deg=3,
         bc_type='not-a-knot',
-        batch=True,
+        batch_energies=None,
+        batch_atoms=None,
         recalculate_ref_t_matrices=False,
     ):
         self.ref_data = ref_data
@@ -73,6 +72,10 @@ class TensorLEEDCalculator:
 
         self.interpolation_deg = interpolation_deg
         self.bc_type = bc_type
+
+        # set batch sizes
+        self.batch_energies = batch_energies
+        self.batch_atoms = batch_atoms
 
         # beam indices
         beam_indices = [beam.hk for beam in rparams.ivbeams]
@@ -123,21 +126,8 @@ class TensorLEEDCalculator:
         if self.interpolation_deg != 3:
             raise NotImplementedError
 
-        # work out the energy batching
-        if batch is False:
-            # do not perform batching other than the requested lmax-batching
-            self.batching = Batching(self.energies, ref_data.lmax, None)
-        elif batch is True:
-            self.batching = Batching(self.energies, ref_data.lmax, 8)
-        elif isinstance(batch, int):
-            self.batching = Batching(self.energies, ref_data.lmax, batch)
-        else:
-            raise ValueError('batch_lmax must be bool or int.')
-        logger.info(
-            f'Batching initialized with {len(self.batching.batches)} batches '
-            f'and a maximum batch size of {self.batching.max_batch_size}.'
-        )
-
+        # calculate batching
+        self.batching = Batching(self.energies, ref_data.lmax)
         self.tensor_amps_in, self.tensor_amps_out = self._batch_tensor_amps()
 
         # get experimental intensities and hk
@@ -222,10 +212,10 @@ class TensorLEEDCalculator:
         tensor_amps_out = []
         for batch in self.batching.batches:
             tensor_amps_in.append(
-                self.ref_data.tensor_amps_in[batch.l_max][batch.energy_indices]
+                np.array(self.ref_data.tensor_amps_in[batch.l_max][batch.energy_indices])
             )
             tensor_amps_out.append(
-                self.ref_data.tensor_amps_out[batch.l_max][batch.energy_indices]
+                np.array(self.ref_data.tensor_amps_out[batch.l_max][batch.energy_indices])
             )
         return tensor_amps_in, tensor_amps_out
 
@@ -854,7 +844,7 @@ class TensorLEEDCalculator:
 
                 # Use lax.map with a batch_size of n_atom
                 contributions = jax.lax.map(
-                    compute_atom_contrib, atom_ids, batch_size=self.n_atoms
+                    compute_atom_contrib, atom_ids, batch_size=self.batch_atoms
                 )
                 return jnp.sum(contributions, axis=0)
 
