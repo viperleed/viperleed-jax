@@ -835,7 +835,7 @@ class TensorLEEDCalculator:
 
                 # Use lax.map with a batch_size of n_atom
                 contributions = jax.lax.map(
-                    compute_atom_contrib, atom_ids, batch_size=self.batch_atoms
+                    compute_atom_contrib, self.atom_ids, batch_size=self.batch_atoms
                 )
                 return jnp.sum(contributions, axis=0)
 
