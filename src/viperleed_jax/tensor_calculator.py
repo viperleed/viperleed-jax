@@ -187,6 +187,11 @@ class TensorLEEDCalculator:
     def n_free_parameters(self):
         return self.parameter_space.n_free_params
 
+    @property
+    def atom_ids(self):
+        # atom ids that will be batched over
+        return jnp.arange(self.parameter_space.n_atom_basis)
+
     def set_rfactor(self, rfactor_name):
         _rfactor_name = rfactor_name.lower().strip()
         for func, synonyms in R_FACTOR_SYNONYMS.items():
@@ -756,9 +761,6 @@ class TensorLEEDCalculator:
         chem_weights = jnp.asarray(
             self.parameter_space.occ_weight_transformer(occ_params)
         )
-
-        # atom ids that will be batched over
-        atom_ids = jnp.arange(self.parameter_space.n_atom_basis)
 
         # Loop over batches
         # -----------------
