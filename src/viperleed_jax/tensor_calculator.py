@@ -120,6 +120,8 @@ class TensorLEEDCalculator:
         self.batch_energies = batch_energies
         if batch_atoms is None:
             self.batch_atoms = self.n_atoms
+        else:
+            self.batch_atoms = batch_atoms
 
         # default R-factor is Pendry
         self.rfactor_func = rfactor.pendry_R
