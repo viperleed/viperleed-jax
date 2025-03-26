@@ -778,8 +778,8 @@ class TensorLEEDCalculator:
             t_matrices = t_matrices[:, :, : l_max + 1]
 
             # tensor amplitudes
-            tensor_amps_in = jnp.asarray(self.ref_calc_result.in_amps)
-            tensor_amps_out = jnp.asarray(self.ref_calc_result.out_amps)
+            # tensor_amps_in = self.ref_calc_result.in_amps
+            # tensor_amps_out = self.ref_calc_result.out_amps
 
             # map t-matrices to compressed quantum index
             mapped_t_matrix_vib = jax.vmap(
@@ -812,9 +812,9 @@ class TensorLEEDCalculator:
                     # Sum from equation (41) in Rous, Pendry 1989
                     return jnp.einsum(
                         'bl,lk,k->b',
-                        tensor_amps_out[e_id, a],
+                        self.ref_calc_result.out_amps[e_id, a],
                         delta_t_matrix,
-                        tensor_amps_in[e_id, a],
+                        self.ref_calc_result.in_amps[e_id, a],
                         optimize='optimal',
                     )
 

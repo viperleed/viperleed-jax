@@ -3,10 +3,11 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-04-29'
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import partial
 
 import jax
+from jax import numpy as jnp
 import numpy as np
 import tqdm
 
@@ -87,21 +88,21 @@ class RefCalcParams:
 
 @partial(
     jax.tree_util.register_dataclass,
-    data_fields=[],
-    # Mark all fields as meta fields
-    meta_fields=[
+    data_fields=[
         'ref_amps',
         't_matrices',
         'in_amps',
         'out_amps',
+        ],
+    meta_fields=[
     ],
 )
 @dataclass
 class RefCalcOutput:
-    ref_amps: np.ndarray
-    t_matrices: np.ndarray
-    in_amps: np.ndarray
-    out_amps: np.ndarray
+    ref_amps: jax.Array
+    t_matrices: jax.Array
+    in_amps: jax.Array
+    out_amps: jax.Array
 
     @property
     def size_in_memory(self):
@@ -258,10 +259,10 @@ def process_tensors(tensors, fix_lmax=False):
         tensor_amps_out[en_id, ...] = np.asarray(tmp_tensor_amps_out)
 
     ref_calc_output = RefCalcOutput(
-        ref_amps=ref_amps,
-        t_matrices=ref_t_matrix,
-        in_amps=tensor_amps_in,
-        out_amps=tensor_amps_out,
+        ref_amps=jnp.array(ref_amps),
+        t_matrices=jnp.array(ref_t_matrix),
+        in_amps=jnp.array(tensor_amps_in),
+        out_amps=jnp.array(tensor_amps_out),
     )
     return calc_params, ref_calc_output
 
