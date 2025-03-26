@@ -6,6 +6,7 @@ __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-09-05'
 
 import jax.numpy as jnp
+import numpy as np
 
 from viperleed_jax.constants import BOHR, HARTREE
 
@@ -83,7 +84,7 @@ def kappa(energy, v_imag):
 
     Returns
     -------
-    jnp.array
+    np.array
         Wave vector kappa.
     """
-    return jnp.sqrt(2 * energy + 2j * v_imag)
+    return np.sqrt(2 * energy + 2j * v_imag)

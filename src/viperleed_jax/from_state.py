@@ -89,7 +89,7 @@ def calculator_from_state(
     # Combine data into a ReferenceData object
     logger.debug('Combining tensor data ...')
     ref_calc_params, ref_calc_results = process_tensors(sorted_tensors, fix_lmax=l_max)
-    logger.debug('ReferenceData object created successfully.')
+    logger.debug('Tensor processing successful.')
 
     # read Phaseshift data using existing phaseshift reader
     phaseshifts_path = calc_path / 'PHASESHIFTS'

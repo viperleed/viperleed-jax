@@ -158,6 +158,7 @@ class TensorLEEDCalculator:
         )
         self.set_experiment_intensity(mapped_exp_intensities, exp_energies)
 
+        self.kappa = jnp.array(self.ref_calc_params.kappa)
 
     @property
     def unit_cell_area(self):
@@ -334,7 +335,7 @@ class TensorLEEDCalculator:
                     self.max_l_max,
                     disp,
                     comps,
-                    self.ref_calc_params.kappa[e_idx],
+                    self.kappa[e_idx],
                 )
 
             return jax.lax.map(
@@ -450,7 +451,7 @@ class TensorLEEDCalculator:
                 dyn = self._calculate_dynamic_propagator(
                     displacements,
                     displacements_components,
-                    self.ref_calc_params.kappa[e_idx],
+                    self.kappa[e_idx],
                 )
             else:
                 dyn = jnp.zeros_like(self._static_propagators[0])
