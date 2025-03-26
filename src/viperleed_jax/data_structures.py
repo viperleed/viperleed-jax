@@ -27,7 +27,8 @@ from viperleed_jax.dense_quantum_numbers import (
     # Mark all fields as meta fields
     data_fields=[],
     meta_fields=['energies', 'v0i', 'v0r',
-                 'kx_in', 'ky_in', 'lmax', 'max_lmax']
+                 'kx_in', 'ky_in', 'lmax', 'max_lmax',
+                 'n_tensors', 'n_beams']
 )
 @dataclass
 class RefCalcParams:
