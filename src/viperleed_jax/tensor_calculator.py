@@ -645,14 +645,7 @@ class TensorLEEDCalculator:
         displacements_au = atomic_units.to_internal_displacement_vector(
             displacements_ang
         )
-        displacement_components = jnp.array(
-            [
-                lib_math.spherical_harmonics_components(
-                    self.max_l_max, displacement
-                )
-                for displacement in displacements_au
-            ]
-        )
+
 
         # vibrational amplitudes, converted to atomic units
         vib_amps_au = self.parameter_space.reference_vib_amps(vib_params)
@@ -678,7 +671,6 @@ class TensorLEEDCalculator:
             propagators = _calculate_propagators(
                 self.propagator_context,
                 displacements_au,
-                displacement_components,
                 energy_ids,
                 self.batch_energies,
                 self.batch_atoms,
@@ -902,9 +894,7 @@ class TensorLEEDCalculator:
         """JIT compiled R-factor calculation."""
         return self.R(free_params)
 
-    @partial(
-        jax.jit, static_argnames=('self')
-    )  # TODO: not good, redo as pytree
+
     def jit_R_val_and_grad(self, free_params):
         """JIT compiled R-factor calculation with gradient."""
         val, grad = jax.value_and_grad(self.R)(free_params)
@@ -1172,7 +1162,6 @@ def _calculate_dynamic_propagator(
 def _calculate_propagators(
     propagtor_context,
     displacements,
-    displacements_components,
     energy_indices,
     batch_energies,
     batch_atoms,
@@ -1180,6 +1169,16 @@ def _calculate_propagators(
 ):
     # We want the final result indexed as (energies, atom_basis, lm, l'm')
     energy_indices = jnp.array(energy_indices)
+
+    # Precompute the spherical harmonics components for each displacement.
+    displacement_components = jnp.array(
+        [
+            lib_math.spherical_harmonics_components(
+                l_max, disp
+            )
+            for disp in displacements
+        ]
+    )
 
     def process_energy(e_idx):
         # --- Dynamic propagators ---
@@ -1189,7 +1188,7 @@ def _calculate_propagators(
                 l_max,
                 batch_atoms,
                 displacements,
-                displacements_components,
+                displacement_components,
                 propagtor_context.kappa[e_idx],
             )
         else:
