@@ -360,23 +360,37 @@ class TensorLEEDCalculator:
             ]
         )
 
-    def _calculate_dynamic_t_matrices(self, vib_amps, energy_indices):
-        t_matrix_vmap_en = jax.vmap(
-            vib_dependent_tmatrix, in_axes=(None, 0, 0, None), out_axes=0
+        # Outer loop: iterate over energy indices.
+        def energy_fn(e_idx):
+            # For each energy, iterate over all displacements.
+            def displacement_fn(i):
+                disp = displacements_au[i]
+                comps = spherical_harmonics_components[i]
+                return calc_propagator(
+                    self.max_l_max,
+                    disp,
+                    comps,
+                    self.kappa[e_idx],
+                )
+
+            return jax.lax.map(
+                displacement_fn,
+                jnp.arange(displacements_au.shape[0]),
+                batch_size=self.batch_atoms,
+            )
+
+        # Map over energies with the specified batch size.
+        static_propagators = jax.lax.map(
+            energy_fn,
+            jnp.arange(len(self.energies)),
+            batch_size=self.batch_energies,
         )
-        dynamic_t_matrices = [
-            t_matrix_vmap_en(
-                self.max_l_max,
-                self.phaseshifts[site_el][energy_indices, : self.max_l_max + 1],
-                self.energies[energy_indices],
-                vib_amp.reshape(),  # cast shape from (1,) to (); required to play nicely with grad
-            )
-            for vib_amp, site_el in zip(
-                vib_amps, self.parameter_space.dynamic_t_matrix_site_elements
-            )
-        ]
-        dynamic_t_matrices = jnp.asarray(dynamic_t_matrices)
-        return jnp.einsum('ael->eal', dynamic_t_matrices)
+        # The result has shape (num_energies, num_displacements, ...).
+        # Use einsum to swap axes so that the final shape is
+        # (num_displacements, num_energies, ...), matching the original ordering.
+        self._static_propagators = jnp.einsum('ed...->de...', static_propagators)
+
+
 
     def _calculate_reference_t_matrices(self, ref_vib_amps, site_elements):
         t_matrix_vmap_en = jax.vmap(
@@ -398,18 +412,32 @@ class TensorLEEDCalculator:
     def _calculate_t_matrices(self, vib_amps, energy_indices):
         # return t-matrices indexed as (energies, atom-site-elements, lm)
 
-        dynamic_t_matrices = self._calculate_dynamic_t_matrices(
-            vib_amps, energy_indices
-        )
-        # map t-matrices to atom-site-element basis
-        mapped_dynamic_t_matrices = dynamic_t_matrices[
-            :, self.parameter_space.t_matrix_id
-        ]  # TODO: clamp?
-
-        # if there are 0 static t-matrices, indexing would raise Error
-        if len(self._static_t_matrices) == 0:
-            static_t_matrices = jnp.array(
-                [jnp.zeros_like(dynamic_t_matrices[0])]
+        def energy_fn(e_idx):
+            # Compute the dynamic t-matrix for a single energy.
+            # _calculate_dynamic_t_matrices expects a sequence of energies; here we pass a list of one index.
+            dyn_t = _calculate_dynamic_t_matrices(
+                self.max_l_max,
+                self.max_l_max,
+                self.parameter_space.dynamic_t_matrix_site_elements,
+                self.phaseshifts,
+                self.energies,
+                vib_amps,
+                [e_idx]
+            )[0]
+            # Map the dynamic t-matrix to the atom-site-element basis.
+            dyn_mapped = dyn_t[self.parameter_space.t_matrix_id]
+            # Get the corresponding static t-matrix, or zeros if none exist.
+            if len(self._static_t_matrices) == 0:
+                stat_t = jnp.zeros_like(dyn_t)
+            else:
+                stat_t = self._static_t_matrices[e_idx, :, :]
+            stat_mapped = stat_t[self.parameter_space.t_matrix_id, :]
+            # Select between dynamic and static for this energy.
+            # The condition is broadcasted to shape (num_selected, lm)
+            return jnp.where(
+                self.parameter_space.is_dynamic_t_matrix[:, jnp.newaxis],
+                dyn_mapped,
+                stat_mapped,
             )
         else:
             static_t_matrices = self._static_t_matrices[energy_indices, :, :]
@@ -426,136 +454,6 @@ class TensorLEEDCalculator:
         )
         return t_matrices
 
-    # @partial(jax.profiler.annotate_function, name="tc.calculate_dynamic_propagator")
-    def _calculate_dynamic_propagators(
-        self, displacements, components, energy_indices
-    ):
-        propagator_vmap_en = jax.vmap(
-            calc_propagator, in_axes=(None, None, None, 0)
-        )
-
-        def body_fn(carry, displacement_index):
-            # Compute the result for the current displacement
-            result = propagator_vmap_en(
-                self.max_l_max,
-                displacements[displacement_index],
-                components[displacement_index],
-                self.kappa[energy_indices],
-            )
-            # No carry state needed, just passing through
-            return carry, result
-
-        # Initial carry state can be None if not needed
-        _, results = jax.lax.scan(body_fn, None, jnp.arange(len(displacements)))
-        return results
-
-    def _calculate_propagators(
-        self, displacements, displacements_components, energy_indices
-    ):
-        # return propagators indexed as (atom_basis, energies, lm, l'm')
-        if len(displacements) > 0:
-            dynamic_propagators = self._calculate_dynamic_propagators(
-                displacements, displacements_components, energy_indices
-            )
-        else:
-            dynamic_propagators = jnp.array(
-                [jnp.zeros_like(self._static_propagators[0])]
-            )
-
-        # if there are 0 static propagators, indexing would raise Error
-        if len(self._static_propagators) == 0:
-            static_propagators = jnp.array(
-                [jnp.zeros_like(dynamic_propagators[0])]
-            )
-        else:
-            static_propagators = self._static_propagators[
-                :, energy_indices, :, :
-            ]
-
-        mapped_dynamic_propagators = dynamic_propagators[
-            self.parameter_space.propagator_id
-        ]
-        mapped_static_propagators = static_propagators[
-            self.parameter_space.propagator_id
-        ]
-
-        propagators = jnp.where(
-            self.parameter_space.is_dynamic_propagator[
-                :, jnp.newaxis, jnp.newaxis, jnp.newaxis
-            ],
-            mapped_dynamic_propagators,
-            mapped_static_propagators,
-        )
-        # selective transpositions
-        propagators = (1 - self.propagator_transpose_int)[
-            :, np.newaxis, np.newaxis, np.newaxis
-        ] * propagators + self.propagator_transpose_int[
-            :, np.newaxis, np.newaxis, np.newaxis
-        ] * jnp.transpose(propagators, (0, 1, 3, 2))
-        # apply rotations and rearrange to make energy the first axis
-        propagators = jnp.einsum(
-            'aelm,alm->ealm',
-            propagators,
-            self.propagator_symmetry_operations,
-            optimize='optimal',
-        )
-
-        return propagators
-
-    @partial(jax.jit, static_argnums=(0,))
-    def _calculate_propagators_new(self, displacements):
-        # return propagators indexed as (energies, atom_basis, lm, l'm')
-
-        dynamic_propagators = self._calculate_dynamic_propagators(displacements)
-
-        # if there are 0 static propagators, indexing would raise Error
-        if len(self._static_propagators) == 0:
-            static_propagators = jnp.array(
-                [jnp.zeros_like(dynamic_propagators[0])]
-            )
-        else:
-            static_propagators = self._static_propagators
-
-        mapping_size = max(
-            self.parameter_space.n_static_propagators,
-            self.parameter_space.n_dynamic_propagators,
-        )
-        mapping = jnp.zeros(
-            shape=(self.parameter_space.n_atom_basis, mapping_size)
-        )
-        for base_id, prop_id in enumerate(self.parameter_space.propagator_id):
-            mapping = mapping.at[base_id, prop_id].set(1.0)
-
-        mapping_static = mapping[:, : self.parameter_space.n_static_propagators]
-        mapping_dynamic = mapping[
-            :, : self.parameter_space.n_dynamic_propagators
-        ]
-
-        static_propagators = jnp.einsum(
-            'a,as,selm->ealm',
-            (1.0 - self.parameter_space.is_dynamic_propagator),  # d
-            mapping_static,  # ad
-            static_propagators,  # delm
-            optimize='optimal',
-        )
-
-        dynamic_propagators = jnp.einsum(
-            'a,as,selm->ealm',
-            self.parameter_space.is_dynamic_propagator,  # s
-            mapping_dynamic,  # as
-            dynamic_propagators,  # selm
-            optimize='optimal',
-        )
-
-        # TODO: transpositoin
-
-        return jnp.einsum(
-            'aelm,aelm,alm->ealm',
-            static_propagators,  # aelm
-            dynamic_propagators,  # aelm
-            self.propagator_symmetry_operations,  # alm
-            optimize='optimal',
-        )
 
     # TODO: for testing purposes: contrib should be exactly 0 for not pertubations and if recalculate_ref_t_matrices=True
     def _calculate_static_ase_contributions(self):
@@ -819,8 +717,14 @@ class TensorLEEDCalculator:
             energy_ids = jnp.asarray(batch.energy_indices)
 
             # propagators - already rotated
-            propagators = self._calculate_propagators(
-                displacements_au, displacement_components, energy_ids
+            propagators = _calculate_propagators(
+                self.propagator_context,
+                displacements_au,
+                displacement_components,
+                energy_ids,
+                self.batch_energies,
+                self.batch_atoms,
+                self.max_l_max,
             )
 
             # crop propagators
@@ -855,38 +759,87 @@ class TensorLEEDCalculator:
                 in_axes=(0, None),
             )(ref_t_matrices, l_max)
 
-            # for every energy
-            @jax.checkpoint # seems to be faster # TODO: test other checkpointing
-            def calc_energy(e_id):
-                en_propagators = propagators[e_id, :, ...]
-                en_t_matrix_vib = mapped_t_matrix_vib[e_id]
-                en_t_matrix_ref = mapped_t_matrix_ref[e_id]
+            # energy_data = {
+            #     'propagators':propagators,
+            #     't_matrix_vib':mapped_t_matrix_vib,
+            #     't_matrix_ref':mapped_t_matrix_ref,
+            #     'amps_in':self.ref_calc_result.in_amps,
+            #     'amps_out':self.ref_calc_result.out_amps,
+            # }
 
-                def compute_atom_contrib(a):
-                    delta_t_matrix = calculate_delta_t_matrix(
-                        en_propagators[a, :, :].conj(),
-                        en_t_matrix_vib[a],
-                        en_t_matrix_ref[a],
-                        chem_weights[a],
-                    )
-                    # Sum from equation (41) in Rous, Pendry 1989
-                    return jnp.einsum(
-                        'bl,lk,k->b',
-                        tensor_amps_out[e_id, a],
-                        delta_t_matrix,
-                        tensor_amps_in[e_id, a],
-                        optimize='optimal',
-                    )
+            # atom_ids = self.atom_ids
+            # batch_atoms = self.batch_atoms
 
-                # Use lax.map with a batch_size of n_atom
-                contributions = jax.lax.map(
-                    compute_atom_contrib, atom_ids, batch_size=self.n_atoms
-                )
-                return jnp.sum(contributions, axis=0)
+            # # for every energy
+            # #@jax.checkpoint # seems to be faster # TODO: test other checkpointing
+            # @jax.jit
+            # def calc_energy(energy_data):
+            #     en_propagators = energy_data['propagators']
+            #     en_t_matrix_vib = energy_data['t_matrix_vib']
+            #     en_t_matrix_ref = energy_data['t_matrix_ref']
+            #     amps_in = energy_data['amps_in']
+            #     amps_out = energy_data['amps_out']
+            #     # en_propagators = propagators[e_id, :, ...]
+            #     # en_t_matrix_vib = mapped_t_matrix_vib[e_id]
+            #     # en_t_matrix_ref = mapped_t_matrix_ref[e_id]
 
-            # map over energies
-            l_delta_amps = jax.lax.map(calc_energy, jnp.arange(len(batch)))
+            #     def compute_atom_contrib(a):
+            #         delta_t_matrix = calculate_delta_t_matrix(
+            #             en_propagators[a, :, :].conj(),
+            #             en_t_matrix_vib[a],
+            #             en_t_matrix_ref[a],
+            #             chem_weights[a],
+            #         )
+            #         # Sum from equation (41) in Rous, Pendry 1989
+            #         return jnp.einsum(
+            #             'bl,lk,k->b',
+            #             amps_out[a],
+            #             delta_t_matrix,
+            #             amps_in[a],
+            #             optimize='optimal',
+            #         )
 
+            #     # Use lax.map with a batch_size of n_atom
+            #     contributions = jax.lax.map(
+            #         compute_atom_contrib, atom_ids, batch_size=batch_atoms
+            #     )
+            #     return jnp.sum(contributions, axis=0)
+
+            # # map over energies
+            # l_delta_amps = jax.lax.map(calc_energy, energy_data,
+            #                            batch_size=self.batch_energies)
+
+
+            # energy_ids = jnp.arange(len(self.energies))
+
+            # l_delta_amps = jax.lax.map(
+            #     lambda e_id: calc_energy(
+            #         e_id,
+            #         propagators,
+            #         mapped_t_matrix_vib,
+            #         mapped_t_matrix_ref,
+            #         self.ref_calc_result.in_amps,
+            #         self.ref_calc_result.out_amps,
+            #         chem_weights,
+            #         self.parameter_space.n_atom_basis,
+            #         self.batch_atoms,
+            #     ),
+            #     energy_ids,
+            # )
+            # batched_delta_amps.append(l_delta_amps)
+
+            energy_ids = jnp.arange(len(batch))  # smaller batch of energies
+            l_delta_amps = batch_delta_amps(
+                energy_ids,
+                propagators,
+                mapped_t_matrix_vib,
+                mapped_t_matrix_ref,
+                self.ref_calc_result.in_amps,
+                self.ref_calc_result.out_amps,
+                chem_weights,
+                self.parameter_space.n_atom_basis,
+                self.batch_atoms,
+            )
             batched_delta_amps.append(l_delta_amps)
 
         # now re-sort the delta_amps to the original order
@@ -986,9 +939,6 @@ class TensorLEEDCalculator:
             self.exp_spline,
         )
 
-    @partial(
-        jax.jit, static_argnames=('self')
-    )  # TODO: not good, redo as pytree
     def jit_R(self, free_params):
         """JIT compiled R-factor calculation."""
         return self.R(free_params)
@@ -1206,3 +1156,202 @@ def calculate_delta_t_matrix(
     delta_t_matrix = delta_t_matrix - jnp.diag(1j * t_matrix_ref)
     delta_t_matrix = delta_t_matrix * chem_weight
     return delta_t_matrix
+
+
+#@partial(jax.jit, static_argnames=['n_atom_basis', 'batch_atoms'])
+def calc_energy(
+    e_id,
+    propagators,
+    t_matrix_vib,
+    t_matrix_ref,
+    amps_in,
+    amps_out,
+    chem_weights,
+    n_atom_basis,
+    batch_atoms,
+):
+    def compute_atom_contrib(a):
+        delta_t_matrix = calculate_delta_t_matrix(
+            propagators[e_id, a].conj(),
+            t_matrix_vib[e_id, a],
+            t_matrix_ref[e_id, a],
+            chem_weights[a],
+        )
+        return jnp.einsum(
+            'bl,lk,k->b',
+            amps_out[e_id, a],
+            delta_t_matrix,
+            amps_in[e_id, a],
+            optimize='optimal',
+        )
+
+    contribs = jax.lax.map(
+        compute_atom_contrib, jnp.arange(n_atom_basis), batch_size=batch_atoms
+    )
+    return jnp.sum(contribs, axis=0)
+
+
+def _calculate_dynamic_propagator(
+    l_max, batch_atoms, displacements, components, kappa
+):
+    """
+    Compute dynamic propagators for a single energy index.
+
+    Returns an array of shape (num_displacements, ...).
+    """
+    return jax.lax.map(
+        lambda atom_idx: calc_propagator(
+            l_max,
+            displacements[atom_idx],
+            components[atom_idx],
+            kappa,
+        ),
+        jnp.arange(len(displacements)),
+        batch_size=batch_atoms,
+    )
+
+
+@partial(jax.jit, static_argnames=[
+    'l_max',
+    'batch_atoms',
+    'batch_energies'])
+def _calculate_propagators(
+    propagtor_context,
+    displacements,
+    displacements_components,
+    energy_indices,
+    batch_energies,
+    batch_atoms,
+    l_max,
+):
+    # We want the final result indexed as (energies, atom_basis, lm, l'm')
+    energy_indices = jnp.array(energy_indices)
+
+    def process_energy(e_idx):
+        # --- Dynamic propagators ---
+        if len(displacements) > 0:
+            # Now call the per-energy dynamic propagator.
+            dyn = _calculate_dynamic_propagator(
+                l_max,
+                batch_atoms,
+                displacements,
+                displacements_components,
+                propagtor_context.kappa[e_idx],
+            )
+        else:
+            dyn = jnp.zeros_like(propagtor_context.static_propagators[0])
+
+        # --- Static propagators ---
+        if len(propagtor_context.static_propagators) == 0:
+            stat = jnp.zeros_like(dyn)
+        else:
+            # Assuming self._static_propagators is indexed as (atom_basis, num_energies, lm, m)
+            stat = propagtor_context.static_propagators[:, e_idx, :, :]
+
+        # --- Map to atom basis using propagator_id ---
+        mapped_dyn = dyn[propagtor_context.propagator_id]
+        mapped_stat = stat[propagtor_context.propagator_id]
+
+        # --- Combine dynamic and static parts ---
+        # Condition is broadcast along the last two axes.
+        cond = propagtor_context.is_dynamic_propagator[:, None, None]
+        combined = jnp.where(cond, mapped_dyn, mapped_stat)
+        # combined now has shape (atom_basis, lm, m)
+
+        # --- Apply selective transposition ---
+        trans_int = propagtor_context.propagator_transpose_int[:, None, None]
+        combined = (1 - trans_int) * combined + trans_int * jnp.transpose(
+            combined, (0, 2, 1)
+        )
+        # combined remains (atom_basis, lm, m)
+
+        return combined
+
+    # Process each energy individually.
+    # Each process_energy returns (atom_basis, lm, m); mapping over energies yields shape:
+    # (num_energies, atom_basis, lm, m)
+    per_energy = jax.lax.map(
+        process_energy, energy_indices, batch_size=batch_energies
+    )
+    # Transpose to (atom_basis, num_energies, lm, m) to match what the symmetry einsum expects.
+    per_energy = jnp.transpose(per_energy, (1, 0, 2, 3))
+
+    # --- Apply rotations (symmetry operations) and rearrange ---
+    propagators = jnp.einsum(
+        'aelm,alm->ealm',
+        per_energy,
+        propagtor_context.symmetry_operations,
+        optimize='optimal',
+    )
+    # Final shape is (energies, atom_basis, lm, m)
+    return propagators
+
+
+@partial(jax.jit, static_argnames=['batch_atoms', 'n_atom_basis'])
+def batch_delta_amps(
+    energy_ids,
+    propagators,
+    t_matrix_vib,
+    t_matrix_ref,
+    amps_in,
+    amps_out,
+    chem_weights,
+    n_atom_basis,
+    batch_atoms,
+):
+    def calc_energy(e_id):
+        def compute_atom_contrib(a):
+            delta_t_matrix = calculate_delta_t_matrix(
+                propagators[e_id, a].conj(),
+                t_matrix_vib[e_id, a],
+                t_matrix_ref[e_id, a],
+                chem_weights[a],
+            )
+            return jnp.einsum(
+                'bl,lk,k->b',
+                amps_out[e_id, a],
+                delta_t_matrix,
+                amps_in[e_id, a],
+                optimize='optimal',
+            )
+
+        contribs = jax.lax.map(
+            compute_atom_contrib,
+            jnp.arange(n_atom_basis),
+            batch_size=batch_atoms,
+        )
+        return jnp.sum(contribs, axis=0)
+
+    return jax.lax.map(calc_energy, energy_ids)
+
+def _calculate_dynamic_t_matrices(
+    l_max,
+    batch_energies,
+    dynamic_t_matrix_site_elements,
+    phaseshifts,
+    energies,
+    vib_amps,
+    energy_indices,
+):
+    # Convert energy_indices to a JAX array for the outer mapping.
+    energy_indices = jnp.array(energy_indices)
+    # Pre-build the static list of (vib_amp, site_element) pairs.
+    pairs = list(zip(vib_amps, dynamic_t_matrix_site_elements))
+
+    def energy_map_fn(e_idx):
+        # For each energy index, loop over the static pairs.
+        results = []
+        for vib_amp, site_el in pairs:
+            result = vib_dependent_tmatrix(
+                l_max,
+                phaseshifts[site_el][e_idx, : l_max + 1],
+                energies[e_idx],
+                vib_amp.reshape(),  # reshape from (1,) to scalar for grad compatibility
+            )
+            results.append(result)
+        return jnp.stack(results)
+
+    dynamic_t_matrices = jax.lax.map(
+        energy_map_fn, energy_indices, batch_size=batch_energies
+    )
+    return jnp.asarray(dynamic_t_matrices)
