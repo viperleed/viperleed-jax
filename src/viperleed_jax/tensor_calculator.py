@@ -970,9 +970,6 @@ def calc_energy(
     return jnp.sum(contribs, axis=0)
 
 
-
-
-
 @partial(jax.jit, static_argnames=['batch_atoms', 'n_atom_basis'])
 def batch_delta_amps(
     energy_ids,
