@@ -13,39 +13,6 @@ from viperleed_jax.constants import BOHR
 def sum_intensity(prefactors, reference_amplitudes, delta_amplitudes):
     return prefactors * abs(reference_amplitudes + delta_amplitudes) ** 2
 
-@jax.jit
-def intensity_prefactor(
-    displacement, ref_data, beam_indices, theta, phi, trar, is_surface_atom
-):
-    # prefactors (refraction) from amplitudes to intensities
-    n_beams = beam_indices.shape[0]
-    (in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum) = (
-        _wave_vectors(ref_data, theta, phi, trar, beam_indices)
-    )
-
-    a = out_k_perp_vacuum
-    c = in_k_vacuum * jnp.cos(theta)
-
-    onset_height_change = _potential_onset_height_change(displacement, is_surface_atom)
-    prefactor = (
-        abs(
-            jnp.exp(
-                -1j
-                * onset_height_change
-                / BOHR
-                * (
-                    jnp.outer(in_k_perp_vacuum, jnp.ones(shape=(n_beams,)))
-                    + out_k_perp
-                )
-            )
-        )
-        ** 2
-        * a.real
-        / jnp.outer(c, jnp.ones(shape=(n_beams,))).real
-    )
-    return prefactor
-
-
 def _wave_vectors(ref_data, theta, phi, trar, beam_indices):
     e_kin = ref_data.energies
     v_real = ref_data.v0r
@@ -98,3 +65,37 @@ def _potential_onset_height_change(displacement_step, is_surface_atom):
         is_surface_atom, 0
     ]  # z disp for surface atoms
     return jnp.max(surface_z)
+
+@jax.jit
+def intensity_prefactors(
+    onset_height_change,
+    n_beams,
+    theta,
+    wave_vectors):
+    # onset height change was called CXDisp in the original code
+
+    # from lib_intensity
+    (in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum) = wave_vectors
+
+    a = out_k_perp_vacuum
+    c = in_k_vacuum * jnp.cos(theta)
+
+    # TODO: re-check if it should be a.real or abs(a)
+    return (
+        abs(
+            jnp.exp(
+                -1j
+                * onset_height_change
+                / BOHR
+                * (
+                    jnp.outer(
+                        in_k_perp_vacuum, jnp.ones(shape=(n_beams,))
+                    )
+                    + out_k_perp
+                )
+            )
+        )
+        ** 2
+        * a.real
+        / jnp.outer(c, jnp.ones(shape=(n_beams,))).real
+    )

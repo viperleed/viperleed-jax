@@ -24,7 +24,7 @@ from viperleed_jax.dense_quantum_numbers import (
 )
 from viperleed_jax.interpolation import *
 from viperleed_jax.interpolation import interpolate_ragged_array
-from viperleed_jax.lib_intensity import sum_intensity
+from viperleed_jax.lib_intensity import sum_intensity, intensity_prefactors
 from viperleed_jax.propagator import (
     calc_propagator,
     symmetry_operations,
@@ -188,6 +188,9 @@ class TensorLEEDCalculator:
         self.set_experiment_intensity(mapped_exp_intensities, exp_energies)
 
         self.kappa = jnp.array(self.ref_calc_params.kappa)
+
+        # evaluate the wave vectors
+        self.wave_vectors = self._eval_wave_vectors()
 
     @property
     def unit_cell_area(self):
@@ -451,7 +454,7 @@ class TensorLEEDCalculator:
 
         # from lib_intensity
         (in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum) = (
-            self._wave_vectors()
+            self.wave_vectors()
         )
 
         a = out_k_perp_vacuum
@@ -478,7 +481,7 @@ class TensorLEEDCalculator:
         )
         return prefactor
 
-    def _wave_vectors(self):
+    def _eval_wave_vectors(self):
         e_kin = self.energies
         v_real = self.ref_calc_params.v0r
         v_imag = self.ref_calc_params.v0i
@@ -641,11 +644,15 @@ class TensorLEEDCalculator:
         _, _, geo_params, _ = self.parameter_space.split_free_params(
             jnp.asarray(free_params)
         )
-        intensity_prefactors = self._intensity_prefactors(
-            self.parameter_space.potential_onset_height_change(geo_params)
+        prefactors = intensity_prefactors(
+            self.parameter_space.potential_onset_height_change(geo_params),
+            self.n_beams,
+            self.theta,
+            self.wave_vectors,
         )
+
         return sum_intensity(
-            intensity_prefactors, self.ref_calc_result.ref_amps, delta_amplitude
+            prefactors, self.ref_calc_result.ref_amps, delta_amplitude
         )
 
     @property
@@ -657,9 +664,15 @@ class TensorLEEDCalculator:
             ),
             dtype=jnp.complex128,
         )
-        intensity_prefactors = self._intensity_prefactors(jnp.array(0.0))
+
+        prefactors = intensity_prefactors(
+            jnp.array([0.0]),
+            self.n_beams,
+            self.theta,
+            self.wave_vectors,
+        )
         return sum_intensity(
-            intensity_prefactors,
+            prefactors,
             self.ref_calc_result.ref_amps,
             dummy_delta_amps,
         )
@@ -670,6 +683,7 @@ class TensorLEEDCalculator:
         raise NotImplementedError
 
     def interpolated(self, free_params, deriv_deg=0):
+        """Return interpolated intensity and energy derivatives."""
         return _interpolate_intensity(
             self.intensity(free_params),
             self.origin_grid,
