@@ -5,11 +5,12 @@ __created__ = '2024-02-17'
 
 from pathlib import Path
 
-import numpy as np
-from jax import config
-
-config.update('jax_enable_x64', True)
+import jax
 import jax.numpy as jnp
+import numpy as np
+
+jax.config.update('jax_enable_x64', True)
+
 
 MAXIMUM_LMAX = 18
 
@@ -67,3 +68,13 @@ def map_l_array_to_compressed_quantum_index(array, LMAX):
     broadcast_l_index = DENSE_L[LMAX]
     mapped_array = jnp.asarray(array)[broadcast_l_index]
     return mapped_array
+
+_vmapped_l_array_to_compressed_quantum_index = jax.vmap(
+    jax.vmap(map_l_array_to_compressed_quantum_index, in_axes=(0, None)),
+    in_axes=(0, None),
+)
+
+vmapped_l_array_to_compressed_quantum_index = jax.jit(
+    _vmapped_l_array_to_compressed_quantum_index,
+    static_argnums=(1,),
+)

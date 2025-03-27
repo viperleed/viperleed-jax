@@ -605,18 +605,11 @@ class TensorLEEDCalculator:
             t_matrices = t_matrices[:, :, : l_max + 1]
 
             # map t-matrices to compressed quantum index
-            mapped_t_matrix_vib = jax.vmap(
-                jax.vmap(
-                    map_l_array_to_compressed_quantum_index, in_axes=(0, None)
-                ),
-                in_axes=(0, None),
-            )(t_matrices, l_max)
-            mapped_t_matrix_ref = jax.vmap(
-                jax.vmap(
-                    map_l_array_to_compressed_quantum_index, in_axes=(0, None)
-                ),
-                in_axes=(0, None),
-            )(ref_t_matrices, l_max)
+            mapped_t_matrix_vib = vmapped_l_array_to_compressed_quantum_index(
+                t_matrices, l_max)
+            mapped_t_matrix_ref = vmapped_l_array_to_compressed_quantum_index(
+                ref_t_matrices, l_max
+            )
 
             energy_ids = jnp.arange(len(batch))  # smaller batch of energies
             l_delta_amps = batch_delta_amps(
