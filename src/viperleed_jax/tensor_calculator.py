@@ -881,24 +881,18 @@ class TensorLEEDCalculator:
         _free_params = jnp.asarray(free_params)
         if self.comp_intensity is None:
             raise ValueError('Comparison intensity not set.')
-        v0i_electron_volt = -self.ref_calc_params.v0i * HARTREE
+
         non_interpolated_intensity = self.intensity(_free_params)
 
-        v0r_param, *_ = self.parameter_space.split_free_params(
-            jnp.asarray(_free_params)
-        )
+        v0r_param, *_ = self.parameter_space.split_free_params(jnp.asarray(free_params))
         v0r_shift = self.parameter_space.v0r_transformer(v0r_param)
 
-        # apply v0r shift
-        theo_spline = interpax.CubicSpline(
-            self.origin_grid + v0r_shift,
+        return calc_r_factor(
             non_interpolated_intensity,
-            check=False,
-            extrapolate=False,
-        )
-        return self.rfactor_func(
-            theo_spline,
-            v0i_electron_volt,
+            v0r_shift,
+            self.ref_calc_params,
+            self.rfactor_func,
+            self.origin_grid,
             self.interpolation_step,
             self.target_grid,
             self.exp_spline,
@@ -1364,3 +1358,40 @@ def calculate_t_matrices(
         energy_fn, energy_indices, batch_size=batch_energies
     )
     return t_matrices
+
+@partial(
+    jax.jit,
+    static_argnames=(
+        'interpolation_step',
+        'rfactor_func',
+        #'ref_calc_params',
+    ),
+)
+def calc_r_factor(
+    non_interpolated_intensity,
+    v0r_shift,
+    ref_calc_params,
+    rfactor_func,
+    origin_grid,
+    interpolation_step,
+    target_grid,
+    exp_spline,
+):
+
+    v0i_electron_volt = -ref_calc_params.v0i * HARTREE
+
+    # apply v0r shift
+    theo_spline = interpax.CubicSpline(
+        origin_grid + v0r_shift,
+        non_interpolated_intensity,
+        check=False,
+        extrapolate=False,
+    )
+
+    return rfactor_func(
+        theo_spline,
+        v0i_electron_volt,
+        interpolation_step,
+        target_grid,
+        exp_spline,
+    )
