@@ -372,6 +372,10 @@ class TensorLEEDCalculator:
                 for disp in displacements_au
             ]
         )
+        # The result has shape (num_energies, num_displacements, ...).
+        # Use einsum to swap axes so that the final shape is
+        # (num_displacements, num_energies, ...), matching the original ordering.
+        self._static_propagators = jnp.einsum('ed...->de...', static_propagators)
 
         # Outer loop: iterate over energy indices.
         def energy_fn(e_idx):
@@ -705,7 +709,6 @@ class TensorLEEDCalculator:
         _free_params = jnp.asarray(free_params)
         if self.comp_intensity is None:
             raise ValueError('Comparison intensity not set.')
-
         non_interpolated_intensity = self.intensity(_free_params)
 
         v0r_param, *_ = self.parameter_space.split_free_params(jnp.asarray(free_params))

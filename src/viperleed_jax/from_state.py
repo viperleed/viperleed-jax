@@ -21,7 +21,7 @@ from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from viperleed.calc.run import run_calc
 
 from viperleed_jax.atom_basis import AtomBasis
-from viperleed_jax.data_structures import ReferenceData
+from viperleed_jax.data_structures import process_tensors
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.displacements.file import DisplacementsFile
 from viperleed_jax.files.tensors import read_tensor_zip
@@ -87,9 +87,9 @@ def calculator_from_state(
     sorted_tensors = [tensors[f'T_{at.num}'] for at in non_bulk_atoms]
 
     # Combine data into a ReferenceData object
-    logger.debug('Combining tensor data into ReferenceData object.')
-    ref_data = ReferenceData(sorted_tensors, fix_lmax=l_max)
-    logger.debug('ReferenceData object created successfully.')
+    logger.debug('Combining tensor data ...')
+    ref_calc_params, ref_calc_results = process_tensors(sorted_tensors, fix_lmax=l_max)
+    logger.debug('Tensor processing successful.')
 
     # read Phaseshift data using existing phaseshift reader
     phaseshifts_path = calc_path / 'PHASESHIFTS'
@@ -102,12 +102,12 @@ def calculator_from_state(
 
     # interpolate phaseshifts
     phaseshifts = ps.Phaseshifts(
-        raw_phaseshifts, ref_data.energies, l_max, phaseshift_map=site_el_map
+        raw_phaseshifts, ref_calc_params.energies, l_max, phaseshift_map=site_el_map
     )
 
     logger.debug('Initializing Tensor LEED calculator.')
     calculator = TensorLEEDCalculator(
-        ref_data, phaseshifts, slab, rpars, **kwargs
+        ref_calc_params, ref_calc_results, phaseshifts, slab, rpars, **kwargs
     )
 
     # free up memory for large objects that are no longer needed
@@ -126,7 +126,8 @@ def calculator_from_state(
         calculator,
         slab,
         rpars,
-        ref_data,
+        ref_calc_params,
+        ref_calc_results,
         phaseshifts,
         atom_basis,
         disp_file,
