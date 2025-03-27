@@ -45,6 +45,17 @@ class PropagatorContext:
     is_dynamic_propagator: jnp.ndarray
 
 
+@partial(
+    jax.tree_util.register_dataclass,
+)
+@dataclass
+class TMatrixContext:
+    energies: jnp.ndarray
+    static_t_matrices: jnp.ndarray
+    dynamic_site_elements: jnp.ndarray
+    t_matrix_id: jnp.ndarray
+    is_dynamic_mask: jnp.ndarray
+
 @register_pytree_node_class
 class TensorLEEDCalculator:
     """Main class for calculating tensor LEED intensities and R-factors.
@@ -295,6 +306,15 @@ class TensorLEEDCalculator:
             symmetry_operations=self.propagator_symmetry_operations,
         )
 
+        # set the t-matrix context
+        self.t_matrix_context = TMatrixContext(
+            energies=self.energies,
+            static_t_matrices=self._static_t_matrices,
+            dynamic_site_elements=self.parameter_space.dynamic_t_matrix_site_elements,
+            t_matrix_id=self.parameter_space.t_matrix_id,
+            is_dynamic_mask=self.parameter_space.is_dynamic_t_matrix,
+        )
+
     def _calculate_static_t_matrices(self):
         # This is only done once – perform for maximum lmax and crop later
         energy_indices = jnp.arange(len(self.energies))
@@ -396,43 +416,6 @@ class TensorLEEDCalculator:
         )
         return jnp.einsum('ael->eal', ref_t_matrices)
 
-    def _calculate_t_matrices(self, vib_amps, energy_indices):
-        # Process one energy at a time to reduce memory usage.
-        energy_indices = jnp.array(energy_indices)
-
-        def energy_fn(e_idx):
-            # Compute the dynamic t-matrix for a single energy.
-            # _calculate_dynamic_t_matrices expects a sequence of energies; here we pass a list of one index.
-            dyn_t = _calculate_dynamic_t_matrices(
-                self.max_l_max,
-                self.batch_energies,
-                self.parameter_space.dynamic_t_matrix_site_elements,
-                self.phaseshifts,
-                self.energies,
-                vib_amps,
-                [e_idx],
-            )[0]
-            # Map the dynamic t-matrix to the atom-site-element basis.
-            dyn_mapped = dyn_t[self.parameter_space.t_matrix_id]
-            # Get the corresponding static t-matrix, or zeros if none exist.
-            if len(self._static_t_matrices) == 0:
-                stat_t = jnp.zeros_like(dyn_t)
-            else:
-                stat_t = self._static_t_matrices[e_idx, :, :]
-            stat_mapped = stat_t[self.parameter_space.t_matrix_id, :]
-            # Select between dynamic and static for this energy.
-            # The condition is broadcasted to shape (num_selected, lm)
-            return jnp.where(
-                self.parameter_space.is_dynamic_t_matrix[:, jnp.newaxis],
-                dyn_mapped,
-                stat_mapped,
-            )
-
-        # Process each energy one by one.
-        t_matrices = jax.lax.map(
-            energy_fn, energy_indices, batch_size=self.batch_energies
-        )
-        return t_matrices
 
     # TODO: for testing purposes: contrib should be exactly 0 for not pertubations and if recalculate_ref_t_matrices=True
     def _calculate_static_ase_contributions(self):
@@ -708,7 +691,13 @@ class TensorLEEDCalculator:
             ]
 
             # dynamic t-matrices
-            t_matrices = self._calculate_t_matrices(vib_amps_au, energy_ids)
+            t_matrices = calculate_t_matrices(
+                self.t_matrix_context,
+                l_max,
+                self.batch_energies,
+                self.phaseshifts,
+                vib_amps_au,
+                energy_ids)
 
             # crop t-matrices
             ref_t_matrices = jnp.asarray(self.ref_t_matrices)[
@@ -1327,3 +1316,50 @@ def _calculate_dynamic_t_matrices(
         energy_map_fn, energy_indices, batch_size=batch_energies
     )
     return jnp.asarray(dynamic_t_matrices)
+
+@partial(jax.jit, static_argnames=['l_max',
+                                   'batch_energies',])
+def calculate_t_matrices(
+    t_matrix_context,
+    l_max,
+    batch_energies,
+    phaseshifts,
+    vib_amps,
+    energy_indices
+    ):
+    # Process one energy at a time to reduce memory usage.
+    energy_indices = jnp.array(energy_indices)
+
+    def energy_fn(e_idx):
+        # Compute the dynamic t-matrix for a single energy.
+        # _calculate_dynamic_t_matrices expects a sequence of energies; here we pass a list of one index.
+        dyn_t = _calculate_dynamic_t_matrices(
+            l_max,
+            batch_energies,
+            t_matrix_context.dynamic_site_elements,
+            phaseshifts,
+            t_matrix_context.energies,
+            vib_amps,
+            [e_idx],
+        )[0]
+        # Map the dynamic t-matrix to the atom-site-element basis.
+        dyn_mapped = dyn_t[t_matrix_context.t_matrix_id]
+        # Get the corresponding static t-matrix, or zeros if none exist.
+        if len(t_matrix_context.static_t_matrices) == 0:
+            stat_t = jnp.zeros_like(dyn_t)
+        else:
+            stat_t = t_matrix_context.static_t_matrices[e_idx, :, :]
+        stat_mapped = stat_t[t_matrix_context.t_matrix_id, :]
+        # Select between dynamic and static for this energy.
+        # The condition is broadcasted to shape (num_selected, lm)
+        return jnp.where(
+            t_matrix_context.is_dynamic_t_matrix[:, jnp.newaxis],
+            dyn_mapped,
+            stat_mapped,
+        )
+
+    # Process each energy one by one.
+    t_matrices = jax.lax.map(
+        energy_fn, energy_indices, batch_size=batch_energies
+    )
+    return t_matrices
