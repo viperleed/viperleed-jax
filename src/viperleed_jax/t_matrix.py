@@ -149,8 +149,6 @@ def _calculate_dynamic_t_matrices(
     )
     return jnp.asarray(dynamic_t_matrices)
 
-
-@jax.checkpoint
 @partial(
     jax.jit,
     static_argnames=[
