@@ -27,7 +27,7 @@ from viperleed_jax.interpolation import *
 from viperleed_jax.interpolation import interpolate_ragged_array
 from viperleed_jax.lib_intensity import sum_intensity
 from viperleed_jax.propagator import calc_propagator, symmetry_operations
-from viperleed_jax.t_matrix import vib_dependent_tmatrix
+from viperleed_jax.t_matrix import calculate_t_matrices
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
 from viperleed_jax import utils
 
@@ -1204,88 +1204,6 @@ def batch_delta_amps(
         return jnp.sum(contribs, axis=0)
 
     return jax.lax.map(calc_energy, energy_ids)
-
-
-def _calculate_dynamic_t_matrices(
-    l_max,
-    batch_energies,
-    dynamic_t_matrix_site_elements,
-    phaseshifts,
-    energies,
-    vib_amps,
-    energy_indices,
-):
-    # Convert energy_indices to a JAX array for the outer mapping.
-    energy_indices = jnp.array(energy_indices)
-    # Pre-build the static list of (vib_amp, site_element) pairs.
-    pairs = list(zip(vib_amps, dynamic_t_matrix_site_elements))
-
-    def energy_map_fn(e_idx):
-        # For each energy index, loop over the static pairs.
-        results = []
-        for vib_amp, site_el in pairs:
-            result = vib_dependent_tmatrix(
-                l_max,
-                phaseshifts[site_el][e_idx, : l_max + 1],
-                energies[e_idx],
-                vib_amp.reshape(),  # reshape from (1,) to scalar for grad compatibility
-            )
-            results.append(result)
-        return jnp.stack(results)
-
-    dynamic_t_matrices = jax.lax.map(
-        energy_map_fn, energy_indices, batch_size=batch_energies
-    )
-    return jnp.asarray(dynamic_t_matrices)
-
-
-@partial(jax.jit, static_argnames=['l_max',
-                                   'batch_energies',
-                                   'phaseshifts'])
-def calculate_t_matrices(
-    t_matrix_context,
-    l_max,
-    batch_energies,
-    phaseshifts,
-    vib_amps,
-    energy_indices
-    ):
-    # Process one energy at a time to reduce memory usage.
-    energy_indices = jnp.array(energy_indices)
-
-    def energy_fn(e_idx):
-        # Compute the dynamic t-matrix for a single energy.
-        # _calculate_dynamic_t_matrices expects a sequence of energies; here we pass a list of one index.
-        dyn_t = _calculate_dynamic_t_matrices(
-            l_max,
-            batch_energies,
-            t_matrix_context.dynamic_site_elements,
-            phaseshifts,
-            t_matrix_context.energies,
-            vib_amps,
-            [e_idx],
-        )[0]
-        # Map the dynamic t-matrix to the atom-site-element basis.
-        dyn_mapped = dyn_t[t_matrix_context.t_matrix_id]
-        # Get the corresponding static t-matrix, or zeros if none exist.
-        if len(t_matrix_context.static_t_matrices) == 0:
-            stat_t = jnp.zeros_like(dyn_t)
-        else:
-            stat_t = t_matrix_context.static_t_matrices[e_idx, :, :]
-        stat_mapped = stat_t[t_matrix_context.t_matrix_id, :]
-        # Select between dynamic and static for this energy.
-        # The condition is broadcasted to shape (num_selected, lm)
-        return jnp.where(
-            t_matrix_context.is_dynamic_mask[:, jnp.newaxis],
-            dyn_mapped,
-            stat_mapped,
-        )
-
-    # Process each energy one by one.
-    t_matrices = jax.lax.map(
-        energy_fn, energy_indices, batch_size=batch_energies
-    )
-    return t_matrices
 
 @partial(
     jax.jit,
