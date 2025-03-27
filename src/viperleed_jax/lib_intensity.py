@@ -9,12 +9,11 @@ import jax.numpy as jnp
 from viperleed_jax.constants import BOHR
 
 
-# @jax.named_scope("sum_intensity")
+@jax.jit
 def sum_intensity(prefactors, reference_amplitudes, delta_amplitudes):
     return prefactors * abs(reference_amplitudes + delta_amplitudes) ** 2
 
-
-# @jax.named_scope("_intensity_prefactor")
+@jax.jit
 def intensity_prefactor(
     displacement, ref_data, beam_indices, theta, phi, trar, is_surface_atom
 ):
@@ -27,12 +26,12 @@ def intensity_prefactor(
     a = out_k_perp_vacuum
     c = in_k_vacuum * jnp.cos(theta)
 
-    CXDisp = _potential_onset_height_change(displacement, is_surface_atom)
+    onset_height_change = _potential_onset_height_change(displacement, is_surface_atom)
     prefactor = (
         abs(
             jnp.exp(
                 -1j
-                * CXDisp
+                * onset_height_change
                 / BOHR
                 * (
                     jnp.outer(in_k_perp_vacuum, jnp.ones(shape=(n_beams,)))

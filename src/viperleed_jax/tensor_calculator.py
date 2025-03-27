@@ -709,7 +709,6 @@ class TensorLEEDCalculator:
         """Evaluate R-factor gradients."""
         _, grad = self.R_val_and_grad(free_params)
         return grad
-        return jnp.asarray(jax.grad(self.R)(free_params))
 
 
     def benchmark(self, free_params=None, n_repeats=10, csv_file_path=None):
