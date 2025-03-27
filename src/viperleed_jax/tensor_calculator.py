@@ -4,6 +4,8 @@ __authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
 __created__ = '2024-05-03'
 
 import copy
+from functools import partial
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -29,6 +31,20 @@ from viperleed_jax.propagator import calc_propagator, symmetry_operations
 from viperleed_jax.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
 from viperleed_jax import utils
+
+
+
+@partial(
+    jax.tree_util.register_dataclass,
+)
+@dataclass
+class PropagatorContext:
+    kappa: jnp.ndarray  # shape (n_energies,)
+    static_propagators: jnp.ndarray  # shape (atom_basis, n_energies, lm, m)
+    propagator_transpose_int: jnp.ndarray  # shape (atom_basis,)
+    symmetry_operations: jnp.ndarray  # shape (atom_basis, lm, m)
+    propagator_id: jnp.ndarray
+    is_dynamic_propagator: jnp.ndarray
 
 
 @register_pytree_node_class
