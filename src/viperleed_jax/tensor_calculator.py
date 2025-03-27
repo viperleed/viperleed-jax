@@ -403,9 +403,9 @@ class TensorLEEDCalculator:
         def energy_fn(e_idx):
             # Compute the dynamic t-matrix for a single energy.
             # _calculate_dynamic_t_matrices expects a sequence of energies; here we pass a list of one index.
-            dyn_t =  _calculate_dynamic_t_matrices(
+            dyn_t = _calculate_dynamic_t_matrices(
                 self.max_l_max,
-                self.max_l_max,
+                self.batch_energies,
                 self.parameter_space.dynamic_t_matrix_site_elements,
                 self.phaseshifts,
                 self.energies,
