@@ -372,10 +372,6 @@ class TensorLEEDCalculator:
                 for disp in displacements_au
             ]
         )
-        # The result has shape (num_energies, num_displacements, ...).
-        # Use einsum to swap axes so that the final shape is
-        # (num_displacements, num_energies, ...), matching the original ordering.
-        self._static_propagators = jnp.einsum('ed...->de...', static_propagators)
 
         # Outer loop: iterate over energy indices.
         def energy_fn(e_idx):
