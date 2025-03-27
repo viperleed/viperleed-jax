@@ -21,7 +21,6 @@ from viperleed_jax import atomic_units, lib_math, rfactor
 from viperleed_jax.batching import Batching
 from viperleed_jax.constants import BOHR, HARTREE
 from viperleed_jax.dense_quantum_numbers import (
-    DENSE_QUANTUM_NUMBERS,
     map_l_array_to_compressed_quantum_index,
 )
 from viperleed_jax.interpolation import *
@@ -31,7 +30,6 @@ from viperleed_jax.propagator import calc_propagator, symmetry_operations
 from viperleed_jax.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
 from viperleed_jax import utils
-
 
 
 @partial(
@@ -67,23 +65,24 @@ class TensorLEEDCalculator:
         The degree of interpolation, by default 3.
     bc_type : str, optional
         The boundary condition type for interpolation, by default 'not-a-knot'.
-    batch_lmax : bool or int, optional
-        Whether to use batched calculation. By default True.
     """
 
     def __init__(
         self,
-        ref_data,
+        ref_calc_params,
+        ref_calc_result,
         phaseshifts,
         slab,
         rparams,
         interpolation_step=0.5,
         interpolation_deg=3,
         bc_type='not-a-knot',
-        batch=True,
+        batch_energies=None,
+        batch_atoms=None,
         recalculate_ref_t_matrices=False,
     ):
-        self.ref_data = ref_data
+        self.ref_calc_params = ref_calc_params
+        self.ref_calc_result = ref_calc_result
         self.phaseshifts = phaseshifts
         self.recalculate_ref_t_matrices = recalculate_ref_t_matrices
 
@@ -113,10 +112,9 @@ class TensorLEEDCalculator:
         self.theta = jnp.deg2rad(rparams.THETA)
         self.phi = jnp.deg2rad(rparams.PHI)
 
-        # energies, inner potential, kappa
-        self.energies = jnp.asarray(self.ref_data.energies)
-        self.v0i = ref_data.v0i
-        self.kappa = atomic_units.kappa(self.energies, self.v0i)
+        # TODO: refactor into a dataclass
+        self.max_l_max = self.ref_calc_params.max_lmax
+        self.energies = jnp.asarray(self.ref_calc_params.energies)
 
         non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
         # TODO check this
@@ -127,11 +125,18 @@ class TensorLEEDCalculator:
         self.ref_vibrational_amps = jnp.array(
             [at.site.vibamp[at.el] for at in non_bulk_atoms]
         )
-        self.origin_grid = ref_data.incident_energy_ev
+        self.origin_grid = ref_calc_params.incident_energy_ev
 
         self.delta_amp_prefactors = self._calc_delta_amp_prefactors()
 
         self.exp_spline = None
+
+        # set batch sizes
+        self.batch_energies = batch_energies
+        if batch_atoms is None:
+            self.batch_atoms = self.n_atoms
+        else:
+            self.batch_atoms = batch_atoms
 
         # default R-factor is Pendry
         self.rfactor_func = rfactor.pendry_R
@@ -139,22 +144,8 @@ class TensorLEEDCalculator:
         if self.interpolation_deg != 3:
             raise NotImplementedError
 
-        # work out the energy batching
-        if batch is False:
-            # do not perform batching other than the requested lmax-batching
-            self.batching = Batching(self.energies, ref_data.lmax, None)
-        elif batch is True:
-            self.batching = Batching(self.energies, ref_data.lmax, 8)
-        elif isinstance(batch, int):
-            self.batching = Batching(self.energies, ref_data.lmax, batch)
-        else:
-            raise ValueError('batch_lmax must be bool or int.')
-        logger.info(
-            f'Batching initialized with {len(self.batching.batches)} batches '
-            f'and a maximum batch size of {self.batching.max_batch_size}.'
-        )
-
-        self.tensor_amps_in, self.tensor_amps_out = self._batch_tensor_amps()
+        # calculate batching
+        self.batching = Batching(self.energies, ref_calc_params.lmax)
 
         # get experimental intensities and hk
         exp_energies, _, _, exp_intensities = beamlist_to_array(
@@ -182,6 +173,8 @@ class TensorLEEDCalculator:
         )
         self.set_experiment_intensity(mapped_exp_intensities, exp_energies)
 
+        self.kappa = jnp.array(self.ref_calc_params.kappa)
+
     @property
     def unit_cell_area(self):
         return jnp.linalg.norm(
@@ -197,10 +190,6 @@ class TensorLEEDCalculator:
         return len(self.ref_vibrational_amps)
 
     @property
-    def max_l_max(self):
-        return max(self.ref_data.needed_lmax)
-
-    @property
     def parameter_space(self):
         if self._parameter_space is None:
             raise ValueError('Parameter space not set.')
@@ -209,6 +198,11 @@ class TensorLEEDCalculator:
     @property
     def n_free_parameters(self):
         return self.parameter_space.n_free_params
+
+    @property
+    def atom_ids(self):
+        # atom ids that will be batched over
+        return jnp.arange(self.parameter_space.n_atom_basis)
 
     def set_rfactor(self, rfactor_name):
         _rfactor_name = rfactor_name.lower().strip()
@@ -232,18 +226,6 @@ class TensorLEEDCalculator:
             self.comp_intensity,
             bc_type=self.bc_type,
         )
-
-    def _batch_tensor_amps(self):
-        tensor_amps_in = []
-        tensor_amps_out = []
-        for batch in self.batching.batches:
-            tensor_amps_in.append(
-                self.ref_data.tensor_amps_in[batch.l_max][batch.energy_indices]
-            )
-            tensor_amps_out.append(
-                self.ref_data.tensor_amps_out[batch.l_max][batch.energy_indices]
-            )
-        return tensor_amps_in, tensor_amps_out
 
     def set_parameter_space(self, parameter_space):
         if self._parameter_space is not None:
@@ -274,7 +256,8 @@ class TensorLEEDCalculator:
                 ref_vib_amps, site_elements
             )
         else:
-            self.ref_t_matrices = self.ref_data.ref_t_matrix[self.max_l_max]
+            # use the stored reference t-matrices from reference calculation
+            self.ref_t_matrices = self.ref_calc_result.t_matrices
 
         # pre-calculate the static t-matrices
         logger.debug(
@@ -313,50 +296,56 @@ class TensorLEEDCalculator:
         )
 
     def _calculate_static_t_matrices(self):
-        # this is only done once – perform for maximum lmax and crop later
-        t_matrix_vmap_en = jax.vmap(
-            vib_dependent_tmatrix, in_axes=(None, 0, 0, None), out_axes=0
-        )
-        static_t_matrices = jnp.array(
-            [
-                t_matrix_vmap_en(
+        # This is only done once – perform for maximum lmax and crop later
+        energy_indices = jnp.arange(len(self.energies))
+
+        # Outer loop: iterate over energy indices with batching
+        def energy_fn(e_idx):
+            # For each energy, compute t-matrices for all static input pairs.
+            # self._parameter_space.static_t_matrix_inputs is assumed to be a list
+            # of (site_el, vib_amp) pairs.
+            def compute_t(pair):
+                site_el, vib_amp = pair
+                return vib_dependent_tmatrix(
                     self.max_l_max,
-                    self.phaseshifts[site_el][:, : self.max_l_max + 1],
-                    self.energies,
+                    self.phaseshifts[site_el][e_idx, : self.max_l_max + 1],
+                    self.energies[e_idx],
                     vib_amp,
                 )
-                for site_el, vib_amp in self._parameter_space.static_t_matrix_inputs
-            ]
+
+            # Use a Python loop to compute for each pair and stack the results.
+            # This loop is over a typically small list so it shouldn't be a bottleneck.
+            return jnp.stack(
+                [
+                    compute_t(pair)
+                    for pair in self._parameter_space.static_t_matrix_inputs
+                ]
+            )
+
+        # Map over energies with the given batch size.
+        static_t_matrices = jax.lax.map(
+            energy_fn, energy_indices, batch_size=self.batch_energies
         )
-        self._static_t_matrices = jnp.einsum('ael->eal', static_t_matrices)
+        # static_t_matrices has shape (num_energies, num_static_inputs, lm, ...),
+        # which is equivalent to the original einsum('ael->eal') result.
+        self._static_t_matrices = static_t_matrices
 
     def _calculate_static_propagators(self):
-        # this is only done once – perform for maximum lmax and crop later
-        propagator_vmap_en = jax.vmap(
-            calc_propagator, in_axes=(None, None, None, 0)
-        )
-        displacements_ang = jnp.asarray(
-            self._parameter_space.static_propagator_inputs
-        )
+        # Convert static propagator inputs to an array.
+        static_inputs = self._parameter_space.static_propagator_inputs
+        if len(static_inputs) == 0:
+            # If there are no static inputs, store an empty array.
+            self._static_propagators = jnp.array([])
+            return
+
+        displacements_ang = jnp.asarray(static_inputs)
         displacements_au = atomic_units.to_internal_displacement_vector(
             displacements_ang
         )
         spherical_harmonics_components = jnp.array(
             [
-                lib_math.spherical_harmonics_components(
-                    self.max_l_max, displacement
-                )
-                for displacement in displacements_au
-            ]
-        )
-        self._static_propagators = jnp.array(
-            [
-                propagator_vmap_en(
-                    self.max_l_max, displacement, components, self.kappa
-                )
-                for displacement, components in zip(
-                    displacements_au, spherical_harmonics_components
-                )
+                lib_math.spherical_harmonics_components(self.max_l_max, disp)
+                for disp in displacements_au
             ]
         )
 
@@ -388,41 +377,40 @@ class TensorLEEDCalculator:
         # The result has shape (num_energies, num_displacements, ...).
         # Use einsum to swap axes so that the final shape is
         # (num_displacements, num_energies, ...), matching the original ordering.
-        self._static_propagators = jnp.einsum('ed...->de...', static_propagators)
-
-
+        self._static_propagators = jnp.einsum(
+            'ed...->de...', static_propagators
+        )
 
     def _calculate_reference_t_matrices(self, ref_vib_amps, site_elements):
-        t_matrix_vmap_en = jax.vmap(
-            vib_dependent_tmatrix, in_axes=(None, 0, 0, None), out_axes=0
-        )
-        ref_t_matrices = jnp.array(
-            [
-                t_matrix_vmap_en(
-                    self.max_l_max,
-                    self.phaseshifts[site_el][:, : self.max_l_max + 1],
-                    self.energies,
-                    vib_amp,
-                )
-                for vib_amp, site_el in zip(ref_vib_amps, site_elements)
-            ]
+        def map_fn(pair):
+            vib_amp, site_el = pair
+            return vib_dependent_tmatrix(
+                self.max_l_max,
+                self.phaseshifts[site_el][:, : self.max_l_max + 1],
+                self.energies,
+                vib_amp,
+            )
+
+        ref_t_matrices = jax.lax.map(
+            map_fn, (ref_vib_amps, site_elements), batch_size=self.batch_atoms
         )
         return jnp.einsum('ael->eal', ref_t_matrices)
 
     def _calculate_t_matrices(self, vib_amps, energy_indices):
-        # return t-matrices indexed as (energies, atom-site-elements, lm)
+        # Process one energy at a time to reduce memory usage.
+        energy_indices = jnp.array(energy_indices)
 
         def energy_fn(e_idx):
             # Compute the dynamic t-matrix for a single energy.
             # _calculate_dynamic_t_matrices expects a sequence of energies; here we pass a list of one index.
-            dyn_t = _calculate_dynamic_t_matrices(
+            dyn_t =  _calculate_dynamic_t_matrices(
                 self.max_l_max,
                 self.max_l_max,
                 self.parameter_space.dynamic_t_matrix_site_elements,
                 self.phaseshifts,
                 self.energies,
                 vib_amps,
-                [e_idx]
+                [e_idx],
             )[0]
             # Map the dynamic t-matrix to the atom-site-element basis.
             dyn_mapped = dyn_t[self.parameter_space.t_matrix_id]
@@ -439,21 +427,12 @@ class TensorLEEDCalculator:
                 dyn_mapped,
                 stat_mapped,
             )
-        else:
-            static_t_matrices = self._static_t_matrices[energy_indices, :, :]
-        mapped_static_t_matrices = static_t_matrices[
-            :, self.parameter_space.t_matrix_id, :
-        ]
 
-        t_matrices = jnp.where(
-            self.parameter_space.is_dynamic_t_matrix[
-                jnp.newaxis, :, jnp.newaxis
-            ],
-            mapped_dynamic_t_matrices,
-            mapped_static_t_matrices,
+        # Process each energy one by one.
+        t_matrices = jax.lax.map(
+            energy_fn, energy_indices, batch_size=self.batch_energies
         )
         return t_matrices
-
 
     # TODO: for testing purposes: contrib should be exactly 0 for not pertubations and if recalculate_ref_t_matrices=True
     def _calculate_static_ase_contributions(self):
@@ -555,11 +534,11 @@ class TensorLEEDCalculator:
 
     def _calc_delta_amp_prefactors(self):
         energies = self.energies
-        v_imag = self.v0i
+        v_imag = self.ref_calc_params.v0i
 
         # energy dependent quantities
-        out_k_par2 = self.ref_data.kx_in
-        out_k_par3 = self.ref_data.ky_in
+        out_k_par2 = self.ref_calc_params.kx_in
+        out_k_par3 = self.ref_calc_params.ky_in
 
         k_inside = jnp.sqrt(2 * energies - 2j * v_imag + 1j * lib_math.EPS)
 
@@ -614,8 +593,8 @@ class TensorLEEDCalculator:
 
     def _wave_vectors(self):
         e_kin = self.energies
-        v_real = self.ref_data.v0r
-        v_imag = self.v0i
+        v_real = self.ref_calc_params.v0r
+        v_imag = self.ref_calc_params.v0i
         n_energies = e_kin.shape[0]
         n_beams = self.beam_indices.shape[0]
         # incident wave vector
@@ -702,9 +681,6 @@ class TensorLEEDCalculator:
             self.parameter_space.occ_weight_transformer(occ_params)
         )
 
-        # atom ids that will be batched over
-        atom_ids = jnp.arange(self.parameter_space.n_atom_basis)
-
         # Loop over batches
         # -----------------
 
@@ -713,7 +689,6 @@ class TensorLEEDCalculator:
         batched_delta_amps = []
         for batch in self.batching.batches:
             l_max = batch.l_max
-            batch_id = batch.batch_id
             energy_ids = jnp.asarray(batch.energy_indices)
 
             # propagators - already rotated
@@ -742,8 +717,8 @@ class TensorLEEDCalculator:
             t_matrices = t_matrices[:, :, : l_max + 1]
 
             # tensor amplitudes
-            tensor_amps_in = jnp.asarray(self.tensor_amps_in[batch_id])
-            tensor_amps_out = jnp.asarray(self.tensor_amps_out[batch_id])
+            # tensor_amps_in = self.ref_calc_result.in_amps
+            # tensor_amps_out = self.ref_calc_result.out_amps
 
             # map t-matrices to compressed quantum index
             mapped_t_matrix_vib = jax.vmap(
@@ -809,7 +784,6 @@ class TensorLEEDCalculator:
             # l_delta_amps = jax.lax.map(calc_energy, energy_data,
             #                            batch_size=self.batch_energies)
 
-
             # energy_ids = jnp.arange(len(self.energies))
 
             # l_delta_amps = jax.lax.map(
@@ -866,7 +840,7 @@ class TensorLEEDCalculator:
             self.parameter_space.potential_onset_height_change(geo_params)
         )
         intensities = sum_intensity(
-            intensity_prefactors, self.ref_data.ref_amps, delta_amplitude
+            intensity_prefactors, self.ref_calc_result.ref_amps, delta_amplitude
         )
         return intensities
 
@@ -881,7 +855,9 @@ class TensorLEEDCalculator:
         )
         intensity_prefactors = self._intensity_prefactors(jnp.array(0.0))
         intensities = sum_intensity(
-            intensity_prefactors, self.ref_data.ref_amps, dummy_delta_amps
+            intensity_prefactors,
+            self.ref_calc_result.ref_amps,
+            dummy_delta_amps,
         )
         return intensities
 
@@ -916,7 +892,7 @@ class TensorLEEDCalculator:
         _free_params = jnp.asarray(free_params)
         if self.comp_intensity is None:
             raise ValueError('Comparison intensity not set.')
-        v0i_electron_volt = -self.v0i * HARTREE
+        v0i_electron_volt = -self.ref_calc_params.v0i * HARTREE
         non_interpolated_intensity = self.intensity(_free_params)
 
         v0r_param, *_ = self.parameter_space.split_free_params(
@@ -979,19 +955,17 @@ class TensorLEEDCalculator:
             'interpolation_deg': self.interpolation_deg,
             'interpolation_step': self.interpolation_step,
             'is_surface_atom': self.is_surface_atom,
-            'kappa': self.kappa,
             'n_beams': self.n_beams,
             'origin_grid': self.origin_grid,
             'phaseshifts': self.phaseshifts,
             'phi': self.phi,
             'propagator_symmetry_operations': self.propagator_symmetry_operations,
             'propagator_transpose_int': self.propagator_transpose_int,
-            'ref_data': self.ref_data,
             'ref_t_matrices': self.ref_t_matrices,
             'ref_vibrational_amps': self.ref_vibrational_amps,
             'target_grid': self.target_grid,
             'tensor_amps_in': self.tensor_amps_in,
-            'tensor_amps_out': self.tensor_amps_out,
+            #'tensor_amps_out': self.tensor_amps_out,
             'theta': self.theta,
             'unit_cell': self.unit_cell,
         }
@@ -1158,7 +1132,7 @@ def calculate_delta_t_matrix(
     return delta_t_matrix
 
 
-#@partial(jax.jit, static_argnames=['n_atom_basis', 'batch_atoms'])
+# @partial(jax.jit, static_argnames=['n_atom_basis', 'batch_atoms'])
 def calc_energy(
     e_id,
     propagators,
@@ -1211,10 +1185,7 @@ def _calculate_dynamic_propagator(
     )
 
 
-@partial(jax.jit, static_argnames=[
-    'l_max',
-    'batch_atoms',
-    'batch_energies'])
+@partial(jax.jit, static_argnames=['l_max', 'batch_atoms', 'batch_energies'])
 def _calculate_propagators(
     propagtor_context,
     displacements,
@@ -1323,6 +1294,7 @@ def batch_delta_amps(
         return jnp.sum(contribs, axis=0)
 
     return jax.lax.map(calc_energy, energy_ids)
+
 
 def _calculate_dynamic_t_matrices(
     l_max,
