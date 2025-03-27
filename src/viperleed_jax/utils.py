@@ -40,13 +40,13 @@ def benchmark_calculator(
     # --- Benchmark for jit_R (R factor) ---
     # Measure compile time
     start = perf()
-    calculator.jit_R(free_params).block_until_ready()
+    calculator.R(free_params).block_until_ready()
     r_fac_compile_time = perf() - start
 
     # Measure average execution time over n_repeats
     start_total = perf()
     for _ in range(n_repeats):
-        calculator.jit_R(free_params).block_until_ready()
+        calculator.R(free_params).block_until_ready()
     r_fac_time = (perf() - start_total) / n_repeats
 
     # If the compile time is less than 3x the average execution time,
@@ -57,14 +57,14 @@ def benchmark_calculator(
             'The function may have been precompiled.'
     )
 
-    # --- Benchmark for jit_grad_R (gradients) ---
+    # --- Benchmark for grad_R (gradients) ---
     start = perf()
-    calculator.jit_grad_R(free_params).block_until_ready()
+    calculator.grad_R(free_params).block_until_ready()
     grad_compile_time = perf() - start
 
     start_total = perf()
     for _ in range(n_repeats):
-        calculator.jit_grad_R(free_params).block_until_ready()
+        calculator.grad_R(free_params).block_until_ready()
     grad_time = (perf() - start_total) / n_repeats
 
     if grad_compile_time < 3 * grad_time:

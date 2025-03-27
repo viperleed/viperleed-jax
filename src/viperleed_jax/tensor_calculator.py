@@ -636,13 +636,6 @@ class TensorLEEDCalculator:
             self.delta_amp_prefactors
         )
 
-
-    @partial(
-        jax.jit, static_argnames=('self')
-    )  # TODO: not good, redo as pytree
-    def jit_delta_amplitude(self, free_params):
-        return self.delta_amplitude(free_params)
-
     def intensity(self, free_params):
         delta_amplitude = self.delta_amplitude(free_params)
         _, _, geo_params, _ = self.parameter_space.split_free_params(
@@ -651,10 +644,9 @@ class TensorLEEDCalculator:
         intensity_prefactors = self._intensity_prefactors(
             self.parameter_space.potential_onset_height_change(geo_params)
         )
-        intensities = sum_intensity(
+        return sum_intensity(
             intensity_prefactors, self.ref_calc_result.ref_amps, delta_amplitude
         )
-        return intensities
 
     @property
     def reference_intensity(self):
@@ -666,18 +658,11 @@ class TensorLEEDCalculator:
             dtype=jnp.complex128,
         )
         intensity_prefactors = self._intensity_prefactors(jnp.array(0.0))
-        intensities = sum_intensity(
+        return sum_intensity(
             intensity_prefactors,
             self.ref_calc_result.ref_amps,
             dummy_delta_amps,
         )
-        return intensities
-
-    @partial(
-        jax.jit, static_argnames=('self')
-    )  # TODO: not good, redo as pytree
-    def jit_intensity(self, free_params):
-        return self.intensity(free_params)
 
     @property
     def unperturbed_intensity(self):
@@ -696,11 +681,8 @@ class TensorLEEDCalculator:
             spline = spline.derivative()
         return spline(self.target_grid)
 
-    @partial(jax.jit, static_argnames=('self', 'deriv_deg'))
-    def jit_interpolated(self, free_params, deriv_deg=0):
-        return self.interpolated(free_params, deriv_deg)
-
     def R(self, free_params):
+        """Evaluate R-factor."""
         _free_params = jnp.asarray(free_params)
         if self.comp_intensity is None:
             raise ValueError('Comparison intensity not set.')
@@ -720,20 +702,15 @@ class TensorLEEDCalculator:
             self.exp_spline,
         )
 
-    def jit_R(self, free_params):
-        """JIT compiled R-factor calculation."""
-        return self.R(free_params)
-
-
-    def jit_R_val_and_grad(self, free_params):
-        """JIT compiled R-factor calculation with gradient."""
+    def R_val_and_grad(self, free_params):
+        """Evaluate R-factor and its gradients."""
         val, grad = jax.value_and_grad(self.R)(free_params)
         grad = jnp.asarray(grad)
         return val, grad
 
-    def jit_grad_R(self, free_params):
-        """JIT compiled R-factor gradient calculation."""
-        _, grad = self.jit_R_val_and_grad(free_params)
+    def grad_R(self, free_params):
+        """Evaluate R-factor gradients."""
+        _, grad = self.R_val_and_grad(free_params)
         return grad
         return jnp.asarray(jax.grad(self.R)(free_params))
 
