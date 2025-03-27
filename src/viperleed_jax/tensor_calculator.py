@@ -302,6 +302,16 @@ class TensorLEEDCalculator:
         )
         self._calculate_static_propagators()
 
+        # set the propagator context
+        self.propagator_context = PropagatorContext(
+            is_dynamic_propagator=self._parameter_space.is_dynamic_propagator,
+            propagator_id=self._parameter_space.propagator_id,
+            kappa=self.kappa,
+            static_propagators=self._static_propagators,
+            propagator_transpose_int=self.propagator_transpose_int,
+            symmetry_operations=self.propagator_symmetry_operations,
+        )
+
     def _calculate_static_t_matrices(self):
         # this is only done once – perform for maximum lmax and crop later
         t_matrix_vmap_en = jax.vmap(
