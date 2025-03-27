@@ -87,11 +87,12 @@ def spherical_harmonics_components(l_max, vector):
 
 
 def cart_to_polar(c):
-    """Converts cartesian coordinates to polar coordinates.
+    """Convert cartesian coordinates to polar coordinates.
 
     Note, this function uses safe division to avoid division by zero errors,
     and gives defined results and gradients for all inputs, EXCEPT for
-    c = (0.0, 0.0, 0.0)."""
+    c = (0.0, 0.0, 0.0).
+    """
     z, x, y = c  # LEED coordinates
 
     x_y_norm = jnp.hypot(x, y)
@@ -116,11 +117,12 @@ def cart_to_polar(c):
 
 @jax.custom_jvp
 def cart_to_polar_2(c):
-    """Converts cartesian coordinates to polar coordinates.
+    """Convert cartesian coordinates to polar coordinates.
 
     Note, this function uses safe division to avoid division by zero errors,
     and gives defined results and gradients for all inputs, EXCEPT for
-    c = (0.0, 0.0, 0.0)."""
+    c = (0.0, 0.0, 0.0).
+    """
     z, x, y = c  # LEED coordinates
 
     x_y_norm = jnp.hypot(x, y)
