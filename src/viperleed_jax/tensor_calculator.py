@@ -11,7 +11,6 @@ import numpy as np
 
 import jax
 import jax.numpy as jnp
-from jax.tree_util import register_pytree_node_class
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.files import poscar
 from viperleed.calc.files.iorfactor import beamlist_to_array
@@ -60,7 +59,7 @@ class TMatrixContext:
     t_matrix_id: jnp.ndarray
     is_dynamic_mask: jnp.ndarray
 
-@register_pytree_node_class
+
 class TensorLEEDCalculator:
     """Main class for calculating tensor LEED intensities and R-factors.
 
@@ -738,58 +737,6 @@ class TensorLEEDCalculator:
         return grad
         return jnp.asarray(jax.grad(self.R)(free_params))
 
-    # JAX PyTree methods
-
-    def tree_flatten(self):
-        dynamic_elements = {
-            'rfactor_name': R_FACTOR_SYNONYMS[self.rfactor_func][0]
-        }
-        simple_elements = {
-            '_parameter_space': self.parameter_space,
-            '_static_propagators': self._static_propagators,
-            '_static_t_matrices': self._static_t_matrices,
-            'batching': self.batching,
-            'bc_type': self.bc_type,
-            'beam_indices': self.beam_indices,
-            'comp_energies': self.comp_energies,
-            'comp_intensity': self.comp_intensity,
-            'delta_amp_prefactors': self.delta_amp_prefactors,
-            'energies': self.energies,
-            'exp_spline': self.exp_spline,
-            'interpolation_deg': self.interpolation_deg,
-            'interpolation_step': self.interpolation_step,
-            'is_surface_atom': self.is_surface_atom,
-            'n_beams': self.n_beams,
-            'origin_grid': self.origin_grid,
-            'phaseshifts': self.phaseshifts,
-            'phi': self.phi,
-            'propagator_symmetry_operations': self.propagator_symmetry_operations,
-            'propagator_transpose_int': self.propagator_transpose_int,
-            'ref_t_matrices': self.ref_t_matrices,
-            'ref_vibrational_amps': self.ref_vibrational_amps,
-            'target_grid': self.target_grid,
-            'tensor_amps_in': self.tensor_amps_in,
-            #'tensor_amps_out': self.tensor_amps_out,
-            'theta': self.theta,
-            'unit_cell': self.unit_cell,
-        }
-        aux_data = (dynamic_elements, simple_elements)
-        children = ()
-        return children, aux_data
-
-    @classmethod
-    def tree_unflatten(cls, aux_data, children):
-        dynamic_elements, simple_elements = aux_data
-
-        calculator = cls.__new__(cls)
-        # set static elements
-        for kw, value in simple_elements.items():
-            setattr(calculator, kw, value)
-
-        # set dynamic elements
-        calculator.set_rfactor(dynamic_elements['rfactor_name'])
-
-        return calculator
 
     def benchmark(self, free_params=None, n_repeats=10, csv_file_path=None):
         """Run benchmarks and add log results."""
