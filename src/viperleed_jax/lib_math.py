@@ -63,15 +63,15 @@ def bessel(z, n1):
     return BESSEL_FUNCTIONS[n1](z + EPS)
 
 
-def spherical_harmonics_components(LMAX, vector):
+def spherical_harmonics_components(l_max, vector):
     """Generates the spherical harmonics for the vector C.
 
     This is a python implementation of the fortran subroutine HARMONY from
     TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
     equivalent results."""
     _, theta, phi = cart_to_polar(vector)
-    l = DENSE_L[2 * LMAX]
-    m = DENSE_M[2 * LMAX]
+    l = DENSE_L[2 * l_max]
+    m = DENSE_M[2 * l_max]
 
     is_on_pole_axis = abs(theta) <= EPS
     _theta = jnp.where(is_on_pole_axis, 0.1, theta)
@@ -79,7 +79,7 @@ def spherical_harmonics_components(LMAX, vector):
     # values at the poles(theta = 0) depend on l and m only
     pole_values = (m == 0) * jnp.sqrt((2 * l + 1) / (4 * jnp.pi))
     non_pole_values = sph_harm(
-        m, l, jnp.asarray([phi]), jnp.asarray([_theta]), n_max=2 * LMAX
+        m, l, jnp.asarray([phi]), jnp.asarray([_theta]), n_max=2 * l_max
     )
 
     return jnp.where(is_on_pole_axis, pole_values, non_pole_values)
