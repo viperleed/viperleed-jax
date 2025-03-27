@@ -143,3 +143,104 @@ def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
         )
         / 1j
     ).real
+
+
+
+def _calculate_dynamic_propagator(
+    l_max, batch_atoms, displacements, components, kappa
+):
+    """
+    Compute dynamic propagators for a single energy index.
+
+    Returns an array of shape (num_displacements, ...).
+    """
+    return jax.lax.map(
+        lambda atom_idx: calc_propagator(
+            l_max,
+            displacements[atom_idx],
+            components[atom_idx],
+            kappa,
+        ),
+        jnp.arange(len(displacements)),
+        batch_size=batch_atoms,
+    )
+
+
+@partial(jax.jit, static_argnames=['l_max', 'batch_atoms', 'batch_energies'])
+def calculate_propagators(
+    propagtor_context,
+    displacements,
+    energy_indices,
+    batch_energies,
+    batch_atoms,
+    l_max,
+):
+    # We want the final result indexed as (energies, atom_basis, lm, l'm')
+    energy_indices = jnp.array(energy_indices)
+
+    # Precompute the spherical harmonics components for each displacement.
+    displacement_components = jnp.array(
+        [
+            lib_math.spherical_harmonics_components(l_max, disp)
+            for disp in displacements
+        ]
+    )
+
+    def process_energy(e_idx):
+        # --- Dynamic propagators ---
+        if len(displacements) > 0:
+            # Now call the per-energy dynamic propagator.
+            dyn = _calculate_dynamic_propagator(
+                l_max,
+                batch_atoms,
+                displacements,
+                displacement_components,
+                propagtor_context.kappa[e_idx],
+            )
+        else:
+            dyn = jnp.zeros_like(propagtor_context.static_propagators[0])
+
+        # --- Static propagators ---
+        if len(propagtor_context.static_propagators) == 0:
+            stat = jnp.zeros_like(dyn)
+        else:
+            # Assuming self._static_propagators is indexed as (atom_basis, num_energies, lm, m)
+            stat = propagtor_context.static_propagators[:, e_idx, :, :]
+
+        # --- Map to atom basis using propagator_id ---
+        mapped_dyn = dyn[propagtor_context.propagator_id]
+        mapped_stat = stat[propagtor_context.propagator_id]
+
+        # --- Combine dynamic and static parts ---
+        # Condition is broadcast along the last two axes.
+        cond = propagtor_context.is_dynamic_propagator[:, None, None]
+        combined = jnp.where(cond, mapped_dyn, mapped_stat)
+        # combined now has shape (atom_basis, lm, m)
+
+        # --- Apply selective transposition ---
+        trans_int = propagtor_context.propagator_transpose_int[:, None, None]
+        combined = (1 - trans_int) * combined + trans_int * jnp.transpose(
+            combined, (0, 2, 1)
+        )
+        # combined remains (atom_basis, lm, m)
+
+        return combined
+
+    # Process each energy individually.
+    # Each process_energy returns (atom_basis, lm, m); mapping over energies yields shape:
+    # (num_energies, atom_basis, lm, m)
+    per_energy = jax.lax.map(
+        process_energy, energy_indices, batch_size=batch_energies
+    )
+    # Transpose to (atom_basis, num_energies, lm, m) to match what the symmetry einsum expects.
+    per_energy = jnp.transpose(per_energy, (1, 0, 2, 3))
+
+    # --- Apply rotations (symmetry operations) and rearrange ---
+    propagators = jnp.einsum(
+        'aelm,alm->ealm',
+        per_energy,
+        propagtor_context.symmetry_operations,
+        optimize='optimal',
+    )
+    # Final shape is (energies, atom_basis, lm, m)
+    return propagators
