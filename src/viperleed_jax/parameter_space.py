@@ -3,8 +3,8 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-09-02'
 
-from collections import namedtuple
 from copy import deepcopy
+from functools import partial
 
 import jax
 import numpy as np
@@ -445,6 +445,7 @@ class FrozenParameterSpace:
                 copied_attr = jnp.asarray(copied_attr)
             setattr(self, attr, copied_attr)
 
+    @partial(jax.jit, static_argnames=('self',))
     def split_free_params(self, free_params):
         if len(free_params) != self.n_free_params:
             raise ValueError('Number of free parameters does not match.')
@@ -458,6 +459,7 @@ class FrozenParameterSpace:
         occ_params = free_params[sum(self.n_param_split[:3]) :]
         return v0r_params, vib_params, geo_params, occ_params
 
+    @partial(jax.jit, static_argnames=('self',))
     def expand_params(self, free_params):
         v0r_params, vib_params, geo_params, occ_params = self.split_free_params(
             free_params
@@ -468,6 +470,7 @@ class FrozenParameterSpace:
         weights = self.occ_weight_transformer(occ_params)
         return v0r_shift, vib_amps, displacements, weights
 
+    @partial(jax.jit, static_argnames=('self',))
     def reference_displacements(self, geo_free_params):
         """Calculate the displacements for all reference propagators.
 
@@ -484,6 +487,7 @@ class FrozenParameterSpace:
             for trafo in self.dynamic_displacements_transformers
         ]
 
+    @partial(jax.jit, static_argnames=('self',))
     def reference_vib_amps(self, vib_free_params):
         """Calculate the vibrational amplitudes for all reference t-matrices.
 
@@ -500,6 +504,7 @@ class FrozenParameterSpace:
             for trafo in self.dynamic_t_matrix_transformers
         ]
 
+    @partial(jax.jit, static_argnames=('self',))
     def occ_weights(self, occ_free_params):
         """Calculate the occupation weights for all scatters.
 
@@ -513,6 +518,7 @@ class FrozenParameterSpace:
         """
         return self.occ_weight_transformer(occ_free_params)
 
+    @partial(jax.jit, static_argnames=('self',))
     def all_displacements(self, geo_free_params):
         """Calculate the displacements for all propagators.
 
@@ -526,6 +532,7 @@ class FrozenParameterSpace:
         """
         return self.all_displacements_transformer()(geo_free_params)
 
+    @partial(jax.jit, static_argnames=('self',))
     def all_vib_amps(self, vib_free_params):
         """Calculate the vibrational amplitudes for all t-matrices.
 
@@ -539,6 +546,7 @@ class FrozenParameterSpace:
         """
         return self.all_vib_amps_transformer(vib_free_params)
 
+    @partial(jax.jit, static_argnames=('self',))
     def potential_onset_height_change(self, geo_free_params):
         """Calculate the change in the highest atom z position.
 

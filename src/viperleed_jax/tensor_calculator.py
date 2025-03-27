@@ -20,7 +20,7 @@ from viperleed_jax import atomic_units, lib_math, rfactor
 from viperleed_jax.batching import Batching
 from viperleed_jax.constants import BOHR, HARTREE
 from viperleed_jax.dense_quantum_numbers import (
-    map_l_array_to_compressed_quantum_index,
+    vmapped_l_array_to_compressed_quantum_index,
 )
 from viperleed_jax.interpolation import *
 from viperleed_jax.interpolation import interpolate_ragged_array
@@ -538,21 +538,19 @@ class TensorLEEDCalculator:
 
     def delta_amplitude(self, free_params):
         """Calculate the delta amplitude for a given set of free parameters."""
-        _free_params = jnp.asarray(free_params)
         # split free parameters
-        (_, vib_params, geo_parms, occ_params) = (
-            self.parameter_space.split_free_params(jnp.asarray(_free_params))
+        (_, vib_params, geo_params, occ_params) = (
+            self.parameter_space.split_free_params(free_params)
         )
 
         # displacements, converted to atomic units
         displacements_ang = self.parameter_space.reference_displacements(
-            geo_parms
+            geo_params
         )
         displacements_ang = jnp.asarray(displacements_ang)
         displacements_au = atomic_units.to_internal_displacement_vector(
             displacements_ang
         )
-
 
         # vibrational amplitudes, converted to atomic units
         vib_amps_au = self.parameter_space.reference_vib_amps(vib_params)
@@ -634,9 +632,7 @@ class TensorLEEDCalculator:
 
     def intensity(self, free_params):
         delta_amplitude = self.delta_amplitude(free_params)
-        _, _, geo_params, _ = self.parameter_space.split_free_params(
-            jnp.asarray(free_params)
-        )
+        _, _, geo_params, _ = self.parameter_space.split_free_params(free_params)
         prefactors = intensity_prefactors(
             self.parameter_space.potential_onset_height_change(geo_params),
             self.n_beams,
