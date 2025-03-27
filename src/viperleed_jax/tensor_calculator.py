@@ -670,16 +670,13 @@ class TensorLEEDCalculator:
         raise NotImplementedError
 
     def interpolated(self, free_params, deriv_deg=0):
-        spline = interpax.CubicSpline(
-            self.origin_grid,
+        return _interpolate_intensity(
             self.intensity(free_params),
-            bc_type=self.bc_type,
-            extrapolate=False,
-            check=False,  # TODO: do check once in the object creation
+            self.origin_grid,
+            self.target_grid,
+            deriv_deg,
+            self.bc_type,
         )
-        for i in range(deriv_deg):
-            spline = spline.derivative()
-        return spline(self.target_grid)
 
     def R(self, free_params):
         """Evaluate R-factor."""
@@ -976,3 +973,22 @@ def _recombine_delta_amps(energy_batched, sorting_order, prefactors):
     delta_amps = delta_amps[sorting_order]
     # apply prefactors and return
     return delta_amps * prefactors
+
+@partial(jax.jit, static_argnames=['deriv_deg', 'bc_type'])
+def _interpolate_intensity(
+    intensity,
+    origin_grid,
+    target_grid,
+    deriv_deg,
+    bc_type,
+):
+        spline = interpax.CubicSpline(
+        origin_grid,
+        intensity,
+        bc_type=bc_type,
+        extrapolate=False,
+        check=False,  # TODO: do check once in the object creation
+        )
+        for _ in range(deriv_deg):
+            spline = spline.derivative()
+        return spline(target_grid)
