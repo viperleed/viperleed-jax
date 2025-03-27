@@ -697,10 +697,6 @@ class TensorLEEDCalculator:
             ]
             t_matrices = t_matrices[:, :, : l_max + 1]
 
-            # tensor amplitudes
-            # tensor_amps_in = self.ref_calc_result.in_amps
-            # tensor_amps_out = self.ref_calc_result.out_amps
-
             # map t-matrices to compressed quantum index
             mapped_t_matrix_vib = jax.vmap(
                 jax.vmap(
@@ -714,74 +710,6 @@ class TensorLEEDCalculator:
                 ),
                 in_axes=(0, None),
             )(ref_t_matrices, l_max)
-
-            # energy_data = {
-            #     'propagators':propagators,
-            #     't_matrix_vib':mapped_t_matrix_vib,
-            #     't_matrix_ref':mapped_t_matrix_ref,
-            #     'amps_in':self.ref_calc_result.in_amps,
-            #     'amps_out':self.ref_calc_result.out_amps,
-            # }
-
-            # atom_ids = self.atom_ids
-            # batch_atoms = self.batch_atoms
-
-            # # for every energy
-            # #@jax.checkpoint # seems to be faster # TODO: test other checkpointing
-            # @jax.jit
-            # def calc_energy(energy_data):
-            #     en_propagators = energy_data['propagators']
-            #     en_t_matrix_vib = energy_data['t_matrix_vib']
-            #     en_t_matrix_ref = energy_data['t_matrix_ref']
-            #     amps_in = energy_data['amps_in']
-            #     amps_out = energy_data['amps_out']
-            #     # en_propagators = propagators[e_id, :, ...]
-            #     # en_t_matrix_vib = mapped_t_matrix_vib[e_id]
-            #     # en_t_matrix_ref = mapped_t_matrix_ref[e_id]
-
-            #     def compute_atom_contrib(a):
-            #         delta_t_matrix = calculate_delta_t_matrix(
-            #             en_propagators[a, :, :].conj(),
-            #             en_t_matrix_vib[a],
-            #             en_t_matrix_ref[a],
-            #             chem_weights[a],
-            #         )
-            #         # Sum from equation (41) in Rous, Pendry 1989
-            #         return jnp.einsum(
-            #             'bl,lk,k->b',
-            #             amps_out[a],
-            #             delta_t_matrix,
-            #             amps_in[a],
-            #             optimize='optimal',
-            #         )
-
-            #     # Use lax.map with a batch_size of n_atom
-            #     contributions = jax.lax.map(
-            #         compute_atom_contrib, atom_ids, batch_size=batch_atoms
-            #     )
-            #     return jnp.sum(contributions, axis=0)
-
-            # # map over energies
-            # l_delta_amps = jax.lax.map(calc_energy, energy_data,
-            #                            batch_size=self.batch_energies)
-
-            # energy_ids = jnp.arange(len(self.energies))
-
-            # l_delta_amps = jax.lax.map(
-            #     lambda e_id: calc_energy(
-            #         e_id,
-            #         propagators,
-            #         mapped_t_matrix_vib,
-            #         mapped_t_matrix_ref,
-            #         self.ref_calc_result.in_amps,
-            #         self.ref_calc_result.out_amps,
-            #         chem_weights,
-            #         self.parameter_space.n_atom_basis,
-            #         self.batch_atoms,
-            #     ),
-            #     energy_ids,
-            # )
-            # batched_delta_amps.append(l_delta_amps)
 
             energy_ids = jnp.arange(len(batch))  # smaller batch of energies
             l_delta_amps = batch_delta_amps(
