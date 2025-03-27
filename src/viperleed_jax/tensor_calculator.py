@@ -725,14 +725,13 @@ class TensorLEEDCalculator:
             )
             batched_delta_amps.append(l_delta_amps)
 
-        # now re-sort the delta_amps to the original order
-        delta_amps = jnp.concatenate(batched_delta_amps, axis=0)
-        delta_amps = delta_amps[self.batching.restore_sorting]
+        # perform final processing and return
+        return _recombine_delta_amps(
+            batched_delta_amps,
+            self.batching.restore_sorting,
+            self.delta_amp_prefactors
+        )
 
-        # Finally apply the prefactors calculated earlier to the result
-        delta_amps = delta_amps * self.delta_amp_prefactors
-
-        return delta_amps
 
     @partial(
         jax.jit, static_argnames=('self')
@@ -1322,3 +1321,12 @@ def calc_r_factor(
         target_grid,
         exp_spline,
     )
+
+@jax.jit
+def _recombine_delta_amps(energy_batched, sorting_order, prefactors):
+    # combine to one array
+    delta_amps = jnp.concatenate(energy_batched, axis=0)
+    # re-sort to the original order
+    delta_amps = delta_amps[sorting_order]
+    # apply prefactors and return
+    return delta_amps * prefactors
