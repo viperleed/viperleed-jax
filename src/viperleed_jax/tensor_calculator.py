@@ -1179,6 +1179,7 @@ def batch_delta_amps(
     n_atom_basis,
     batch_atoms,
 ):
+    @jax.checkpoint
     def calc_energy(e_id):
         def compute_atom_contrib(a):
             delta_t_matrix = calculate_delta_t_matrix(
@@ -1237,9 +1238,10 @@ def _calculate_dynamic_t_matrices(
     )
     return jnp.asarray(dynamic_t_matrices)
 
+
 @partial(jax.jit, static_argnames=['l_max',
                                    'batch_energies',
-                                   'phaseshifts',])
+                                   'phaseshifts'])
 def calculate_t_matrices(
     t_matrix_context,
     l_max,
