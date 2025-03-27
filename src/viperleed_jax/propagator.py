@@ -181,7 +181,7 @@ def calculate_propagators(
     # Precompute the spherical harmonics components for each displacement.
     displacement_components = jnp.array(
         [
-            lib_math.spherical_harmonics_components(l_max, disp)
+            spherical_harmonics_components(l_max, disp)
             for disp in displacements
         ]
     )
