@@ -5,7 +5,7 @@ __created__ = '2024-05-03'
 
 import copy
 from functools import partial
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -52,7 +52,7 @@ class PropagatorContext:
 class TMatrixContext:
     energies: jnp.ndarray
     static_t_matrices: jnp.ndarray
-    dynamic_site_elements: jnp.ndarray
+    dynamic_site_elements: jnp.ndarray = field(metadata=dict(static=True))
     t_matrix_id: jnp.ndarray
     is_dynamic_mask: jnp.ndarray
 
@@ -1318,7 +1318,8 @@ def _calculate_dynamic_t_matrices(
     return jnp.asarray(dynamic_t_matrices)
 
 @partial(jax.jit, static_argnames=['l_max',
-                                   'batch_energies',])
+                                   'batch_energies',
+                                   'phaseshifts',])
 def calculate_t_matrices(
     t_matrix_context,
     l_max,
@@ -1353,7 +1354,7 @@ def calculate_t_matrices(
         # Select between dynamic and static for this energy.
         # The condition is broadcasted to shape (num_selected, lm)
         return jnp.where(
-            t_matrix_context.is_dynamic_t_matrix[:, jnp.newaxis],
+            t_matrix_context.is_dynamic_mask[:, jnp.newaxis],
             dyn_mapped,
             stat_mapped,
         )
