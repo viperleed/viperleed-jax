@@ -64,11 +64,12 @@ def bessel(z, n1):
 
 
 def spherical_harmonics_components(l_max, vector):
-    """Generates the spherical harmonics for the vector C.
+    """Generate the spherical harmonics for a vector.
 
     This is a python implementation of the fortran subroutine HARMONY from
     TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
-    equivalent results."""
+    equivalent results.
+    """
     _, theta, phi = cart_to_polar(vector)
     l = DENSE_L[2 * l_max]
     m = DENSE_M[2 * l_max]
