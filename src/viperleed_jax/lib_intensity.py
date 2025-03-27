@@ -3,6 +3,8 @@
 __authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@PaulHai7)')
 __created__ = '2024-02-22'
 
+from functools import partial
+
 import jax
 import jax.numpy as jnp
 
@@ -66,7 +68,7 @@ def _potential_onset_height_change(displacement_step, is_surface_atom):
     ]  # z disp for surface atoms
     return jnp.max(surface_z)
 
-@jax.jit
+@partial(jax.jit, static_argnames=['n_beams'])
 def intensity_prefactors(
     onset_height_change,
     n_beams,
