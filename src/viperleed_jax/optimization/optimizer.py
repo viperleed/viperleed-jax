@@ -582,3 +582,37 @@ def create_resample_and_evaluate(
         )
 
     return resample_and_evaluate
+
+class NelderMeadOptimizer(SciPyNonGradOptimizer):
+    method = 'Nelder-Mead'
+    use_bounds = True
+
+
+class COBYLAOptimizer(SciPyNonGradOptimizer):
+    method = 'COBYLA'
+    use_bounds = False
+
+
+class PowellOptimizer(SciPyNonGradOptimizer):
+    method = 'Powell'
+    use_bounds = True
+
+
+class CGOptimizer(SciPyGradOptimizer):
+    method = 'CG'
+    use_bounds = False
+
+
+class TNCOptimizer(SciPyGradOptimizer):
+    method = 'TNC'
+    use_bounds = True
+
+
+class BFGSOptimizer(SciPyGradOptimizer):
+    method = 'BFGS'
+    use_bounds = False
+
+
+class DoglegOptimizer(SciPyGradOptimizer):
+    method = 'dogleg'
+    use_bounds = False
