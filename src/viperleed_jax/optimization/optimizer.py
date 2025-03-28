@@ -34,6 +34,9 @@ class Optimizer(ABC):
         self.fun = fun
         self.fun_history = []
 
+    @abstractmethod
+    def _uses_grad(self):
+        """Whether the optimizer uses gradients."""
 
     @abstractmethod
     def __call__(self):
@@ -66,6 +69,8 @@ class GradOptimizer(
             having a lot function calls without the gradient (e.g., in SLSQP).
     """
 
+    _uses_grad = True
+
     def __init__(self, fun, grad=None, fun_and_grad=None):
         if grad is None and fun_and_grad is None:
             raise ValueError(
@@ -85,162 +90,166 @@ class GradOptimizer(
         self.current_fun = 0
         self.current_grad = 0
 
-
-class SciPyGradOptimizer(GradOptimizer):
-    """Gradient based optimizers that wrap SciPy's optimize.minimize.
-
-    Parameters
-    ----------
-    fun : callable, optional
-        The objective function to be minimized.
-    grad : callable, optional
-        The gradient of the objective function.
-    fun_and_grad : callable, optional
-        A function that returns both the objective function value and its
-        gradient.
-    bounds : sequence, optional
-        Bounds on variables for the optimizer. (min, max) pairs for each element
-        in x.
-    **kwargs : dict, optional
-        Additional keyword arguments to pass to the optimizer.
-
-    Attributes
-    ----------
-    bounds : sequence
-        Bounds on variables for the optimizer.
-    options : dict
-        Options for the optimizer.
-
-    Methods
-    -------
-    method()
-        Abstract method to define the optimization method.
-    combined_fun_and_grad()
-        Abstract method to define if the function returns both value and gradient.
-    transform_bounds(x0, L)
-        Transform the bounds according to the current transformation.
-    __call__(x0, L=None)
-        Run the optimization.
-    _start_message(L)
-        Return the start message for the optimizer.
-    """
-
-    def __init__(self, fun=None, grad=None, fun_and_grad=None, bounds=None,
-                 grad_damp_factor=1.0,
-                 ftol=5e-6,
-                 maxiter=1000,
-                 **kwargs):
-        super().__init__(fun, grad, fun_and_grad, **kwargs)
-        self.bounds = bounds
-        self.options={}
-        self.grad_damp_factor = grad_damp_factor
-        self.options['ftol'] = ftol / self.grad_damp_factor
-        self.options['maxiter'] = maxiter
-
-    @abstractmethod
-    def method(self):
-        """Optimization algorithm as used by scipy.optimize.minimize."""
-
-    @abstractmethod
-    def combined_fun_and_grad(self):
-        """Wether the optimizer uses a combined function and gradient."""
-
-
-    def transform_bounds(self, x0, L):
-        """Transform the bounds according to the current transformation.
-
-        Parameters
-        ----------
-        x0 : ndarray
-            The initial guess.
-        L : ndarray
-            The transformation matrix.
-
-        Returns
-        -------
-        list of tuple
-            Transformed bounds.
-        """
-        # If no bounds are set, default to [0, 1] for each dimension.
-        bounds = [(0, 1)] * len(x0) if self.bounds is None else self.bounds
-        x_min, x_max = np.array(bounds).T
-        # Transform the bounds
-        x_min_transformed = L.T @ (x_min - x0)
-        x_max_transformed = L.T @ (x_max - x0)
-        # Ensure lower bounds are always smaller than upper bounds
-        x_min_corrected = np.minimum(x_min_transformed, x_max_transformed)
-        x_max_corrected = np.maximum(x_min_transformed, x_max_transformed)
-        return list(zip(x_min_corrected, x_max_corrected))
-
-
-    def __call__(self, x0, L=None):
-        """Run the optimization."""
-        logger.info(self._start_message(L))
-        opt_history = GradOptimizationHistory()
-
-        if L is None:
-            L = np.eye(len(x0))
-        L_inv = np.linalg.inv(L)
-
-        def _fun(y):
-            x = x0 + L_inv.T @ y  # Transform y back to x
-            fun_val = self.fun(x)
-            opt_history.append(x, R=fun_val, grad_R=None)
-            return fun_val
-
-        def _grad(y):
-            x = x0 + L_inv.T @ y
-            _grad_x = self.grad(x)
-            opt_history.append(
-                x, R=None, grad_R=_grad_x / self.grad_damp_factor
-            )
-            return L_inv @ _grad_x  # Transform gradient
-
-        def _fun_and_grad(y):
-            x = x0 + L_inv.T @ y
-            fun_val, grad_x = self.fun_and_grad(x)
-            grad_y = L_inv @ grad_x  # Transform gradient
-            opt_history.append(
-                x, R=fun_val, grad_R=grad_x / self.grad_damp_factor
-            )
-            return fun_val, grad_y
-
-        # Transform initial guess
-        y0 = np.zeros_like(x0)
-
-        # get transformed bounds
-        transformed_bounds = self.transform_bounds(x0, L)
-
-        scipy_result = minimize(
-            fun=_fun_and_grad if self.combined_fun_and_grad else _fun,
-            x0=y0,
-            method=self.method,
-            jac=True if self.combined_fun_and_grad else _grad,
-            bounds=transformed_bounds,
-            options=self.options,
-        )
-        result = GradOptimizerResult(scipy_result, opt_history)
-        logger.info(self._end_message(result))
-        return result
-
-    def _start_message(self, L):
-        """Return the start message for the optimizer."""
-        msg = 'Starting Optimization using SciPy...\n'
-        msg += f'\tMethod:\t\t{self.method}\n'
-        msg += f'\tPreconditioned:\t{L is not None}\n'
-        msg += f'\tftol:\t\t{self.options.get("ftol")/self.grad_damp_factor}\n'
-        msg += f'\tmaxiter:\t{self.options.get("maxiter")}\n'
-        msg += f'\tGrad. damp. f.:\t{self.grad_damp_factor}\n'
-        return msg
-
-
 class NonGradOptimizer(Optimizer):
     """Class for optimizers that do not use gradients."""
+
+    _uses_grad = False
 
     def __init__(self, fun):
         self.fun = fun
         super().__init__(fun=fun)
 
+
+class SciPyOptimizerBase:
+    """Shared logic for SciPy-based optimizers (grad and non-grad)."""
+
+    @abstractmethod
+    def method(self):
+        """The optimization method name (e.g. 'L-BFGS-B')."""
+
+    def __init__(
+        self, bounds=None, ftol=1e-6, maxiter=1000, cholesky=None, **kwargs
+    ):
+        self.bounds = bounds
+        self.options = {
+            'ftol': ftol,
+            'maxiter': maxiter,
+            **kwargs,
+        }
+        self.cholesky = cholesky  # transformation matrix
+
+    def _set_cholesky_related(self, x0):
+        if self.cholesky is None:
+            self._L = np.eye(len(x0))
+            self._L_inv = np.eye(len(x0))
+        else:
+            self._L = self.cholesky
+            self._L_inv = np.linalg.inv(self.cholesky)
+
+    def transform_bounds(self, x0):
+        bounds = [(0, 1)] * len(x0) if self.bounds is None else self.bounds
+        x_min, x_max = np.array(bounds).T
+        # Transform the bounds
+        x_min_transformed = self._L.T @ (x_min - x0)
+        x_max_transformed = self._L.T @ (x_max - x0)
+        # Ensure lower bounds are always smaller than upper bounds
+        x_min_corrected = np.minimum(x_min_transformed, x_max_transformed)
+        x_max_corrected = np.maximum(x_min_transformed, x_max_transformed)
+        return list(zip(x_min_corrected, x_max_corrected))
+
+    def transform_x(self, y, x0):
+        return x0 + self._L_inv.T @ y
+
+    def transform_grad(self, grad_x):
+        return self._L_inv @ grad_x
+
+    def _start_message(self):
+        msg = (
+            f'Starting SciPy optimization using {self.method}...\n'
+            f'\tUsing gradients:\t{self._uses_grad}\n'
+            f'\tPreconditioned:\t{self.cholesky is not None}\n'
+            f'\tftol:\t\t{self.options["ftol"]}\n'
+            f'\tmaxiter:\t{self.options["maxiter"]}\n'
+        )
+        return msg
+
+class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
+    def __init__(self, fun, bounds=None, cholesky=None, **kwargs):
+        NonGradOptimizer.__init__(self, fun)
+        SciPyOptimizerBase.__init__(
+            self, bounds=bounds, cholesky=cholesky, **kwargs
+        )
+
+    def __call__(self, x0):
+        self._set_cholesky_related(x0)
+        logger.info(self._start_message())
+        opt_history = GradOptimizationHistory()
+
+        def _fun(y):
+            x = self.transform_x(y, x0)
+            val = self.fun(x)
+            opt_history.append(x, R=val, grad_R=None)
+            return val
+
+        y0 = np.zeros_like(x0)
+        bounds = self.transform_bounds(x0)
+
+        result = minimize(
+            fun=_fun,
+            x0=y0,
+            method=self.method,
+            bounds=bounds,
+            options=self.options,
+        )
+        wrapped = GradOptimizerResult(result, opt_history)
+        logger.info(self._end_message(wrapped))
+        return wrapped
+
+
+class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
+    def __init__(
+        self,
+        fun=None,
+        grad=None,
+        fun_and_grad=None,
+        bounds=None,
+        grad_damp_factor=1.0,
+        cholesky=None,
+        **kwargs,
+    ):
+        GradOptimizer.__init__(self, fun, grad, fun_and_grad)
+        SciPyOptimizerBase.__init__(
+            self, bounds=bounds, cholesky=cholesky, **kwargs
+        )
+        self.grad_damp_factor = grad_damp_factor
+        self.options['ftol'] /= grad_damp_factor
+
+    def __call__(self, x0):
+        self._set_cholesky_related(x0)
+        logger.info(self._start_message())
+        opt_history = GradOptimizationHistory()
+
+        def _fun(y):
+            x = self.transform_x(y, x0)
+            val = self.fun(x)
+            opt_history.append(x, R=val, grad_R=None)
+            return val
+
+        def _grad(y):
+            x = self.transform_x(y, x0)
+            g = self.grad(x)
+            opt_history.append(x, R=None, grad_R=g / self.grad_damp_factor)
+            return self.transform_grad(g)
+
+        def _fun_and_grad(y):
+            x = self.transform_x(y, x0)
+            f, g = self.fun_and_grad(x)
+            opt_history.append(x, R=f, grad_R=g / self.grad_damp_factor)
+            return f, self.transform_grad(g)
+
+        # Transform initial guess
+        y0 = np.zeros_like(x0)
+        # get transformed bounds
+        bounds = self.transform_bounds(x0)
+        use_combined = getattr(self, 'combined_fun_and_grad', False)
+
+        result = minimize(
+            fun=_fun_and_grad if use_combined else _fun,
+            x0=y0,
+            method=self.method,
+            jac=True if use_combined else _grad,
+            bounds=bounds,
+            options=self.options,
+        )
+        wrapped = GradOptimizerResult(result, opt_history)
+        logger.info(self._end_message(wrapped))
+        return wrapped
+
+    def _start_message(self):
+        """Return the start message for the optimizer."""
+        msg = super()._start_message()
+        msg += f'\tGrad. damp. f.:\t{self.grad_damp_factor}\n'
+        return msg
 
 class LBFGSBOptimizer(SciPyGradOptimizer):
     """Class for setting up the L-BFGS-B algorithm for local minimization.
@@ -271,12 +280,6 @@ class LBFGSBOptimizer(SciPyGradOptimizer):
 
     method='L-BFGS-B'
     combined_fun_and_grad = True
-
-    def __init__(self, fun=None, grad=None, fun_and_grad=None, bounds=None,
-                 **kwargs):
-        super().__init__(fun=fun, grad=grad, fun_and_grad=fun_and_grad,
-                         bounds=bounds, **kwargs)
-
 
 
 class SLSQPOptimizer(SciPyGradOptimizer):
@@ -309,7 +312,7 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         grad=None,
         fun_and_grad=None,
         bounds=None,
-        grad_damp_factor=0.1,
+        grad_damp_factor=0.1, # default values
         **kwargs,
     ):
         super().__init__(
