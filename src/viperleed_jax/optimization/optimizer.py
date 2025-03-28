@@ -107,6 +107,10 @@ class SciPyOptimizerBase:
     def method(self):
         """The optimization method name (e.g. 'L-BFGS-B')."""
 
+    @abstractmethod
+    def use_bounds(self):
+        """Wether to use bounds."""
+
     def __init__(
         self, bounds=None, ftol=1e-6, maxiter=1000, cholesky=None, **kwargs
     ):
@@ -178,7 +182,8 @@ class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
             fun=_fun,
             x0=y0,
             method=self.method,
-            bounds=bounds,
+            tol=self.options['ftol'],
+            bounds=bounds if self.use_bounds() else None,
             options=self.options,
         )
         wrapped = GradOptimizerResult(result, opt_history)
@@ -237,8 +242,9 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
             fun=_fun_and_grad if use_combined else _fun,
             x0=y0,
             method=self.method,
+            tol=self.options['ftol'],
             jac=True if use_combined else _grad,
-            bounds=bounds,
+            bounds=bounds if self.use_bounds() else None,
             options=self.options,
         )
         wrapped = GradOptimizerResult(result, opt_history)
