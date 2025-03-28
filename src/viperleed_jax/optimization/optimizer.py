@@ -183,7 +183,7 @@ class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
             x0=y0,
             method=self.method,
             tol=self.options['ftol'],
-            bounds=bounds if self.use_bounds() else None,
+            bounds=bounds if self.use_bounds else None,
             options=self.options,
         )
         wrapped = GradOptimizerResult(result, opt_history)
@@ -244,7 +244,7 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
             method=self.method,
             tol=self.options['ftol'],
             jac=True if use_combined else _grad,
-            bounds=bounds if self.use_bounds() else None,
+            bounds=bounds if self.use_bounds else None,
             options=self.options,
         )
         wrapped = GradOptimizerResult(result, opt_history)
