@@ -5,12 +5,14 @@ We use Angstrom and eV as inputs, but use atomic units internally."""
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-09-05'
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 
 from viperleed_jax.constants import BOHR, HARTREE
 
 
+@jax.jit
 def to_internal_displacement_vector(displacement_vector_ang):
     """Convert from Angstrom to atomic units and left handed coordinate system.
 
@@ -35,7 +37,7 @@ def to_internal_displacement_vector(displacement_vector_ang):
     vector = vector * jnp.array([1, 1, -1])
     return vector
 
-
+@jax.jit
 def to_internal_vib_amps(vib_amps_ang):
     """Convert from Angstrom to atomic units.
 
