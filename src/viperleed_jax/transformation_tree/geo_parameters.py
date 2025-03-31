@@ -202,6 +202,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
             for child in children:
                 at_freedir = child.atom.atom.freedir
                 movement_vector = ab_cell.T @ at_freedir
+                movement_vector = child.symrefm @ movement_vector
                 movement_vector = movement_vector / np.linalg.norm(
                     movement_vector
                 )
