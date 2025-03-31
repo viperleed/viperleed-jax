@@ -1,0 +1,30 @@
+! ####### GLOBAL PARAMETERS #######
+
+RUN = 1
+THEO_ENERGIES =   50 700 3
+N_CORES = 128
+
+V0_IMAG = 5.7 # obtained by FD calculation
+LMAX = 8-14
+
+! ####### PARAMETERS FOR INTERPRETING THE POSCAR #######
+
+! BULK_LIKE_BELOW = 0.35            ! line commented out automatically
+
+SITE_DEF Ir = surf top(2)
+SITE_DEF O = ads top(1)
+
+! ####### PARAMETERS FOR VIBROCC #######
+
+! T_DEBYE = 420                     ! line commented out automatically
+! T_EXPERIMENT = 100                ! line commented out automatically
+! VIBR_AMP_SCALE = *surf 1.3        ! line commented out automatically
+
+
+! ######################################################
+! #  THE FOLLOWING LINES WERE GENERATED AUTOMATICALLY  #
+! ######################################################
+
+BULK_REPEAT = [-1.35580 1.35580 1.91739] ! Automatically detected repeat vector
+LAYER_CUTS = 0.1500 0.2500 0.3500 0.4500 0.5500 0.6500
+N_BULK_LAYERS = 1
