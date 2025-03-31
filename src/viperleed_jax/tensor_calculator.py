@@ -62,11 +62,12 @@ class PropagatorContext:
     data_fields=[
         'energies',
         'static_t_matrices',
-        'dynamic_site_elements',
         't_matrix_id',
         'is_dynamic_mask',
     ],
-    meta_fields=[],
+    meta_fields=[
+        'dynamic_site_elements',
+    ],
 )
 @dataclass
 class TMatrixContext:
