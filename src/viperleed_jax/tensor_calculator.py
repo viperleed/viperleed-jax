@@ -37,6 +37,15 @@ from viperleed_jax import utils
 
 @partial(
     jax.tree_util.register_dataclass,
+    data_fields=[
+        'kappa',
+        'static_propagators',
+        'propagator_transpose_int',
+        'symmetry_operations',
+        'propagator_id',
+        'is_dynamic_propagator',
+    ],
+    meta_fields=[],
 )
 @dataclass
 class PropagatorContext:
@@ -50,6 +59,14 @@ class PropagatorContext:
 
 @partial(
     jax.tree_util.register_dataclass,
+    data_fields=[
+        'energies',
+        'static_t_matrices',
+        'dynamic_site_elements',
+        't_matrix_id',
+        'is_dynamic_mask',
+    ],
+    meta_fields=[],
 )
 @dataclass
 class TMatrixContext:
