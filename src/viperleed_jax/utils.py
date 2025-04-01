@@ -13,7 +13,8 @@ import numpy as np
 
 
 def benchmark_calculator(
-    calculator, free_params=None, n_repeats=10, csv_file_path=None
+    calculator, free_params=None, n_repeats=10, csv_file_path=None,
+    use_grad=True,
 ):
     """
     Benchmarks the execution of two methods on the given calculator object.
@@ -58,20 +59,24 @@ def benchmark_calculator(
     )
 
     # --- Benchmark for grad_R (gradients) ---
-    start = perf()
-    calculator.grad_R(free_params).block_until_ready()
-    grad_compile_time = perf() - start
-
-    start_total = perf()
-    for _ in range(n_repeats):
+    if use_grad:
+        start = perf()
         calculator.grad_R(free_params).block_until_ready()
-    grad_time = (perf() - start_total) / n_repeats
+        grad_compile_time = perf() - start
 
-    if grad_compile_time < 3 * grad_time:
-        print(
-            'Gradient compilation time is suspiciously low. '
-            'The function may have been precompiled.'
-        )
+        start_total = perf()
+        for _ in range(n_repeats):
+            calculator.grad_R(free_params).block_until_ready()
+        grad_time = (perf() - start_total) / n_repeats
+
+        if grad_compile_time < 3 * grad_time:
+            print(
+                'Gradient compilation time is suspiciously low. '
+                'The function may have been precompiled.'
+            )
+    else:
+        grad_compile_time = np.nan
+        grad_time = np.nan
 
     # Prepare the results with a timestamp
     results = {

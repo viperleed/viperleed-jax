@@ -731,11 +731,12 @@ class TensorLEEDCalculator:
         return grad
 
 
-    def benchmark(self, free_params=None, n_repeats=10, csv_file_path=None):
+    def benchmark(self, free_params=None, n_repeats=10, csv_file_path=None,
+                  use_grad=True):
         """Run benchmarks and add log results."""
         logger.info('Runnning timing benchmarks for tensor-LEED calculation...')
         bench_results = utils.benchmark_calculator(
-            self, free_params, n_repeats, csv_file_path
+            self, free_params, n_repeats, csv_file_path, use_grad
         )
         logger.info(utils.format_benchmark_results(bench_results) + '\n')
 
