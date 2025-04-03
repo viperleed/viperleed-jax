@@ -22,6 +22,21 @@ from .history import EvolutionOptimizationHistory, GradOptimizationHistory
 from .result import CMAESResult, GradOptimizerResult
 
 
+class EarlyStopper:
+    """Helper class to enforce the ftol condition."""
+
+    def __init__(self, ftol=1e-6):
+        self.ftol = ftol
+        self.prev_val = None
+
+    def __call__(self, intermediate_result):
+        val = intermediate_result.fun
+        if self.prev_val is not None:
+            rel_change = abs(self.prev_val - val) / max(1.0, abs(self.prev_val))
+            if rel_change < self.ftol:
+                raise StopIteration("Function value change below ftol.")
+        self.prev_val = val
+
 class Optimizer(ABC):
     """Base class for all the optimizers.
 
@@ -29,6 +44,7 @@ class Optimizer(ABC):
     ----------
         fun: Objective function
     """
+    use_early_stopper = False
 
     def __init__(self, fun):
         self.fun = fun
@@ -158,6 +174,9 @@ class SciPyOptimizerBase:
         return msg
 
 class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
+
+    jac_strategy = None
+
     def __init__(self, fun, bounds=None, cholesky=None, **kwargs):
         NonGradOptimizer.__init__(self, fun)
         SciPyOptimizerBase.__init__(
@@ -183,6 +202,10 @@ class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
             x0=y0,
             method=self.method,
             tol=self.options['ftol'],
+            callback=EarlyStopper(ftol=self.options['ftol'])
+            if self.use_early_stopper
+            else None,
+            jac=self.jac_strategy,
             bounds=bounds if self.use_bounds else None,
             options=self.options,
         )
@@ -244,6 +267,7 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
             method=self.method,
             tol=self.options['ftol'],
             jac=True if use_combined else _grad,
+            callback=EarlyStopper(ftol=self.options['ftol']) if self.use_early_stopper else None,
             bounds=bounds if self.use_bounds else None,
             options=self.options,
         )
@@ -583,20 +607,8 @@ def create_resample_and_evaluate(
 
     return resample_and_evaluate
 
-class NelderMeadOptimizer(SciPyNonGradOptimizer):
-    method = 'Nelder-Mead'
-    use_bounds = True
 
-
-class COBYLAOptimizer(SciPyNonGradOptimizer):
-    method = 'COBYLA'
-    use_bounds = False
-
-
-class PowellOptimizer(SciPyNonGradOptimizer):
-    method = 'Powell'
-    use_bounds = True
-
+# Furhter gradient based optimizers
 
 class CGOptimizer(SciPyGradOptimizer):
     method = 'CG'
@@ -611,8 +623,26 @@ class TNCOptimizer(SciPyGradOptimizer):
 class BFGSOptimizer(SciPyGradOptimizer):
     method = 'BFGS'
     use_bounds = False
+    use_early_stopper = True
+
+# Further gradient-free optimizers
+
+class GradFreeSLSQPOptimizer(SciPyNonGradOptimizer):
+    method = 'SLSQP'
+    use_bounds = True
+    jac_strategy = '2-point'
+
+class GradFreeLBFGSBOptimizer(SciPyNonGradOptimizer):
+    method = 'L-BFGS-B'
+    use_bounds = True
+    jac_strategy = '2-point'
+
+class PowellOptimizer(SciPyNonGradOptimizer):
+    method = 'Powell'
+    use_bounds = True
 
 
-class DoglegOptimizer(SciPyGradOptimizer):
-    method = 'dogleg'
-    use_bounds = False
+class NelderMeadOptimizer(SciPyNonGradOptimizer):
+    method = 'Nelder-Mead'
+    use_bounds = True
+
