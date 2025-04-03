@@ -311,6 +311,23 @@ class LBFGSBOptimizer(SciPyGradOptimizer):
     method='L-BFGS-B'
     combined_fun_and_grad = True
 
+    def __init__(
+        self,
+        fun=None,
+        grad=None,
+        fun_and_grad=None,
+        bounds=None,
+        grad_damp_factor=0.1, # default values
+        **kwargs,
+    ):
+        super().__init__(
+            fun=fun, grad=grad, fun_and_grad=fun_and_grad,
+            bounds=bounds, grad_damp_factor=grad_damp_factor,
+            **kwargs
+        )
+        self.bounds = bounds
+        self.options['maxcor'] = 20
+
 
 class SLSQPOptimizer(SciPyGradOptimizer):
     """Class for setting up the SLSQP algorithm for local minimization.
