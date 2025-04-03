@@ -613,17 +613,17 @@ class TensorLEEDCalculator:
                 self.batch_energies,
                 self.phaseshifts,
                 vib_amps_au,
-                energy_ids)
+                energy_ids,
+            )
 
             # crop t-matrices
-            ref_t_matrices = self.ref_t_matrices[
-                energy_ids, :, : l_max + 1
-            ]
+            ref_t_matrices = self.ref_t_matrices[energy_ids, :, : l_max + 1]
             t_matrices = t_matrices[:, :, : l_max + 1]
 
             # map t-matrices to compressed quantum index
             mapped_t_matrix_vib = vmapped_l_array_to_compressed_quantum_index(
-                t_matrices, l_max)
+                t_matrices, l_max
+            )
             mapped_t_matrix_ref = vmapped_l_array_to_compressed_quantum_index(
                 ref_t_matrices, l_max
             )
@@ -646,12 +646,14 @@ class TensorLEEDCalculator:
         return _recombine_delta_amps(
             batched_delta_amps,
             self.batching.restore_sorting,
-            self.delta_amp_prefactors
+            self.delta_amp_prefactors,
         )
 
     def intensity(self, free_params):
         delta_amplitude = self.delta_amplitude(free_params)
-        _, _, geo_params, _ = self.parameter_space.split_free_params(free_params)
+        _, _, geo_params, _ = self.parameter_space.split_free_params(
+            free_params
+        )
         prefactors = intensity_prefactors(
             self.parameter_space.potential_onset_height_change(geo_params),
             self.n_beams,
@@ -731,9 +733,9 @@ class TensorLEEDCalculator:
         _, grad = self.R_val_and_grad(free_params)
         return grad
 
-
-    def benchmark(self, free_params=None, n_repeats=10, csv_file_path=None,
-                  use_grad=True):
+    def benchmark(
+        self, free_params=None, n_repeats=10, csv_file_path=None, use_grad=True
+    ):
         """Run benchmarks and add log results."""
         logger.info('Runnning timing benchmarks for tensor-LEED calculation...')
         bench_results = utils.benchmark_calculator(
@@ -949,6 +951,7 @@ def batch_delta_amps(
 
     return jax.lax.map(calc_energy, energy_ids)
 
+
 @partial(
     jax.jit,
     static_argnames=(
@@ -967,7 +970,6 @@ def calc_r_factor(
     target_grid,
     exp_spline,
 ):
-
     v0i_electron_volt = -ref_calc_params.v0i * HARTREE
 
     # apply v0r shift
@@ -986,6 +988,7 @@ def calc_r_factor(
         exp_spline,
     )
 
+
 @jax.jit
 def _recombine_delta_amps(energy_batched, sorting_order, prefactors):
     # combine to one array
@@ -995,6 +998,7 @@ def _recombine_delta_amps(energy_batched, sorting_order, prefactors):
     # apply prefactors and return
     return delta_amps * prefactors
 
+
 @partial(jax.jit, static_argnames=['deriv_deg', 'bc_type'])
 def _interpolate_intensity(
     intensity,
@@ -1003,13 +1007,13 @@ def _interpolate_intensity(
     deriv_deg,
     bc_type,
 ):
-        spline = interpax.CubicSpline(
+    spline = interpax.CubicSpline(
         origin_grid,
         intensity,
         bc_type=bc_type,
         extrapolate=False,
         check=False,  # TODO: do check once in the object creation
-        )
-        for _ in range(deriv_deg):
-            spline = spline.derivative()
-        return spline(target_grid)
+    )
+    for _ in range(deriv_deg):
+        spline = spline.derivative()
+    return spline(target_grid)
