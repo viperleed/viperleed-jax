@@ -649,6 +649,12 @@ class GradFreeSLSQPOptimizer(SciPyNonGradOptimizer):
     use_bounds = True
     jac_strategy = '2-point'
 
+class GradFreeBFGSOptimizer(SciPyNonGradOptimizer):
+    method = 'BFGS'
+    use_bounds = True
+    jac_strategy = '2-point'
+    use_early_stopper = True
+
 class GradFreeLBFGSBOptimizer(SciPyNonGradOptimizer):
     method = 'L-BFGS-B'
     use_bounds = True
