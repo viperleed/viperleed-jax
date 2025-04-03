@@ -287,12 +287,14 @@ class TensorLEEDCalculator:
             site_elements = [
                 leaf.site_element for leaf in parameter_space.vib_tree.leaves
             ]
-            self.ref_t_matrices = self._calculate_reference_t_matrices(
+            ref_t_matrices = self._calculate_reference_t_matrices(
                 ref_vib_amps, site_elements
             )
         else:
             # use the stored reference t-matrices from reference calculation
-            self.ref_t_matrices = self.ref_calc_result.t_matrices
+            ref_t_matrices = self.ref_calc_result.t_matrices
+        # convert to jnp array
+        self.ref_t_matrices = jnp.asarray(ref_t_matrices)
 
         # pre-calculate the static t-matrices
         logger.debug(
@@ -615,7 +617,7 @@ class TensorLEEDCalculator:
                 energy_ids)
 
             # crop t-matrices
-            ref_t_matrices = jnp.asarray(self.ref_t_matrices)[
+            ref_t_matrices = self.ref_t_matrices[
                 energy_ids, :, : l_max + 1
             ]
             t_matrices = t_matrices[:, :, : l_max + 1]
