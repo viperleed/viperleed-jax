@@ -567,7 +567,6 @@ class TensorLEEDCalculator:
         displacements_ang = self.parameter_space.reference_displacements(
             geo_params
         )
-        displacements_ang = jnp.asarray(displacements_ang)
         displacements_au = atomic_units.to_internal_displacement_vector(
             displacements_ang
         )
