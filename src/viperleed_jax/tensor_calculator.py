@@ -590,7 +590,7 @@ class TensorLEEDCalculator:
 
         # chemical weights
         chem_weights = jnp.asarray(
-            self.parameter_space.occ_weight_transformer(occ_params)
+            self.occ_weight_transformer(occ_params)
         )
 
         # Loop over batches

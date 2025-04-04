@@ -471,13 +471,14 @@ class FrozenParameterSpace:
 
 
     def expand_params(self, free_params):
-        v0r_params, vib_params, geo_params, occ_params = self.split_free_params(
+        splitter = self.split_free_params()
+        v0r_params, vib_params, geo_params, occ_params = splitter(
             free_params
         )
-        v0r_shift = self.v0r_transformer(v0r_params)
+        v0r_shift = self.v0r_transformer()(v0r_params)
         vib_amps = self.all_vib_amps(vib_params)
         displacements = self.all_displacements(geo_params)
-        weights = self.occ_weight_transformer(occ_params)
+        weights = self.occ_weight_transformer()(occ_params)
         return v0r_shift, vib_amps, displacements, weights
 
 
@@ -497,11 +498,10 @@ class FrozenParameterSpace:
         transformers = self.dynamic_displacements_transformers
 
         def compute(geo_free_params):
-            def apply_trafo(trafo):
-                return trafo(geo_free_params)
-
-            return jax.lax.map(apply_trafo, transformers,
-                               batch_size=n_batch_atoms)
+            return [
+                trafo(geo_free_params)
+                for trafo in self.dynamic_displacements_transformers
+            ]
         return jax.jit(compute)
 
     def reference_vib_amps(self, n_batch_atoms):
@@ -520,11 +520,10 @@ class FrozenParameterSpace:
         transformers = self.dynamic_t_matrix_transformers
 
         def compute(vib_free_params):
-            def apply_trafo(trafo):
-                return trafo(vib_free_params)
-
-            return jax.lax.map(apply_trafo, transformers,
-                               batch_size=n_batch_atoms)
+            return [
+                trafo(vib_free_params)
+                for trafo in self.dynamic_t_matrix_transformers
+            ]
 
         return jax.jit(compute)
 
