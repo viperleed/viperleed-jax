@@ -341,6 +341,18 @@ class TensorLEEDCalculator:
             is_dynamic_mask=self.parameter_space.is_dynamic_t_matrix,
         )
 
+        # set transformations
+        self.reference_displacements = self.parameter_space.reference_displacements(
+            self.batch_atoms
+        )
+        self.reference_vib_amps = self.parameter_space.reference_vib_amps(
+            self.batch_atoms
+        )
+        self.potential_onset_height_change = self.parameter_space.potential_onset_height_change()
+        self.split_free_params = self.parameter_space.split_free_params()
+        self.v0r_transformer = self.parameter_space.v0r_transformer()
+        self.occ_weight_transformer = self.parameter_space.occ_weight_transformer()
+
     def _calculate_static_t_matrices(self):
         # This is only done once – perform for maximum lmax and crop later
         energy_indices = jnp.arange(len(self.energies))
@@ -560,11 +572,11 @@ class TensorLEEDCalculator:
         """Calculate the delta amplitude for a given set of free parameters."""
         # split free parameters
         (_, vib_params, geo_params, occ_params) = (
-            self.parameter_space.split_free_params(free_params)
+            self.split_free_params(free_params)
         )
 
         # displacements, converted to atomic units
-        displacements_ang = self.parameter_space.reference_displacements(
+        displacements_ang = self.reference_displacements(
             geo_params
         )
         displacements_au = atomic_units.to_internal_displacement_vector(
@@ -572,7 +584,7 @@ class TensorLEEDCalculator:
         )
 
         # vibrational amplitudes, converted to atomic units
-        vib_amps_au = self.parameter_space.reference_vib_amps(vib_params)
+        vib_amps_au = self.reference_vib_amps(vib_params)
         # vib_amps_au = jax.vmap(atomic_units.to_internal_vib_amps,
         #                         in_axes=0)(vib_amps_ang)
 
@@ -651,11 +663,11 @@ class TensorLEEDCalculator:
 
     def intensity(self, free_params):
         delta_amplitude = self.delta_amplitude(free_params)
-        _, _, geo_params, _ = self.parameter_space.split_free_params(
+        _, _, geo_params, _ = self.split_free_params(
             free_params
         )
         prefactors = intensity_prefactors(
-            self.parameter_space.potential_onset_height_change(geo_params),
+            self.potential_onset_height_change(geo_params),
             self.n_beams,
             self.theta,
             self.wave_vectors,
@@ -708,8 +720,8 @@ class TensorLEEDCalculator:
             raise ValueError('Comparison intensity not set.')
         non_interpolated_intensity = self.intensity(free_params)
 
-        v0r_param, *_ = self.parameter_space.split_free_params(free_params)
-        v0r_shift = self.parameter_space.v0r_transformer(v0r_param)
+        v0r_param, *_ = self.split_free_params(free_params)
+        v0r_shift = self.v0r_transformer(v0r_param)
 
         return calc_r_factor(
             non_interpolated_intensity,
