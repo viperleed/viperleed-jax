@@ -71,7 +71,7 @@ def to_atomic_unit_energy(energy_eV):
 
 
 def kappa(energy, v_imag):
-    """Return wave vector kappa (atomic units).
+    r"""Return wave vector kappa (atomic units).
 
     In atomic units, the wave vector is given by:
     .. math::
