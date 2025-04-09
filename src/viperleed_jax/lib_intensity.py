@@ -59,15 +59,6 @@ def _wave_vectors(ref_data, theta, phi, trar, beam_indices):
     return in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum
 
 
-def _potential_onset_height_change(displacement_step, is_surface_atom):
-    """Calculates the displacement of the topmost surface atom in the z direction."""
-    # TODO: this is actually not really correct!
-    # We should not consider suface atoms, but only the topmost one probably!!
-    surface_z = displacement_step[
-        is_surface_atom, 0
-    ]  # z disp for surface atoms
-    return jnp.max(surface_z)
-
 @partial(jax.jit, static_argnames=['n_beams'])
 def intensity_prefactors(
     onset_height_change,
