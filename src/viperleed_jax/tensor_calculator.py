@@ -224,11 +224,18 @@ class TensorLEEDCalculator:
     def n_atoms(self):
         return len(self.ref_vibrational_amps)
 
-    @property
-    def parameter_space(self):
+    def check_parameter_space_set(self):
         if self._parameter_space is None:
             raise ValueError('Parameter space not set.')
+
+    @property
+    def parameter_space(self):
+        self.check_parameter_space_set()
         return self._parameter_space
+
+    def split_free_params(self, free_params):
+        self.check_parameter_space_set()
+        return self._split_free_params(free_params)
 
     @property
     def n_free_parameters(self):
@@ -266,12 +273,12 @@ class TensorLEEDCalculator:
         if self._parameter_space is not None:
             logger.debug('Overwriting parameter space.')
         # take delta_slab and set the parameter space
-        self._parameter_space = parameter_space.freeze()
+        self._parameter_space = parameter_space
         logger.info(f'Parameter space set.\n{parameter_space.info}')
         logger.info(
             'This parameter space requires dynamic calculation of '
-            f'{self._parameter_space.n_dynamic_t_matrices} t-matrice(s) and '
-            f'{self._parameter_space.n_dynamic_propagators} propagator(s).'
+            f'{self.parameter_space.n_dynamic_t_matrices} t-matrice(s) and '
+            f'{self.parameter_space.n_dynamic_propagators} propagator(s).'
         )
 
         if self.recalculate_ref_t_matrices:
@@ -298,7 +305,7 @@ class TensorLEEDCalculator:
 
         # pre-calculate the static t-matrices
         logger.debug(
-            f'Pre-calculating {self._parameter_space.n_static_t_matrices} '
+            f'Pre-calculating {self.parameter_space.n_static_t_matrices} '
             'static t-matrice(s).'
         )
         self._calculate_static_t_matrices()
@@ -317,15 +324,15 @@ class TensorLEEDCalculator:
 
         # pre-calculate the static propagators
         logger.debug(
-            f'Pre-calculating {self._parameter_space.n_static_propagators} '
+            f'Pre-calculating {self.parameter_space.n_static_propagators} '
             'static propagator(s).'
         )
         self._calculate_static_propagators()
 
         # set the propagator context
         self.propagator_context = PropagatorContext(
-            is_dynamic_propagator=self._parameter_space.is_dynamic_propagator,
-            propagator_id=self._parameter_space.propagator_id,
+            is_dynamic_propagator=self.parameter_space.is_dynamic_propagator,
+            propagator_id=self.parameter_space.propagator_id,
             kappa=self.kappa,
             static_propagators=self._static_propagators,
             propagator_transpose_int=self.propagator_transpose_int,
@@ -342,15 +349,18 @@ class TensorLEEDCalculator:
         )
 
         # set transformations
-        self.reference_displacements = self.parameter_space.reference_displacements(
+        self._reference_displacements = jax.jit(self.parameter_space.reference_displacements(
             self.batch_atoms
-        )
-        self.reference_vib_amps = self.parameter_space.reference_vib_amps(
+        ))
+        self._reference_vib_amps = jax.jit(self.parameter_space.reference_vib_amps(
             self.batch_atoms
+        ))
+        self._split_free_params = jax.jit(self.parameter_space.split_free_params())
+        self._v0r_transformer = jax.jit(self.parameter_space.v0r_transformer())
+        self._occ_weight_transformer = jax.jit(self.parameter_space.occ_weight_transformer())
+        self._all_displacements = jax.jit(
+            self.parameter_space.all_displacements_transformer()
         )
-        self.split_free_params = self.parameter_space.split_free_params()
-        self.v0r_transformer = self.parameter_space.v0r_transformer()
-        self.occ_weight_transformer = self.parameter_space.occ_weight_transformer()
 
     def _calculate_static_t_matrices(self):
         # This is only done once – perform for maximum lmax and crop later
@@ -375,7 +385,7 @@ class TensorLEEDCalculator:
             return jnp.stack(
                 [
                     compute_t(pair)
-                    for pair in self._parameter_space.static_t_matrix_inputs
+                    for pair in self.parameter_space.static_t_matrix_inputs
                 ]
             )
 
@@ -389,7 +399,7 @@ class TensorLEEDCalculator:
 
     def _calculate_static_propagators(self):
         # Convert static propagator inputs to an array.
-        static_inputs = self._parameter_space.static_propagator_inputs
+        static_inputs = self.parameter_space.static_propagator_inputs
         if len(static_inputs) == 0:
             # If there are no static inputs, store an empty array.
             self._static_propagators = jnp.array([])
@@ -569,13 +579,14 @@ class TensorLEEDCalculator:
 
     def delta_amplitude(self, free_params):
         """Calculate the delta amplitude for a given set of free parameters."""
+        self.check_parameter_space_set()
         # split free parameters
         (_, vib_params, geo_params, occ_params) = (
-            self.split_free_params(free_params)
+            self._split_free_params(free_params)
         )
 
         # displacements, converted to atomic units
-        displacements_ang = self.reference_displacements(
+        displacements_ang = self._reference_displacements(
             geo_params
         )
         displacements_au = atomic_units.to_internal_displacement_vector(
@@ -583,13 +594,11 @@ class TensorLEEDCalculator:
         )
 
         # vibrational amplitudes, converted to atomic units
-        vib_amps_au = self.reference_vib_amps(vib_params)
-        # vib_amps_au = jax.vmap(atomic_units.to_internal_vib_amps,
-        #                         in_axes=0)(vib_amps_ang)
+        vib_amps_au = self._reference_vib_amps(vib_params)
 
         # chemical weights
         chem_weights = jnp.asarray(
-            self.occ_weight_transformer(occ_params)
+            self._occ_weight_transformer(occ_params)
         )
 
         # Loop over batches
@@ -662,10 +671,10 @@ class TensorLEEDCalculator:
 
     def intensity(self, free_params):
         delta_amplitude = self.delta_amplitude(free_params)
-        _, _, geo_params, _ = self.split_free_params(
+        _, _, geo_params, _ = self._split_free_params(
             free_params
         )
-        displacements = self.reference_displacements(geo_params)
+        displacements = self._all_displacements(geo_params)
         prefactors = intensity_prefactors(
             displacements,
             self.parameter_space.atoms_ref_z_position,
@@ -721,8 +730,8 @@ class TensorLEEDCalculator:
             raise ValueError('Comparison intensity not set.')
         non_interpolated_intensity = self.intensity(free_params)
 
-        v0r_param, *_ = self.split_free_params(free_params)
-        v0r_shift = self.v0r_transformer(v0r_param)
+        v0r_param, *_ = self._split_free_params(free_params)
+        v0r_shift = self._v0r_transformer(v0r_param)
 
         return calc_r_factor(
             non_interpolated_intensity,

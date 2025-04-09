@@ -19,7 +19,7 @@ from .transformation_tree import (
     vib_parameters,
 )
 from .transformation_tree.displacement_tree_layers import DisplacementTreeLayers
-from .constants import ATOM_Z_DIR_ID, DISP_Z_DIR_ID
+from .constants import ATOM_Z_DIR_ID
 
 
 class ParameterSpace:
@@ -178,7 +178,7 @@ class ParameterSpace:
 
     @property
     def all_vib_amps_transformer(self):
-        return self.vib_tree.all_vib_amps_transformer()
+        return self.vib_tree.all_vib_amps_transformer
 
     @property
     def dynamic_t_matrix_transformers(self):
@@ -392,6 +392,98 @@ class ParameterSpace:
             f'{self.n_base_params}\t{format(n_base_params)}\n'
         )
 
+    def split_free_params(self):
+        """Return a function to split free parameters into categories.
+
+        Returns
+        -------
+        fn: Callable
+            A function free_params -> (v0r_params, vib_params, geo_params, occ_params)
+        """
+        n_split = self.n_param_split
+        n_total = self.n_free_params
+
+        def compute(free_params):
+            if len(free_params) != n_total:
+                raise ValueError('Number of free parameters does not match.')
+            i0 = 0
+            i1 = n_split[0]
+            i2 = i1 + n_split[1]
+            i3 = i2 + n_split[2]
+            v0r_params = free_params[i0:i1]
+            vib_params = free_params[i1:i2]
+            geo_params = free_params[i2:i3]
+            occ_params = free_params[i3:]
+            return v0r_params, vib_params, geo_params, occ_params
+
+        return compute
+
+    def expand_params(self, free_params):
+        _free_params = np.asarray(free_params)
+        splitter = self.split_free_params()
+        v0r_params, vib_params, geo_params, occ_params = splitter(
+            np.asarray(_free_params)
+        )
+        v0r_shift = self.v0r_transformer()(v0r_params)
+        vib_amps = self.all_vib_amps_transformer()(vib_params)
+        displacements = self.all_displacements_transformer()(geo_params)
+        weights = self.occ_weight_transformer()(occ_params)
+        return v0r_shift, vib_amps, displacements, weights
+
+    def reference_displacements(self, n_batch_atoms):
+        """Return a function that computes displacements for ref. propagators.
+
+        Parameters
+        ----------
+        n_batch_atoms: int
+            Batch size for lax.map.
+
+        Returns
+        -------
+        fn: Callable
+            A function geo_free_params -> displacements.
+        """
+
+        def compute(geo_free_params):
+            return [
+                trafo(geo_free_params)
+                for trafo in self.dynamic_displacements_transformers
+            ]
+
+        return compute
+
+    def reference_vib_amps(self, n_batch_atoms):
+        """Return a function that computes vibrational amplitudes for t-matrices.
+
+        Parameters
+        ----------
+        n_batch_atoms: int
+            Batch size for lax.map.
+
+        Returns
+        -------
+        fn: Callable
+            A function vib_free_params -> vib_amps.
+        """
+
+        def compute(vib_free_params):
+            return [
+                trafo(vib_free_params)
+                for trafo in self.dynamic_t_matrix_transformers
+            ]
+
+        return compute
+
+    def occ_weights(self):
+        """Calculate the occupation weights for all scatters.
+
+        Returns
+        -------
+        weights: The occupation weights for all scatterers.
+        """
+        return self.occ_weight_transformer
+
+
 
 @register_pytree_node_class
 class FrozenParameterSpace:
@@ -467,7 +559,7 @@ class FrozenParameterSpace:
             geo_params = free_params[i2:i3]
             occ_params = free_params[i3:]
             return v0r_params, vib_params, geo_params, occ_params
-        return jax.jit(compute)
+        return compute
 
 
     def expand_params(self, free_params):
@@ -502,7 +594,7 @@ class FrozenParameterSpace:
                 trafo(geo_free_params)
                 for trafo in self.dynamic_displacements_transformers
             ]
-        return jax.jit(compute)
+        return compute
 
     def reference_vib_amps(self, n_batch_atoms):
         """Return a function that computes vibrational amplitudes for t-matrices.
@@ -524,9 +616,8 @@ class FrozenParameterSpace:
                 for trafo in self.dynamic_t_matrix_transformers
             ]
 
-        return jax.jit(compute)
+        return compute
 
-    @partial(jax.jit, static_argnames=('self',))
     def occ_weights(self):
         """Calculate the occupation weights for all scatters.
 
@@ -534,7 +625,7 @@ class FrozenParameterSpace:
         -------
         weights: The occupation weights for all scatterers.
         """
-        return jax.jit(self.occ_weight_transformer)
+        return self.occ_weight_transformer
 
     @partial(jax.jit, static_argnames=('self',))
     def all_displacements(self, geo_free_params):
