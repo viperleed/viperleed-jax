@@ -162,6 +162,17 @@ class LinearTransformer(Transformer):
             np.bool_(self.weights), np.bool_(self.biases), self.out_reshape
         )
 
+    def __hash__(self):
+        """Calculate a hash for the transformer.
+
+        This is necessary for jit compilation in jax. The hash is calculated
+        based on the weights, biases, and output reshape of the transformer.
+        """
+        return hash(
+            (tuple(self.weights.flatten()),
+             tuple(self.biases),
+             self.out_reshape)
+        )
 
 class LinearMap(LinearTransformer):
     """A linear map is a LinearTransformer with biases set to zero."""
