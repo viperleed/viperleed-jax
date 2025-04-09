@@ -81,7 +81,7 @@ class TMatrixContext:
 class TensorLEEDCalculator:
     """Main class for calculating tensor LEED intensities and R-factors.
 
-    Parameters:
+    Parameters
     ----------
     ref_data : ReferenceData
         The reference data for LEED calculations.
