@@ -160,8 +160,7 @@ class ParameterSpace:
         return FrozenParameterSpace(self)
 
     def _free_params_up_to_layer(self, layer):
-        """Return the number of free parameters in all subtrees up to a given
-        layer."""
+        """Return the number of free parameters in all trees up to a layer."""
         free_params = []
         for subtree in self.subtrees:
             layer_roots = subtree.roots_up_to_layer(layer)
