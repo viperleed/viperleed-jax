@@ -19,7 +19,6 @@ from viperleed_jax.lib_math import (
 )
 
 
-# TODO: replace energy, v_imag with a single arg kappa = 2*energy - 2j*v_imag
 # @partial(jax.profiler.annotate_function, name="calc_propagator")
 def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
     c_norm = safe_norm(c)
@@ -38,9 +37,13 @@ def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
         : 2 * LMAX + 1, : (LMAX + 1) ** 2, : (LMAX + 1) ** 2
     ]
 
+    idx_lookup = jnp.stack(
+        [lpp * lpp + lpp - dense_mpp for lpp in range(2 * LMAX + 1)]
+    )  # shape: (2*LMAX+1, n, n)
+
     def propagator_lpp_element(lpp, running_sum):
         bessel_values = BJ[lpp]
-        ylm_values = YLM[lpp * lpp + lpp - dense_mpp]
+        ylm_values = YLM[idx_lookup[lpp]]
         # Equation (34) from Rous, Pendry 1989
         return (
             running_sum + bessel_values * ylm_values * capped_coeffs[lpp, :, :]
