@@ -671,10 +671,9 @@ class TensorLEEDCalculator:
         )
 
     def intensity(self, free_params):
-        delta_amplitude = self.delta_amplitude(free_params)
-        _, _, geo_params, _ = self._split_free_params(
-            free_params
-        )
+        _free_params = jnp.asarray(free_params)
+        delta_amplitude = self.delta_amplitude(_free_params)
+        _, _, geo_params, _ = self._split_free_params(_free_params)
         displacements = self._all_displacements(geo_params)
         prefactors = intensity_prefactors(
             displacements,
