@@ -728,9 +728,10 @@ class TensorLEEDCalculator:
         """Evaluate R-factor."""
         if self.comp_intensity is None:
             raise ValueError('Comparison intensity not set.')
-        non_interpolated_intensity = self.intensity(free_params)
+        _free_params = jnp.asarray(free_params)
+        non_interpolated_intensity = self.intensity(_free_params)
 
-        v0r_param, *_ = self._split_free_params(free_params)
+        v0r_param, *_ = self._split_free_params(_free_params)
         v0r_shift = self._v0r_transformer(v0r_param)
 
         return calc_r_factor(
