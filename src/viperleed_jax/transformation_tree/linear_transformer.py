@@ -31,6 +31,9 @@ class Transformer(ABC):
     def __eq__(self, other):
         """Check equality between two transformers."""
 
+    @abstractmethod
+    def __hash__(self):
+        """Calculate a hash for the transformer."""
 
 class LinearTransformer(Transformer):
     """Linear transformation class that implements an affine transformation."""
