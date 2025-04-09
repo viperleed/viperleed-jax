@@ -3,6 +3,10 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-03-18'
 
+# Displacement direction indices
+ATOM_Z_DIR_ID = 2
+DISP_Z_DIR_ID = 0
+
 # Hartree to eV conversion factor
 HARTREE = 27.211386245
 

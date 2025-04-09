@@ -19,9 +19,8 @@ from .transformation_tree import (
     vib_parameters,
 )
 from .transformation_tree.displacement_tree_layers import DisplacementTreeLayers
-
 _ATOM_Z_DIR_ID = 2
-_DISP_Z_DIR_ID = 0
+from .constants import ATOM_Z_DIR_ID, DISP_Z_DIR_ID
 
 
 class ParameterSpace:
@@ -582,7 +581,7 @@ class FrozenParameterSpace:
         disp_fn = self.all_displacements_transformer()
 
         def compute(geo_free_params):
-            z_changes = disp_fn(geo_free_params)[:, _DISP_Z_DIR_ID]
+            z_changes = disp_fn(geo_free_params)[:, DISP_Z_DIR_ID]
             new_z_pos = ref_z_pos + z_changes
             return jnp.max(new_z_pos) - jnp.max(ref_z_pos)
         return jax.jit(compute)
