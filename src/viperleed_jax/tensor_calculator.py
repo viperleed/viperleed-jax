@@ -580,9 +580,10 @@ class TensorLEEDCalculator:
     def delta_amplitude(self, free_params):
         """Calculate the delta amplitude for a given set of free parameters."""
         self.check_parameter_space_set()
+        _free_params = jnp.asarray(free_params)
         # split free parameters
         (_, vib_params, geo_params, occ_params) = (
-            self._split_free_params(free_params)
+            self._split_free_params(_free_params)
         )
 
         # displacements, converted to atomic units
