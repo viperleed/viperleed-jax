@@ -8,7 +8,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-from viperleed_jax.constants import BOHR
+from viperleed_jax.constants import BOHR, DISP_Z_DIR_ID
 
 
 @jax.jit
@@ -61,11 +61,15 @@ def _wave_vectors(ref_data, theta, phi, trar, beam_indices):
 
 @partial(jax.jit, static_argnames=['n_beams'])
 def intensity_prefactors(
-    onset_height_change,
+    displacements,
+    atoms_ref_z_pos,
     n_beams,
     theta,
     wave_vectors):
     # onset height change was called CXDisp in the original code
+    onset_height_change = potential_onset_height_change(
+        atoms_ref_z_pos, displacements
+    )
 
     # from lib_intensity
     (in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum) = wave_vectors
@@ -92,3 +96,28 @@ def intensity_prefactors(
         * a.real
         / jnp.outer(c, jnp.ones(shape=(n_beams,))).real
     )
+
+
+def potential_onset_height_change(atoms_ref_z_pos, displacements):
+    """Calculate the change in the highest atom z position.
+
+    This is needed because the onset height of the inner potential is
+    defined as the z position of the highest atom in the slab.
+    Therefore, changes to this height may change refraction of the incoming
+    electron wave.
+
+    Parameters
+    ----------
+    atoms_ref_z_pos : array_like
+        Reference z positions of the atoms.
+    displacements : array_like
+        Displacements of the atoms in the slab.
+
+    Returns
+    -------
+    jax.Array(float)
+        Change in the highest atom z position.
+    """
+    z_changes = jnp.asarray(displacements)[:, DISP_Z_DIR_ID]
+    new_z_pos = atoms_ref_z_pos + z_changes
+    return jnp.max(new_z_pos) - jnp.max(atoms_ref_z_pos)

@@ -348,7 +348,6 @@ class TensorLEEDCalculator:
         self.reference_vib_amps = self.parameter_space.reference_vib_amps(
             self.batch_atoms
         )
-        self.potential_onset_height_change = self.parameter_space.potential_onset_height_change()
         self.split_free_params = self.parameter_space.split_free_params()
         self.v0r_transformer = self.parameter_space.v0r_transformer()
         self.occ_weight_transformer = self.parameter_space.occ_weight_transformer()
@@ -666,8 +665,10 @@ class TensorLEEDCalculator:
         _, _, geo_params, _ = self.split_free_params(
             free_params
         )
+        displacements = self.reference_displacements(geo_params)
         prefactors = intensity_prefactors(
-            self.potential_onset_height_change(geo_params),
+            displacements,
+            self.parameter_space.atoms_ref_z_position,
             self.n_beams,
             self.theta,
             self.wave_vectors,

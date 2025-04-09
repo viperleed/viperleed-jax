@@ -19,7 +19,6 @@ from .transformation_tree import (
     vib_parameters,
 )
 from .transformation_tree.displacement_tree_layers import DisplacementTreeLayers
-_ATOM_Z_DIR_ID = 2
 from .constants import ATOM_Z_DIR_ID, DISP_Z_DIR_ID
 
 
@@ -44,11 +43,6 @@ class ParameterSpace:
             self.geo_tree,
             self.vib_tree,
             self.occ_tree,
-        )
-
-        # atom-site-element reference z positions
-        self._ats_ref_z_pos = jnp.array(
-            [bs.atom.cartpos[_ATOM_Z_DIR_ID] for bs in self.atom_basis]
         )
 
     def apply_displacements(self, offset_block=None, search_block=None):
@@ -111,7 +105,8 @@ class ParameterSpace:
             elif line.offset_type == 'occ':
                 self.occ_tree.apply_offsets(line)
             else:
-                raise ValueError('Unknown offset type: ' f'{line.offset_type}')
+                msg = f'Unknown offset type: {line.offset_type}'
+                raise ValueError(msg)
         self.check_for_inconsistencies()
 
     def _parse_bounds(self, search_block):
@@ -165,6 +160,13 @@ class ParameterSpace:
             layer_roots = subtree.roots_up_to_layer(layer)
             free_params.append(int(sum(node.dof for node in layer_roots)))
         return free_params
+
+    @property
+    def atoms_ref_z_position(self):
+        """Return the reference z positions of the atoms in the atom basis."""
+        return np.array(
+                [bs.atom.cartpos[ATOM_Z_DIR_ID] for bs in self.atom_basis]
+            )
 
     @property
     def all_displacements_transformer(self):
@@ -394,7 +396,7 @@ class ParameterSpace:
 @register_pytree_node_class
 class FrozenParameterSpace:
     frozen_attributes = (
-        '_ats_ref_z_pos',
+        'atoms_ref_z_position',
         'all_displacements_transformer',
         'all_vib_amps_transformer',
         'dynamic_displacements_transformers',
@@ -494,7 +496,6 @@ class FrozenParameterSpace:
         fn: Callable
             A function geo_free_params -> displacements.
         """
-        transformers = self.dynamic_displacements_transformers
 
         def compute(geo_free_params):
             return [
@@ -516,7 +517,6 @@ class FrozenParameterSpace:
         fn: Callable
             A function vib_free_params -> vib_amps.
         """
-        transformers = self.dynamic_t_matrix_transformers
 
         def compute(vib_free_params):
             return [
@@ -563,28 +563,6 @@ class FrozenParameterSpace:
         vib_amps: The vibrational amplitudes for all t-matrices.
         """
         return self.all_vib_amps_transformer(vib_free_params)
-
-    def potential_onset_height_change(self):
-        """Calculate the change in the highest atom z position.
-
-        This is needed because the onset height of the inner potential is
-        defined as the z position of the highest atom in the slab.
-        Therefore, changes to this height may change refraction of the incoming
-        electron wave.
-
-        Returns
-        -------
-        fn: Callable
-            A function geo_free_params -> float
-        """
-        ref_z_pos = self._ats_ref_z_pos
-        disp_fn = self.all_displacements_transformer()
-
-        def compute(geo_free_params):
-            z_changes = disp_fn(geo_free_params)[:, DISP_Z_DIR_ID]
-            new_z_pos = ref_z_pos + z_changes
-            return jnp.max(new_z_pos) - jnp.max(ref_z_pos)
-        return jax.jit(compute)
 
     def tree_flatten(self):
         aux_data = {
