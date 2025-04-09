@@ -63,22 +63,27 @@ class LinearTransformer(Transformer):
 
     @property
     def in_dim(self):
+        """Return the input dimensionality of the transformer."""
         return self._in_dim
 
     @property
     def out_dim(self):
+        """Return the output dimensionality of the transformer."""
         return self._out_dim
 
     @property
     def is_injective(self):
+        """Check if the transformation is injective."""
         return np.linalg.matrix_rank(self.weights) == self.in_dim
 
     @property
     def is_surjective(self):
+        """Check if the transformation is surjective."""
         return np.linalg.matrix_rank(self.weights.T) == self.out_dim
 
     @property
     def is_bijective(self):
+        """Check if the transformation is bijective."""
         return self.is_injective and self.is_surjective
 
     def __call__(self, free_params):
@@ -99,6 +104,7 @@ class LinearTransformer(Transformer):
         return result
 
     def __eq__(self, other):
+        """Check equality between two transformers."""
         if not isinstance(other, LinearTransformer):
             return False
         if not np.array_equal(self.weights, other.weights):
@@ -133,6 +139,13 @@ class LinearTransformer(Transformer):
         return LinearTransformer(new_weights, new_biases, other.out_reshape)
 
     def select_rows(self, bool_mask):
+        """Select rows of the transformer based on a boolean mask.
+
+        This method creates a new transformer with the same weights and biases,
+        but only the rows of the weights and biases that are selected by the
+        boolean mask. The boolean mask should be a 1D array of booleans with
+        the same length as the number of rows in the transformer.
+        """
         # check that bool mask is a valid shape
         _bool_mask = np.asarray(bool_mask)
         new_weights = self.weights[_bool_mask]
@@ -140,6 +153,7 @@ class LinearTransformer(Transformer):
         return LinearTransformer(new_weights, new_biases, (_bool_mask.sum(),))
 
     def __repr__(self):
+        """Return a string representation of the transformer."""
         return (
             f'LinearTransformer(weights={self.weights.shape}, '
             f'biases={self.biases.shape}, out_reshape={self.out_reshape})'
