@@ -5,7 +5,6 @@ __created__ = '2024-10-07'
 
 from abc import ABC, abstractmethod
 
-import jax.numpy as jnp
 import numpy as np
 
 
@@ -94,7 +93,6 @@ class LinearTransformer(Transformer):
                 return result.reshape(self.out_reshape)
             return result
 
-        free_params = jnp.asarray(free_params)
         if len(free_params) != self.n_free_params:
             msg = 'Free parameters have wrong shape'
             raise ValueError(msg)
@@ -158,25 +156,6 @@ class LinearTransformer(Transformer):
             f'LinearTransformer(weights={self.weights.shape}, '
             f'biases={self.biases.shape}, out_reshape={self.out_reshape})'
         )
-
-    def tree_flatten(self):
-        aux_data = {
-            'n_free_params': self.n_free_params,
-            'weights': self.weights,
-            'biases': self.biases,
-            'out_reshape': self.out_reshape,
-            '_in_dim': self._in_dim,
-            '_out_dim': self._out_dim,
-        }
-        children = None
-        return (children, aux_data)
-
-    @classmethod
-    def tree_unflatten(cls, children, aux_data):
-        frozen_parameter_space = cls.__new__
-        for kw, value in aux_data.items():
-            setattr(frozen_parameter_space, kw, value)
-        return frozen_parameter_space
 
     def boolify(self):
         return LinearTransformer(

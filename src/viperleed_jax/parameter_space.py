@@ -471,9 +471,10 @@ class FrozenParameterSpace:
 
 
     def expand_params(self, free_params):
+        _free_params = np.asarray(free_params)
         splitter = self.split_free_params()
         v0r_params, vib_params, geo_params, occ_params = splitter(
-            free_params
+            np.asarray(_free_params)
         )
         v0r_shift = self.v0r_transformer()(v0r_params)
         vib_amps = self.all_vib_amps(vib_params)
