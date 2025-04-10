@@ -4,19 +4,18 @@ __authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
 __created__ = '2024-05-03'
 
 import copy
-from functools import partial
 from dataclasses import dataclass, field
-
-import numpy as np
+from functools import partial
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.files import poscar
 from viperleed.calc.files.iorfactor import beamlist_to_array
 from viperleed.calc.files.vibrocc import writeVIBROCC
 
-from viperleed_jax import atomic_units, lib_math, rfactor
+from viperleed_jax import atomic_units, lib_math, rfactor, utils
 from viperleed_jax.batching import Batching
 from viperleed_jax.constants import BOHR, HARTREE
 from viperleed_jax.dense_quantum_numbers import (
@@ -24,15 +23,14 @@ from viperleed_jax.dense_quantum_numbers import (
 )
 from viperleed_jax.interpolation import *
 from viperleed_jax.interpolation import interpolate_ragged_array
-from viperleed_jax.lib_intensity import sum_intensity, intensity_prefactors
+from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
 from viperleed_jax.propagator import (
     calc_propagator,
-    symmetry_operations,
     calculate_propagators,
+    symmetry_operations,
 )
-from viperleed_jax.t_matrix import calculate_t_matrices, vib_dependent_tmatrix
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
-from viperleed_jax import utils
+from viperleed_jax.t_matrix import calculate_t_matrices, vib_dependent_tmatrix
 
 
 @partial(
