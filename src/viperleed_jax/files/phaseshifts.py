@@ -1,7 +1,8 @@
 """Module phaseshifts.
 
 This module is based on the files/phaseshifts and psgen modules from
-viperleed.calc."""
+viperleed.calc.
+"""
 
 __authors__ = (
     'Alexander M. Imre (@amimre)',
