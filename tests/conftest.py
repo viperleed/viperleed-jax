@@ -7,7 +7,7 @@ from tests.fixtures.base import LARGE_FILE_PATH
 from tests.fixtures.cu_111_dynamic_l_max import *
 from tests.fixtures.cu_111_fixed_l_max import *
 from tests.fixtures.fe2o3_012_converged import *
-from viperleed_jax.data_structures import ReferenceData
+from viperleed_jax.data_structures import process_tensors
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.from_state import run_viperleed_initialization
@@ -75,9 +75,4 @@ def fe2o3_unrelaxed_state_after_init():
 def fe2o3_ref_data_fixed_lmax_12(fe2o3_pickled_tensor):
     fixed_lmax = 12
     tensor_tuple = tuple(fe2o3_pickled_tensor.values())
-    return ReferenceData(tensor_tuple, fix_lmax=fixed_lmax)
-
-
-@pytest.fixture(scope='session')
-def fe2o3_tensor_calculator(fe2o3_ref_data_fixed_lmax_12):
-    ref_data = fe2o3_ref_data_fixed_lmax_12
+    return process_tensors(tensor_tuple, fix_lmax=fixed_lmax)

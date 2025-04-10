@@ -41,10 +41,10 @@ class TestPhaseshifts:
         self, fe2o3_unrelaxed_raw_phaseshifts, fe2o3_ref_data_fixed_lmax_12
     ):
         raw_phaseshifts, ps_site_el_map = fe2o3_unrelaxed_raw_phaseshifts
-        ref_data = fe2o3_ref_data_fixed_lmax_12
+        ref_calc_params, _ = fe2o3_ref_data_fixed_lmax_12
         phaseshifts, ps_site_el_map = Phaseshifts(
             raw_phaseshifts,
-            ref_data.energies,
+            ref_calc_params.energies,
             12,
             phaseshift_map=ps_site_el_map,
         )
