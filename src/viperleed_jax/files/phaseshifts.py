@@ -10,13 +10,8 @@ __authors__ = (
 __created__ = '2024-08-29'
 
 import logging
-import os
-import sys
 
-import fortranformat as ff
-import jax
 import numpy as np
-import scipy
 from jax import numpy as jnp
 from jax.tree_util import register_pytree_node_class
 
@@ -90,8 +85,7 @@ def regrid_phaseshifts(old_grid, new_grid, phaseshifts):
 @register_pytree_node_class
 class Phaseshifts:
     def __init__(self, raw_phaseshifts, energies, l_max, phaseshift_map):
-        """
-        Initialize the Phaseshifts class.
+        """Class to handle phaseshifts.
 
         Parameters:
         -----------
