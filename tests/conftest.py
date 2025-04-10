@@ -49,10 +49,9 @@ def fe2o3_unrelaxed_pickle_path():
 # Reading the zipped tensors takes 5+ minutes
 @pytest.fixture(scope='session')
 def fe2o3_read_tensor_zip(fe2o3_unrelaxed_tensor_path):
-    tensors = read_tensor_zip(
+    return read_tensor_zip(
         fe2o3_unrelaxed_tensor_path, lmax=14, n_beams=38, n_energies=208
     )
-    return tensors
 
 
 # Therefore, we have pickeled tensors for faster testing
