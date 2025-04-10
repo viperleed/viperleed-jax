@@ -10,6 +10,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import numpy as np
+from interpax import CubicSpline
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.files import poscar
 from viperleed.calc.files.iorfactor import beamlist_to_array
@@ -21,7 +22,6 @@ from viperleed_jax.constants import BOHR, HARTREE
 from viperleed_jax.dense_quantum_numbers import (
     vmapped_l_array_to_compressed_quantum_index,
 )
-from viperleed_jax.interpolation import *
 from viperleed_jax.interpolation import interpolate_ragged_array
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
 from viperleed_jax.propagator import (
@@ -963,7 +963,7 @@ def calc_r_factor(
     v0i_electron_volt = -ref_calc_params.v0i * HARTREE
 
     # apply v0r shift
-    theo_spline = interpax.CubicSpline(
+    theo_spline = CubicSpline(
         origin_grid + v0r_shift,
         non_interpolated_intensity,
         check=False,
@@ -997,7 +997,7 @@ def _interpolate_intensity(
     deriv_deg,
     bc_type,
 ):
-    spline = interpax.CubicSpline(
+    spline = CubicSpline(
         origin_grid,
         intensity,
         bc_type=bc_type,
