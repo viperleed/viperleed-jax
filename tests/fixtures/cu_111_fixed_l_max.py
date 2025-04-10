@@ -9,7 +9,7 @@ from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from tests.fixtures.base import LARGE_FILE_PATH
 from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo
 from viperleed_jax.atom_basis import AtomBasis
-from viperleed_jax.data_structures import ReferenceData
+from viperleed_jax.data_structures import process_tensors
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.deltas import Transform as delta_transform
 from viperleed_jax.files.displacements.file import DisplacementsFile
@@ -198,7 +198,7 @@ def cu_111_fixed_l_max_read_ref_data(
         for at in non_bulk_atoms
     ]
 
-    return ReferenceData(sorted_tensors, fix_lmax=10)  # TODO: fix!!
+    return process_tensors(sorted_tensors, fix_lmax=10)  # TODO: fix!!
 
 
 @fixture(scope='session')
@@ -208,14 +208,15 @@ def cu_111_fixed_l_max_tensor_calculator(
     cu_111_fixed_l_max_read_ref_data,
 ):
     slab, rpars = cu_111_fixed_l_max_state_after_init
-    calculator = TensorLEEDCalculator(
-        cu_111_fixed_l_max_read_ref_data,
+    ref_calc_params, ref_calc_result = cu_111_fixed_l_max_read_ref_data
+    return TensorLEEDCalculator(
+        ref_calc_params,
+        ref_calc_result,
         cu_111_fixed_l_max_phaseshifts,
         slab,
         rpars,
         recalculate_ref_t_matrices=False,
     )
-    return calculator
 
 
 @fixture(scope='session')

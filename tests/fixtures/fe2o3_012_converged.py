@@ -9,7 +9,7 @@ from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from tests.fixtures.base import LARGE_FILE_PATH
 from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo
 from viperleed_jax.atom_basis import AtomBasis
-from viperleed_jax.data_structures import ReferenceData
+from viperleed_jax.data_structures import process_tensors
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.displacements.file import DisplacementsFile
 from viperleed_jax.files.tensors import read_tensor_zip
@@ -335,7 +335,7 @@ def fe2o3_012_converged_read_ref_data(
         for at in non_bulk_atoms
     ]
 
-    return ReferenceData(sorted_tensors, fix_lmax=10)  # TODO: fix!!
+    return process_tensors(sorted_tensors, fix_lmax=10)  # TODO: fix!!
 
 
 @fixture(scope='session')
@@ -345,14 +345,15 @@ def fe2o3_012_converged_tensor_calculator(
     fe2o3_012_converged_read_ref_data,
 ):
     slab, rpars = fe2o3_012_converged_state_after_init
-    calculator = TensorLEEDCalculator(
-        fe2o3_012_converged_read_ref_data,
+    ref_calc_params, ref_calc_result = fe2o3_012_converged_read_ref_data
+    return TensorLEEDCalculator(
+        ref_calc_params,
+        ref_calc_result,
         fe2o3_012_converged_phaseshifts,
         slab,
         rpars,
         recalculate_ref_t_matrices=False,
     )
-    return calculator
 
 
 @fixture(scope='session')
