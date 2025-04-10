@@ -145,3 +145,13 @@ class Phaseshifts:
         return interpolated
 
     # TODO: methods for easier access
+
+    # PyTree methods
+    def tree_flatten(self):
+        return (self._phaseshifts, self.l_max), None
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        new_ps = cls.__new__(cls)
+        new_ps._phaseshifts, new_ps.l_max = children
+        return new_ps
