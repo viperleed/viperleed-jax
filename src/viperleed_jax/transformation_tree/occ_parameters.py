@@ -87,13 +87,13 @@ class OccSymmetryConstraint(OccConstraintNode):
 
     def __init__(self, children, name):
         # Check that all children have the same dof
-        if len(set(child.dof for child in children)) != 1:
+        if len({child.dof for child in children}) != 1:
             raise ValueError('Children must have the same dof.')
 
         dof = children[0].dof
 
         transformers = []
-        for child in children:
+        for _ in children:
             weights = np.identity(dof)
             bias = np.zeros(dof)
             transformers.append(LinearTransformer(weights, bias, (dof,)))
@@ -111,7 +111,7 @@ class OccLinkedConstraint(OccConstraintNode):
 
     def __init__(self, children, name):
         # check that all children have the same dof
-        if len(set(child.dof for child in children)) != 1:
+        if len({child.dof for child in children}) != 1:
             raise ValueError('Children must have the same dof.')
         dof = children[0].dof
 
