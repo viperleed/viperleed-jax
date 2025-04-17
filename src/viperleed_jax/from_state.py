@@ -13,122 +13,26 @@ import logging
 import os
 import shutil
 import tempfile
-from pathlib import Path
 
-import numpy as np
 from viperleed.calc import LOGGER as logger
-from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from viperleed.calc.run import run_calc
 
-from viperleed_jax.atom_basis import AtomBasis
-from viperleed_jax.data_structures import process_tensors
-from viperleed_jax.files import phaseshifts as ps
-from viperleed_jax.files.displacements.file import DisplacementsFile
-from viperleed_jax.files.tensors import read_tensor_zip
-from viperleed_jax.parameter_space import ParameterSpace
-from viperleed_jax.tensor_calculator import TensorLEEDCalculator
+from from_objects import calculator_from_objects
 
+def calculator_from_paths(inputs_path,
+                          tensor_path,
+                          displacements_path,
+                          **kwargs):
 
-def calculator_from_state(
-    calc_path, tensor_path, l_max: int, displacements_file=None, **kwargs
-):
-    last_state = run_viperleed_initialization(calc_path)
+    # Run ViPErLEED initialization from inputs_path
+    last_state = run_viperleed_initialization(inputs_path)
+    # get objects from last_state
     slab, rpars = last_state.slab, last_state.rpars
 
-
-    # load and read the DISPLACEMENTS file
-    if displacements_file is None:
-        displacements_file = calc_path / 'DISPLACEMENTS'
-    disp_file = DisplacementsFile()
-    disp_file.read(displacements_file)
-
-    # Create the parameter space.
-    # We do this now, because if anything fails here, we don't want to waste
-    # time reading the tensor files.
-    logger.debug('Creating parameter space.')
-    atom_basis = AtomBasis(slab)
-    parameter_space = ParameterSpace(atom_basis, rpars)
-
-    # take the blocks from the displacements file
-    # TODO: take care of multiple blocks!
-
-    offsets_block = disp_file.offsets_block()
-    search_block = disp_file.first_block()  # TODO,FIXME: can only do first block for now
-    parameter_space.apply_displacements(offsets_block, search_block)
-
-    # parameters needed to interpret the tensor data
-    ref_calc_lmax = rpars.LMAX.max
-    n_beams = len(rpars.ivbeams)
-    n_energies = len(
-        np.arange(
-            rpars.THEO_ENERGIES.start,  # TODO: would be good to make this a property of the EnergyRange class
-            rpars.THEO_ENERGIES.stop + 0.01,
-            rpars.THEO_ENERGIES.step,
-        )
+    # delegate to calculator_from_objects
+    return calculator_from_objects(
+        slab, rpars, tensor_path, displacements_path, **kwargs
     )
-
-    logger.info(f'Starting to interpret tensor file {tensor_path.name}.')
-    logger.debug(
-        f'Reading tensor file with lmax={ref_calc_lmax},'
-        f'n_beams={n_beams}, n_energies={n_energies}.'
-    )
-
-    # read tensor file
-    tensors = read_tensor_zip(tensor_path, ref_calc_lmax, n_beams, n_energies)
-
-    logger.debug('Finished reading tensor file.')
-
-    non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
-    sorted_tensors = [tensors[f'T_{at.num}'] for at in non_bulk_atoms]
-
-    # Combine data into a ReferenceData object
-    logger.debug('Combining tensor data ...')
-    ref_calc_params, ref_calc_results = process_tensors(sorted_tensors, fix_lmax=l_max)
-    logger.debug('Tensor processing successful.')
-
-    # read Phaseshift data using existing phaseshift reader
-    phaseshifts_path = calc_path / 'PHASESHIFTS'
-    _, raw_phaseshifts, _, _ = readPHASESHIFTS(
-        slab, rpars, readfile=phaseshifts_path, check=True, ignoreEnRange=False
-    )
-
-    # get site element order
-    site_el_map = ps.phaseshift_site_el_order(slab, rpars)
-
-    # interpolate phaseshifts
-    phaseshifts = ps.Phaseshifts(
-        raw_phaseshifts, ref_calc_params.energies, l_max, phaseshift_map=site_el_map
-    )
-
-    logger.debug('Initializing Tensor LEED calculator.')
-    calculator = TensorLEEDCalculator(
-        ref_calc_params, ref_calc_results, phaseshifts, slab, rpars, **kwargs
-    )
-
-    # free up memory for large objects that are no longer needed
-    del sorted_tensors
-    del tensors
-    del raw_phaseshifts
-
-    calculator.set_parameter_space(parameter_space)
-    logger.debug(
-        'Parameter space created\n'
-        '-----------------------\n'
-        f'{calculator.parameter_space.info}'
-    )
-
-    return (
-        calculator,
-        slab,
-        rpars,
-        ref_calc_params,
-        ref_calc_results,
-        phaseshifts,
-        atom_basis,
-        disp_file,
-        parameter_space,
-    )
-
 
 def run_viperleed_initialization(calc_path):
     """Run ViPErLEED initialization with the input data in calc_path.
