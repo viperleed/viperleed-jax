@@ -47,7 +47,7 @@ def calculator_from_objects(
 
     # load and read the DISPLACEMENTS file
     disp_file = DisplacementsFile()
-    disp_file.read(displacements_file)
+    disp_file.read(displacements_path)
 
     # Create the parameter space.
     # We do this now, because if anything fails here, we don't want to waste
