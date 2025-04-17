@@ -7,9 +7,26 @@ import csv
 import datetime
 import time
 from pathlib import Path
+import logging
 
 import jax
 import numpy as np
+
+logger = logging.getLogger(__name__)
+
+def check_jax_devices():
+    """Check if JAX can detect GPU devices.
+
+    If no GPU devices are detected, a warning is logged.
+    """
+    try:
+        gpu_devices = jax.devices('gpu')
+    except RuntimeError:
+        logger.warning(
+            'JAX could not detect any GPU devices. The execution will default '
+            'to CPU only which can be significantly slower.')
+        return
+    logger.info(f'JAX detected {len(gpu_devices)} GPU(s).')
 
 
 def benchmark_calculator(
