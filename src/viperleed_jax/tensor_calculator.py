@@ -119,6 +119,19 @@ class TensorLEEDCalculator:
         self.interpolation_deg = interpolation_deg
         self.bc_type = bc_type
 
+        # get experimental intensities and hk
+        if not rparams.expbeams:
+            msg = (
+                'No (pseudo)experimental beams loaded. This is required '
+                'for the structure optimization.'
+            )
+            logger.error(msg)
+
+        exp_energies, _, _, exp_intensities = beamlist_to_array(
+            rparams.expbeams
+        )
+        exp_hk = [b.hk for b in rparams.expbeams]
+
         # beam indices
         beam_indices = [beam.hk for beam in rparams.ivbeams]
         self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
@@ -176,12 +189,6 @@ class TensorLEEDCalculator:
 
         # calculate batching
         self.batching = Batching(self.energies, ref_calc_params.lmax)
-
-        # get experimental intensities and hk
-        exp_energies, _, _, exp_intensities = beamlist_to_array(
-            rparams.expbeams
-        )
-        exp_hk = [b.hk for b in rparams.expbeams]
 
         # determine the mapping
         exp_beam_mapping = []

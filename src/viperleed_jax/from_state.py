@@ -35,12 +35,7 @@ def calculator_from_state(
     last_state = run_viperleed_initialization(calc_path)
     slab, rpars = last_state.slab, last_state.rpars
 
-    if not rpars.expbeams:
-        msg = (
-            'No (pseudo)experimental beams loaded. This is required '
-            'for the structure optimization.'
-        )
-        raise RuntimeError(msg)
+
     # load and read the DISPLACEMENTS file
     if displacements_file is None:
         displacements_file = calc_path / 'DISPLACEMENTS'
