@@ -40,7 +40,7 @@ def calculator_from_objects(
 
     # decide on T-matrix recalculation
     if recalculate_ref_tmatrices is None:
-        recalc_ref_tmatrices = rpars.SEARCH_RECALC_TMATRICES
+        recalculate_ref_tmatrices = rpars.SEARCH_RECALC_TMATRICES
 
     # log info or warning on used GPU/CPU
     check_jax_devices()
@@ -121,7 +121,7 @@ def calculator_from_objects(
         phaseshifts,
         slab,
         rpars,
-        recalculate_ref_t_matrices=recalc_ref_tmatrices,
+        recalculate_ref_t_matrices=recalculate_ref_tmatrices,
         **kwargs,
     )
 
