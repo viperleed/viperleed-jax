@@ -23,6 +23,7 @@ from viperleed_jax.dense_quantum_numbers import (
     vmapped_l_array_to_compressed_quantum_index,
 )
 from viperleed_jax.interpolation import interpolate_ragged_array
+from viperleed_jax.lib.calculator import normalize_occ_vector
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
 from viperleed_jax.propagator import (
     calc_propagator,
@@ -572,9 +573,11 @@ class TensorLEEDCalculator:
         vib_amps_au = self._reference_vib_amps(vib_params)
 
         # chemical weights
-        chem_weights = jnp.asarray(
+        non_normalized_chem_weights = jnp.asarray(
             self._occ_weight_transformer(occ_params)
         )
+        chem_weights = normalize_occ_vector(
+            non_normalized_chem_weights, tuple(self.atom_ids.tolist()))
 
         # Loop over batches
         # -----------------
