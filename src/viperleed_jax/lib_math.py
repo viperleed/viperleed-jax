@@ -212,12 +212,12 @@ def project_onto_plane_sum_1(vector):
     return project_through_origin @ _vector + offset_to_sum_one_plane
 
 
-@partial(jax.jit, static_argnames=('index','fun'))
-def apply_fun_grouped(in_vec, index, fun):
+@partial(jax.jit, static_argnames=('index','func'))
+def apply_fun_grouped(in_vec, index, func):
     """Apply a function separately to groups determined by an index array.
 
     For each unique index value in `index`, this function collects all elements
-    in `in_vec` with the same index, applies `fun` to that group, and writes
+    in `in_vec` with the same index, applies `func` to that group, and writes
     the transformed elements back into their original positions.
 
     Parameters
@@ -226,7 +226,7 @@ def apply_fun_grouped(in_vec, index, fun):
         Input vector of shape (n,).
     index : tuple
         Integer array of shape (n,) indicating group membership.
-    fun : callable
+    func : callable
         Function that takes a 1D array of arbitrary length and returns a 1D
         array of the same length. Applied separately to each group.
 
@@ -234,11 +234,11 @@ def apply_fun_grouped(in_vec, index, fun):
     -------
     out_vec : jax.Array
         Output vector of shape (n,) where each group has been independently
-        transformed by `fun`.
+        transformed by `func`.
 
     Notes
     -----
-    - `fun` must be shape-preserving for each group (input and output lengths
+    - `func` must be shape-preserving for each group (input and output lengths
       must match).
 
     Examples
@@ -259,7 +259,7 @@ def apply_fun_grouped(in_vec, index, fun):
     for idx in unique_inds:
         mask = index == idx
         group = in_vec[mask]
-        transformed = fun(group)
+        transformed = func(group)
         # Store the mask and transformed group
         # put into the output vector
         out_vec = out_vec.at[mask].set(transformed)
