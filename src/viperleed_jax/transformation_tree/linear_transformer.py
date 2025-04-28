@@ -76,10 +76,14 @@ class LinearTransformer(Transformer):
     @property
     def is_injective(self):
         """Check if the transformation is injective."""
+        if self.in_dim == 0:
+            return False
         return np.linalg.matrix_rank(self.weights) == self.in_dim
 
     @property
     def is_surjective(self):
+        if self.in_dim == 0:
+            return False
         """Check if the transformation is surjective."""
         return np.linalg.matrix_rank(self.weights.T) == self.out_dim
 
