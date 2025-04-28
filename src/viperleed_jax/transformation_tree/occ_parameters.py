@@ -100,6 +100,35 @@ class OccLinkedConstraint(OccConstraintNode):
 
 
 class OccTree(DisplacementTree):
+    r"""Tree for occupational parameters.
+
+    TODO
+
+    Parameters
+    ----------
+    atom_basis: AtomBasis
+        The atom basis to be used for the tree.
+
+    Notes
+    -----
+    In addition to symmetry, chemical parameters (occupations) MUST fulfill the
+    physical constraint that the sum of occupations for each scattering site
+    must be less than or equal to 1. This is currently NOT enforced in the tree,
+    and MUST be enforced in the calculator to ensure physically valid
+    configurations.
+    The reason we do not enforce this constraint in the tree at this time is
+    that the condition \sum{c_i} \leq 1 is inherently non-linear, and
+    therefore not easily compatible with the current implementation that builds
+    on the assumption of affine transformations.
+
+    To enforce the constraint, we need to distinguish between two cases:
+    1. The sum of occupations is less than or equal to 1: In this case, the
+       occupations are already valid and do not need to be modified.
+    2. The sum of occupations is greater than 1: In this case, we need to
+       project the occupations onto the hyperplane defined by the constraint
+       \sum{c_i} = 1.
+    """
+
     def __init__(self, atom_basis):
         super().__init__(
             atom_basis,
