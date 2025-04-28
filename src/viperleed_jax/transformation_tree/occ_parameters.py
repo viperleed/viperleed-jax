@@ -52,36 +52,6 @@ class OccConstraintNode(LinearConstraintNode):
         )
 
 
-class OccSharedConstraint(OccConstraintNode):
-    """Constraint for sharing occupation to 100%."""
-
-    def __init__(self, children):
-        name = 'shared occ'
-        dof = len(children)
-
-        if any(not isinstance(child, OccLeafNode) for child in children):
-            raise ValueError('Children must be OccLeaf nodes.')
-
-        if any(child.num != children[0].num for child in children):
-            raise ValueError('Children must be of the same atom.')
-        # set the number of the atom
-        self.num = children[0].num
-
-        transformers = []
-        for child in children:
-            weights = np.full(shape=(1, dof), fill_value=-1 / dof)
-            weights[0, children.index(child)] = 1
-            bias = np.ones(1)
-            transformers.append(LinearTransformer(weights, bias, (1,)))
-        super().__init__(
-            dof=dof,
-            name=name,
-            children=children,
-            transformers=transformers,
-            layer=DisplacementTreeLayers.Symmetry,
-        )
-
-
 class OccSymmetryConstraint(OccConstraintNode):
     """Constraint for enforcing symmetry in occupation."""
 
@@ -143,22 +113,8 @@ class OccTree(DisplacementTree):
         occ_leaf_nodes = [OccLeafNode(ase) for ase in self.atom_basis]
         self.nodes.extend(occ_leaf_nodes)
 
-        # iterate over atom-site-elements and link ones from the same atom
-        # since we can't have more than 100% occupancy
-        # This does not reduce the number of free parameters, but it's a physical
-        # requirement that we need to enforce
-        linked_nodes = []
-        for num in range(
-            self.atom_basis.max_atom_number + 1
-        ):  # inclusive range
-            atom_nodes = [node for node in self.leaves if node.num == num]
-            if not atom_nodes:
-                continue
-            linked_node = OccSharedConstraint(children=atom_nodes)
-            self.nodes.append(linked_node)
-            linked_nodes.append(linked_node)
-
         # occupational parameters need to fulfill symmetry constraints
+        linked_nodes = []
         for link in self.atom_basis.atom_number_symmetry_links:
             # put all linked atoms in the same symmetry group
 
@@ -178,7 +134,6 @@ class OccTree(DisplacementTree):
             self.nodes.append(symmetry_node)
 
     def apply_explicit_constraint(self, constraint_line):
-        # self._check_constraint_line_type(constraint_line, "occ")
         _, selected_roots = self._select_constraint(constraint_line)
 
         if not all(
