@@ -15,7 +15,8 @@ from viperleed_jax.lib_math import (
     safe_norm,
     spherical_harmonics_components,
     spherical_to_cart,
-    project_onto_plane_sum_1
+    project_onto_plane_sum_1,
+    apply_fun_grouped
 )
 
 
@@ -293,6 +294,81 @@ class TestProjectSum1Plane:
         proj = project_onto_plane_sum_1(x)
         expected = jnp.ones(5) / 5
         assert np.allclose(proj, expected), f"Projected zero vector is {proj}, expected {expected}"
+
+
+class TestApplyFunGrouped:
+    def test_apply_fun_grouped_basic_doubling(self):
+        """Test doubling groups individually."""
+        v = jnp.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+        ind = (0, 1, 0, 1, 2, 2)
+
+        def fun(x):
+            return x * 2
+
+        result = apply_fun_grouped(v, ind, fun)
+        expected = jnp.array([2.0, 4.0, 6.0, 8.0, 10.0, 12.0])
+
+        assert result == pytest.approx(expected)
+
+
+    def test_apply_fun_grouped_identity(self):
+        """Test with the identity function (should return input unchanged)."""
+        v = jnp.array([1.0, 2.0, 3.0, 4.0])
+        ind = (0, 0, 1, 1)
+
+        result = apply_fun_grouped(v, ind, lambda x: x)
+
+        assert result == pytest.approx(v)
+
+
+    def test_apply_fun_grouped_sum_normalization(self):
+        """Normalize each group so its sum is 1."""
+        v = jnp.array([2.0, 2.0, 1.0, 3.0])
+        ind = (0, 0, 1, 1)
+
+        def normalize(x):
+            return x / jnp.sum(x)
+
+        result = apply_fun_grouped(v, ind, normalize)
+
+        expected = jnp.array(
+            [
+                0.5,
+                0.5,  # [2,2] normalized
+                0.25,
+                0.75,  # [1,3] normalized
+            ]
+        )
+
+        assert result == pytest.approx(expected)
+
+
+    def test_apply_fun_grouped_empty_group_behavior(self):
+        """Ensure behavior is fine when some group index is missing (e.g., no '2' label)."""
+        v = jnp.array([1.0, 2.0, 3.0])
+        ind = (0, 0, 1)  # No group '2'
+
+        def fun(x):
+            return x + 1
+
+        result = apply_fun_grouped(v, ind, fun)
+        expected = jnp.array([2.0, 3.0, 4.0])
+
+        assert result == pytest.approx(expected)
+
+
+    def test_apply_fun_grouped_singleton_groups(self):
+        """Test where each element is its own group."""
+        v = jnp.array([10.0, 20.0, 30.0])
+        ind = (0, 1, 2)
+
+        def fun(x):
+            return x * 0.1
+
+        result = apply_fun_grouped(v, ind, fun)
+        expected = jnp.array([1.0, 2.0, 3.0])
+
+        assert result == pytest.approx(expected)
 
 
 if __name__ == '__main__':

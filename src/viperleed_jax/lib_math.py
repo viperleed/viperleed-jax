@@ -3,10 +3,13 @@
 __authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
 __created__ = '2024-01-02'
 
+from functools import partial
+
 import jax
 import jax.numpy as jnp
 from jax.scipy.special import sph_harm
 from spbessax import functions
+import numpy as np
 
 from viperleed_jax.dense_quantum_numbers import DENSE_L, DENSE_M, MAXIMUM_LMAX
 
@@ -182,3 +185,58 @@ def project_onto_plane_sum_1(vector):
     project_through_origin = jnp.eye(dim) - jnp.ones((dim, dim)) / dim
     offset_to_sum_one_plane = jnp.ones(dim) / dim
     return project_through_origin @ _vector + offset_to_sum_one_plane
+
+
+@partial(jax.jit, static_argnames=('index','fun'))
+def apply_fun_grouped(in_vec, index, fun):
+    """Apply a function separately to groups determined by an index array.
+
+    For each unique index value in `index`, this function collects all elements
+    in `in_vec` with the same index, applies `fun` to that group, and writes
+    the transformed elements back into their original positions.
+
+    Parameters
+    ----------
+    in_vec : jax.Array
+        Input vector of shape (N,).
+    index : tuple
+        Integer array of shape (N,) indicating group membership.
+    fun : callable
+        Function that takes a 1D array of arbitrary length and returns a 1D
+        array of the same length. Applied separately to each group.
+
+    Returns
+    -------
+    out_vec : jax.Array
+        Output vector of shape (N,) where each group has been independently
+        transformed by `fun`.
+
+    Notes
+    -----
+    - `fun` must be shape-preserving for each group (input and output lengths
+      must match).
+
+    Examples
+    --------
+    >>> import jax.numpy as jnp
+    >>> v = jnp.array([1., 2., 3., 4., 5., 6.])
+    >>> ind = jnp.array([0, 1, 0, 1, 2, 2])
+    >>> def double(x):
+    ...     return x * 2
+    >>> apply_fun_grouped(v, ind, double)
+    Array([ 2.,  4.,  6.,  8., 10., 12.], dtype=float32)
+    """
+    unique_inds = np.unique(index)
+
+    # prepare output buffer
+    out_vec = jnp.zeros_like(in_vec)
+
+    for idx in unique_inds:
+        mask = index == idx
+        group = in_vec[mask]
+        transformed = fun(group)
+        # Store the mask and transformed group
+        # put into the output vector
+        out_vec = out_vec.at[mask].set(transformed)
+
+    return out_vec
