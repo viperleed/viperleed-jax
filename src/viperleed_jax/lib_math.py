@@ -177,7 +177,32 @@ def spherical_to_cart(spherical_coordinates):
 
 
 def project_onto_plane_sum_1(vector):
-    """Project a vector onto the plane given by \sum{x_i}=1."""
+    """Project a vector onto the plane defined by sum(x_i) = 1.
+
+    This function orthogonally projects an input vector onto the hyperplane
+    in which the sum of all elements equals 1.
+
+    Parameters
+    ----------
+    vector : array_like
+        Input 1D vector of shape (n,).
+
+    Returns
+    -------
+    projected_vector : jax.Array
+        1D array of shape (n,) representing the projection of the input
+        vector onto the plane sum(x_i) = 1.
+
+    Examples
+    --------
+    >>> import jax.numpy as jnp
+    >>> from your_module import project_onto_plane_sum_1
+    >>> v = jnp.array([0.6, 0.4, 0.2])
+    >>> project_onto_plane_sum_1(v)
+    Array([0.5333333, 0.3333333, 0.1333333], dtype=float32)
+    >>> jnp.sum(project_onto_plane_sum_1(v))
+    Array(1., dtype=float32)
+    """
     # transform to jax array if needed
     _vector = jnp.asarray(vector)
 
