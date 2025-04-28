@@ -223,9 +223,9 @@ def apply_fun_grouped(in_vec, index, fun):
     Parameters
     ----------
     in_vec : jax.Array
-        Input vector of shape (N,).
+        Input vector of shape (n,).
     index : tuple
-        Integer array of shape (N,) indicating group membership.
+        Integer array of shape (n,) indicating group membership.
     fun : callable
         Function that takes a 1D array of arbitrary length and returns a 1D
         array of the same length. Applied separately to each group.
@@ -233,7 +233,7 @@ def apply_fun_grouped(in_vec, index, fun):
     Returns
     -------
     out_vec : jax.Array
-        Output vector of shape (N,) where each group has been independently
+        Output vector of shape (n,) where each group has been independently
         transformed by `fun`.
 
     Notes
