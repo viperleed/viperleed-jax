@@ -15,6 +15,7 @@ from viperleed_jax.lib_math import (
     safe_norm,
     spherical_harmonics_components,
     spherical_to_cart,
+    project_onto_plane_sum_1
 )
 
 
@@ -250,6 +251,48 @@ class TestBessel:
         z = jnp.array([0.1, 1.0, 2.0, 3.0]) - 2.0j
         # For z=0, the expression should be directly computed without vectorization
         assert bessel(z, n1) == pytest.approx(scipy_bessel(n1, z))
+
+
+class TestProjectSum1Plane:
+
+    def test_projection_preserves_sum(self):
+        """Test that the projection results in a vector summing to 1."""
+        x = jnp.array([3.0, 0.0, 0.0])
+        proj = project_onto_plane_sum_1(x)
+        assert jnp.allclose(jnp.sum(proj), 1.0), f"Sum after projection was {jnp.sum(proj)}"
+
+    def test_projection_of_vector_on_plane_is_identity(self):
+        """Test that a vector already on the plane remains unchanged."""
+        x = jnp.array([0.5, 0.25, 0.25])
+        assert jnp.sum(x), pytest.approx(1.0)  # Pre-check
+        proj = project_onto_plane_sum_1(x)
+        assert jnp.allclose(proj, x), f"Projection altered a point already on the plane."
+
+    def test_projection_is_linear_up_to_offset(self):
+        """Test that projecting two vectors and summing is predictable."""
+        x = jnp.array([2.0, 0.0, 0.0])
+        y = jnp.array([0.0, 3.0, 0.0])
+        proj_x = project_onto_plane_sum_1(x)
+        proj_y = project_onto_plane_sum_1(y)
+        proj_sum = project_onto_plane_sum_1(x + y)
+
+        # Projection is affine, not linear, so we check:
+        assert jnp.sum(proj_x) == pytest.approx(1.0)
+        assert jnp.sum(proj_y) == pytest.approx(1.0)
+        assert jnp.sum(proj_sum) == pytest.approx(1.0)
+
+    def test_high_dimensional_projection(self):
+        """Test projection in higher dimensions."""
+        x = jnp.arange(1, 11, dtype=float)  # 10D vector
+        proj = project_onto_plane_sum_1(x)
+        assert jnp.sum(proj) == pytest.approx(1.0), f"Sum after projection was {jnp.sum(proj)}"
+
+    def test_zero_vector_projection(self):
+        """Test projection of a zero vector."""
+        x = jnp.zeros(5)
+        proj = project_onto_plane_sum_1(x)
+        expected = jnp.ones(5) / 5
+        assert np.allclose(proj, expected), f"Projected zero vector is {proj}, expected {expected}"
 
 
 if __name__ == '__main__':
