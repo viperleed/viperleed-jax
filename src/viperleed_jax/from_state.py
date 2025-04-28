@@ -3,6 +3,8 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-08-28'
 
+from pathlib import Path
+
 from jax import config
 
 config.update('jax_debug_nans', False)
@@ -17,7 +19,7 @@ import tempfile
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.run import run_calc
 
-from from_objects import calculator_from_objects
+from .from_objects import calculator_from_objects
 
 def calculator_from_paths(inputs_path,
                           tensor_path,
