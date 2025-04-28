@@ -218,7 +218,7 @@ class TestHARMONY:
             jnp.array([jnp.arccos((C[0] + EPS) / safe_norm(C))]),
         )
         # Compare with the output of HARMONY function
-        assert spherical_harmonics_components(C, LMAX) == pytest.approx(
+        assert spherical_harmonics_components(LMAX, C) == pytest.approx(
             expected_output
         )
 
@@ -231,7 +231,7 @@ class TestHARMONY:
             DENSE_M[2 * LMAX], DENSE_L[2 * LMAX], jnp.pi * 0.25, 0
         )
         # Compare with the output of HARMONY function
-        assert spherical_harmonics_components(C, LMAX) == pytest.approx(
+        assert spherical_harmonics_components(LMAX, C) == pytest.approx(
             expected_output
         )
 
