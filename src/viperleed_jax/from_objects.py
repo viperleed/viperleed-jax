@@ -30,7 +30,7 @@ def calculator_from_objects(
     tensor_path,
     displacements_path,
     t_leed_l_max=None,
-    recalculate_ref_tmatrices=None,
+    recalculate_ref_t_matrices=None,
     **kwargs,
 ):
     # set LMAX cutoff
@@ -39,8 +39,8 @@ def calculator_from_objects(
         t_leed_l_max = ref_calc_lmax
 
     # decide on T-matrix recalculation
-    if recalculate_ref_tmatrices is None:
-        recalculate_ref_tmatrices = rpars.SEARCH_RECALC_TMATRICES
+    if recalculate_ref_t_matrices is None:
+        recalculate_ref_t_matrices = rpars.SEARCH_RECALC_TMATRICES
 
     # log info or warning on used GPU/CPU
     check_jax_devices()
@@ -98,7 +98,7 @@ def calculator_from_objects(
     logger.debug('Tensor processing successful.')
 
     # read Phaseshift data using existing phaseshift reader
-    phaseshifts_path = calc_path / 'PHASESHIFTS'
+    phaseshifts_path = displacements_path.parent /'PHASESHIFTS' # TODO: rename!!
     _, raw_phaseshifts, _, _ = readPHASESHIFTS(
         slab, rpars, readfile=phaseshifts_path, check=True, ignoreEnRange=False
     )
@@ -121,7 +121,7 @@ def calculator_from_objects(
         phaseshifts,
         slab,
         rpars,
-        recalculate_ref_t_matrices=recalculate_ref_tmatrices,
+        recalculate_ref_t_matrices=recalculate_ref_t_matrices,
         **kwargs,
     )
 
