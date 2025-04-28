@@ -171,3 +171,14 @@ def spherical_to_cart(spherical_coordinates):
     z = r * jnp.cos(theta)
 
     return jnp.array([z, x, y])
+
+
+def project_onto_plane_sum_1(vector):
+    """Project a vector onto the plane given by \sum{x_i}=1."""
+    # transform to jax array if needed
+    _vector = jnp.asarray(vector)
+
+    dim = _vector.shape[0]
+    project_through_origin = jnp.eye(dim) - jnp.ones((dim, dim)) / dim
+    offset_to_sum_one_plane = jnp.ones(dim) / dim
+    return project_through_origin @ _vector + offset_to_sum_one_plane
