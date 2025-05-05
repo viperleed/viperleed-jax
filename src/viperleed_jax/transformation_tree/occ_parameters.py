@@ -143,11 +143,11 @@ class OccTree(DisplacementTree):
         self.nodes.extend(occ_leaf_nodes)
 
         # occupational parameters need to fulfill symmetry constraints
-        linked_nodes = []
+
         for link in self.atom_basis.atom_number_symmetry_links:
             # put all linked atoms in the same symmetry group
 
-            nodes_to_link = [node for node in linked_nodes if node.num in link]
+            nodes_to_link = [node for node in occ_leaf_nodes if node.num in link]
             if not nodes_to_link:
                 continue
             symmetry_node = OccSymmetryConstraint(
@@ -155,7 +155,7 @@ class OccTree(DisplacementTree):
             )
             self.nodes.append(symmetry_node)
 
-        unlinked_site_el_nodes = [node for node in linked_nodes if node.is_root]
+        unlinked_site_el_nodes = [node for node in occ_leaf_nodes if node.is_root]
         for node in unlinked_site_el_nodes:
             symmetry_node = OccSymmetryConstraint(
                 children=[node], name='Symmetry'
