@@ -255,6 +255,8 @@ class DisplacementTree(LinearTree):
         symmetry violations, and raises an error if any are found.
         """
         for root in self.roots:
+            if root.is_leaf:  # TODO: check if this is correct once new bounds handling is implemented
+                continue
             root.check_bounds_valid()
 
     def _check_constraint_line_type(self, constraint_line, constraint_type):
