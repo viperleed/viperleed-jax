@@ -372,38 +372,56 @@ class ImplicitLinearConstraintNode(LinearConstraintNode):
         child = children[0]
         child.check_bounds_valid()
 
-        # using the child's free property, reduce the dof as much as possible
-        # by removing fixed degrees of freedom
-        dof = np.sum(child.free)
-        weights = np.diag(child.free)[child.free]
-        weights = (weights.astype(float)).T
-        implicit_trafo = LinearMap(weights, (child.dof,))
+        # determine the number of degrees of freedom
 
-        # TODO: does this automatically raise if we have bound conflicts?
+        if np.sum(child.free) == 0:
+            # if all bounds are fixed, we have an implicitly fixed node with
+            # no degrees of freedom
+            super().__init__(
+                dof=0,
+                name='Implicit Fixed',
+                children=[child],
+                transformers=[
+                    LinearMap(np.zeros((child.dof, 0)), (child.dof,))
+                ],
+                layer=DisplacementTreeLayers.Implicit_Constraints,
+            )
+            return
 
-        # now get a transformer that enforces the bounds
-        free, lower, upper = child.stacked_bounds()
-        if np.any(free):
-            partial_trafo = child.collapse_transformer().select_rows(free)
-            lower = lower[free]
-            upper = upper[free]
-        else:
-            # all fixed, but may still have a default value
-            partial_trafo = child.collapse_transformer()
-        inverted_weights = np.linalg.pinv(partial_trafo.weights)
-        norm_lower = inverted_weights @ (lower - partial_trafo.biases)
-        norm_upper = inverted_weights @ (upper - partial_trafo.biases)
-        weights = np.diag(norm_upper - norm_lower)
-        biases = norm_lower
-        range_trafo = LinearTransformer(weights, biases)
+        # First, we determine and reduce the number of degrees of freedom
 
-        # compose the two transformers
-        composed_transformer = implicit_trafo.compose(range_trafo)
+        # get bounds and free values
+        _, lower, upper = child.stacked_bounds()
+        free_mask = ~np.isclose(lower, upper)
+
+        collapsed_trafo = child.collapse_transformer().select_rows(free_mask)
+
+        # Make sure the transformer is invertible by checking condition number
+        cond = np.linalg.cond(collapsed_trafo.weights)
+        if cond > 1e12:
+            raise ValueError('Transformer matrix is too ill-conditioned '
+                             'to invert safely')
+        inv = np.linalg.pinv(collapsed_trafo.weights)
+        p_lower = inv @ lower[free_mask]
+        p_upper = inv @ upper[free_mask]
+
+        _, s, vh = np.linalg.svd(collapsed_trafo.weights, full_matrices=False)
+        dof = np.linalg.matrix_rank(collapsed_trafo.weights)
+
+        m_prime = np.diag(p_upper - p_lower) @ vh.T
+        b_prime = p_lower
+
+
+        range_trafo = LinearTransformer(
+            m_prime,
+            b_prime,
+            (child.dof,)
+        )
 
         super().__init__(
             dof=dof,
-            name='Implicit Constraint' if dof > 0 else 'Implicit Fixed',
+            name='Implicit Constraint',
             children=[child],
-            transformers=[composed_transformer],
+            transformers=[range_trafo],
             layer=DisplacementTreeLayers.Implicit_Constraints,
         )
