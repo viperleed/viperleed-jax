@@ -3,6 +3,7 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-10-07'
 
+import logging
 from abc import ABC, abstractmethod
 from enum import IntEnum
 from itertools import compress
@@ -46,17 +47,54 @@ class TransformationTree(ABC):
         self.nodes = []
         self.name = name
         self.root_node_name = root_node_name
-        self._tree_root_has_been_created = False
+        self._current_construction_order = ConstructionOrder.SYMMETRY
         self._initialize_tree()
 
     @abstractmethod
     def _initialize_tree(self):
         """Set up the tree."""
 
+    def _check_construction_order(self, order):
+        """Check if the tree is in the correct construction order."""
+        if self._current_construction_order == ConstructionOrder.ROOT:
+            raise ValueError(
+                'Tree has already been finalized. No further modifications '
+                'are allowed.'
+            )
+        if order < self._current_construction_order:
+            msg = (f'Cannot apply {order.name} after '
+                   f'{self._current_construction_order.name}.')
+            raise ValueError(msg)
+        if order > self._current_construction_order:
+            self._current_construction_order = order
+            logger.debug(
+                f'{self.name}: Construction order {order.name}.'
+            )
+
+    @abstractmethod
+    def apply_explicit_constraint(self):
+        """Apply an explicit constraint to the tree."""
+        self._check_construction_order(ConstructionOrder.EXPLICIT_CONSTRAINT)
+
+    @abstractmethod
+    def apply_offsets(self):
+        """Apply offsets to the tree."""
+        self._check_construction_order(ConstructionOrder.OFFSET)
+
+    @abstractmethod
+    def apply_bounds(self):
+        """Apply bounds to the tree."""
+        self._check_construction_order(ConstructionOrder.BOUNDS)
+
+    @abstractmethod
+    def apply_implicit_constraints(self):
+        """Apply implicit constraints to the tree."""
+        self._check_construction_order(ConstructionOrder.IMPLICIT_CONSTRAINT)
+
     @property
     def finalized(self):
         """Return whether the tree has been finalized."""
-        return self._tree_root_has_been_created
+        return self._current_construction_order == ConstructionOrder.ROOT
 
     @abstractmethod
     def finalize_tree(self):
@@ -81,7 +119,7 @@ class TransformationTree(ABC):
     @abstractmethod
     def _create_root(self):
         """Create a root node that aggregates all root nodes in the subtree."""
-        self._tree_root_has_been_created = True
+        self._check_construction_order(ConstructionOrder.ROOT)
 
     @abstractmethod
     def _analyze_tree(self):
@@ -89,7 +127,7 @@ class TransformationTree(ABC):
 
     def graphical_export(self, filename):
         """Create and save a graphical representation of the tree to file."""
-        if not self._tree_root_has_been_created:
+        if not self.finalized:
             raise ValueError('Subtree root has not yet been created.')
         # Left-to-right orientation looks better for broad trees like we have
         UniqueDotExporter(self.root, options=['rankdir=LR']).to_picture(
@@ -116,7 +154,7 @@ class LinearTree(InvertibleTransformationTree):
 
     def _create_root(self):
         """Create a root node that aggregates all root nodes in the subtree."""
-        if self._tree_root_has_been_created:
+        if self.finalized:
             raise ValueError('Subtree root has already been created.')
         if not self.roots:
             raise ValueError('No root nodes found in subtree.')
@@ -129,7 +167,7 @@ class LinearTree(InvertibleTransformationTree):
                 node.dof
             )
             bias = np.zeros(node.dof)
-            transformers.append(LinearTransformer(weights, bias, (node.dof,)))
+            transformers.append(AffineTransformer(weights, bias, (node.dof,)))
             cum_node_dof += node.dof
         self.root = LinearConstraintNode(
             dof=root_dof,
@@ -216,12 +254,32 @@ class DisplacementTree(LinearTree):
 
     def _analyze_tree(self):
         """Analyze the finalized tree and calculate the functionals."""
-        if not self._tree_root_has_been_created:
+        if not self.finalized:
             raise ValueError('Root node must be created first.')
         for functional in self.functionals:
             functional.analyze_tree(self)
 
+
+    def apply_offsets(self, line):
+        """Apply offsets to the children of the node."""
+        super().apply_offsets()
+        targets = line.targets
+        _, explicitly_selected_leaves, selected_roots = self._target_nodes(
+            targets
+        )
+        primary_leaves = self._select_primary_leaf(
+            selected_roots, explicitly_selected_leaves
+        )
+
+        # apply the bound to the primary leaf only – others will be linked
+        # (this is so that for e.g. geometries the bounds are not swapped
+        # and violate symmetry)
+        for leaf in primary_leaves.values():
+            leaf.update_offsets(line)
+
     def apply_bounds(self, line):
+        """Apply bounds to the children of the node."""
+        super().apply_bounds()
         targets = line.targets
         _, explicitly_selected_leaves, selected_roots = self._target_nodes(
             targets
@@ -236,21 +294,12 @@ class DisplacementTree(LinearTree):
         for leaf in primary_leaves.values():
             leaf.update_bounds(line)
 
-    def apply_offsets(self, line):
-        """Apply offsets to the children of the node."""
-        targets = line.targets
-        _, explicitly_selected_leaves, selected_roots = self._target_nodes(
-            targets
-        )
-        primary_leaves = self._select_primary_leaf(
-            selected_roots, explicitly_selected_leaves
-        )
-
-        # apply the bound to the primary leaf only – others will be linked
-        # (this is so that for e.g. geometries the bounds are not swapped
-        # and violate symmetry)
-        for leaf in primary_leaves.values():
-            leaf.update_offsets(line)
+    def apply_implicit_constraints(self):
+        """Apply implicit constraints to the tree."""
+        super().apply_implicit_constraints()
+        for root in self.roots:
+            implicit_node = ImplicitLinearConstraintNode([root])
+            self.nodes.append(implicit_node)
 
     @property
     def collapsed_transformer_scatterer_order(self):
@@ -329,8 +378,3 @@ class DisplacementTree(LinearTree):
             targets
         )
         return implicit_leaves, explicit_leaves, selected_roots
-
-    def apply_implicit_constraints(self):
-        for root in self.roots:
-            implicit_node = ImplicitLinearConstraintNode([root])
-            self.nodes.append(implicit_node)
