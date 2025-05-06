@@ -4,6 +4,7 @@ __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-10-07'
 
 from abc import ABC, abstractmethod
+from enum import IntEnum
 from itertools import compress
 
 import anytree
@@ -26,6 +27,17 @@ from .linear_transformer import AffineTransformer, stack_transformers
 # should not be a performance issue.
 anytree.config.ASSERTIONS = True
 
+logger = logging.getLogger(__name__)
+
+class ConstructionOrder(IntEnum):
+    """Enum for the construction order of transformation trees."""
+
+    SYMMETRY = 0
+    EXPLICIT_CONSTRAINT = 1
+    OFFSET = 2
+    BOUNDS = 3
+    IMPLICIT_CONSTRAINT = 4
+    ROOT = 5
 
 class TransformationTree(ABC):
     """Abstract base class for a transformation tree."""
