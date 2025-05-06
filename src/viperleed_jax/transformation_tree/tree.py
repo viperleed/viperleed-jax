@@ -20,7 +20,7 @@ from viperleed_jax.transformation_tree.nodes import (
     LinearConstraintNode,
 )
 
-from .linear_transformer import LinearTransformer, stack_transformers
+from .linear_transformer import AffineTransformer, stack_transformers
 
 # Enable checks for the anytree library; we don't deal with huge trees so this
 # should not be a performance issue.

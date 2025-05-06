@@ -9,7 +9,7 @@ from .displacement_tree_layers import DisplacementTreeLayers
 from .tree import (
     LinearTree,
 )
-from .linear_transformer import LinearTransformer
+from .linear_transformer import AffineTransformer
 from .nodes import LinearConstraintNode, LinearLeafNode
 
 # Note: currently, V0r is (and can only be) a single parameter, which makes
@@ -67,7 +67,7 @@ class V0rBoundNode(LinearConstraintNode):
 
         weights = [child.bound.upper - child.bound.lower]
         biases = child.bound.lower
-        transformer = LinearTransformer(weights, biases, (1,))
+        transformer = AffineTransformer(weights, biases, (1,))
 
         super().__init__(
             dof=1,

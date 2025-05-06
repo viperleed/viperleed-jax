@@ -20,7 +20,7 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
 )
 from viperleed_jax.transformation_tree.linear_transformer import (
     LinearMap,
-    LinearTransformer,
+    AffineTransformer,
     stack_transformers,
 )
 
@@ -79,7 +79,7 @@ class LinearTreeNode(TransformationTreeNode):
     def set_transformer(self, transformer):
         """Set transformer for the edge connecting this node to its parent."""
         # check if the transformer is valid
-        if not isinstance(transformer, LinearTransformer):
+        if not isinstance(transformer, AffineTransformer):
             msg = (
                 f'Transformer must be an instance of LinearTransformer. '
                 f'Invalid transformer: {transformer}'
@@ -258,7 +258,7 @@ class LinearConstraintNode(LinearTreeNode):
 
         stacked_weights = np.vstack(child_weights)
         stacked_biases = np.hstack(child_biases)
-        return LinearTransformer(
+        return AffineTransformer(
             stacked_weights,
             stacked_biases,
             (np.sum([c.dof for c in self.children]),),
@@ -412,7 +412,7 @@ class ImplicitLinearConstraintNode(LinearConstraintNode):
         b_prime = p_lower
 
 
-        range_trafo = LinearTransformer(
+        range_trafo = AffineTransformer(
             m_prime,
             b_prime,
             (child.dof,)

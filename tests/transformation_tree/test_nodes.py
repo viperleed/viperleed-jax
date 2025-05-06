@@ -10,7 +10,7 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
 from viperleed_jax.transformation_tree.linear_transformer import (
-    LinearTransformer,
+    AffineTransformer,
 )
 from viperleed_jax.transformation_tree.nodes import (
     LinearTreeNode,
@@ -30,7 +30,7 @@ class MockLinearTreeNode(LinearTreeNode):
         )
 
     def set_transformer(self, transformer):
-        if not isinstance(transformer, LinearTransformer):
+        if not isinstance(transformer, AffineTransformer):
             raise TypeError('Invalid transformer type.')
         if transformer.out_dim != self.dof:
             raise ValueError('Transformer output dimension mismatch.')
@@ -44,7 +44,7 @@ def test_transformation_tree_node():
     with pytest.raises(ValueError):
         _ = node.transformer  # Transformer is not set
 
-    transformer = LinearTransformer(weights=np.eye(2), biases=np.zeros(2))
+    transformer = AffineTransformer(weights=np.eye(2), biases=np.zeros(2))
     node.set_transformer(transformer)
     assert node.transformer is transformer
 
@@ -52,8 +52,8 @@ def test_transformation_tree_node():
 def test_linear_tree_node_transformer_validation():
     """Test transformer validation in LinearTreeNode."""
     node = MockLinearTreeNode(dof=2, layer=DisplacementTreeLayers.Base)
-    valid_transformer = LinearTransformer(weights=np.eye(2), biases=np.zeros(2))
-    invalid_transformer = LinearTransformer(
+    valid_transformer = AffineTransformer(weights=np.eye(2), biases=np.zeros(2))
+    invalid_transformer = AffineTransformer(
         weights=np.eye(3), biases=np.zeros(3)
     )
 

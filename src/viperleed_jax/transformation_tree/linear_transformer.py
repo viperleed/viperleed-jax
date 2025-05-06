@@ -35,7 +35,7 @@ class Transformer(ABC):
     def __hash__(self):
         """Calculate a hash for the transformer."""
 
-class LinearTransformer(Transformer):
+class AffineTransformer(Transformer):
     """Linear transformation class that implements an affine transformation."""
 
     def __init__(self, weights, biases, out_reshape=None):
@@ -110,7 +110,7 @@ class LinearTransformer(Transformer):
 
     def __eq__(self, other):
         """Check equality between two transformers."""
-        if not isinstance(other, LinearTransformer):
+        if not isinstance(other, AffineTransformer):
             return False
         if not np.array_equal(self.weights, other.weights):
             return False
@@ -130,7 +130,7 @@ class LinearTransformer(Transformer):
         For compatible transformers l1, l2, l3 and input x, it holds that:
         l3(l2(l1(x))) == l1.compose(l2).compose(l3)(x)
         """
-        if not isinstance(other, LinearTransformer):
+        if not isinstance(other, AffineTransformer):
             msg = 'Can only compose with another LinearTransformer'
             raise TypeError(msg)
         if self.out_dim != other.in_dim:
@@ -141,7 +141,7 @@ class LinearTransformer(Transformer):
             raise ValueError(msg)
         new_weights = other.weights @ self.weights
         new_biases = other.weights @ self.biases + other.biases
-        return LinearTransformer(new_weights, new_biases, other.out_reshape)
+        return AffineTransformer(new_weights, new_biases, other.out_reshape)
 
     def select_rows(self, bool_mask):
         """Select rows of the transformer based on a boolean mask.
@@ -155,7 +155,7 @@ class LinearTransformer(Transformer):
         _bool_mask = np.asarray(bool_mask)
         new_weights = self.weights[_bool_mask]
         new_biases = self.biases[_bool_mask]
-        return LinearTransformer(new_weights, new_biases, (_bool_mask.sum(),))
+        return AffineTransformer(new_weights, new_biases, (_bool_mask.sum(),))
 
     def __repr__(self):
         """Return a string representation of the transformer."""
@@ -165,7 +165,7 @@ class LinearTransformer(Transformer):
         )
 
     def boolify(self):
-        return LinearTransformer(
+        return AffineTransformer(
             np.bool_(self.weights), np.bool_(self.biases), self.out_reshape
         )
 
@@ -181,7 +181,7 @@ class LinearTransformer(Transformer):
              self.out_reshape)
         )
 
-class LinearMap(LinearTransformer):
+class LinearMap(AffineTransformer):
     """A linear map is a LinearTransformer with biases set to zero."""
 
     def __init__(self, weights, out_reshape=None):
@@ -193,6 +193,6 @@ def stack_transformers(transformers):
     """Stack a list of transformers into a single transformer."""
     weights = np.vstack([transformer.weights for transformer in transformers])
     biases = np.hstack([transformer.biases for transformer in transformers])
-    return LinearTransformer(
+    return AffineTransformer(
         weights, biases, (np.sum([t.out_dim for t in transformers]),)
     )

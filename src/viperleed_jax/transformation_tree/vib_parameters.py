@@ -7,7 +7,7 @@ import numpy as np
 
 from .displacement_tree_layers import DisplacementTreeLayers
 from .functionals import LinearTreeFunctional
-from .linear_transformer import LinearMap, LinearTransformer
+from .linear_transformer import LinearMap, AffineTransformer
 from .nodes import AtomicLinearNode, LinearConstraintNode
 from .tree import (
     DisplacementTree,
@@ -38,7 +38,7 @@ class VibLeafNode(AtomicLinearNode):
         )
 
     def _update_bounds(self, line):
-        # vibrational leaves are 1D, so bounds are scalars´
+        # vibrational leaves are 1D, so bounds are scalars
         self._bounds.update_range(
             _range=(line.range.start, line.range.stop), enforce=True
         )
@@ -105,7 +105,7 @@ class VibLinkedConstraint(VibConstraintNode):
             # let's create the transformer
             weights = np.array([[_upper[0] - _lower[0]]])
             biases = np.array([_lower[0]])
-            transformers.append(LinearTransformer(weights, biases, (1,)))
+            transformers.append(AffineTransformer(weights, biases, (1,)))
 
         super().__init__(
             dof=dof,

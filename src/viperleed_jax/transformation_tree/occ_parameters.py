@@ -9,7 +9,7 @@ from .displacement_tree_layers import DisplacementTreeLayers
 from .tree import (
     DisplacementTree,
 )
-from .linear_transformer import LinearTransformer
+from .linear_transformer import AffineTransformer
 from .nodes import AtomicLinearNode, LinearConstraintNode
 
 
@@ -66,7 +66,7 @@ class OccSymmetryConstraint(OccConstraintNode):
         for _ in children:
             weights = np.identity(dof)
             bias = np.zeros(dof)
-            transformers.append(LinearTransformer(weights, bias, (dof,)))
+            transformers.append(AffineTransformer(weights, bias, (dof,)))
         super().__init__(
             dof=dof,
             name=name,
@@ -87,7 +87,7 @@ class OccLinkedConstraint(OccConstraintNode):
 
         # transformers can be identity
         transformers = [
-            LinearTransformer(np.eye(dof), np.zeros(dof), (dof,))
+            AffineTransformer(np.eye(dof), np.zeros(dof), (dof,))
             for _ in children
         ]
         super().__init__(
