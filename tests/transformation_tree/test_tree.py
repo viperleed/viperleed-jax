@@ -71,7 +71,7 @@ def test_abstract_transformation_tree():
 
 # Test LinearTree
 def test_linear_tree_create_subtree_root(linear_tree):
-    assert not linear_tree._tree_root_has_been_created
+    assert not linear_tree.finalized
     linear_tree.create_subtree_root()
-    assert linear_tree._tree_root_has_been_created
+    assert linear_tree.finalized
     assert linear_tree.root.dof == 3
