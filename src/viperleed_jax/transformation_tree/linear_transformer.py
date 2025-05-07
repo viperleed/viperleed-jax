@@ -15,13 +15,30 @@ class Transformer(ABC):
     def __call__(self, input_params):
         """Apply the transformation to the input parameters."""
 
+    @property
     @abstractmethod
     def in_dim(self):
         """Input dimensionality of the transformer."""
 
+    @property
     @abstractmethod
     def out_dim(self):
         """Output dimensionality of the transformer."""
+
+    @property
+    @abstractmethod
+    def is_injective(self):
+        """Check if the transformation is injective."""
+
+    @property
+    @abstractmethod
+    def is_surjective(self):
+        """Check if the transformation is surjective."""
+
+    @property
+    def is_bijective(self):
+        """Check if the transformation is bijective."""
+        return self.is_injective and self.is_surjective
 
     @abstractmethod
     def compose(self, other):
@@ -36,7 +53,7 @@ class Transformer(ABC):
         """Calculate a hash for the transformer."""
 
 class AffineTransformer(Transformer):
-    """Linear transformation class that implements an affine transformation."""
+    """Class that implements an affine transformation."""
 
     def __init__(self, weights, biases, out_reshape=None):
         self.weights = np.array(weights)
@@ -82,15 +99,10 @@ class AffineTransformer(Transformer):
 
     @property
     def is_surjective(self):
+        """Check if the transformation is surjective."""
         if self.in_dim == 0:
             return False
-        """Check if the transformation is surjective."""
         return np.linalg.matrix_rank(self.weights.T) == self.out_dim
-
-    @property
-    def is_bijective(self):
-        """Check if the transformation is bijective."""
-        return self.is_injective and self.is_surjective
 
     def __call__(self, free_params):
         """Apply the transformation to the input parameters."""
