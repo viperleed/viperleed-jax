@@ -3,7 +3,7 @@ import pytest
 
 from viperleed_jax.transformation_tree.linear_transformer import (
     LinearMap,
-    LinearTransformer,
+    AffineTransformer,
     Transformer,
 )
 
@@ -14,7 +14,7 @@ class TestLinearTransformer:
     def test_linear_transformer_initialization(self):
         weights = [[1, 2], [3, 4]]
         biases = [5, 6]
-        transformer = LinearTransformer(weights, biases)
+        transformer = AffineTransformer(weights, biases)
         assert transformer.n_free_params == 2
         assert transformer.weights.shape == (2, 2)
         assert transformer.biases.shape == (2,)
@@ -23,7 +23,7 @@ class TestLinearTransformer:
     def test_call_with_correct_shape(self):
         weights = [[1, 2], [3, 4]]
         biases = [5, 6]
-        transformer = LinearTransformer(weights, biases)
+        transformer = AffineTransformer(weights, biases)
         free_params = [0.5, 0.25]
         result = transformer(free_params)
         expected = np.array(
@@ -34,7 +34,7 @@ class TestLinearTransformer:
     def test_call_with_incorrect_shape(self):
         weights = [[1, 2], [3, 4]]
         biases = [5, 6]
-        transformer = LinearTransformer(weights, biases)
+        transformer = AffineTransformer(weights, biases)
         free_params = [0.5]  # Incorrect length
         with pytest.raises(
             ValueError, match='Free parameters have wrong shape'
@@ -44,14 +44,14 @@ class TestLinearTransformer:
     def test_call_without_free_params(self):
         weights = np.zeros(shape=(2, 0))
         biases = [5, 6]
-        transformer = LinearTransformer(weights, biases)
+        transformer = AffineTransformer(weights, biases)
         result = transformer([])  # Empty list should just return biases
         assert result == pytest.approx(np.array([5, 6]))
 
     def test_call_with_out_reshape(self):
         weights = [[1, 2], [3, 4]]
         biases = [5, 6]
-        transformer = LinearTransformer(weights, biases, out_reshape=(2, 1))
+        transformer = AffineTransformer(weights, biases, out_reshape=(2, 1))
         free_params = [0.5, 0.25]
         result = transformer(free_params)
         expected = np.array([[6], [8.5]])
@@ -61,7 +61,7 @@ class TestLinearTransformer:
     def test_repr(self):
         weights = [[1, 2], [3, 4]]
         biases = [5, 6]
-        transformer = LinearTransformer(weights, biases)
+        transformer = AffineTransformer(weights, biases)
         assert (
             repr(transformer)
             == 'LinearTransformer(weights=(2, 2), biases=(2,), out_reshape=None)'
@@ -74,11 +74,11 @@ class TestLinearTransformerCompositions:
     def test_composition_of_two_transformers(self):
         weights1 = np.array([[1, 2], [3, 4]])
         biases1 = np.array([5, 6])
-        transformer1 = LinearTransformer(weights1, biases1)
+        transformer1 = AffineTransformer(weights1, biases1)
 
         weights2 = np.array([[0.5, 0.25], [0.75, 1.5]])
         biases2 = np.array([1, -1])
-        transformer2 = LinearTransformer(weights2, biases2)
+        transformer2 = AffineTransformer(weights2, biases2)
 
         composed_transformer = transformer2.compose(transformer1)
 
@@ -93,13 +93,13 @@ class TestLinearTransformerCompositions:
         """Ensure that composing with an identity transformer does not change the behavior."""
         identity_weights = np.eye(2)
         identity_biases = np.array([0, 0])
-        identity_transformer = LinearTransformer(
+        identity_transformer = AffineTransformer(
             identity_weights, identity_biases
         )
 
         weights = np.array([[1, 2], [3, 4]])
         biases = np.array([5, 6])
-        transformer = LinearTransformer(weights, biases)
+        transformer = AffineTransformer(weights, biases)
 
         # Compose with identity
         composed_transformer = transformer.compose(identity_transformer)
@@ -113,11 +113,11 @@ class TestLinearTransformerCompositions:
     def test_composition_with_mismatched_dimensions(self):
         weights1 = np.array([[1, 2], [3, 4]])
         biases1 = np.array([5, 6])
-        transformer1 = LinearTransformer(weights1, biases1)
+        transformer1 = AffineTransformer(weights1, biases1)
 
         weights2 = np.array([[0.5, 0.25, 0.1], [0.75, 1.5, 0.2]])
         biases2 = np.array([1, -1])
-        transformer2 = LinearTransformer(weights2, biases2)
+        transformer2 = AffineTransformer(weights2, biases2)
 
         # Expect a ValueError due to dimension mismatch
         with pytest.raises(ValueError):
@@ -126,15 +126,15 @@ class TestLinearTransformerCompositions:
     def test_composition_of_three_transformers(self, subtests):
         weights1 = np.array([[1, 2], [3, 4]])
         biases1 = np.array([5, 6])
-        transformer1 = LinearTransformer(weights1, biases1)
+        transformer1 = AffineTransformer(weights1, biases1)
 
         weights2 = np.array([[0.5, 0.25], [0.75, 1.5]])
         biases2 = np.array([1, -1])
-        transformer2 = LinearTransformer(weights2, biases2)
+        transformer2 = AffineTransformer(weights2, biases2)
 
         weights3 = np.array([[2, 0], [0, 0.5]])
         biases3 = np.array([0.5, 0.25])
-        transformer3 = LinearTransformer(weights3, biases3)
+        transformer3 = AffineTransformer(weights3, biases3)
 
         composed_transformer = transformer3.compose(transformer2).compose(
             transformer1
@@ -190,7 +190,7 @@ class TestAdheresToTransformerABC:
     def test_linear_transformer_adheres_to_transformer_abc(self):
         weights = [[1, 2], [3, 4]]
         biases = [5, 6]
-        transformer = LinearTransformer(weights, biases)
+        transformer = AffineTransformer(weights, biases)
 
         assert hasattr(transformer, '__call__')
         assert callable(transformer)
@@ -202,11 +202,11 @@ class TestAdheresToTransformerABC:
     def test_linear_transformer_compose_with_abc(self):
         weights1 = [[1, 2], [3, 4]]
         biases1 = [5, 6]
-        transformer1 = LinearTransformer(weights1, biases1)
+        transformer1 = AffineTransformer(weights1, biases1)
 
         weights2 = [[0.5, 0.25], [0.75, 1.5]]
         biases2 = [1, -1]
-        transformer2 = LinearTransformer(weights2, biases2)
+        transformer2 = AffineTransformer(weights2, biases2)
 
         composed_transformer = transformer2.compose(transformer1)
 
@@ -264,7 +264,7 @@ class TestLinearMap:
         weights2 = np.array([[0.5, 0.25], [0.75, 1.5]])
         biases2 = np.array([1, -1])
         linear_map = LinearMap(weights1)
-        transformer = LinearTransformer(weights2, biases2)
+        transformer = AffineTransformer(weights2, biases2)
 
         composed_transformer = transformer.compose(linear_map)
 
