@@ -52,7 +52,7 @@ class ParameterSpace:
 
         if offset_block is None and search_block is None:
             raise ValueError(
-                'Either offset_block or search_block must be ' 'provided.'
+                'Either offset_block or search_block must be provided.'
             )
 
         if offset_block is not None:
@@ -138,7 +138,7 @@ class ParameterSpace:
                 self.occ_tree.apply_explicit_constraint(constraint)
             else:
                 raise ValueError(
-                    'Unknown constraint type: ' f'{constraint.constraint_type}'
+                    f'Unknown constraint type: {constraint.constraint_type}'
                 )
         self.check_for_inconsistencies()
 
