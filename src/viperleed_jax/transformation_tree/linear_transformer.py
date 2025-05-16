@@ -52,6 +52,11 @@ class Transformer(ABC):
     def __hash__(self):
         """Calculate a hash for the transformer."""
 
+    def __matmul__(self, other):
+        """Compose this transformer with another using @ operator."""
+        return self.compose(other)
+
+
 class AffineTransformer(Transformer):
     """Class that implements an affine transformation."""
 
