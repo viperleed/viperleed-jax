@@ -142,10 +142,6 @@ class ParameterSpace:
                 )
         self.check_for_inconsistencies()
 
-    def freeze(self):
-        if not self._displacements_applied:
-            raise ValueError('Displacements must be applied before freezing.')
-        return FrozenParameterSpace(self)
 
     def _free_params_up_to_layer(self, layer):
         """Return the number of free parameters in all trees up to a layer."""
