@@ -378,3 +378,47 @@ class DisplacementTree(LinearTree):
             targets
         )
         return implicit_leaves, explicit_leaves, selected_roots
+def _map_transformation_from_leaf_to_root(
+    primary_leaf, secondary_leaf, transformation
+):
+    r"""Map a transformation from leaf level to root level.
+
+    Map a given linear transformation from one leaf to another into a
+    transformation between their root nodes. In many cases, we need to determine
+    what the transformation between two leaves is in terms of the root
+    transformations. We are given two leafs with values p and p' and the
+    transformation between them is given by the transformation matrix A such
+    that p'=Ap. We need to find the transformations B and B' between the root
+    nodes of the two leaves as shown in the figure below where T and T' are
+    intermediate transformations.
+
+                 ( )
+             B   / \   B'
+                /   \
+              ( )   ( )
+           T  / \   / \  T'
+             /         \
+           ( )         ( )
+            p           p'
+
+    Since the transformations between the leaves are equivalent, we find
+    L = T^{+} B^{+} B' T'.
+    We can choose the transformation on the left side (the primary leaf) to be
+    the identity matrix. Inserting this, we find
+    B' = T L T'^{+}.
+    """
+    primary_root = primary_leaf.root
+    secondary_root = secondary_leaf.root
+
+    T = primary_root.transformer_to_descendent(primary_leaf)
+    T_dash = secondary_root.transformer_to_descendent(secondary_leaf)
+    b_prime = T @ transformation @ T_dash.pseudo_inverse()
+    return b_prime
+
+def _select_primary_leaf(root, leaves):
+    for leaf in reversed(leaves):
+        if leaf in root.leaves:
+            return leaf
+    # if no leaf is found, raise an error
+    msg = f'None of the provided leaves matches {root}.'
+    raise ValueError(msg)
