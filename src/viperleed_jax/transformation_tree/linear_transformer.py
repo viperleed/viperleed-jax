@@ -148,7 +148,7 @@ class AffineTransformer(Transformer):
         l3(l2(l1(x))) == l1.compose(l2).compose(l3)(x)
         """
         if not isinstance(other, AffineTransformer):
-            msg = 'Can only compose with another LinearTransformer'
+            msg = 'Can only compose with another AffineTransformer'
             raise TypeError(msg)
         if self.out_dim != other.in_dim:
             msg = (
@@ -177,7 +177,7 @@ class AffineTransformer(Transformer):
     def __repr__(self):
         """Return a string representation of the transformer."""
         return (
-            f'LinearTransformer(weights={self.weights.shape}, '
+            f'AffineTransformer(weights={self.weights.shape}, '
             f'biases={self.biases.shape}, out_reshape={self.out_reshape})'
         )
 
@@ -199,7 +199,7 @@ class AffineTransformer(Transformer):
         )
 
 class LinearMap(AffineTransformer):
-    """A linear map is a LinearTransformer with biases set to zero."""
+    """A linear map is a AffineTransformer with biases set to zero."""
 
     def __init__(self, weights, out_reshape=None):
         weights = np.array(weights)
