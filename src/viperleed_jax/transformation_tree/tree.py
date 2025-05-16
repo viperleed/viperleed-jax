@@ -352,19 +352,19 @@ class DisplacementTree(LinearTree):
             selected_roots,
         )
 
-    def _select_primary_leaf(self, roots, explicit_leaves):
-        # make a dict that maps the primary leaf for each root
-        # go through the leaves in reverse order to assign the first leaf in
-        # the list to the root
-        # If the root has no leafs in the explicit list, assign the first leaf
-        primary_leaves = {}
-        for root in roots:
-            for leaf in reversed(explicit_leaves):
-                if leaf in root.leaves:
-                    primary_leaves[root] = leaf
-            if root not in primary_leaves:
-                primary_leaves[root] = root.leaves[0]
-        return primary_leaves
+    # def _select_primary_leaf(self, roots, explicit_leaves):
+    #     # make a dict that maps the primary leaf for each root
+    #     # go through the leaves in reverse order to assign the first leaf in
+    #     # the list to the root
+    #     # If the root has no leafs in the explicit list, assign the first leaf
+    #     primary_leaves = {}
+    #     for root in roots:
+    #         for leaf in reversed(explicit_leaves):
+    #             if leaf in root.leaves:
+    #                 primary_leaves[root] = leaf
+    #         if root not in primary_leaves:
+    #             primary_leaves[root] = root.leaves[0]
+    #     return primary_leaves
 
     def _select_constraint(self, constraint_line):
         # gets the leaves that are affected by a constraint
@@ -378,6 +378,94 @@ class DisplacementTree(LinearTree):
             targets
         )
         return implicit_leaves, explicit_leaves, selected_roots
+
+
+    def apply_explicit_constraint(self, constraint_line):
+        r"""Apply an explicit constraint to the tree.
+        
+        This method applies explicit, user defined constraints to the tree
+
+        """
+        # resolve the reference (rhs of constraint) into a mask
+        link_target_mask = self.atom_basis.selection_mask((constraint_line.link_target,))
+        # if multiple atoms are targeted, we need to select the first one
+        link_target = self.leaves[link_target_mask][0]
+        link_target_root = link_target.root
+
+        # select which atoms to link by interpreting the target token
+        to_link_mask = self.atom_basis.selection_mask(constraint_line.targets)
+        leaves_to_link = self.leaves[to_link_mask]
+        # get the roots of the leaves to link
+        roots_to_link = [leaf.root for leaf in leaves_to_link]
+        # remove the link_target from the list of roots to link
+        roots_to_link = [root for root in roots_to_link if root != link_target_root]
+        # remove duplicates
+        roots_to_link = list({root: None for root in roots_to_link}.keys())
+
+        # if there are no roots to link, complain
+        if len(leaves_to_link) == 0:
+            raise ValueError(
+                f'Constraint line "{constraint_line}" does not link any atoms. '
+                f'It is likely redundant.'
+            )
+
+        # check that the roots all have the same number of DOFs
+        if not all(root.dof == link_target_root.dof for root in roots_to_link):
+            raise ValueError(
+                f'Constraint line "{constraint_line}" links atoms with different DOFs. '
+                f'This means it either violates symmetry or is in contradiction with '
+                f'other constraints. '
+            )
+
+        user_arr = constraint_line.linear_operation.arr
+        
+        # TODO: If we allow for non (3x3) transformations, we need to check
+        # casting here.
+        # check that the linear transformation given by the user is valid
+        if len(user_arr) == 1:
+            # scalar case
+            user_trafo = float(user_arr.flatten()[0]) * np.eye(link_target.dof)
+        elif user_arr.size == (link_target.dof, link_target.dof):
+            user_trafo = user_arr
+        else:
+            msg = (
+                f'Constraint line "{constraint_line}" has a linear transformation '
+                f'of shape {user_arr.shape} but the target has {link_target.dof} '
+                f'DOFs. The transformation must be of shape ({link_target.dof}, '
+                f'{link_target.dof}).'
+            )
+            raise ValueError(msg)
+
+        transformations = []
+
+
+        # iterate over the roots to link and determine the transformations
+        for root in roots_to_link:
+            # get primary leaf of the root
+            primary_target_leaf = _select_primary_leaf(root, leaves_to_link)
+            # map transformation between the leaves to the root
+            transformations.append(
+                _map_transformation_from_leaf_to_root(
+                    primary_target_leaf, link_target, user_trafo
+                )
+            )
+
+        transformations = [np.eye(link_target.dof), *transformations]
+        children = [link_target_root, *roots_to_link]
+
+        # TODO: continue here; create the constraint node
+
+        constraint_node = LinearConstraintNode(
+            dof=link_target.dof,
+            name=constraint_line.raw_line,
+            children=children,
+            transformers=transformations,
+            layer=DisplacementTreeLayers.ExplicitConstraint,
+        )
+        return constraint_node
+
+
+
 def _map_transformation_from_leaf_to_root(
     primary_leaf, secondary_leaf, transformation
 ):
