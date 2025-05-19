@@ -22,7 +22,7 @@ from viperleed_jax.transformation_tree.nodes import (
     LinearConstraintNode,
 )
 
-from .linear_transformer import AffineTransformer, stack_transformers
+from .linear_transformer import AffineTransformer, stack_transformers, LinearMap
 
 # Enable checks for the anytree library; we don't deal with huge trees so this
 # should not be a performance issue.
@@ -382,12 +382,12 @@ class DisplacementTree(LinearTree):
 
     def apply_explicit_constraint(self, constraint_line):
         r"""Apply an explicit constraint to the tree.
-        
-        This method applies explicit, user defined constraints to the tree
 
+        This method applies explicit, user defined constraints to the tree.
         """
         # resolve the reference (rhs of constraint) into a mask
-        link_target_mask = self.atom_basis.selection_mask((constraint_line.link_target,))
+        link_target_mask = self.atom_basis.selection_mask(
+            (constraint_line.link_target,))
         # if multiple atoms are targeted, we need to select the first one
         link_target = self.leaves[link_target_mask][0]
         link_target_root = link_target.root
@@ -403,22 +403,25 @@ class DisplacementTree(LinearTree):
         roots_to_link = list({root: None for root in roots_to_link}.keys())
 
         # if there are no roots to link, complain
-        if len(leaves_to_link) == 0:
-            raise ValueError(
-                f'Constraint line "{constraint_line}" does not link any atoms. '
-                f'It is likely redundant.'
+        if len(roots_to_link) == 0:
+            msg = (
+                'All targets of CONSTRAIN block line '
+                f'"{constraint_line.raw_line}" are already linked. It is '
+                'likely redundant.'
             )
+            raise ValueError(msg)
 
         # check that the roots all have the same number of DOFs
         if not all(root.dof == link_target_root.dof for root in roots_to_link):
-            raise ValueError(
-                f'Constraint line "{constraint_line}" links atoms with different DOFs. '
-                f'This means it either violates symmetry or is in contradiction with '
-                f'other constraints. '
+            msg = (
+                f'CONSTRAIN block line "{constraint_line.raw_line}" links '
+                'atoms with different DOFs. This means it either violates '
+                'symmetry or is in contradiction with other constraints.'
             )
+            raise ValueError(msg)
 
         user_arr = constraint_line.linear_operation.arr
-        
+
         # TODO: If we allow for non (3x3) transformations, we need to check
         # casting here.
         # check that the linear transformation given by the user is valid
@@ -453,17 +456,14 @@ class DisplacementTree(LinearTree):
         transformations = [LinearMap(np.eye(link_target.dof)), *transformations]
         children = [link_target_root, *roots_to_link]
 
-        # TODO: continue here; create the constraint node
-
-        constraint_node = LinearConstraintNode(
+        constraint_node =  LinearConstraintNode(
             dof=link_target.dof,
             name=constraint_line.raw_line,
             children=children,
             transformers=transformations,
-            layer=DisplacementTreeLayers.ExplicitConstraint,
+            layer=DisplacementTreeLayers.User_Constraints,
         )
-        return constraint_node
-
+        self.nodes.append(constraint_node)
 
 
 def _map_transformation_from_leaf_to_root(
