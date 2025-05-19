@@ -450,7 +450,7 @@ class DisplacementTree(LinearTree):
                 )
             )
 
-        transformations = [np.eye(link_target.dof), *transformations]
+        transformations = [LinearMap(np.eye(link_target.dof)), *transformations]
         children = [link_target_root, *roots_to_link]
 
         # TODO: continue here; create the constraint node
