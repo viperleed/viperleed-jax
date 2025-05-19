@@ -500,7 +500,7 @@ def _map_transformation_from_leaf_to_root(
 
     T = primary_root.transformer_to_descendent(primary_leaf)
     T_dash = secondary_root.transformer_to_descendent(secondary_leaf)
-    b_prime = T @ transformation @ T_dash.pseudo_inverse()
+    b_prime = T @ LinearMap(transformation) @ T_dash.pseudo_inverse()
     return b_prime
 
 def _select_primary_leaf(root, leaves):
