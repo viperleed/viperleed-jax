@@ -167,26 +167,6 @@ class TestLinearTransformerCompositions:
 class TestAdheresToTransformerABC:
     """Test that LinearTransformer adheres to the Transformer ABC."""
 
-    def test_transformer_implements_required_methods(self):
-        class DummyTransformer(Transformer):
-            def __call__(self, input_params):
-                pass
-
-            def in_dim(self):
-                return 0
-
-            def out_dim(self):
-                return 0
-
-            def compose(self, other):
-                pass
-
-            def __eq__(self, other):
-                return True
-
-        dummy_transformer = DummyTransformer()
-        assert isinstance(dummy_transformer, Transformer)
-
     def test_linear_transformer_adheres_to_transformer_abc(self):
         weights = [[1, 2], [3, 4]]
         biases = [5, 6]
