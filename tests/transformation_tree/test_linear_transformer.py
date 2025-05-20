@@ -8,8 +8,8 @@ from viperleed_jax.transformation_tree.linear_transformer import (
 )
 
 
-class TestLinearTransformer:
-    """Test the functionality of the LinearTransformer class."""
+class TestAffineTransformer:
+    """Test the functionality of the AffineTransformer class."""
 
     def test_linear_transformer_initialization(self):
         weights = [[1, 2], [3, 4]]
@@ -64,12 +64,12 @@ class TestLinearTransformer:
         transformer = AffineTransformer(weights, biases)
         assert (
             repr(transformer)
-            == 'LinearTransformer(weights=(2, 2), biases=(2,), out_reshape=None)'
+            == 'AffineTransformer(weights=(2, 2), biases=(2,), out_reshape=None)'
         )
 
 
-class TestLinearTransformerCompositions:
-    """Test the composition behavior of the LinearTransformer class."""
+class TestAffineTransformerCompositions:
+    """Test the composition behavior of the AffineTransformer class."""
 
     def test_composition_of_two_transformers(self):
         weights1 = np.array([[1, 2], [3, 4]])
@@ -165,7 +165,7 @@ class TestLinearTransformerCompositions:
 
 
 class TestAdheresToTransformerABC:
-    """Test that LinearTransformer adheres to the Transformer ABC."""
+    """Test that Affineransformer adheres to the Transformer ABC."""
 
     def test_linear_transformer_adheres_to_transformer_abc(self):
         weights = [[1, 2], [3, 4]]
@@ -236,7 +236,7 @@ class TestLinearMap:
         linear_map = LinearMap(weights)
         assert (
             repr(linear_map)
-            == 'LinearTransformer(weights=(2, 2), biases=(2,), out_reshape=None)'
+            == 'LinearMap(weights=(2, 2), biases=(2,), out_reshape=None)'
         )
 
     def test_composition_with_linear_transformer(self):
