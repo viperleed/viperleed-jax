@@ -11,6 +11,7 @@ DisplacementTreeLayers = Enum(
         'Base',
         'Symmetry',
         'Backend_Constraints',
+        'Offsets',
         'User_Constraints',
         'Implicit_Constraints',
         'Root',
