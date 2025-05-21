@@ -140,7 +140,7 @@ def apply_affine_to_subspace(
 
     Parameters
     ----------
-    basis_vectors : (D, n) array
+    basis_vectors : (n, D) array
         Columns are basis vectors spanning subspace in R^D.
     coordinate_ranges : (2, n) array
         [lows; highs] of coefficients.
@@ -158,14 +158,14 @@ def apply_affine_to_subspace(
     """
     if basis_vectors.ndim != 2:
         raise ValueError('basis_vectors must be 2D')
-    D, n = basis_vectors.shape
+    n, D = basis_vectors.shape
     cr = np.asarray(coordinate_ranges)
     if cr.shape != (2, n):
         raise ValueError(f'coordinate_ranges must be shape (2,{n})')
     lows, highs = cr
     W, b = transform.weights, transform.biases
     # project basis
-    Bm = W @ basis_vectors
+    Bm = W @ basis_vectors.T
     # compute new ranges for each coeff
     # (using brute-force corners if n small, but closed form here)
     # we only need per-axis extrema of linear functionals v·x + b
@@ -236,3 +236,69 @@ def orthonormalize_subspace(
     W_rec = Q @ np.diag(inv_scale)
     b_rec = bias - Q @ (inv_scale * shift)
     return AffineTransformer(W_rec, b_rec, out_reshape=(M,))
+
+
+class Zonotope:
+    """
+    Represents an affine zonotope Z = { b + B @ x  |  x_i in [l_i, u_i] }.
+    - B:  (D×n) basis matrix (columns are generators)
+    - ranges: (2×n) array of [lows; highs]
+    - offset: (D,) bias vector b
+    """
+
+    def __init__(
+        self, basis: np.ndarray, ranges: np.ndarray, offset: np.ndarray = None
+    ):
+        if basis.ndim != 2:
+            raise ValueError('basis must be shape (D,n)')
+        D, n = basis.shape
+
+        ranges = np.asarray(ranges)
+        if ranges.shape != (2, D):
+            raise ValueError(f'ranges must be (2,{D})')
+
+        if offset is None:
+            offset = np.zeros(D)
+        offset = np.asarray(offset)
+        if offset.shape != (D,):
+            raise ValueError(f'offset must be length {D}')
+
+        non_zero_range_mask = abs(ranges[0] - ranges[1]) > EPS
+
+
+        self.basis = basis[non_zero_range_mask, :]
+        self.ranges = ranges[:, non_zero_range_mask]
+        self.offset = offset
+
+    def apply_affine(self, A: 'AffineTransformer') -> 'Zonotope':
+        """
+        Returns a new Zonotope = A(Z), applying Z → { A(z) | z in Z }.
+        """
+        Bm, new_ranges, b_new = apply_affine_to_subspace(
+            self.basis, self.ranges, A
+        )
+        # the sub‐function already returns the new offset b_new
+        return Zonotope(Bm, new_ranges, offset=b_new)
+
+    def normalize(
+        self, output_ranges: np.ndarray = None
+    ) -> AffineTransformer:
+        """
+        Collapse and orthonormalize the zonotope’s affine image.
+        Returns an AffineTransformer T such that
+          T(u) reconstructs points in this zonotope for u in output_ranges.
+        """
+        return orthonormalize_subspace(
+            self.basis,
+            self.ranges,
+            self.offset,
+            output_ranges=output_ranges,
+        )
+
+    @property
+    def dim(self) -> int:
+        return self.basis.shape[0]
+
+    @property
+    def order(self) -> int:
+        return self.basis.shape[1]
