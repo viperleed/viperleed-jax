@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
+from viperleed_jax.lib_math import EPS
 
 class Transformer(ABC):
     """Abstract base class for transformations."""
@@ -133,8 +134,6 @@ class AffineTransformer(Transformer):
             return False
         if not np.array_equal(self.biases, other.biases):
             return False
-        if self.out_reshape is None and other.out_reshape is not None:
-            return True
         return self.out_reshape == other.out_reshape
 
     def compose(self, other):
@@ -204,6 +203,33 @@ class LinearMap(AffineTransformer):
     def __init__(self, weights, out_reshape=None):
         weights = np.array(weights)
         super().__init__(weights, np.zeros(weights.shape[0]), out_reshape)
+
+    def pseudo_inverse(self):
+        """Calculate the pseudo-inverse of the linear map."""
+        if self.in_dim == 0:
+            raise ValueError('Cannot calculate pseudo-inverse of zero map')
+        return LinearMap(np.linalg.pinv(self.weights))
+
+    def __repr__(self):
+        """Return a string representation of the transformer."""
+        return (
+            f'LinearMap(weights={self.weights.shape}, '
+            f'out_reshape={self.out_reshape})'
+        )
+
+    def compose(self, other):
+        """Compose this linear map with another transformer."""
+        if not isinstance(other, LinearMap):
+            msg = 'Can only compose with another LinearMap'
+            return super().compose(other)
+        if self.out_dim != other.in_dim:
+            msg = (
+                f'Cannot compose transformers with shapes {self._out_dim} '
+                'and {other.in_dim}'
+            )
+            raise ValueError(msg)
+        new_weights = other.weights @ self.weights
+        return LinearMap(new_weights, other.out_reshape)
 
 
 def stack_transformers(transformers):
