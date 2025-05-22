@@ -226,20 +226,6 @@ class LinearConstraintNode(LinearTreeNode):
             child.parent = self
 
 
-    # TODO: remove
-    def _stacked_transformer(self):
-        """Return the stacked transformer of the children."""
-        child_weights = [child.transformer.weights for child in self.children]
-        child_biases = [child.transformer.biases for child in self.children]
-
-        stacked_weights = np.vstack(child_weights)
-        stacked_biases = np.hstack(child_biases)
-        return AffineTransformer(
-            stacked_weights,
-            stacked_biases,
-            (np.sum([c.dof for c in self.children]),),
-        )
-
     def transformer_to_descendent(self, node):
         """Return the transformer from this node to a descendent."""
         walker = Walker()
