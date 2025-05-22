@@ -16,6 +16,11 @@ from viperleed_jax.transformation_tree.nodes import (
     LinearTreeNode,
     TransformationTreeNode,
 )
+from viperleed_jax.transformation_tree.errors import (
+    TransformationTreeError,
+    NodeCreationError,
+    InvalidNodeError
+)
 
 
 class MockTransformationTreeNode(TransformationTreeNode):
@@ -39,9 +44,9 @@ class MockLinearTreeNode(LinearTreeNode):
 
 def test_transformation_tree_node():
     """Test basic functionality of TransformationTreeNode."""
-    node = MockTransformationTreeNode(name='root')
+    node = MockTransformationTreeNode(name='root', parent=None)
     assert node._name == 'root'
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidNodeError):
         _ = node.transformer  # Transformer is not set
 
     transformer = AffineTransformer(weights=np.eye(2), biases=np.zeros(2))
@@ -69,9 +74,17 @@ def test_linear_tree_node_transformer_validation():
 def test_detaching_parent_not_allowed():
     """Test that detaching parents in TransformationTreeNode is not allowed."""
     # Create a mock node
-    node = MockTransformationTreeNode(name='child')
+    node = MockTransformationTreeNode(name='child', parent=None)
     with pytest.raises(
-        RuntimeError,
+        TransformationTreeError,
         match='Transformation trees do not support detaching nodes.',
     ):
         node._pre_detach()
+
+
+# Test the name property of LinearTreeNode
+def test_linear_tree_node_name_property():
+    node = MockLinearTreeNode(
+        dof=3, layer=DisplacementTreeLayers.Base, name='foo')
+    assert node._name == 'foo'
+    assert node.name == '(3) foo'
