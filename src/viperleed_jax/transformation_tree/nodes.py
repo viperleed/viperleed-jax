@@ -23,6 +23,8 @@ from viperleed_jax.transformation_tree.linear_transformer import (
     AffineTransformer,
     stack_transformers,
 )
+from viperleed_jax.lib_math import EPS
+from viperleed_jax.transformation_tree.reduced_space import orthonormalize_subspace
 
 
 from viperleed_jax.transformation_tree.errors import (
@@ -134,18 +136,13 @@ class LinearLeafNode(LinearTreeNode):
         super().__init__(
             dof=dof, name=name, parent=parent, layer=DisplacementTreeLayers.Base
         )
-
-    def update_bounds(self, line):
-        self._update_bounds(line)
-        self.parent.check_bounds_valid()
-
-    @abstractmethod
-    def _update_bounds(self, line):
-        pass
-
-    @property
-    def free(self):
-        return ~self._bounds.fixed
+        # self.ref_calc_value = np.array(ref_calc_value)
+        # if self.ref_calc_value.shape != (self.dof,):
+        #     msg = (
+        #         f'Reference calculation value shape {self.ref_calc_value.shape} '
+        #         f'does not match node dof shape {self.dof}.'
+        #     )
+        #     raise ValueError(msg)
 
 
 class AtomicLinearNode(LinearLeafNode):
