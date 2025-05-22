@@ -176,18 +176,18 @@ class LinearConstraintNode(LinearTreeNode):
         )  # Initialize the base class
 
         if len(_children) == 0:
-            raise ValueError(
+            raise InvalidNodeError(
                 'Constraint nodes must be initialized with '
                 'at least one child node.'
             )
         # check that children are roots
         if any(not child.is_root for child in _children):
-            raise ValueError('Children must be root nodes.')
+            raise InvalidNodeError('Children must be root nodes.')
 
         # if one child is a leaf, all children must be leaves
         if any(child.is_leaf for child in _children):
             if not all(child.is_leaf for child in _children):
-                raise ValueError(
+                raise InvalidNodeError(
                     'If one child is a leaf node, all children '
                     'must be leaf nodes.'
                 )
@@ -208,7 +208,7 @@ class LinearConstraintNode(LinearTreeNode):
 
         # check that the number of children and transformers match
         if len(_children) != len(transformers):
-            raise ValueError(
+            raise InvalidNodeError(
                 f'Number of children ({len(_children)}) must match '
                 f'number of transformers ({len(transformers)}).'
             )
