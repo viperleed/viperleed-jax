@@ -20,6 +20,7 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
 from viperleed_jax.transformation_tree.nodes import (
     ImplicitLinearConstraintNode,
     LinearConstraintNode,
+    LinearOffsetNode,
 )
 
 from .linear_transformer import AffineTransformer, stack_transformers, LinearMap
@@ -260,39 +261,24 @@ class DisplacementTree(LinearTree):
             functional.analyze_tree(self)
 
 
-    def apply_offsets(self, line):
-        """Apply offsets to the children of the node."""
-        super().apply_offsets()
-        targets = line.targets
-        _, explicitly_selected_leaves, selected_roots = self._target_nodes(
-            targets
-        )
-        primary_leaves = self._select_primary_leaf(
-            selected_roots, explicitly_selected_leaves
-        )
 
-        # apply the bound to the primary leaf only – others will be linked
-        # (this is so that for e.g. geometries the bounds are not swapped
-        # and violate symmetry)
-        for leaf in primary_leaves.values():
-            leaf.update_offsets(line)
 
-    def apply_bounds(self, line):
-        """Apply bounds to the children of the node."""
-        super().apply_bounds()
-        targets = line.targets
-        _, explicitly_selected_leaves, selected_roots = self._target_nodes(
-            targets
-        )
-        primary_leaves = self._select_primary_leaf(
-            selected_roots, explicitly_selected_leaves
-        )
+    # def apply_bounds(self, line):
+    #     """Apply bounds to the children of the node."""
+    #     super().apply_bounds()
+    #     targets = line.targets
+    #     _, explicitly_selected_leaves, selected_roots = self._target_nodes(
+    #         targets
+    #     )
+    #     primary_leaves = self._select_primary_leaf(
+    #         selected_roots, explicitly_selected_leaves
+    #     )
 
-        # apply the bound to the primary leaf only – others will be linked
-        # (this is so that for e.g. geometries the bounds are not swapped
-        # and violate symmetry)
-        for leaf in primary_leaves.values():
-            leaf.update_bounds(line)
+    #     # apply the bound to the primary leaf only – others will be linked
+    #     # (this is so that for e.g. geometries the bounds are not swapped
+    #     # and violate symmetry)
+    #     for leaf in primary_leaves.values():
+    #         leaf.update_bounds(line)
 
     def apply_implicit_constraints(self):
         """Apply implicit constraints to the tree."""
@@ -352,20 +338,6 @@ class DisplacementTree(LinearTree):
             selected_roots,
         )
 
-    # def _select_primary_leaf(self, roots, explicit_leaves):
-    #     # make a dict that maps the primary leaf for each root
-    #     # go through the leaves in reverse order to assign the first leaf in
-    #     # the list to the root
-    #     # If the root has no leafs in the explicit list, assign the first leaf
-    #     primary_leaves = {}
-    #     for root in roots:
-    #         for leaf in reversed(explicit_leaves):
-    #             if leaf in root.leaves:
-    #                 primary_leaves[root] = leaf
-    #         if root not in primary_leaves:
-    #             primary_leaves[root] = root.leaves[0]
-    #     return primary_leaves
-
     def _select_constraint(self, constraint_line):
         # gets the leaves that are affected by a constraint
 
@@ -378,6 +350,61 @@ class DisplacementTree(LinearTree):
             targets
         )
         return implicit_leaves, explicit_leaves, selected_roots
+
+
+    def _get_leaves_and_roots(self, targets):
+        """Return the leaves, roots and primary_leaves for the given targets."""
+        all_target_leaves = self.leaves[self.atom_basis.selection_mask(targets)]
+        target_roots = [leaf.root for leaf in all_target_leaves]
+        target_roots = {
+            root: _select_primary_leaf(root, all_target_leaves)
+            for root in target_roots
+        }
+        return all_target_leaves, target_roots
+
+    def apply_offsets(self, offset_line):
+        """Apply offsets to the children of the node."""
+        offset = np.array(offset_line.offset)
+
+        # check construction order
+        super().apply_offsets()
+        # get roots targeted by the offset
+        _, target_roots_primary_leaves = self._get_leaves_and_roots(
+            offset_line.targets
+        )
+
+        # iterate over the roots and apply the offset
+        for root, primary_leaf in target_roots_primary_leaves.items():
+            if root.dof != len(offset):
+                msg = (
+                    f'Offset line "{offset_line}" has a shape of {offset.shape} '
+                    f'but the target has {root.dof} DOFs. The offset must be of '
+                    f'shape ({root.dof},).'
+                )
+                raise ValueError(msg)
+
+            # check that offset is not yet defined
+            if any(isinstance(node, LinearOffsetNode)
+                   for node in [root, *root.ancestors]):
+                msg = (
+                    f'Offset line "{offset_line}" is already defined for '
+                    f'{root.name}.'
+                )
+                raise ValueError(msg)
+
+            # get the transformation from the primary leaf to the root
+            inv_trafo = root.transformer_to_descendent(primary_leaf
+                                                       ).pseudo_inverse()
+            # get the offset in the root coordinates
+            offset_at_root = inv_trafo(offset)
+
+            # create the offset node
+            offset_node = LinearOffsetNode(
+                children=[root],
+                offset_at_node=offset_at_root,
+                name=offset_line.raw_line,
+            )
+            self.nodes.append(offset_node)
 
 
     def apply_explicit_constraint(self, constraint_line):
@@ -465,6 +492,28 @@ class DisplacementTree(LinearTree):
         )
         self.nodes.append(constraint_node)
 
+    @abstractmethod
+    def apply_bounds(self, bounds_line):
+        """Apply bounds to the children of the node."""
+        super().apply_bounds()
+
+        # check for conficts
+        # resolve targets
+        _, target_roots_and_primary_leaves = self._get_leaves_and_roots(
+            bounds_line.targets
+        )
+        for root in target_roots_and_primary_leaves:
+            root_and_ancestors = [root, *root.ancestors]
+            for ancestor in root_and_ancestors:
+                if isinstance(ancestor, ImplicitLinearConstraintNode):
+                    msg = (
+                        f'{bounds_line.block_name} implicit constraint/'
+                        f'boundary "{bounds_line.raw_line}" is in conflict '
+                        f'"with {ancestor.name}". Only one displacement range '
+                        'may be defined per set of linked parameters.'
+                    )
+                    raise ValueError(msg)
+
 
 def _map_transformation_from_leaf_to_root(
     primary_leaf, secondary_leaf, transformation
@@ -500,8 +549,7 @@ def _map_transformation_from_leaf_to_root(
 
     T = primary_root.transformer_to_descendent(primary_leaf)
     T_dash = secondary_root.transformer_to_descendent(secondary_leaf)
-    b_prime = T @ LinearMap(transformation) @ T_dash.pseudo_inverse()
-    return b_prime
+    return T @ LinearMap(transformation) @ T_dash.pseudo_inverse()
 
 def _select_primary_leaf(root, leaves):
     for leaf in reversed(leaves):
