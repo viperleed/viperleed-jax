@@ -25,6 +25,11 @@ from viperleed_jax.transformation_tree.linear_transformer import (
 )
 
 
+from viperleed_jax.transformation_tree.errors import (
+    TransformationTreeError,
+    InvalidNodeError
+)
+
 class TransformationTreeNode(Node):
     """Base class for nodes for transformation trees.
 
@@ -48,7 +53,7 @@ class TransformationTreeNode(Node):
     def transformer(self):
         """Transformer of the edge connecting this node to its parent."""
         if self._transformer is None:
-            raise ValueError('Node does not have a transformer.')
+            raise InvalidNodeError('Node does not have a transformer.')
         return self._transformer
 
     @abstractmethod
@@ -56,7 +61,7 @@ class TransformationTreeNode(Node):
         """Set the transformer describing the edge."""
 
     def _pre_detach(self):
-        raise RuntimeError(
+        raise TransformationTreeError(
             'Transformation trees do not support detaching nodes.'
         )
 
@@ -109,7 +114,7 @@ class LinearTreeNode(TransformationTreeNode):
                 f'Parent layer ({parent.layer}) must be greater or equal '
                 f'to child layer ({self.layer}).'
             )
-            raise ValueError(msg)
+            raise InvalidNodeError(msg)
 
         # check that the transformer dimensions match
         if self.transformer.in_dim != parent.dof:
@@ -117,7 +122,7 @@ class LinearTreeNode(TransformationTreeNode):
                 f'Transformer input dimension ({self.transformer.in_dim}) '
                 f'must match parent dof ({parent.dof}).'
             )
-            raise ValueError(msg)
+            raise InvalidNodeError(msg)
 
 
 class LinearLeafNode(LinearTreeNode):
