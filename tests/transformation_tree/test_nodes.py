@@ -31,6 +31,7 @@ def dummy_leaf_node():
     """Fixture for a dummy leaf node."""
     return LinearLeafNode(dof=3, name='dummy_leaf')
 
+
 def test_transformation_tree_node(dummy_leaf_node):
     """Test basic functionality of TransformationTreeNode."""
     assert dummy_leaf_node._name == 'dummy_leaf'
@@ -47,6 +48,7 @@ def test_type_error_set_transformer(dummy_leaf_node):
     not_a_transformer = np.eye(3)
     with pytest.raises(TypeError):
         dummy_leaf_node.set_transformer(not_a_transformer)
+
 
 def test_detaching_parent_not_allowed():
     """Test that detaching parents in TransformationTreeNode is not allowed."""
@@ -78,6 +80,7 @@ class TestLinearLeafNode:
         node.set_transformer(valid_transformer)
         assert node.transformer == valid_transformer
 
+
 def test_transformer_validation():
     """Test transformer validation in LinearTreeNode."""
     node = LinearLeafNode(dof=2, name='leaf')
@@ -95,22 +98,35 @@ def test_transformer_validation():
         )  # Mismatched transformer output dimension
 
 
-class TestTreeLinking:
-# Test parent-child relationship in tree nodes
-    def test_parent_child_relationship_in_tree_nodes(self):
-        grandparent = TransformationTreeNode(name='grandparent', parent=None)
-        parent = TransformationTreeNode(name='parent', parent=grandparent)
-        child = TransformationTreeNode(name='child', parent=parent)
-        assert child.parent is parent
-        assert child in parent.children
-        assert parent.parent is grandparent
-        assert child in grandparent.descendants
-        assert grandparent in child.ancestors
+def test_parent_child_relationship_in_tree_nodes():
+    grandparent = TransformationTreeNode(name='grandparent', parent=None)
+    parent = TransformationTreeNode(name='parent', parent=grandparent)
+    child = TransformationTreeNode(name='child', parent=parent)
+    assert child.parent is parent
+    assert child in parent.children
+    assert parent.parent is grandparent
+    assert child in grandparent.descendants
+    assert grandparent in child.ancestors
 
+
+    def test_transformer_to_unrelated_node(dummy_leaf_node):
+        """Test that transformer_to_descendent raises for unrelated nodes."""
+        unrelated_node = LinearLeafNode(dof=3, name='unrelated')
+        with pytest.raises(ValueError):
+            dummy_leaf_node.transformer_to_descendent(unrelated_node)
+
+class TestConstraintNode:
+    @pytest.fixture
+    def direct_map(self):
+        """Fixture for a direct map."""
+        return LinearMap(np.eye(3))
+
+
+# Test parent-child relationship in tree nodes
     def test_parent_child_relationship_in_linear_tree_nodes(
-        self, dummy_leaf_node):
+        self, dummy_leaf_node, direct_map
+    ):
         child = dummy_leaf_node
-        direct_map = LinearMap(np.eye(3))
         parent = LinearConstraintNode(
             dof=3, layer=DisplacementTreeLayers.Symmetry,
             name='sym_parent',
@@ -121,4 +137,33 @@ class TestTreeLinking:
         # test transformer to descendent
         assert parent.transformer_to_descendent(child) == direct_map
 
-# Test that a node cannot be added to multiple parents
+    def test_error_layer_mismatch(self, direct_map):
+        """Test that a node cannot be added to a parent with a lower layer."""
+        child = LinearTreeNode(dof=3, name='child', layer=DisplacementTreeLayers.Root)
+
+        with pytest.raises(InvalidNodeError):
+            LinearConstraintNode(
+                dof=3, layer=DisplacementTreeLayers.Base,
+                name='parent', children=[child], transformers=[direct_map]
+            )
+
+    def test_constraint_node_children(self, direct_map):
+        """Test that a constraint node must have children."""
+        with pytest.raises(InvalidNodeError):
+            LinearConstraintNode(
+                dof=3, layer=DisplacementTreeLayers.Symmetry,
+                name='parent', children=[], transformers=[direct_map]
+            )
+
+    def test_constraint_node_dof_larger_than_children(self, direct_map):
+        """Test that a constraint node must have dof <= dof of children."""
+        child = LinearLeafNode(dof=3, name='child')
+        with pytest.raises(InvalidNodeError):
+            LinearConstraintNode(
+                dof=4, layer=DisplacementTreeLayers.Symmetry,
+                name='parent', children=[child], transformers=[direct_map]
+            )
+
+
+
+#class TestAtomicLinearNode:
