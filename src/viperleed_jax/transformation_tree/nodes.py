@@ -199,6 +199,13 @@ class LinearConstraintNode(LinearTreeNode):
                 "the sum of the children's degrees of freedom."
             )
 
+        # # only one child can be assigned a bound
+        # if sum(child.is_bounded for child in _children) > 1:
+        #     raise ValueError(
+        #         'Cannot connect two or more child nodes that have been '
+        #         'assigned bounds.'
+        #     )
+
         # if no transformers are provided, check if all children already
         # have transformers
         if transformers is None:
@@ -221,41 +228,8 @@ class LinearConstraintNode(LinearTreeNode):
         for child in _children:
             child.parent = self
 
-    def check_bounds_valid(self):
-        """Check that the bounds of the children are valid."""
-        collapsed_tansformer = self.collapse_transformer()
-        user_mask, lower, upper = self.collapse_bounds()
 
-        # if no user set bounds are provided, return True
-        if not np.any(user_mask):
-            return True
-
-        # discard all non-user specified lines
-        transformer = collapsed_tansformer.select_rows(user_mask)
-        lower, upper = lower[user_mask], upper[user_mask]
-
-        # All of this gives us two (lower & upper bound) systems of linear equations
-        # We can check if all requirements can be statified by checking if at least
-        # one solution exists. This is equivalent to checking if the rank of the
-        # augmented matrix is equal to the rank of the coefficient matrix.
-
-        coeff_rank = np.linalg.matrix_rank(transformer.weights)
-
-        upper_bound_matrix = np.hstack(
-            [transformer.weights, (upper - transformer.biases).reshape(-1, 1)]
-        )
-        lower_bound_matrix = np.hstack(
-            [transformer.weights, (lower - transformer.biases).reshape(-1, 1)]
-        )
-        upper_rank = np.linalg.matrix_rank(upper_bound_matrix)
-        lower_rank = np.linalg.matrix_rank(lower_bound_matrix)
-
-        if upper_rank < coeff_rank or lower_rank < coeff_rank:
-            raise ValueError(
-                'Bounds are not satisfiable'
-            )  # TODO: better error message
-        return True
-
+    # TODO: remove
     def _stacked_transformer(self):
         """Return the stacked transformer of the children."""
         child_weights = [child.transformer.weights for child in self.children]
@@ -313,49 +287,49 @@ class LinearConstraintNode(LinearTreeNode):
         )
         return stack_transformers(collapsed_transformers)
 
-    def stacked_bounds(self):
-        free, lower, upper = [], [], []
-        for leaf in self.leaves:
-            free.append(leaf.free)
-            lower.append(leaf._bounds.lower)
-            upper.append(leaf._bounds.upper)
-        return np.hstack(free), np.hstack(lower), np.hstack(upper)
 
-    # TODO: is this/can this be replaced by stacked_bounds()?
-    def collapse_bounds(self):
-        """Iterate through all descendants, collapsing the bounds."""
-        enforced_bounds, lower_bounds, upper_bounds = [], [], []
+class LinearOffsetNode(LinearConstraintNode):
+    """Class representing offsets in the hierarchical linear tree.
 
-        for child in self.children:
-            if child.is_leaf:
-                enforced_bounds.append(child._bounds.enforce)
-                lower_bounds.append(child._bounds.lower)
-                upper_bounds.append(child._bounds.upper)
-            else:
-                _enforce, _lower, _upper = child.collapse_bounds()
-                enforced_bounds.extend(_enforce)
-                lower_bounds.extend(_lower)
-                upper_bounds.extend(_upper)
+    Offsets are used to represent static displacements of parameters in the tree
+    (that are dealt with in the tensor-LEED approximation) rather than treated
+    in the reference calculation.
+    Offsets may be placed in between symmetry and user constraints.
+    """
 
-        return (
-            np.hstack(enforced_bounds),
-            np.hstack(lower_bounds),
-            np.hstack(upper_bounds),
+    def __init__(self, children, offset_at_node, name):
+        # can only have one child
+        if len(children) != 1:
+            raise ValueError('Offset node must have exactly one child')
+        child = children[0]
+
+        # check that no offset node is in the tree yet
+        if any(isinstance(c, LinearOffsetNode) for c in child.ancestors):
+            raise ValueError('Only one offset node is allowed in the tree.')
+
+        # check that the offset is valid
+        offset = np.array(offset_at_node)
+        if offset.shape != (child.dof,):
+            msg = (
+                f'Offset shape {offset.shape} does not match child dof '
+                f'shape {child.dof}.'
+            )
+            raise ValueError(msg)
+
+        # create affine transformer for the offset
+        offset_trafo = AffineTransformer(
+            weights = np.eye(child.dof),
+            biases = offset,
+            out_reshape=(child.dof,)
         )
-
-    @property
-    def free(self):
-        partial_free = []
-        for child in self.children:
-            # We use the Penrose Moore pseudo inverse to see which degrees of
-            # are needed to satisfy the constraints.
-            # This essentially propagates the information about which implicitly
-            # fixed and free parameters up the tree.
-            pseudo_inverse = np.linalg.pinv(child.transformer.weights)
-            # re-cast into a boolean array
-            partial_free.append(np.bool_(pseudo_inverse @ child.free))
-        # take the logical or of all the partial free arrays
-        return np.logical_or.reduce(partial_free)
+        # set the transformer for the child
+        super().__init__(
+            dof=child.dof,
+            name=name,
+            children=[child],
+            transformers=[offset_trafo],
+            layer=DisplacementTreeLayers.Offsets,
+        )
 
 
 class ImplicitLinearConstraintNode(LinearConstraintNode):
@@ -368,65 +342,36 @@ class ImplicitLinearConstraintNode(LinearConstraintNode):
     implicit constraint node.
     Implicit constraints are above user constraints in the hierarchy and are the
     last layer before the subtree root node.
+
+    Parameters
+    ----------
+    children: [LinearConstraintNode]
+        A list containing the child of the node to be created. Will raise a
+        ValueError if more then one child is given.
+    name: str
+        Label to be used by the node.
+    child_basis: np.ndarray (n_basis, n_dof)
+        Basis vectors for the child node. The basis vectors are used to
+    child_ranges: np.ndarray (n_dof, 2)
     """
 
-    def __init__(self, children):
+    def __init__(self, child, name, child_zonotope):
+
         # can only have one child
-        if len(children) != 1:
-            raise ValueError('Implicit constraints must have exactly one child')
-        child = children[0]
-        child.check_bounds_valid()
+        if not isinstance(child, LinearConstraintNode):
+            raise TypeError('Child must be a linear node.')
 
-        # determine the number of degrees of freedom
+        if any(isinstance(a, ImplicitLinearConstraintNode)
+               for a in [child, *child.ancestors]):
+            raise ValueError('Only one implicit constraint node is allowed '
+                             'per tree.')
 
-        if np.sum(child.free) == 0:
-            # if all bounds are fixed, we have an implicitly fixed node with
-            # no degrees of freedom
-            super().__init__(
-                dof=0,
-                name='Implicit Fixed',
-                children=[child],
-                transformers=[
-                    LinearMap(np.zeros((child.dof, 0)), (child.dof,))
-                ],
-                layer=DisplacementTreeLayers.Implicit_Constraints,
-            )
-            return
-
-        # First, we determine and reduce the number of degrees of freedom
-
-        # get bounds and free values
-        _, lower, upper = child.stacked_bounds()
-        free_mask = ~np.isclose(lower, upper)
-
-        collapsed_trafo = child.collapse_transformer().select_rows(free_mask)
-
-        # Make sure the transformer is invertible by checking condition number
-        cond = np.linalg.cond(collapsed_trafo.weights)
-        if cond > 1e12:
-            raise ValueError('Transformer matrix is too ill-conditioned '
-                             'to invert safely')
-        inv = np.linalg.pinv(collapsed_trafo.weights)
-        p_lower = inv @ lower[free_mask]
-        p_upper = inv @ upper[free_mask]
-
-        _, s, vh = np.linalg.svd(collapsed_trafo.weights, full_matrices=False)
-        dof = np.linalg.matrix_rank(collapsed_trafo.weights)
-
-        m_prime = np.diag(p_upper - p_lower) @ vh.T
-        b_prime = p_lower
-
-
-        range_trafo = AffineTransformer(
-            m_prime,
-            b_prime,
-            (child.dof,)
-        )
+        normalization_transformer = child_zonotope.normalize()
 
         super().__init__(
-            dof=dof,
-            name='Implicit Constraint',
+            dof=normalization_transformer.in_dim,
+            name=name,
             children=[child],
-            transformers=[range_trafo],
+            transformers=[normalization_transformer],
             layer=DisplacementTreeLayers.Implicit_Constraints,
         )
