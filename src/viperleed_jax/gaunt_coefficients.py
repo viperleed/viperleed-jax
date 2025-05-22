@@ -67,16 +67,16 @@ def find_index(
 
 
 def fetch_gaunt(index1: int, index2: int) -> float:
-    """
-    Fetches the Gaunt coefficient from the loaded file.
+    """Fetch the Gaunt coefficient from the loaded file.
 
-    Parameters:
+    Parameters
+    ----------
         index1 (int): The first index of the Gaunt coefficient.
         index2 (int): The second index of the Gaunt coefficient.
 
-    Returns:
+    Returns
+    -------
         float: The value of the Gaunt coefficient.
-
     """
     return _REDUCED_GAUNT_COEFFICIENTS[index1, index2]
 
@@ -85,7 +85,7 @@ def fetch_gaunt(index1: int, index2: int) -> float:
 def fetch_stored_gaunt_coeffs(
     l1: int, l2: int, l3: int, m1: int, m2: int, m3: int
 ) -> float:
-    """Returns stored Gaunt coefficients.
+    r"""Return stored Gaunt coefficients.
 
     Enforces the selection rule m1 + m2 + m3 == 0.
 
@@ -102,7 +102,7 @@ def fetch_stored_gaunt_coeffs(
         Value of the Gaunt coefficient.
 
     Notes
-    _____
+    -----
     The Gaunt coefficients are directly related to the Clebsch-Gordan
     coefficients and the Wigner 3-j symbols. The Gaunt coefficients are
     defined as
@@ -128,7 +128,7 @@ def fetch_stored_gaunt_coeffs(
 @partial(vmap, in_axes=(None, 0, None))
 @partial(vmap, in_axes=(None, None, 0))
 def integrate_legendre(l1: int, l2: int, l3: int) -> float:
-    """Calculates integral over three associated Legendre polynomials.
+    r"""Calculate integral over three associated Legendre polynomials.
 
     Parameters
     ----------
