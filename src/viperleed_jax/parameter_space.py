@@ -5,15 +5,18 @@ __created__ = '2024-09-02'
 
 import numpy as np
 
-from .constants import ATOM_Z_DIR_ID
-from .files.displacements.reader import DisplacementFileSections
-from .transformation_tree import (
+from viperleed_jax.constants import ATOM_Z_DIR_ID
+from viperleed_jax.files.displacements.reader import DisplacementFileSections
+from viperleed_jax.perturbation_type import PerturbationType
+from viperleed_jax.transformation_tree import (
     geo_parameters,
     meta_parameters,
     occ_parameters,
     vib_parameters,
 )
-from .transformation_tree.displacement_tree_layers import DisplacementTreeLayers
+from viperleed_jax.transformation_tree.displacement_tree_layers import (
+    DisplacementTreeLayers,
+)
 
 
 class ParameterSpace:
@@ -109,13 +112,13 @@ class ParameterSpace:
         vib_block = search_block.sections[DisplacementFileSections.VIB_DELTA]
         occ_block = search_block.sections[DisplacementFileSections.OCC_DELTA]
 
-        for subtree, block in zip(
+        for tree, block in zip(
             (self.geo_tree, self.vib_tree, self.occ_tree),
             (geo_block, vib_block, occ_block),
         ):
             for line in block:
                 # apply and check for symmetry violations
-                subtree.apply_bounds(line)
+                tree.apply_bounds(line)
         self.check_for_inconsistencies()
 
     def _parse_constraints(self, search_block):
@@ -129,17 +132,19 @@ class ParameterSpace:
         constraints_block = search_block.sections[
             DisplacementFileSections.CONSTRAIN
         ]
-        for constraint in constraints_block:
-            if constraint.constraint_type == 'geo':  # TODO: make into Enum
-                self.geo_tree.apply_explicit_constraint(constraint)
-            elif constraint.constraint_type == 'vib':
-                self.vib_tree.apply_explicit_constraint(constraint)
-            elif constraint.constraint_type == 'occ':
-                self.occ_tree.apply_explicit_constraint(constraint)
+        for constraint_line in constraints_block:
+            if constraint_line.type.type is PerturbationType.GEO:
+                self.geo_tree.apply_explicit_constraint(constraint_line)
+            elif constraint_line.type.type is PerturbationType.VIB:
+                self.vib_tree.apply_explicit_constraint(constraint_line)
+            elif constraint_line.type.type is PerturbationType.OCC:
+                self.occ_tree.apply_explicit_constraint(constraint_line)
+            elif constraint_line.type.type is PerturbationType.DOM:
+                raise NotImplementedError(
+                    'Domain constraints are not supported yet.')
             else:
-                raise ValueError(
-                    f'Unknown constraint type: {constraint.constraint_type}'
-                )
+                msg = f'Unknown constraint type: {constraint_line.type}'
+                raise ValueError(msg)
         self.check_for_inconsistencies()
 
 
