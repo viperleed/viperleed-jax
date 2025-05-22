@@ -156,16 +156,15 @@ def apply_affine_to_subspace(
     bias : (M,) array
         The transform.biases.
     """
-    if basis_vectors.ndim != 2:
-        raise ValueError('basis_vectors must be 2D')
-    n, D = basis_vectors.shape
-    cr = np.asarray(coordinate_ranges)
-    if cr.shape != (2, n):
-        raise ValueError(f'coordinate_ranges must be shape (2,{n})')
-    lows, highs = cr
+    D, n = basis_vectors.shape
+    if coordinate_ranges.shape != (2, n):
+        raise ValueError(f'coordinate_ranges must be (2,{n}), got {coordinate_ranges.shape}')
+    lows, highs = coordinate_ranges
+
     W, b = transform.weights, transform.biases
-    # project basis
-    Bm = W @ basis_vectors.T
+    # project basis correctly:
+    Bm = W @ basis_vectors  # -> (M, n)
+
     # compute new ranges for each coeff
     # (using brute-force corners if n small, but closed form here)
     # we only need per-axis extrema of linear functionals v·x + b
@@ -176,13 +175,15 @@ def apply_affine_to_subspace(
     # invert: for each basis col i, coordinate xi ranges in [lows[i], highs[i]]
     # z = Bm @ e_i * xi  => extremum at xi boundaries
     for i in range(n):
-        vec = Bm[:, i]
+        vec = Bm[:, i]  # M-vector
         low_pt = vec * lows[i] + b
         high_pt = vec * highs[i] + b
-        new_mins[i] = np.where(lows[i] <= highs[i], low_pt.min(), high_pt.min())
-        new_maxs[i] = np.where(highs[i] >= lows[i], high_pt.max(), low_pt.max())
+        new_mins[i] = low_pt.min()  # since lows[i] ≤ highs[i]
+        new_maxs[i] = high_pt.max()
     new_ranges = np.vstack([new_mins, new_maxs])
     return Bm, new_ranges, b
+
+
 
 
 def orthonormalize_subspace(
@@ -249,13 +250,18 @@ class Zonotope:
     def __init__(
         self, basis: np.ndarray, ranges: np.ndarray, offset: np.ndarray = None
     ):
-        if basis.ndim != 2:
+        basis_arr = np.asarray(basis)
+        ranges_arr = np.asarray(ranges)
+        if basis_arr.ndim != 2:
             raise ValueError('basis must be shape (D,n)')
-        D, n = basis.shape
+        # detect orientation: if ranges matches rows of basis, transpose
+        if ranges_arr.shape[1] == basis_arr.shape[0] and ranges_arr.shape[1] != basis_arr.shape[1]:
+            basis_arr = basis_arr.T
+        # now basis_arr is (D, n)
+        D, n = basis_arr.shape
 
-        ranges = np.asarray(ranges)
-        if ranges.shape != (2, D):
-            raise ValueError(f'ranges must be (2,{D})')
+        if ranges_arr.shape != (2, n):
+            raise ValueError(f'ranges must be (2,{n}), got {ranges_arr.shape}')
 
         if offset is None:
             offset = np.zeros(D)
@@ -263,11 +269,10 @@ class Zonotope:
         if offset.shape != (D,):
             raise ValueError(f'offset must be length {D}')
 
-        non_zero_range_mask = abs(ranges[0] - ranges[1]) > EPS
+        non_zero_range_mask = abs(ranges_arr[0] - ranges_arr[1]) > EPS
 
-
-        self.basis = basis[non_zero_range_mask, :]
-        self.ranges = ranges[:, non_zero_range_mask]
+        self.basis  = basis_arr[:, non_zero_range_mask]
+        self.ranges = ranges_arr[:, non_zero_range_mask]
         self.offset = offset
 
     def apply_affine(self, A: 'AffineTransformer') -> 'Zonotope':
@@ -278,7 +283,7 @@ class Zonotope:
             self.basis, self.ranges, A
         )
         # the sub‐function already returns the new offset b_new
-        return Zonotope(Bm, new_ranges, offset=b_new)
+        return Zonotope(Bm, new_ranges.T, offset=b_new)
 
     def normalize(
         self, output_ranges: np.ndarray = None
