@@ -6,6 +6,7 @@ __created__ = '2024-11-23'
 import numpy as np
 import pytest
 
+from viperleed_jax.atom_basis import SiteEl
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
@@ -16,17 +17,15 @@ from viperleed_jax.transformation_tree.errors import (
 )
 from viperleed_jax.transformation_tree.linear_transformer import (
     AffineTransformer,
-    LinearMap
+    LinearMap,
 )
 from viperleed_jax.transformation_tree.nodes import (
+    AtomicLinearNode,
+    LinearConstraintNode,
     LinearLeafNode,
     LinearTreeNode,
-    LinearConstraintNode,
-    AtomicLinearNode,
     TransformationTreeNode,
 )
-
-from viperleed_jax.atom_basis import SiteEl
 
 
 @pytest.fixture
