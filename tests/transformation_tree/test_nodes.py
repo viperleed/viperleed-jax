@@ -22,8 +22,11 @@ from viperleed_jax.transformation_tree.nodes import (
     LinearLeafNode,
     LinearTreeNode,
     LinearConstraintNode,
+    AtomicLinearNode,
     TransformationTreeNode,
 )
+
+from viperleed_jax.atom_basis import SiteEl
 
 
 @pytest.fixture
@@ -165,5 +168,21 @@ class TestConstraintNode:
             )
 
 
+class TestAtomicLinearNode:
+    class MockAtom:
+        def __init__(self):
+            self.atom = None
+            self.num = 1
+            self.site_element = SiteEl('site', 'Fe')
+            self.site = self.site_element.site
+            self.element = self.site_element.element
 
-#class TestAtomicLinearNode:
+    def test_atomic_linear_node(self):
+        """Test AtomicLinearNode properties and transformer setting."""
+        atom = self.MockAtom()
+        node = AtomicLinearNode(atom=atom, dof=3, name='atomic_node')
+        assert node.dof == 3
+        assert node.name == '(3) atomic_node'
+        assert node.atom is atom
+        assert node.element == 'Fe'
+        assert node.site == 'site'
