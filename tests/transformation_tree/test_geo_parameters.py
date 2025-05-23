@@ -79,8 +79,12 @@ class TestFe2O3:
         return GeoTree(atom_basis)
 
     # def test_apply_offsets(self, fe2o3_tree):
-    #     fe2o3_tree.apply_offsets()
+    #     fe2o3_tree.apply_offsets(OffsetsLine('geo Fe 1 z = 0.1'))
 
+    # def test_apply_offsets_twice(self, fe2o3_tree):
+    #     fe2o3_tree.apply_offsets(OffsetsLine('geo Fe 1 z = 0.1'))
+    #     with pytest.raises(ValueError, match='already applied'):
+    #         fe2o3_tree.apply_offsets(OffsetsLine('geo Fe 1 z = 0.1'))
 
     @pytest.mark.parametrize(
         'constraint',
@@ -136,3 +140,26 @@ class TestFe2O3:
             for constraint in constraints:
                 fe2o3_tree.apply_explicit_constraint(
                     ConstraintLine(constraint))
+
+
+    @pytest.mark.parametrize(
+        'bounds_line,implicit_dof',
+        [
+            ('Fe_surf xyz = -0.1 0.1', 3),
+            ('Fe_surf z = -0.1 0.1', 1),
+            ('Fe_surf xy = -0.1 0.1', 2),
+            ('Fe_surf z = -5 5', 1),
+        ]
+    )
+    def test_apply_single_geo_delta(
+        self, fe2o3_tree, bounds_line, implicit_dof, subtests):
+        """Test applying a single GeoDelta."""
+        geo_delta_line = GeoDeltaLine(bounds_line)
+        fe2o3_tree.apply_bounds(geo_delta_line)
+        assert bounds_line in str(fe2o3_tree)
+
+        # apply implicit constraints
+        fe2o3_tree.apply_implicit_constraints()
+        with subtests.test('check dof'):
+            # finalize the tree to apply the bounds
+            assert sum(root.dof for root in fe2o3_tree.roots) == implicit_dof
