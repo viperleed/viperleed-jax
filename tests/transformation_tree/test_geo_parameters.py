@@ -88,7 +88,6 @@ class TestFe2O3:
             'geo Fe L(1) = linked',
             'geo Fe L(1-2) = linked',
             'geo O L(1) = linked',
-            'geo Fe 1 = Fe 2',
             'geo Fe_surf, O_surf = linked',
             'geo Fe_surf, O_surf = 1 Fe_surf',
             'geo Fe_surf, O_surf = [[1 0 0] [0 0 1] [0 1 0]] Fe_surf',
@@ -120,12 +119,14 @@ class TestFe2O3:
         [
             [
                 'geo Fe L(1) = linked',
-                'geo Fe L(2) = linked',
-                'geo Fe L(1-2) = linked',
+                'geo Fe 1-4 = linked',
             ],
             [
                 'geo Fe L(1-2) = linked',
                 'geo Fe L(1) = linked',
+            ],
+            [
+                'geo Fe 1 = Fe 2',
             ],
         ],
     )
