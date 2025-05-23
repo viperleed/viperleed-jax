@@ -283,7 +283,7 @@ class Zonotope:
             self.basis, self.ranges, A
         )
         # the sub‐function already returns the new offset b_new
-        return Zonotope(Bm, new_ranges.T, offset=b_new)
+        return Zonotope(Bm, new_ranges, offset=b_new)
 
     def normalize(
         self, output_ranges: np.ndarray = None
