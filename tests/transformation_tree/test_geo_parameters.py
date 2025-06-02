@@ -7,6 +7,8 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
 from viperleed_jax.transformation_tree.geo_parameters import GeoTree
+from viperleed_jax.transformation_tree.linear_transformer import AffineTransformer
+from viperleed_jax.transformation_tree.reduced_space import apply_affine_to_subspace
 
 from ..structures import CaseStatesAfterInit
 
