@@ -452,7 +452,7 @@ class DisplacementTree(LinearTree):
         # TODO: If we allow for non (3x3) transformations, we need to check
         # casting here.
         # check that the linear transformation given by the user is valid
-        if len(user_arr) == 1:
+        if user_arr.size == 1:
             # scalar case
             user_trafo = float(user_arr.flatten()[0]) * np.eye(link_target.dof)
         elif user_arr.size == (link_target.dof, link_target.dof):
