@@ -116,6 +116,7 @@ class TestFe2O3:
                 ConstraintLine('geo Fe L(1-2) = linked'))
             assert sum(root.dof for root in fe2o3_tree.roots) == 36
         with subtests.test('finalize layered constraints'):
+            fe2o3_tree.apply_implicit_constraints()
             fe2o3_tree.finalize_tree()
 
     @pytest.mark.parametrize(
