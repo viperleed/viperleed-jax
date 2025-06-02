@@ -455,7 +455,7 @@ class DisplacementTree(LinearTree):
         if user_arr.size == 1:
             # scalar case
             user_trafo = float(user_arr.flatten()[0]) * np.eye(link_target.dof)
-        elif user_arr.size == (link_target.dof, link_target.dof):
+        elif user_arr.shape == (link_target.dof, link_target.dof):
             user_trafo = user_arr
         else:
             msg = (
