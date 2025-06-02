@@ -41,6 +41,7 @@ def apply_affine_to_subspace(
     # project basis correctly:
     Bm = W @ basis_vectors  # -> (M, n)
 
+
     # compute new ranges for each coeff
     # (using brute-force corners if n small, but closed form here)
     # we only need per-axis extrema of linear functionals v·x + b
@@ -54,12 +55,12 @@ def apply_affine_to_subspace(
         vec = Bm[:, i]  # M-vector
         low_pt = vec * lows[i] + b
         high_pt = vec * highs[i] + b
-        new_mins[i] = low_pt.min()  # since lows[i] ≤ highs[i]
-        new_maxs[i] = high_pt.max()
+        all_edges = np.vstack([low_pt, high_pt])
+        new_mins[i] = all_edges.min()
+        new_maxs[i] = all_edges.max() # since lows[i] ≤ highs[i]
     new_ranges = np.vstack([new_mins, new_maxs])
+
     return Bm, new_ranges, b
-
-
 
 
 def orthonormalize_subspace(
