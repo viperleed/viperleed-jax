@@ -365,7 +365,7 @@ class DisplacementTree(LinearTree):
 
     def apply_offsets(self, offset_line):
         """Apply offsets to the children of the node."""
-        offset = np.array(offset_line.offset)
+        offset = np.array(offset_line.offset.offset)
 
         # check construction order
         super().apply_offsets()
@@ -376,9 +376,9 @@ class DisplacementTree(LinearTree):
 
         # iterate over the roots and apply the offset
         for root, primary_leaf in target_roots_primary_leaves.items():
-            if root.dof != len(offset):
+            if root.dof != offset.size:
                 msg = (
-                    f'Offset line "{offset_line}" has a shape of {offset.shape} '
+                    f'Offset line "{offset_line}" has a size of {offset.size} '
                     f'but the target has {root.dof} DOFs. The offset must be of '
                     f'shape ({root.dof},).'
                 )
