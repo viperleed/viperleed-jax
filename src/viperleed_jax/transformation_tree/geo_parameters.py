@@ -10,10 +10,12 @@ from ..lib_math import EPS
 from .displacement_tree_layers import DisplacementTreeLayers
 from .functionals import LinearTreeFunctional
 from .linear_transformer import LinearMap
-from .nodes import AtomicLinearNode, LinearConstraintNode
+from .nodes import AtomicLinearNode, LinearConstraintNode, ImplicitLinearConstraintNode
 from .tree import (
     DisplacementTree,
 )
+from viperleed_jax.perturbation_type import PerturbationType
+from .reduced_space import Zonotope
 
 
 class DisplacementFunctional(LinearTreeFunctional):
@@ -26,51 +28,11 @@ class DisplacementFunctional(LinearTreeFunctional):
 class GeoLeafNode(AtomicLinearNode):
     """Represents a leaf node with geometric parameters."""
 
-    _Z_DIR_ID = 0  # TODO: unify and move to a common place
-
     def __init__(self, atom):
         dof = 3
         super().__init__(dof=dof, atom=atom)
         self.symrefm = atom.atom.symrefm
         self._name = f'geo (At_{self.num},{self.site},{self.element})'
-
-    def _update_bounds(self, line):
-        # geometric leaf bounds are 3D
-        range = line.range
-        direction = line.direction
-
-        if direction._fractional:
-            raise NotImplementedError('TODO')
-
-        lower = np.sum(direction._vectors*range.start, axis=0)
-        upper = np.sum(direction._vectors*range.stop, axis=0)
-        user_set = abs(upper-lower) > EPS
-
-        # Swap indices to match LEED convention
-        # TODO: do this in a more general way
-        lower = lower[[2, 0, 1]]
-        upper = upper[[2, 0, 1]]
-        user_set = user_set[[2, 0, 1]]
-        self._bounds.update_range((lower, upper), enforce=user_set)
-
-    def update_offsets(self, line):
-        # geometric leaf bounds are 3D
-        direction = line.direction
-
-        if direction._fractional:
-            raise NotImplementedError('TODO')
-
-        if (
-            direction.num_free_directions == 1
-            and direction._vectors[0][2]
-            == 1  # TODO: index 2 here needs to be changed to LEED convention
-        ):
-            # z-only movement
-            offset = np.array([line.value, 0.0, 0.0])
-            user_set = np.array([True, False, False])
-        else:
-            raise NotImplementedError('TODO')
-        self._bounds.update_offset(offset=offset, enforce=user_set)
 
 
 class GeoConstraintNode(LinearConstraintNode):
@@ -226,9 +188,8 @@ class GeoSymmetryConstraint(GeoConstraintNode):
 class GeoLinkedConstraint(GeoConstraintNode):
     """Class for explicit links of geometric parameters."""
 
-    # TODO: if we implement linking of nodes with different dof (directional),
-    # this needs to be adapted
-    # TODO: this also needs to be adapted if we allow partial directional linking
+
+    # TODO: this needs to be adapted if we allow partial directional linking
     # e.g. linking z coordinates of two atoms, but not x and y
     # TODO: furthermore: linking of atoms in the same direction, but with
     #       different magnitudes would also be problematic! – check math for this
@@ -290,27 +251,50 @@ class GeoTree(DisplacementTree):
             self.nodes.append(GeoSymmetryConstraint(children=[node]))
 
     def apply_explicit_constraint(self, constraint_line):
-        # self._check_constraint_line_type(constraint_line, "geo")
-        *_, selected_roots = self._select_constraint(constraint_line)
+        if constraint_line.type.type != PerturbationType.GEO:
+            msg = f'Wrong constraint type for GeoTree: {constraint_line.type}.'
+            raise ValueError(msg)
 
-        if constraint_line.direction is None:
-            # complete linking; requires all root nodes to have the same dof
-            if not all(
-                node.dof == selected_roots[0].dof for node in selected_roots
-            ):
-                raise ValueError(
-                    'All root nodes must have the same number of free parameters.'
-                )
-            # create a constraint node for the selected roots
-            self.nodes.append(
-                GeoLinkedConstraint(
-                    children=selected_roots, name=constraint_line.line
-                )
+        super().apply_explicit_constraint(constraint_line)
+
+
+    def apply_bounds(self, geo_delta_line):
+        super().apply_bounds(geo_delta_line)
+
+        # resolve targets
+        _, target_roots_and_primary_leaves = self._get_leaves_and_roots(
+            geo_delta_line.targets
+        )
+
+        # get vector and range information from the GEO_DELTA line
+        n_vectors = len(geo_delta_line.direction.vectors)
+        # ranges =[geo_delta_line.range.start, geo_delta_line.range.stop]*n_vectors
+        # ranges = np.array(ranges).reshape((2, n_vectors))
+
+        ranges = np.vstack([
+            np.full(n_vectors, geo_delta_line.range.start),
+            np.full(n_vectors, geo_delta_line.range.stop)
+        ])
+
+        leaf_range_zonotope = Zonotope(
+            basis=geo_delta_line.direction.vectors,
+            ranges=ranges,
+            offset=None,
+        )
+
+        for root, primary_leaf in target_roots_and_primary_leaves.items():
+            root_to_leaf_transformer = root.transformer_to_descendent(primary_leaf)
+            leaf_to_root_transformer = root_to_leaf_transformer.pseudo_inverse()
+            root_range_zonotope = leaf_range_zonotope.apply_affine(
+                leaf_to_root_transformer
             )
-        else:
-            raise NotImplementedError(
-                'Directional geo constraints are not yet supported.'
+            implicit_constraint_node = ImplicitLinearConstraintNode(
+                child=root,
+                name=geo_delta_line.raw_line,
+                child_zonotope=root_range_zonotope,
             )
+            self.nodes.append(implicit_constraint_node)
+
 
     #############################
     # Geometry specific methods #
