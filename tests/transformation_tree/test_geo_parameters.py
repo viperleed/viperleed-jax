@@ -173,3 +173,28 @@ class TestFe2O3:
         with subtests.test('check dof'):
             # finalize the tree to apply the bounds
             assert sum(root.dof for root in fe2o3_tree.roots) == implicit_dof
+
+def test_reflection_preserves_ranges():
+    # 1) Set up a 3×3 basis = identity
+    basis = np.eye(3)
+    # 2) Uniform ±0.1 range on each axis
+    ranges = np.array([[-0.1, -0.1, -0.1], [0.1, 0.1, 0.1]])
+    # 3) Build a “mirror Y” + tiny cross‐coupling
+    W = np.array(
+        [
+            [1.0,  0.0, 0.0],
+            [0.0, -1.0, 0.0],
+            [0.0,  0.0, 1.0],
+        ]
+    )
+    b = np.zeros(3)
+    T = AffineTransformer(W, b)
+
+    Bm, new_ranges, b_out = apply_affine_to_subspace(basis, ranges, T)
+
+    # Expect Bm = W @ I = W
+    assert np.allclose(Bm, W)
+    # And ranges should be exactly the same as what we passed in
+    assert np.allclose(abs(new_ranges), abs(ranges)), f'got {new_ranges}'
+    # No bias in or out
+    assert np.allclose(b_out, 0)
