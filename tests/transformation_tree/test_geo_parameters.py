@@ -104,6 +104,13 @@ class TestFe2O3:
         fe2o3_tree.apply_explicit_constraint(ConstraintLine(constraint))
         assert constraint in str(fe2o3_tree)
 
+    def test_apply_wrong_constraint_type(self, fe2o3_tree):
+        """Test applying a constraint with the wrong type."""
+        vib_constraint = ConstraintLine('vib Fe_surf, O_surf = linked')
+        with pytest.raises(ValueError, match='Wrong constraint type'):
+            fe2o3_tree.apply_explicit_constraint(vib_constraint)
+
+
     def test_apply_multiple_constraints(self, fe2o3_tree, subtests):
         """Test applying multiple interconnected constraints."""
         assert sum(root.dof for root in fe2o3_tree.roots) == 45
