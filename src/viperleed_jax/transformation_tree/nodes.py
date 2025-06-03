@@ -16,19 +16,19 @@ from viperleed_jax.lib_math import EPS
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
+from viperleed_jax.transformation_tree.errors import (
+    InvalidNodeError,
+    TransformationTreeError,
+)
 from viperleed_jax.transformation_tree.linear_transformer import (
-    LinearMap,
     AffineTransformer,
+    LinearMap,
     stack_transformers,
 )
-from viperleed_jax.lib_math import EPS
-from viperleed_jax.transformation_tree.reduced_space import orthonormalize_subspace
-
-
-from viperleed_jax.transformation_tree.errors import (
-    TransformationTreeError,
-    InvalidNodeError
+from viperleed_jax.transformation_tree.reduced_space import (
+    orthonormalize_subspace,
 )
+
 
 class TransformationTreeNode(Node):
     """Base class for nodes for transformation trees.
