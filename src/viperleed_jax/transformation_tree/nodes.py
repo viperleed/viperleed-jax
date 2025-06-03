@@ -188,7 +188,7 @@ class LinearConstraintNode(LinearTreeNode):
 
         # dof cannot be larger than the sum of the children's dofs
         if self.dof > sum(child.dof for child in _children):
-            raise ValueError(
+            raise InvalidNodeError(
                 'Degree of freedom must be less than or equal to '
                 "the sum of the children's degrees of freedom."
             )
