@@ -305,7 +305,7 @@ class LinearOffsetNode(LinearConstraintNode):
         # set the transformer for the child
         super().__init__(
             dof=child.dof,
-            name=name,
+            name=f'Offset({name})',
             children=[child],
             transformers=[offset_trafo],
             layer=DisplacementTreeLayers.Offsets,
