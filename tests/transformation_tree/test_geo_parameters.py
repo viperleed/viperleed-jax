@@ -80,13 +80,20 @@ class TestFe2O3:
         atom_basis =  AtomBasis(state.slab)
         return GeoTree(atom_basis)
 
-    # def test_apply_offsets(self, fe2o3_tree):
-    #     fe2o3_tree.apply_offsets(OffsetsLine('geo Fe 1 z = 0.1'))
+    def test_apply_offsets(self, fe2o3_tree):
+        fe2o3_tree.apply_offsets(OffsetsLine('geo Fe 1 z = 0.1'))
+        assert 'Offset(geo Fe 1 z = 0.1)' in str(fe2o3_tree)
+        last_node = fe2o3_tree.nodes[-1]
+        assert len(last_node.children) == 1
+        assert last_node.children[0].transformer.biases == pytest.approx(
+            np.array([0.1, 0.0, 0.0]))
+        assert last_node.children[0].transformer.weights == pytest.approx(
+            np.eye(3))
 
-    # def test_apply_offsets_twice(self, fe2o3_tree):
-    #     fe2o3_tree.apply_offsets(OffsetsLine('geo Fe 1 z = 0.1'))
-    #     with pytest.raises(ValueError, match='already applied'):
-    #         fe2o3_tree.apply_offsets(OffsetsLine('geo Fe 1 z = 0.1'))
+    def test_apply_offsets_twice(self, fe2o3_tree):
+        fe2o3_tree.apply_offsets(OffsetsLine('geo Fe 1 z = 0.1'))
+        with pytest.raises(ValueError, match='already defined'):
+            fe2o3_tree.apply_offsets(OffsetsLine('geo Fe 1 z = 0.1'))
 
     @pytest.mark.parametrize(
         'constraint',
