@@ -367,6 +367,18 @@ class DisplacementTree(LinearTree):
         """Apply offsets to the children of the node."""
         offset = np.array(offset_line.offset.offset)
 
+        # TODO: allow off axis offsets; multi dim offsets?
+
+        # if there is a direction do processing
+        if offset_line.direction is not None:
+            if len(offset_line.direction.vectors) != 1:
+                msg = (
+                    f'Cannot interpret offset for line "{offset_line}".'
+                )
+                raise ValueError(msg)
+            vector = offset_line.direction.vectors[0]
+            offset = np.array(vector) * offset
+
         # check construction order
         super().apply_offsets()
         # get roots targeted by the offset
