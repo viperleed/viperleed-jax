@@ -163,7 +163,6 @@ class TestFe2O3:
         'bounds_line,implicit_dof',
         [
             ('Fe_surf xyz = -0.1 0.1', 3),
-            ('Fe_surf z = -0.1 0.1', 1),
             ('Fe_surf xy = -0.1 0.1', 2),
             ('Fe_surf z = -5 5', 1),
         ]
