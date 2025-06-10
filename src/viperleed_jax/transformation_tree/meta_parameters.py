@@ -42,6 +42,25 @@ class MetaParameterSubtree(LinearTree):
         self.nodes.append(bound_node)
         self.finalize_tree()
 
+    # TODO
+    def apply_bounds(self):
+        raise NotImplementedError()
+
+    def apply_implicit_constraints(self):
+        raise NotImplementedError(
+            'Meta parameters do not have implicit constraints.'
+        )
+
+    def apply_explicit_constraint(self):
+        raise NotImplementedError(
+            'Meta parameters do not have explicit constraints.'
+        )
+
+    def apply_offsets(self):
+        """Apply the offsets to the meta parameters."""
+        raise NotImplementedError(
+            'Meta parameters do not have offsets to apply.'
+        )
 
 class V0rLeafNode(LinearLeafNode):
     def __init__(self):
