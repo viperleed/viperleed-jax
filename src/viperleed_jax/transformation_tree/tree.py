@@ -14,6 +14,7 @@ from anytree import RenderTree
 from anytree.exporter import UniqueDotExporter
 
 from viperleed_jax.files.displacements.lines import ConstraintLine
+from viperleed_jax.perturbation_type import PerturbationType
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
@@ -234,12 +235,13 @@ class DisplacementTree(LinearTree):
     transformations).
     """
 
-    def __init__(self, atom_basis, name, root_node_name):
+    def __init__(self, atom_basis, name, root_node_name, perturbation_type):
         self.atom_basis = atom_basis
         self.site_elements = self.atom_basis.site_elements
 
         self._offsets_have_been_added = False
         self.functionals = []
+        self.perturbation_type = PerturbationType(perturbation_type)
         super().__init__(name, root_node_name)
 
     @property

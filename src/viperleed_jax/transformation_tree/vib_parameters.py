@@ -146,6 +146,7 @@ class VibTree(DisplacementTree):
             atom_basis,
             name='Vibrational Parameters',
             root_node_name='vib root',
+            perturbation_type='vib',
         )
         self.vibration_functional = VibrationFunctional()
         self.functionals.append(self.vibration_functional)
@@ -178,9 +179,6 @@ class VibTree(DisplacementTree):
         for node in self.roots:
             node.check_bounds_valid()
 
-    def apply_explicit_constraint(self, constraint_line):
-        # self._check_constraint_line_type(constraint_line, "vib")
-        *_, selected_roots = self._select_constraint(constraint_line)
 
         if not all(
             node.dof == selected_roots[0].dof for node in selected_roots

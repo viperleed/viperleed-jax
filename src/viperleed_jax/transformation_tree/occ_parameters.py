@@ -133,7 +133,8 @@ class OccTree(DisplacementTree):
         super().__init__(
             atom_basis,
             name='Occupational Parameters',
-            root_node_name='occ root',
+            root_node_name='occ root'
+            perturbation_type='occ',
         )
 
     def _initialize_tree(self):

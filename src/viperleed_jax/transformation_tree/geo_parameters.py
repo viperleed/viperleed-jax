@@ -219,6 +219,7 @@ class GeoTree(DisplacementTree):
             atom_basis,
             name='Geometric Parameters',
             root_node_name='geo root',
+            perturbation_type='geo',
         )
         self.displacement_functional = DisplacementFunctional()
         self.functionals.append(self.displacement_functional)
@@ -249,13 +250,6 @@ class GeoTree(DisplacementTree):
         unlinked_site_el_nodes = [node for node in self.leaves if node.is_root]
         for node in unlinked_site_el_nodes:
             self.nodes.append(GeoSymmetryConstraint(children=[node]))
-
-    def apply_explicit_constraint(self, constraint_line):
-        if constraint_line.type.type != PerturbationType.GEO:
-            msg = f'Wrong constraint type for GeoTree: {constraint_line.type}.'
-            raise ValueError(msg)
-
-        super().apply_explicit_constraint(constraint_line)
 
 
     def apply_bounds(self, geo_delta_line):
