@@ -118,10 +118,10 @@ class AffineTransformer(Transformer):
                 return result.reshape(self.out_reshape)
             return result
 
-        if len(free_params) != self.n_free_params:
+        if free_params.size != self.n_free_params:
             msg = 'Free parameters have wrong shape'
             raise ValueError(msg)
-        result = self.weights @ free_params + self.biases  # Ax + b
+        result = self.weights @ free_params.reshape(-1) + self.biases  # Ax + b
         if self.out_reshape is not None:
             result = result.reshape(self.out_reshape)
         return result
@@ -172,6 +172,26 @@ class AffineTransformer(Transformer):
         new_weights = self.weights[_bool_mask]
         new_biases = self.biases[_bool_mask]
         return AffineTransformer(new_weights, new_biases, (_bool_mask.sum(),))
+
+    def pseudo_inverse(self):
+            """Calculate the pseudo-inverse of the affine transformation."""
+            if self.in_dim == 0:
+                raise ValueError('Cannot calculate pseudo-inverse of zero map')
+
+            # Create a homogeneous matrix representation of the affine transformation
+            homogeneous_weights = np.block([
+                [self.weights, self.biases],
+                [np.zeros((1, self.in_dim)), np.ones(1)]
+            ])
+
+            # Calculate the pseudo-inverse of the homogeneous matrix
+            pseudo_inverse_homogeneous = np.linalg.pinv(homogeneous_weights)
+
+            # Extract the pseudo-inverse of the weights and the new biases
+            pseudo_inverse_weights = pseudo_inverse_homogeneous[:self.in_dim, :self.out_dim]
+            pseudo_inverse_biases = pseudo_inverse_homogeneous[:self.in_dim, self.out_dim]
+
+            return AffineTransformer(pseudo_inverse_weights, pseudo_inverse_biases, self.out_reshape)
 
     def __repr__(self):
         """Return a string representation of the transformer."""
