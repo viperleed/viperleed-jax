@@ -1,0 +1,44 @@
+"""Module matrix from viperleed_jax.lib."""
+
+__authors__ = (
+    'Alexander M. Imre (@amimre)',
+)
+__created__ = '2025-06-10'
+__license__ = 'GPLv3+'
+
+
+def closest_to_identity(matrices):
+    """
+    Select the matrix from a set that is closest to the identity matrix.
+
+    Parameters
+    ----------
+    matrices (list of numpy.ndarray): List of matrices with the same shape.
+
+    Returns
+    -------
+    int: Index of the matrix that is closest to the identity matrix.
+
+    Raises
+    ------
+    ValueError: If the matrices have different shapes.
+    """
+    if not matrices:
+        raise ValueError('The list of matrices is empty.')
+
+    # Check if all matrices have the same shape
+    reference_shape = matrices[0].shape
+    for matrix in matrices:
+        if matrix.shape != reference_shape:
+            raise ValueError('All matrices must have the same shape.')
+
+    # Create an identity matrix with the same shape as the input matrices
+    identity_matrix = np.eye(reference_shape[0], reference_shape[1])
+
+    # Calculate the Frobenius norm of the difference between each matrix and the identity matrix
+    distances = [
+        np.linalg.norm(matrix - identity_matrix, 'fro') for matrix in matrices
+    ]
+
+    # Find the index of the matrix with the smallest distance
+    return np.argmin(distances)
