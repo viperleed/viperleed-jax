@@ -5,15 +5,19 @@ __created__ = '2024-09-09'
 
 import numpy as np
 
+from ..lib_math import EPS
 from .displacement_tree_layers import DisplacementTreeLayers
 from .functionals import LinearTreeFunctional
-from .linear_transformer import LinearMap, AffineTransformer
-from .nodes import AtomicLinearNode, LinearConstraintNode
+from .linear_transformer import AffineTransformer, LinearMap
+from .nodes import (
+    AtomicLinearNode,
+    ImplicitLinearConstraintNode,
+    LinearConstraintNode,
+)
+from .reduced_space import Zonotope
 from .tree import (
     DisplacementTree,
 )
-
-EPS = 1e-6  # TODO: move to constants
 
 
 class VibrationFunctional(LinearTreeFunctional):
@@ -31,21 +35,6 @@ class VibLeafNode(AtomicLinearNode):
         super().__init__(dof=dof, atom=atom)
         self._name = f'vib (At_{self.num},{self.site},{self.element})'
         self.ref_vib_amp = atom.atom.site.vibamp[self.element]
-
-        # apply reference vibrational amplitudes as non-enforced bounds
-        self._bounds.update_offset(
-            offset=self.ref_vib_amp, enforce=False
-        )
-
-    def _update_bounds(self, line):
-        # vibrational leaves are 1D, so bounds are scalars
-        self._bounds.update_range(
-            _range=(line.range.start, line.range.stop), enforce=True
-        )
-
-    def update_offsets(self, line):
-        offset = line.value
-        self._bounds.update_offset( offset=offset, enforce=True)
 
 
 class VibConstraintNode(LinearConstraintNode):
@@ -134,7 +123,11 @@ class VibSymmetryConstraint(VibConstraintNode):
         super().__init__(
             dof=dof,
             children=children,
-            transformers=None,  # transformers default to identity
+            transformers=[
+                AffineTransformer(
+                    weights=np.array([[1.0]]),
+                    biases=np.array([0.0]))
+                for _ in children],
             name='Symmetry',
             layer=DisplacementTreeLayers.Symmetry,
         )
@@ -175,23 +168,39 @@ class VibTree(DisplacementTree):
             )
             self.nodes.append(dummy_symmetry_node)
 
-        # check that all bounds are valid
-        for node in self.roots:
-            node.check_bounds_valid()
 
+    def apply_bounds(self, vib_delta_line):
+        super().apply_bounds(vib_delta_line)
 
-        if not all(
-            node.dof == selected_roots[0].dof for node in selected_roots
-        ):
-            raise ValueError(
-                'All root nodes must have the same number of free parameters.'
-            )
-        # create a constraint node for the selected roots
-        self.nodes.append(
-            VibLinkedConstraint(
-                children=selected_roots, name=constraint_line.line
-            )
+        # resolve targets
+        _, target_roots_and_primary_leaves = self._get_leaves_and_roots(
+            vib_delta_line.targets
         )
+
+        # TODO: check how this works with ref calc vib amp
+        vib_range = np.array([[vib_delta_line.range.start,
+                              vib_delta_line.range.stop]]).T
+
+        leaf_range_zonotope = Zonotope(
+            basis=np.array([[1.0]]),  # 1D zonotope
+            ranges=vib_range,
+            offset=None,
+        )
+
+        for root, primary_leaf in target_roots_and_primary_leaves.items():
+            root_to_leaf_transformer = root.transformer_to_descendent(
+                primary_leaf
+            )
+            leaf_to_root_transformer = root_to_leaf_transformer.pseudo_inverse()
+            root_range_zonotope = leaf_range_zonotope.apply_affine(
+                leaf_to_root_transformer
+            )
+            implicit_constraint_node = ImplicitLinearConstraintNode(
+                child=root,
+                name=vib_delta_line.raw_line,
+                child_zonotope=root_range_zonotope,
+            )
+            self.nodes.append(implicit_constraint_node)
 
     ##############################
     # Vibration specific methods #
