@@ -162,19 +162,3 @@ class OccTree(DisplacementTree):
                 children=[node], name='Symmetry'
             )
             self.nodes.append(symmetry_node)
-
-    def apply_explicit_constraint(self, constraint_line):
-        _, selected_roots = self._select_constraint(constraint_line)
-
-        if not all(
-            node.dof == selected_roots[0].dof for node in selected_roots
-        ):
-            raise ValueError(
-                'All root nodes must have the same number of free parameters.'
-            )
-        # create a constraint node for the selected roots
-        self.nodes.append(
-            OccLinkedConstraint(
-                children=selected_roots, name=constraint_line.line
-            )
-        )
