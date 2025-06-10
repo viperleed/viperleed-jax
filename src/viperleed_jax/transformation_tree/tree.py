@@ -161,6 +161,13 @@ class LinearTree(InvertibleTransformationTree):
             raise ValueError('Subtree root has already been created.')
         if not self.roots:
             raise ValueError('No root nodes found in subtree.')
+        for root in self.roots:
+            all_ancestors = [root, *root.ancestors]
+            if not any(isinstance(node, ImplicitLinearConstraintNode)
+                       for node in all_ancestors):
+                msg = 'Implicit constraints have not been applied for all roots.'
+                raise ValueError(msg)
+
         root_dof = sum(node.dof for node in self.roots)
         transformers = []
         cum_node_dof = 0
@@ -283,12 +290,38 @@ class DisplacementTree(LinearTree):
     #     for leaf in primary_leaves.values():
     #         leaf.update_bounds(line)
 
+    def apply_explicit_constraint(self, constraint_line):
+        if constraint_line.type.type != self.perturbation_type:
+            msg = (
+                f'Wrong constraint type for {self.perturbation_type} '
+                f'parameter: {constraint_line.type}.'
+            )
+            raise ValueError(msg)
+
+        super().apply_explicit_constraint(constraint_line)
+
     def apply_implicit_constraints(self):
         """Apply implicit constraints to the tree."""
         super().apply_implicit_constraints()
         for root in self.roots:
-            implicit_node = ImplicitLinearConstraintNode([root])
-            self.nodes.append(implicit_node)
+            all_ancestors = [root, *root.ancestors]
+            # check if the root has an implicit constraint
+            if any(isinstance(node, ImplicitLinearConstraintNode)
+                       for node in all_ancestors):
+                continue
+
+            # if not, top it off with an implicit fixed constraint
+            leaf_dof = root.leaves[0].dof
+            implicit_fixed_zonotope = Zonotope(
+                basis=np.array([]).reshape(leaf_dof, 0),
+                ranges=np.array([]).reshape(2, 0),
+            )
+            implicit_fixed_constraint = ImplicitLinearConstraintNode(
+                child=root,
+                name='Implicit fixed',
+                child_zonotope=implicit_fixed_zonotope,
+            )
+            self.nodes.append(implicit_fixed_constraint)
 
     @property
     def collapsed_transformer_scatterer_order(self):
