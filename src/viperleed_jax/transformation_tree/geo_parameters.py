@@ -262,8 +262,6 @@ class GeoTree(DisplacementTree):
 
         # get vector and range information from the GEO_DELTA line
         n_vectors = len(geo_delta_line.direction.vectors)
-        # ranges =[geo_delta_line.range.start, geo_delta_line.range.stop]*n_vectors
-        # ranges = np.array(ranges).reshape((2, n_vectors))
 
         ranges = np.vstack([
             np.full(n_vectors, geo_delta_line.range.start),
