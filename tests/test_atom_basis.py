@@ -11,7 +11,7 @@ from pytest_cases import parametrize_with_cases, filters
 from viperleed_jax.atom_basis import AtomBasis, TargetSelectionError
 
 
-from viperleed_jax.files.displacements.tokens.target import TargetToken
+from viperleed.calc.files.new_displacements.tokens.target import TargetToken
 
 
 

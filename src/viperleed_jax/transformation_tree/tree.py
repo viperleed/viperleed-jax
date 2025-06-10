@@ -12,9 +12,9 @@ import anytree
 import numpy as np
 from anytree import RenderTree
 from anytree.exporter import UniqueDotExporter
+from viperleed.calc.classes.perturbation_type import PerturbationType
+from viperleed.calc.files.new_displacements.lines import ConstraintLine
 
-from viperleed_jax.files.displacements.lines import ConstraintLine
-from viperleed_jax.perturbation_type import PerturbationType
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )

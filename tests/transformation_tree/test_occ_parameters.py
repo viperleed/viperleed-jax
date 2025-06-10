@@ -17,7 +17,7 @@ from viperleed_jax.transformation_tree.reduced_space import (
 from ..structures import CaseStatesAfterInit
 
 
-from viperleed_jax.files.displacements.lines import (
+from viperleed.calc.files.new_displacements.lines import (
     OffsetsLine,
     OccDeltaLine,
     ConstraintLine,

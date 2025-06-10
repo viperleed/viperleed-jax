@@ -13,7 +13,7 @@ from viperleed_jax.transformation_tree.reduced_space import apply_affine_to_subs
 from ..structures import CaseStatesAfterInit
 
 
-from viperleed_jax.files.displacements.lines import (
+from viperleed.calc.files.new_displacements.lines import (
     OffsetsLine,
     GeoDeltaLine,
     ConstraintLine

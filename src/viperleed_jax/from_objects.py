@@ -17,7 +17,7 @@ from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from viperleed_jax.atom_basis import AtomBasis
 from viperleed_jax.data_structures import process_tensors
 from viperleed_jax.files import phaseshifts as ps
-from viperleed_jax.files.displacements.file import DisplacementsFile
+from viperleed.calc.files.new_displacements.file import DisplacementsFile
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.parameter_space import ParameterSpace
 from viperleed_jax.tensor_calculator import TensorLEEDCalculator

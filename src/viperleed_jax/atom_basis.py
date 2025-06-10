@@ -7,7 +7,7 @@ from collections import namedtuple
 
 import numpy as np
 
-from viperleed_jax.files.displacements.tokens.target import TargetToken
+from viperleed.calc.files.new_displacements.tokens.target import TargetToken
 
 SiteEl = namedtuple('SiteEl', ['site', 'element'])
 

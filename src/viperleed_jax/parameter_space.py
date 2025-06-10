@@ -6,8 +6,8 @@ __created__ = '2024-09-02'
 import numpy as np
 
 from viperleed_jax.constants import ATOM_Z_DIR_ID
-from viperleed_jax.files.displacements.reader import DisplacementFileSections
-from viperleed_jax.perturbation_type import PerturbationType
+from viperleed.calc.files.new_displacements.reader import DisplacementFileSections
+from viperleed.calc.classes.perturbation_type import PerturbationType
 from viperleed_jax.transformation_tree import (
     geo_parameters,
     meta_parameters,

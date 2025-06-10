@@ -14,7 +14,7 @@ from .nodes import AtomicLinearNode, LinearConstraintNode, ImplicitLinearConstra
 from .tree import (
     DisplacementTree,
 )
-from viperleed_jax.perturbation_type import PerturbationType
+from viperleed.calc.classes.perturbation_type import PerturbationType
 from .reduced_space import Zonotope
 
 

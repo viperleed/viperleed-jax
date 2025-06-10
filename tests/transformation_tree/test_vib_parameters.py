@@ -3,7 +3,7 @@ import pytest
 from pytest_cases import fixture, parametrize_with_cases
 
 from viperleed_jax.atom_basis import AtomBasis
-from viperleed_jax.files.displacements.lines import (
+from viperleed.calc.files.new_displacements.lines import (
     ConstraintLine,
     OffsetsLine,
     VibDeltaLine,
