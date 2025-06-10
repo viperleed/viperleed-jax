@@ -6,11 +6,16 @@ __created__ = '2024-09-08'
 import numpy as np
 
 from .displacement_tree_layers import DisplacementTreeLayers
+from .linear_transformer import AffineTransformer
+from .nodes import (
+    AtomicLinearNode,
+    ImplicitLinearConstraintNode,
+    LinearConstraintNode,
+)
+from .reduced_space import Zonotope
 from .tree import (
     DisplacementTree,
 )
-from .linear_transformer import AffineTransformer
-from .nodes import AtomicLinearNode, LinearConstraintNode
 
 
 class OccLeafNode(AtomicLinearNode):
@@ -162,3 +167,38 @@ class OccTree(DisplacementTree):
                 children=[node], name='Symmetry'
             )
             self.nodes.append(symmetry_node)
+
+    def apply_bounds(self, occ_delta_line):
+        super().apply_bounds(occ_delta_line)
+
+        # resolve targets
+        _, target_roots_and_primary_leaves = self._get_leaves_and_roots(
+            occ_delta_line.targets
+        )
+
+        # Leaf nodes represent the occupation with a single element,
+        # so we can use 1D zonotopes
+        occ_range = np.array(
+            [[occ_delta_line.range.start, occ_delta_line.range.stop]]
+        ).T
+
+        leaf_range_zonotope = Zonotope(
+            basis=np.array([[1.0]]),  # 1D zonotope
+            ranges=occ_range,
+            offset=None,
+        )
+
+        for root, primary_leaf in target_roots_and_primary_leaves.items():
+            root_to_leaf_transformer = root.transformer_to_descendent(
+                primary_leaf
+            )
+            leaf_to_root_transformer = root_to_leaf_transformer.pseudo_inverse()
+            root_range_zonotope = leaf_range_zonotope.apply_affine(
+                leaf_to_root_transformer
+            )
+            implicit_constraint_node = ImplicitLinearConstraintNode(
+                child=root,
+                name=occ_delta_line.raw_line,
+                child_zonotope=root_range_zonotope,
+            )
+            self.nodes.append(implicit_constraint_node)
