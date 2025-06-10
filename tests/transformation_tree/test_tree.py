@@ -11,57 +11,6 @@ from viperleed_jax.transformation_tree.tree import (
 )
 
 
-class MockAtom:
-    def __init__(self):
-        self.scatterers = ['Atom1', 'Atom2', 'Atom3']
-        self.site_elements = ['H', 'O', 'C']
-
-
-class MockNode:
-    def __init__(self):
-        pass
-
-    def set_transformer(self, transformer):
-        self.transformer = transformer
-
-
-class MockRootNode(MockNode):
-    def __init__(self, dof):
-        self.dof = dof
-        self.is_root = True
-        self.is_leaf = False
-        self.children = []
-
-
-class MockLeafNode(MockNode):
-    def __init__(self, dof, atom):
-        self.dof = dof
-        self.is_leaf = True
-        self.is_root = True
-        self.atom = atom
-
-
-class MockLinearTree(LinearTree):
-    """Mock implementation of LinearTree."""
-
-    def _initialize_tree(self):
-        """Mock implementation of build_tree."""
-        leaf1 = MockLeafNode(dof=1, atom='Atom1')
-        leaf2 = MockLeafNode(dof=1, atom='Atom2')
-        leaf3 = MockLeafNode(dof=1, atom='Atom3')
-
-        self.nodes.extend([leaf1, leaf2, leaf3])
-
-    def finalize_tree(self):
-        """Mock implementation of create_subtree_root."""
-        super().finalize_tree()
-
-
-@pytest.fixture
-def linear_tree():
-    """Fixture for a mock linear tree."""
-    return MockLinearTree(name='Linear Test Tree', root_node_name='Root')
-
 
 # Test Abstract Base Class
 def test_abstract_transformation_tree():
@@ -69,9 +18,50 @@ def test_abstract_transformation_tree():
         TransformationTree(name='Abstract Tree', root_node_name='Root')
 
 
-# Test LinearTree
-def test_linear_tree_create_subtree_root(linear_tree):
-    assert not linear_tree.finalized
-    linear_tree.create_subtree_root()
-    assert linear_tree.finalized
-    assert linear_tree.root.dof == 3
+# # Test LinearTree
+# def test_linear_tree_create_subtree_root(linear_tree):
+#     assert not linear_tree.finalized
+#     linear_tree.create_subtree_root()
+#     assert linear_tree.finalized
+#     assert linear_tree.root.dof == 3
+
+
+# Additional tests for LinearTree using real nodes and transformers
+import numpy as np
+import pytest
+
+from viperleed_jax.transformation_tree.tree import LinearTree
+from viperleed_jax.transformation_tree.linear_transformer import AffineTransformer
+from viperleed_jax.transformation_tree.nodes import LinearLeafNode, LinearConstraintNode
+from viperleed_jax.transformation_tree.displacement_tree_layers import DisplacementTreeLayers
+
+
+def test_linear_tree_add_leaf_node_and_finalize():
+    tree = LinearTree(name='Test Tree', root_node_name='Root')
+    leaf1 = LinearLeafNode(dof=2, name='leaf1')
+    leaf2 = LinearLeafNode(dof=1, name='leaf2')
+
+    trafo1 = AffineTransformer(weights=np.eye(2), biases=np.zeros(2))
+    trafo2 = AffineTransformer(weights=np.ones((1, 2)), biases=np.zeros(1))
+
+    leaf1.set_transformer(trafo1)
+    leaf2.set_transformer(trafo2)
+
+    root = LinearConstraintNode(
+        dof=2,
+        layer=DisplacementTreeLayers.User_Constraints,
+        name='constraint',
+        children=[leaf1, leaf2],
+        transformers=[trafo1, trafo2],
+    )
+    tree.add_node(root)
+    tree.finalize_tree()
+    assert tree.root == root
+    assert tree.finalized
+    assert tree.root.dof == 2
+
+
+def test_linear_tree_finalize_fails_without_root():
+    tree = LinearTree(name='Test Tree', root_node_name='Root')
+    with pytest.raises(ValueError, match="Tree does not contain a node with name 'Root'"):
+        tree.finalize_tree()
