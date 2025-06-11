@@ -19,6 +19,8 @@ from viperleed_jax.transformation_tree.reduced_space import (
 )
 from viperleed_jax.transformation_tree.vib_parameters import (
     VibConstraintNode,
+    VibLeafNode,
+    VibSymmetryConstraint,
     VibTree,
 )
 
