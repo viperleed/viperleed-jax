@@ -26,19 +26,6 @@ class OccLeafNode(AtomicLinearNode):
         super().__init__(dof=dof, atom=atom)
         self._name = f'occ (At_{self.num},{self.site},{self.element})'
 
-        # apply reference occupation as non-enforced bounds
-        # TODO: get non 100% reference occupation? Where is that stored?
-        self._bounds.update_offset(offset=1.0, enforce=False)
-
-    def _update_bounds(self, line):
-        # occupational leaves are 1D, so bounds are scalars
-        range = line.range
-        self._bounds.update_range((range.start, range.stop), enforce=True)
-
-    def update_offsets(self, line):
-        offset = line.value
-        self._bounds.update_offset(offset=offset, enforce=True)
-
 
 class OccConstraintNode(LinearConstraintNode):
     """Represents a constraint node for occupational parameters."""

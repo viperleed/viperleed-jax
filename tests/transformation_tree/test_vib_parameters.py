@@ -22,19 +22,9 @@ from viperleed_jax.transformation_tree.vib_parameters import VibTree
 from ..structures import CaseStatesAfterInit
 
 
-def test_tree_creation(atom_basis, subtests):
+def test_tree_creation(atom_basis, fully_constrained_tree_template):
     """Test tree creation."""
-    # create the geometry tree
-    tree = VibTree(atom_basis)
-    assert len(tree.leaves) == len(atom_basis)
-
-    with subtests.test('tree root creation'):
-        # apply implicit constraints to unmodified tree
-        tree.apply_implicit_constraints()
-        tree.finalize_tree()
-        assert tree.root.is_root
-        assert tree.root.is_leaf is False
-
+    fully_constrained_tree_template(atom_basis, VibTree)
 
 class TestFe2O3:
     """Test the Fe2O3 structure."""
