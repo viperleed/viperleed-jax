@@ -22,14 +22,6 @@ from viperleed_jax.transformation_tree.reduced_space import (
 from ..structures import CaseStatesAfterInit
 
 
-@fixture
-@parametrize_with_cases('test_case', cases=CaseStatesAfterInit)
-def atom_basis(test_case):
-    """Fixture for creating an AtomBasis."""
-    state, _ = test_case
-    return AtomBasis(state.slab)
-
-
 def test_tree_creation(atom_basis, subtests):
     """Test tree creation."""
     # create the geometry tree
