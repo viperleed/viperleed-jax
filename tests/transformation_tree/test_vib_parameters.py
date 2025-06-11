@@ -91,6 +91,25 @@ class TestFe2O3:
         with pytest.raises(ValueError, match='Wrong constraint type'):
             fe2o3_tree.apply_explicit_constraint(vib_constraint)
 
+    def test_apply_multiple_constraints(self, fe2o3_tree, subtests):
+        """Test applying multiple interconnected constraints."""
+        assert sum(root.dof for root in fe2o3_tree.roots) == 15
+        fe2o3_tree.apply_explicit_constraint(
+            ConstraintLine('vib Fe L(1) = linked')
+        )
+        assert sum(root.dof for root in fe2o3_tree.roots) == 14
+        fe2o3_tree.apply_explicit_constraint(
+            ConstraintLine('vib Fe L(2) = linked')
+        )
+        assert sum(root.dof for root in fe2o3_tree.roots) == 13
+        with subtests.test('apply layered constraints'):
+            fe2o3_tree.apply_explicit_constraint(
+                ConstraintLine('vib Fe L(1-2) = linked')
+            )
+            assert sum(root.dof for root in fe2o3_tree.roots) == 12
+        with subtests.test('finalize layered constraints'):
+            fe2o3_tree.apply_implicit_constraints()
+            fe2o3_tree.finalize_tree()
 
     @pytest.mark.parametrize(
         'constraints',
