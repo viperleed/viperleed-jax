@@ -91,6 +91,29 @@ class TestFe2O3:
         with pytest.raises(ValueError, match='Wrong constraint type'):
             fe2o3_tree.apply_explicit_constraint(vib_constraint)
 
+
+    @pytest.mark.parametrize(
+        'constraints',
+        [
+            [
+                'vib Fe L(1) = linked',
+                'vib Fe 1-4 = linked',
+            ],
+            [
+                'vib Fe L(1-2) = linked',
+                'vib Fe L(1) = linked',
+            ],
+            [
+                'vib Fe 1 = Fe 2',
+            ],
+        ],
+    )
+    def test_error_redundant_constraints(self, fe2o3_tree, constraints):
+        """Test that redundant constraints raise an error."""
+        with pytest.raises(ValueError, match='redundant'):  # noqa: PT012
+            for constraint in constraints:
+                fe2o3_tree.apply_explicit_constraint(ConstraintLine(constraint))
+
     @pytest.mark.parametrize(
         'bounds_line,implicit_dof',
         [
