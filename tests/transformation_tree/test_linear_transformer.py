@@ -236,7 +236,7 @@ class TestLinearMap:
         linear_map = LinearMap(weights)
         assert (
             repr(linear_map)
-            == 'LinearMap(weights=(2, 2), biases=(2,), out_reshape=None)'
+            == 'LinearMap(weights=(2, 2), out_reshape=None)'
         )
 
     def test_composition_with_linear_transformer(self):
