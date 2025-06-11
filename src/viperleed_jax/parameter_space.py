@@ -76,15 +76,6 @@ class ParameterSpace:
 
         self._displacements_applied = True
 
-    def check_for_inconsistencies(self):
-        """
-        Check for inconsistencies in the parameter space.
-
-        This method checks for inconsistencies in the parameter space, such as
-        symmetry violations, and raises a ValueError if any are found.
-        """
-        for subtree in (self.geo_tree, self.vib_tree, self.occ_tree):
-            subtree.check_for_inconsistencies()
 
     def _parse_offsets(self, offsets_block):
         """
@@ -104,7 +95,6 @@ class ParameterSpace:
             else:
                 msg = f'Unknown offset type: {line.offset_type}'
                 raise ValueError(msg)
-        self.check_for_inconsistencies()
 
     def _parse_bounds(self, search_block):
         # parse geo, vib and occ bounds
@@ -119,7 +109,6 @@ class ParameterSpace:
             for line in block:
                 # apply and check for symmetry violations
                 tree.apply_bounds(line)
-        self.check_for_inconsistencies()
 
     def _parse_constraints(self, search_block):
         """
@@ -145,7 +134,6 @@ class ParameterSpace:
             else:
                 msg = f'Unknown constraint type: {constraint_line.type}'
                 raise ValueError(msg)
-        self.check_for_inconsistencies()
 
 
     def _free_params_up_to_layer(self, layer):
