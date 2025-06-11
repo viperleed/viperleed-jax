@@ -544,7 +544,7 @@ class DisplacementTree(LinearTree):
         """Apply bounds to the children of the node."""
         super().apply_bounds()
 
-        # check for conficts
+        # check for conflicts
         # resolve targets
         _, target_roots_and_primary_leaves = self._get_leaves_and_roots(
             bounds_line.targets
@@ -559,7 +559,7 @@ class DisplacementTree(LinearTree):
                         f'"with {ancestor.name}". Only one displacement range '
                         'may be defined per set of linked parameters.'
                     )
-                    raise ValueError(msg)
+                    raise TypeError(msg)
 
 
 def _map_transformation_from_leaf_to_root(
