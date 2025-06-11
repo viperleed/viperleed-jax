@@ -90,3 +90,25 @@ class TestFe2O3:
         vib_constraint = ConstraintLine('occ Fe_surf, O_surf = linked')
         with pytest.raises(ValueError, match='Wrong constraint type'):
             fe2o3_tree.apply_explicit_constraint(vib_constraint)
+
+    @pytest.mark.parametrize(
+        'bounds_line,implicit_dof',
+        [
+            ('Fe_surf = -0.1 0.1', 1),
+            ('O_surf = 0.1 -0.1', 1),
+            ('Fe L(1-2) = -0.1 0.2', 4), # 4 indep. atoms, 1 dof each
+        ],
+    )
+    def test_apply_single_vib_delta(
+        self, fe2o3_tree, bounds_line, implicit_dof, subtests
+    ):
+        """Test applying a single VIB_DELTA line."""
+        geo_delta_line = VibDeltaLine(bounds_line)
+        fe2o3_tree.apply_bounds(geo_delta_line)
+        assert bounds_line in str(fe2o3_tree)
+
+        # apply implicit constraints
+        fe2o3_tree.apply_implicit_constraints()
+        with subtests.test('check dof'):
+            # finalize the tree to apply the bounds
+            assert sum(root.dof for root in fe2o3_tree.roots) == implicit_dof
