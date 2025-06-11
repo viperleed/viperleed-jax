@@ -59,52 +59,6 @@ class VibConstraintNode(LinearConstraintNode):
         )
 
 
-class VibLinkedConstraint(VibConstraintNode):
-    """Class for explicit links of vibrational parameters."""
-
-    def __init__(self, children, name):
-        # check that all children have the same dof
-        if len(set(child.dof for child in children)) != 1:
-            raise ValueError('Children must have the same dof.')
-        dof = children[0].dof
-
-        # ensure that children have consistent bounds
-        transformers = []
-        for child in children:
-            # create a transformer for each child
-            child.check_bounds_valid()
-            mask, upper, lower = child.collapse_bounds()
-            # if the child has no enforced bounds, no bounds were defined
-            # this means the node would be implicitly fixed; which is
-            # incompatible with explicit constraints!
-            if not np.any(mask):
-                raise ValueError(
-                    f'Linking vibrations for {child.name} requires '
-                    f'bounds to be defined.'
-                )
-            _upper, _lower = upper[mask], lower[mask]
-            # all _upper and all _lower should be the same
-            if (
-                not np.all(
-                    abs(_upper - _upper[0]) < EPS
-                )  # Need to implement reference nodes...
-                or not np.all(abs(_lower - _lower[0]) < EPS)
-            ):
-                raise ValueError(f'Inconsistent bounds for {child.name}.')
-            # let's create the transformer
-            weights = np.array([[_upper[0] - _lower[0]]])
-            biases = np.array([_lower[0]])
-            transformers.append(AffineTransformer(weights, biases, (1,)))
-
-        super().__init__(
-            dof=dof,
-            children=children,
-            transformers=transformers,
-            name=f"CONSTRAIN '{name}'",
-            layer=DisplacementTreeLayers.User_Constraints,
-        )
-
-
 class VibSymmetryConstraint(VibConstraintNode):
     """Class for linking vibrations of symmetry equivalent atoms."""
 
