@@ -30,17 +30,18 @@ def atom_basis(test_case):
     return AtomBasis(state.slab)
 
 
-# def test_tree_creation(atom_basis, subtests):
-#     """Test tree creation."""
-#     # create the geometry tree
-#     tree = GeoTree(atom_basis)
-#     assert len(tree.leaves) == len(atom_basis)
+def test_tree_creation(atom_basis, subtests):
+    """Test tree creation."""
+    # create the geometry tree
+    tree = GeoTree(atom_basis)
+    assert len(tree.leaves) == len(atom_basis)
 
-#     with subtests.test('tree root creation'):
-#         tree.finalize_tree()
-#         assert tree.root.is_root
-#         assert tree.root.is_leaf is False
-
+    with subtests.test('tree root creation'):
+        # apply implicit constraints to unmodified tree
+        tree.apply_implicit_constraints()
+        tree.finalize_tree()
+        assert tree.root.is_root
+        assert tree.root.is_leaf is False
 
 
 # def test_symmetry_operations_determinant(atom_basis, subtests):
