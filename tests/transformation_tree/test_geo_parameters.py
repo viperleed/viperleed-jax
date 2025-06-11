@@ -22,8 +22,13 @@ from viperleed_jax.transformation_tree.reduced_space import (
 from ..structures import CaseStatesAfterInit
 
 
-def test_tree_creation(atom_basis, subtests):
+def test_tree_creation(atom_basis, fully_constrained_tree_template):
     """Test tree creation."""
+    fully_constrained_tree_template(atom_basis, GeoTree)
+
+
+def test_symmetry_operations_determinant(atom_basis, subtests):
+    """The abs of the determinant of symmetry operations should be 1."""
     # create the geometry tree
     tree = GeoTree(atom_basis)
     assert len(tree.leaves) == len(atom_basis)
@@ -69,12 +74,6 @@ def test_tree_creation(atom_basis, subtests):
 class TestFe2O3:
     """Test the Fe2O3 structure."""
 
-    @fixture
-    @parametrize_with_cases('case', cases=CaseStatesAfterInit.case_fe2o3_012_converged)
-    def fe2o3_tree(self, case):
-        state, _ = case
-        atom_basis =  AtomBasis(state.slab)
-        return GeoTree(atom_basis)
 
     def test_apply_offsets(self, fe2o3_tree):
         fe2o3_tree.apply_offsets(OffsetsLine('geo Fe 1 z = 0.1'))
