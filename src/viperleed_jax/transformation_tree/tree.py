@@ -319,15 +319,6 @@ class DisplacementTree(LinearTree):
         ]
         return stack_transformers(transformers)
 
-    def check_for_inconsistencies(self):
-        """Check for inconsistencies in the parameter space.
-
-        This method checks for inconsistencies in the parameter space, such as
-        symmetry violations, and raises an error if any are found.
-        """
-        for root in self.roots:
-            root.check_bounds_valid()
-
     def _target_nodes(self, targets):
         """Take a BSTarget and returns the corresponding leaves and roots."""
         # gets the leaves that are affected by the targets
