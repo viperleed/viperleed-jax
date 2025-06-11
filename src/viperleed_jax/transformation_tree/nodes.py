@@ -348,8 +348,22 @@ class ImplicitLinearConstraintNode(LinearConstraintNode):
 
         normalization_transformer = child_zonotope.normalize()
 
+        implicit_dof = normalization_transformer.in_dim
+
+        if implicit_dof == 0:
+            name = 'Implicit Fixed'
+        elif implicit_dof < child.dof:
+            name = f'Implicit Constraint({name})'
+        elif implicit_dof == child.dof:
+            name = f'Bound({name})'
+        else:
+            raise ValueError(
+                f'Implicit constraint dof ({implicit_dof}) cannot be larger '
+                f'than child dof ({child.dof}).'
+            )
+
         super().__init__(
-            dof=normalization_transformer.in_dim,
+            dof=implicit_dof,
             name=name,
             children=[child],
             transformers=[normalization_transformer],
