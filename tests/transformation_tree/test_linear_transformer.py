@@ -24,7 +24,7 @@ class TestAffineTransformer:
         weights = [[1, 2], [3, 4]]
         biases = [5, 6]
         transformer = AffineTransformer(weights, biases)
-        free_params = [0.5, 0.25]
+        free_params = np.array([0.5, 0.25])
         result = transformer(free_params)
         expected = np.array(
             [6.0, 8.5]
@@ -35,7 +35,7 @@ class TestAffineTransformer:
         weights = [[1, 2], [3, 4]]
         biases = [5, 6]
         transformer = AffineTransformer(weights, biases)
-        free_params = [0.5]  # Incorrect length
+        free_params = np.array([0.5])  # Incorrect length
         with pytest.raises(
             ValueError, match='Free parameters have wrong shape'
         ):
@@ -52,7 +52,7 @@ class TestAffineTransformer:
         weights = [[1, 2], [3, 4]]
         biases = [5, 6]
         transformer = AffineTransformer(weights, biases, out_reshape=(2, 1))
-        free_params = [0.5, 0.25]
+        free_params = np.array([0.5, 0.25])
         result = transformer(free_params)
         expected = np.array([[6], [8.5]])
         assert result.shape == (2, 1)
@@ -154,7 +154,7 @@ class TestAffineTransformerCompositions:
             assert composed_transformer.biases == pytest.approx(expected_biases)
 
         # Test that the composition has the expected effect on input
-        input_params = [0.5, 1.0]  # Example input
+        input_params = np.array([0.5, 1.0])  # Example input
         intermediate_result = transformer3(input_params)
         intermediate_result = transformer2(intermediate_result)
         final_result = transformer1(intermediate_result)
@@ -198,7 +198,7 @@ class TestLinearMap:
     """Test the functionality of the LinearMap class."""
 
     def test_linear_map_initialization(self):
-        weights = [[1, 2], [3, 4]]
+        weights = np.array([[1, 2], [3, 4]])
         linear_map = LinearMap(weights)
         assert linear_map.n_free_params == 2
         assert linear_map.weights.shape == (2, 2)
@@ -206,26 +206,26 @@ class TestLinearMap:
         assert linear_map.out_reshape is None
 
     def test_call_with_correct_shape(self):
-        weights = [[1, 2], [3, 4]]
+        weights = np.array([[1, 2], [3, 4]])
         linear_map = LinearMap(weights)
-        free_params = [0.5, 0.25]
+        free_params = np.array([0.5, 0.25])
         result = linear_map(free_params)
         expected = np.array([1.0, 2.5])  # [1*0.5 + 2*0.25, 3*0.5 + 4*0.25]
         assert result == pytest.approx(expected)
 
     def test_call_with_incorrect_shape(self):
-        weights = [[1, 2], [3, 4]]
+        weights = np.array([[1, 2], [3, 4]])
         linear_map = LinearMap(weights)
-        free_params = [0.5]  # Incorrect length
+        free_params = np.array([0.5])  # Incorrect length
         with pytest.raises(
             ValueError, match='Free parameters have wrong shape'
         ):
             linear_map(free_params)
 
     def test_call_with_out_reshape(self):
-        weights = [[1, 2], [3, 4]]
+        weights = np.array([[1, 2], [3, 4]])
         linear_map = LinearMap(weights, out_reshape=(2, 1))
-        free_params = [0.5, 0.25]
+        free_params = np.array([0.5, 0.25])
         result = linear_map(free_params)
         expected = np.array([[1.0], [2.5]])
         assert result.shape == (2, 1)
