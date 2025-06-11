@@ -52,6 +52,26 @@ class TestFe2O3:
                 dof=2,
             )
 
+    def test_symmetry_node_with_non_leaf_children(self, fe2o3_tree):
+        """Test that symmetry nodes can have non-leaf children."""
+        # after tree creation, the roots are symmetry nodes (non-leaf)
+        symmetry_node = fe2o3_tree.roots[0]
+
+        with pytest.raises(ValueError, match='Children must be VibLeaf nodes.'):
+            VibSymmetryConstraint(
+                children=[symmetry_node],
+            )
+
+    def test_symmetry_node_with_different_site_elements(self, fe2o3_tree):
+        """Test that symmetry nodes require the same site-element."""
+        leaf_1 = VibLeafNode(fe2o3_tree.leaves[0].atom)
+        leaf_2 = VibLeafNode(fe2o3_tree.leaves[6].atom)
+
+        with pytest.raises(ValueError, match='Children must have the same site-element.'):
+            VibSymmetryConstraint(
+                children=[leaf_1, leaf_2],
+            )
+
     def test_apply_simple_offsets(self, fe2o3_tree):
         fe2o3_tree.apply_offsets(OffsetsLine('vib Fe 1 = 0.1'))
         assert 'Offset(vib Fe 1 = 0.1)' in str(fe2o3_tree)
