@@ -25,18 +25,18 @@ class ParameterSpace:
         self.atom_basis = atom_basis
 
         # create the meta parameter subtree
-        self.meta_param_subtree = meta_parameters.MetaParameterSubtree()
-        # read the meta parameters from the rpars
-        self.meta_param_subtree.read_from_rpars(rpars)
+        self.meta_tree = meta_parameters.MetaTree()
+        # set V0r bounds from Rparams object
+        self.meta_tree.apply_bounds(rpars)
 
-        # create the parameter subtrees - this automatically sets up all the
+        # create the structural trees - this automatically sets up all the
         # symmetry constraints
         self.vib_tree = vib_parameters.VibTree(atom_basis)
         self.geo_tree = geo_parameters.GeoTree(atom_basis)
         self.occ_tree = occ_parameters.OccTree(atom_basis)
 
         self.subtrees = (
-            self.meta_param_subtree,
+            self.meta_tree,
             self.geo_tree,
             self.vib_tree,
             self.occ_tree,
@@ -172,7 +172,7 @@ class ParameterSpace:
 
     @property
     def v0r_transformer(self):
-        return self.meta_param_subtree.collapsed_transformer
+        return self.meta_tree.collapsed_transformer
 
     @property
     def n_free_params(self):
@@ -323,7 +323,7 @@ class ParameterSpace:
     def n_param_split(self):
         return np.array(
             [
-                self.meta_param_subtree.root.dof,
+                self.meta_tree.root.dof,
                 self.vib_tree.root.dof,
                 self.geo_tree.root.dof,
                 self.occ_tree.root.dof,
