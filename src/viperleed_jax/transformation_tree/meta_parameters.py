@@ -98,7 +98,7 @@ class MetaTree(LinearTree):
 
         implicit_constraint_node = ImplicitLinearConstraintNode(
             child=self.v0r_node.parent,
-            name=f'V0r bounds({lower:.2f}, eV {upper:.2f} eV)',
+            name=f'V0r({lower:.2f} eV, {upper:.2f} eV)',
             child_zonotope=v0r_range_zonotope,
         )
         self.nodes.append(implicit_constraint_node)
