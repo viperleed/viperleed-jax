@@ -67,6 +67,35 @@ class TestAffineTransformer:
             == 'AffineTransformer(weights=(2, 2), biases=(2,), out_reshape=None)'
         )
 
+    def test_pseudo_inverse_roundtrip(self):
+        """Test pseudo-inverse with random numbers."""
+        rng = np.random.default_rng(42)
+        weights = rng.normal(size=(4, 3))
+        biases = rng.normal(size=4)
+        transformer = AffineTransformer(weights, biases)
+
+        pseudo = transformer.pseudo_inverse()
+
+        # Generate some test inputs
+        for _ in range(5):
+            x = rng.normal(size=3)
+            y = transformer(x)
+            x_reconstructed = pseudo(y)
+            assert x_reconstructed == pytest.approx(x, rel=1e-6, abs=1e-8)
+
+    def test_pseudo_inverse_is_affine(self):
+        """Test that the pseudo-inverse of a transformer is still affine."""
+        weights = [[2, 0], [0, 0.5]]
+        biases = [1, -2]
+        transformer = AffineTransformer(weights, biases)
+        pseudo = transformer.pseudo_inverse()
+
+        x = np.array([4, 8])
+        y = transformer(x)
+        x_approx = pseudo(y)
+
+        assert x_approx == pytest.approx(x)
+
 
 class TestAffineTransformerCompositions:
     """Test the composition behavior of the AffineTransformer class."""
