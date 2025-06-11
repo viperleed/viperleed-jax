@@ -272,23 +272,6 @@ class DisplacementTree(LinearTree):
             functional.analyze_tree(self)
 
 
-    # def apply_bounds(self, line):
-    #     """Apply bounds to the children of the node."""
-    #     super().apply_bounds()
-    #     targets = line.targets
-    #     _, explicitly_selected_leaves, selected_roots = self._target_nodes(
-    #         targets
-    #     )
-    #     primary_leaves = self._select_primary_leaf(
-    #         selected_roots, explicitly_selected_leaves
-    #     )
-
-    #     # apply the bound to the primary leaf only – others will be linked
-    #     # (this is so that for e.g. geometries the bounds are not swapped
-    #     # and violate symmetry)
-    #     for leaf in primary_leaves.values():
-    #         leaf.update_bounds(line)
-
     def apply_implicit_constraints(self):
         """Apply implicit constraints to the tree."""
         super().apply_implicit_constraints()
