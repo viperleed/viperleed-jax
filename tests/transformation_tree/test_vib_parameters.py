@@ -38,7 +38,7 @@ class TestFe2O3:
         atom_basis = AtomBasis(state.slab)
         return VibTree(atom_basis)
 
-    def test_apply_offsets(self, fe2o3_tree):
+    def test_apply_simple_offsets(self, fe2o3_tree):
         fe2o3_tree.apply_offsets(OffsetsLine('vib Fe 1 = 0.1'))
         assert 'Offset(vib Fe 1 = 0.1)' in str(fe2o3_tree)
         last_node = fe2o3_tree.nodes[-1]
@@ -50,3 +50,29 @@ class TestFe2O3:
             np.eye(1)
         )
 
+    def test_apply_offsets_twice(self, fe2o3_tree):
+        fe2o3_tree.apply_offsets(OffsetsLine('vib Fe 1 = 0.1'))
+        with pytest.raises(ValueError, match='already defined'):
+            fe2o3_tree.apply_offsets(OffsetsLine('vib Fe 1 = 0.1'))
+
+    @pytest.mark.parametrize(
+        'constraint',
+        [
+            'vib Fe L(1) = linked',
+            'vib Fe L(1-2) = linked',
+            'vib O L(1) = linked',
+            'vib Fe_surf, O_surf = linked',
+            'vib Fe_surf, O_surf = 1 Fe_surf',
+            'vib Fe_surf, O_surf = 1.5 Fe_surf',
+        ],
+    )
+    def test_apply_single_constraints(self, fe2o3_tree, constraint):
+        # Apply constraints to the tree
+        fe2o3_tree.apply_explicit_constraint(ConstraintLine(constraint))
+        assert constraint in str(fe2o3_tree)
+
+    def test_apply_wrong_constraint_type(self, fe2o3_tree):
+        """Test applying a constraint with the wrong type."""
+        vib_constraint = ConstraintLine('occ Fe_surf, O_surf = linked')
+        with pytest.raises(ValueError, match='Wrong constraint type'):
+            fe2o3_tree.apply_explicit_constraint(vib_constraint)
