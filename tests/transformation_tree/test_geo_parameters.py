@@ -1,23 +1,26 @@
 import numpy as np
 import pytest
-from pytest_cases import parametrize_with_cases, fixture
+from pytest_cases import fixture, parametrize_with_cases
+from viperleed.calc.files.new_displacements.lines import (
+    ConstraintLine,
+    GeoDeltaLine,
+    OffsetsLine,
+)
 
 from viperleed_jax.atom_basis import AtomBasis
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
 from viperleed_jax.transformation_tree.geo_parameters import GeoTree
-from viperleed_jax.transformation_tree.linear_transformer import AffineTransformer
-from viperleed_jax.transformation_tree.reduced_space import apply_affine_to_subspace
+from viperleed_jax.transformation_tree.linear_transformer import (
+    AffineTransformer,
+)
+from viperleed_jax.transformation_tree.reduced_space import (
+    apply_affine_to_subspace,
+)
 
 from ..structures import CaseStatesAfterInit
 
-
-from viperleed.calc.files.new_displacements.lines import (
-    OffsetsLine,
-    GeoDeltaLine,
-    ConstraintLine
-)
 
 @fixture
 @parametrize_with_cases('test_case', cases=CaseStatesAfterInit)
