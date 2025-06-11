@@ -200,3 +200,32 @@ def test_reflection_preserves_ranges():
     assert np.allclose(abs(new_ranges), abs(ranges)), f'got {new_ranges}'
     # No bias in or out
     assert np.allclose(b_out, 0)
+
+
+class TestBaseTree:
+    """Test that tests methods of the base tree work as expected.
+
+    These tests are not specific to the GeoTree, but rather test the
+    methods of the base tree class.
+    """
+
+    def test_finalize_before_finalize(self, fe2o3_tree):
+        """Test that creating a root before finalizing the tree works."""
+        with pytest.raises(
+            ValueError, match='Implicit constraints have not been applied'
+        ):
+            fe2o3_tree.finalize_tree()
+
+    def test_create_root_again(self, fe2o3_tree):
+        """Test that applying implicit constraints works."""
+        # apply implicit constraints
+        fe2o3_tree.apply_implicit_constraints()
+        # finalize the tree to apply the bounds
+        fe2o3_tree.finalize_tree()
+
+        with pytest.raises(ValueError, match='has already been created'):
+            fe2o3_tree.finalize_tree()
+
+    def test_apply_not_a_constraints(self, fe2o3_tree):
+        with pytest.raises(TypeError, match='must be a ConstraintLine'):
+            fe2o3_tree.apply_explicit_constraint('this is not a constraint')
