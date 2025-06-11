@@ -17,7 +17,10 @@ from viperleed_jax.transformation_tree.linear_transformer import (
 from viperleed_jax.transformation_tree.reduced_space import (
     apply_affine_to_subspace,
 )
-from viperleed_jax.transformation_tree.vib_parameters import VibTree
+from viperleed_jax.transformation_tree.vib_parameters import (
+    VibConstraintNode,
+    VibTree,
+)
 
 from ..structures import CaseStatesAfterInit
 
@@ -37,6 +40,17 @@ class TestFe2O3:
         state, _ = case
         atom_basis = AtomBasis(state.slab)
         return VibTree(atom_basis)
+
+    def test_more_than_one_dof_constraint(self, fe2o3_tree):
+        """Test applying a constraint with more than one DOF."""
+        with pytest.raises(ValueError,
+                           match='Vibrational constraints must have dof=1'):
+            VibConstraintNode(
+                children=[fe2o3_tree.leaves[0]],
+                name='test',
+                layer=DisplacementTreeLayers.User_Constraints,
+                dof=2,
+            )
 
     def test_apply_simple_offsets(self, fe2o3_tree):
         fe2o3_tree.apply_offsets(OffsetsLine('vib Fe 1 = 0.1'))
