@@ -178,20 +178,20 @@ class AffineTransformer(Transformer):
             if self.in_dim == 0:
                 raise ValueError('Cannot calculate pseudo-inverse of zero map')
 
-            # Create a homogeneous matrix representation of the affine transformation
-            homogeneous_weights = np.block([
-                [self.weights, self.biases],
-                [np.zeros((1, self.in_dim)), np.ones(1)]
-            ])
+            # f(x) = Ax + b
+            # The pseudo-inverse is given by A^+ = (A^T A)^-1 A^T
+            # and b^+ = -A^+ b
 
-            # Calculate the pseudo-inverse of the homogeneous matrix
-            pseudo_inverse_homogeneous = np.linalg.pinv(homogeneous_weights)
+            pseudo_inverse_weights = np.linalg.pinv(self.weights)
+            pseudo_inverse_biases = -pseudo_inverse_weights @ self.biases
+            if self.out_reshape is not None:
+                pseudo_inverse_biases = pseudo_inverse_biases.reshape(
+                    self.out_reshape
+                )
+            return AffineTransformer(
+                pseudo_inverse_weights, pseudo_inverse_biases, self.out_reshape
+            )
 
-            # Extract the pseudo-inverse of the weights and the new biases
-            pseudo_inverse_weights = pseudo_inverse_homogeneous[:self.in_dim, :self.out_dim]
-            pseudo_inverse_biases = pseudo_inverse_homogeneous[:self.in_dim, self.out_dim]
-
-            return AffineTransformer(pseudo_inverse_weights, pseudo_inverse_biases, self.out_reshape)
 
     def __repr__(self):
         """Return a string representation of the transformer."""
