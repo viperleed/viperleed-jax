@@ -272,8 +272,6 @@ class DisplacementTree(LinearTree):
             functional.analyze_tree(self)
 
 
-
-
     # def apply_bounds(self, line):
     #     """Apply bounds to the children of the node."""
     #     super().apply_bounds()
@@ -290,16 +288,6 @@ class DisplacementTree(LinearTree):
     #     # and violate symmetry)
     #     for leaf in primary_leaves.values():
     #         leaf.update_bounds(line)
-
-    def apply_explicit_constraint(self, constraint_line):
-        if constraint_line.type.type != self.perturbation_type:
-            msg = (
-                f'Wrong constraint type for {self.perturbation_type} '
-                f'parameter: {constraint_line.type}.'
-            )
-            raise ValueError(msg)
-
-        super().apply_explicit_constraint(constraint_line)
 
     def apply_implicit_constraints(self):
         """Apply implicit constraints to the tree."""
@@ -461,6 +449,17 @@ class DisplacementTree(LinearTree):
 
         This method applies explicit, user defined constraints to the tree.
         """
+        # check construction order
+        super().apply_explicit_constraint()
+
+        # check if the constraint line is of the correct type
+        if constraint_line.type.type != self.perturbation_type:
+            msg = (
+                f'Wrong constraint type for {self.perturbation_type} '
+                f'parameter: {constraint_line.type}.'
+            )
+            raise ValueError(msg)
+
         # resolve the reference (rhs of constraint) into a mask
         link_target_mask = self.atom_basis.selection_mask(
             (constraint_line.link_target,))
