@@ -328,14 +328,6 @@ class DisplacementTree(LinearTree):
         for root in self.roots:
             root.check_bounds_valid()
 
-    def _check_constraint_line_type(self, constraint_line, constraint_type):
-        if not isinstance(constraint_line, ConstraintLine):
-            msg = 'Constraint must be a ConstraintLine.'
-            raise TypeError(msg)
-        if constraint_line.constraint_type != constraint_type:
-            msg = f'Constraint must be a {constraint_type} constraint.'
-            raise ValueError(msg)
-
     def _target_nodes(self, targets):
         """Take a BSTarget and returns the corresponding leaves and roots."""
         # gets the leaves that are affected by the targets
@@ -452,12 +444,7 @@ class DisplacementTree(LinearTree):
         super().apply_explicit_constraint()
 
         # check if the constraint line is of the correct type
-        if constraint_line.type.type != self.perturbation_type:
-            msg = (
-                f'Wrong constraint type for {self.perturbation_type} '
-                f'parameter: {constraint_line.type}.'
-            )
-            raise ValueError(msg)
+        _check_constraint_line_type(constraint_line, self.perturbation_type)
 
         # resolve the reference (rhs of constraint) into a mask
         link_target_mask = self.atom_basis.selection_mask(
@@ -607,3 +594,15 @@ def _select_primary_leaf(root, leaves):
 
     primary_leaf_id = closest_to_identity([leaf.transformer.weights for leaf in root_leaves])
     return root_leaves[primary_leaf_id]
+
+def _check_constraint_line_type(constraint_line, expected_perturbation_type):
+    """Check if the constraint line is of the expected type."""
+    if not isinstance(constraint_line, ConstraintLine):
+        msg = 'Constraint must be a ConstraintLine.'
+        raise TypeError(msg)
+    if constraint_line.type.type != expected_perturbation_type:
+        msg = (
+            f'Wrong constraint type for {expected_perturbation_type} '
+            f'parameter: {constraint_line.type}.'
+        )
+        raise ValueError(msg)
