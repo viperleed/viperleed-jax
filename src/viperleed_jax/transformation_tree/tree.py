@@ -300,9 +300,8 @@ class DisplacementTree(LinearTree):
                 continue
 
             # if not, top it off with an implicit fixed constraint
-            leaf_dof = root.leaves[0].dof
             implicit_fixed_zonotope = Zonotope(
-                basis=np.array([]).reshape(leaf_dof, 0),
+                basis=np.array([]).reshape(root.dof, 0),
                 ranges=np.array([]).reshape(2, 0),
             )
             implicit_fixed_constraint = ImplicitLinearConstraintNode(
