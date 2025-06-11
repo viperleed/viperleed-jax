@@ -3,14 +3,19 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-10-01'
 
+import numpy as np
 
-#from .displacement_range import DisplacementRange
 from .displacement_tree_layers import DisplacementTreeLayers
+from .linear_transformer import LinearMap
+from .nodes import (
+    ImplicitLinearConstraintNode,
+    LinearConstraintNode,
+    LinearLeafNode,
+)
+from .reduced_space import Zonotope
 from .tree import (
     LinearTree,
 )
-from .linear_transformer import AffineTransformer
-from .nodes import LinearConstraintNode, LinearLeafNode
 
 # Note: currently, V0r is (and can only be) a single parameter, which makes
 # it much simpler than the other parameters. Further constraints are not
@@ -18,8 +23,17 @@ from .nodes import LinearConstraintNode, LinearLeafNode
 # In future, this could be extended to try and vary other parameters
 # (e.g. incidence angle, etc.).
 
+class V0rLeafNode(LinearLeafNode):
+    """Leaf node for the V0r meta parameter."""
 
-class MetaParameterSubtree(LinearTree):
+    def __init__(self):
+        super().__init__(
+            dof=1,  # V0r is a single scalar parameter
+            name='V0r',
+        )
+
+
+class MetaTree(LinearTree):
     """Subtree for meta parameters."""
 
     def __init__(self):
@@ -31,20 +45,20 @@ class MetaParameterSubtree(LinearTree):
         """Build the meta parameters subtree."""
         self.v0r_node = V0rLeafNode()
         self.nodes.append(self.v0r_node)
+        # we need a "dummy" symmetry node on top of V0r to match the expected
+        # structure of the tree
+        free_constraint_node = LinearConstraintNode(
+            dof=1,
+            layer=DisplacementTreeLayers.Symmetry,
+            name='V0r',
+            children=[self.v0r_node],
+            transformers=[LinearMap(np.eye(1), (1,))],
+        )
+        self.nodes.append(free_constraint_node)
 
-    def _analyze_tree(self):
-        return super()._analyze_tree()
 
-    def read_from_rpars(self, rpars):
-        """Read and update the bounds of the meta parameters from Rparams."""
-        self.v0r_node.update_bounds(rpars)
-        bound_node = V0rBoundNode(self.v0r_node)
-        self.nodes.append(bound_node)
-        self.finalize_tree()
-
-    # TODO
-    def apply_bounds(self):
-        raise NotImplementedError()
+    def apply_bounds(self, rpars):
+        self._bound_V0r_from_rpars(rpars)
 
     def apply_implicit_constraints(self):
         raise NotImplementedError(
@@ -62,36 +76,29 @@ class MetaParameterSubtree(LinearTree):
             'Meta parameters do not have offsets to apply.'
         )
 
-class V0rLeafNode(LinearLeafNode):
-    def __init__(self):
-        dof = 1  # V0r is a single scalar parameter
-        name = 'V0r'
-        self.bound = DisplacementRange(1)
-        self.num = 1
-        super().__init__(dof=dof, name=name)
+    def _analyze_tree(self):
+        """Apply the offsets to the meta parameters."""
+        raise NotImplementedError(
+            'Meta parameters do not have offsets to apply.'
+        )
 
-    def update_bounds(self, rpars):
+    def _bound_V0r_from_rpars(self, rpars):
+        """Read and apply the bounds of V0r from Rparams."""
         lower, upper = rpars.IV_SHIFT_RANGE.start, rpars.IV_SHIFT_RANGE.stop
-        self.bound.update_range(
-            _range=(lower, upper), enforce=True
+
+        v0r_range = np.array(
+            [[lower, upper]]
+        ).T
+
+        v0r_range_zonotope = Zonotope(
+            basis=np.array([[1.0]]),  # 1D zonotope
+            ranges=v0r_range,
+            offset=None,
         )
 
-
-class V0rBoundNode(LinearConstraintNode):
-    """Node that constrains the V0r parameter to a given bound."""
-
-    def __init__(self, child):
-        if not isinstance(child, V0rLeafNode):
-            raise TypeError('V0rBoundNode must have a single leaf child.')
-
-        weights = [child.bound.upper - child.bound.lower]
-        biases = child.bound.lower
-        transformer = AffineTransformer(weights, biases, (1,))
-
-        super().__init__(
-            dof=1,
-            name='Simple Bound',
-            children=[child],
-            transformers=[transformer],
-            layer=DisplacementTreeLayers.Implicit_Constraints,
+        implicit_constraint_node = ImplicitLinearConstraintNode(
+            child=self.v0r_node.parent,
+            name=f'V0r bounds({lower:.2f}, eV {upper:.2f} eV)',
+            child_zonotope=v0r_range_zonotope,
         )
+        self.nodes.append(implicit_constraint_node)
