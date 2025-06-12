@@ -2,6 +2,7 @@ import pytest
 from pytest_cases import fixture, parametrize_with_cases
 
 from pathlib import Path
+import numpy as np
 
 from tests.structures import CaseStatesAfterInit, ParameterSpaceSize
 from viperleed_jax.atom_basis import AtomBasis
@@ -70,7 +71,7 @@ class TestFe2O3:
             ('complex', (1, 30, 1, 0)),
         ],
     )
-    def fe2o3_valid_displacements_file(fname_postfix, n_param_split):
+    def fe2o3_valid_displacements_file(self, fname_postfix, n_param_split):
         """Fixture for valid displacements file."""
         path =  DISPLACEMENTS_PATH / 'Fe2O3_012' / f'DISPLACEMENTS_{fname_postfix}'
         disp_file = DisplacementsFile()
@@ -81,16 +82,43 @@ class TestFe2O3:
     @parametrize_with_cases(
         'case', cases=CaseStatesAfterInit.case_fe2o3_012_converged
     )
-    def fe2o3_space(case):
+    def fe2o3_space(self, case):
         state, _ = case
         return _get_space(state)
 
 
     """Test the Fe2O3 structure."""
-    def test_apply_displacements(self, fe2o3_space, fe2o3_valid_displacements_file):
+    def test_apply_displacements(self, fe2o3_space, fe2o3_valid_displacements_file, subtests):
         disp_file, expected_param_split = fe2o3_valid_displacements_file
         fe2o3_space.apply_displacements(
             search_block=disp_file.first_block()
         )
         # check that the number of parameters is as expected
         assert fe2o3_space.n_param_split == expected_param_split
+
+        # check that numbers are correctly parsed into the info string
+        with subtests.test('info string'):
+            info_str = fe2o3_space.info
+            assert f'{expected_param_split[0]} V0r' in info_str
+            assert f'{expected_param_split[1]} geo' in info_str
+            assert f'{expected_param_split[2]} vib' in info_str
+            assert f'{expected_param_split[3]} occ' in info_str
+
+        # test generation of the split function
+        with subtests.test('parameter split function'):
+            param_arr = np.random.rand(fe2o3_space.n_free_params)
+            split_func = fe2o3_space.split_free_params()
+            split_params = split_func(param_arr)
+            assert split_params[0].size == expected_param_split[0]
+            assert split_params[1].size == expected_param_split[1]
+            assert split_params[2].size == expected_param_split[2]
+            assert split_params[3].size == expected_param_split[3]
+
+        # test that second application of displacements raises an error
+        with subtests.test('apply search block again'), pytest.raises(
+            ValueError,
+            match='Displacements have already been applied.',
+        ):
+            fe2o3_space.apply_displacements(
+                search_block=disp_file.first_block()
+            )
