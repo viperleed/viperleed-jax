@@ -65,11 +65,11 @@ class ParameterSpace:
             self._parse_offsets(offset_block)
 
         if search_block is not None:
-            # parse and set the bounds & check for symmetry violations
-            self._parse_bounds(search_block)
-
             # first, parse the constraints
             self._parse_constraints(search_block)
+
+            # parse and set the bounds & check for symmetry violations
+            self._parse_bounds(search_block)
 
         # apply the implicit constraints & create the subtree root
         for subtree in (self.geo_tree, self.vib_tree, self.occ_tree):
