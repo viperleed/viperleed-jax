@@ -37,7 +37,7 @@ class ParameterSpace:
         self.geo_tree = geo_parameters.GeoTree(atom_basis)
         self.occ_tree = occ_parameters.OccTree(atom_basis)
 
-        self.subtrees = (
+        self.trees = (
             self.meta_tree,
             self.geo_tree,
             self.vib_tree,
@@ -141,7 +141,7 @@ class ParameterSpace:
     def _free_params_up_to_layer(self, layer):
         """Return the number of free parameters in all trees up to a layer."""
         free_params = []
-        for subtree in self.subtrees:
+        for subtree in self.trees:
             layer_roots = subtree.roots_up_to_layer(layer)
             free_params.append(int(sum(node.dof for node in layer_roots)))
         return free_params
