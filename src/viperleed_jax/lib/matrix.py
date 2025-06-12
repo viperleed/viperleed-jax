@@ -44,3 +44,28 @@ def closest_to_identity(matrices):
 
     # Find the index of the matrix with the smallest distance
     return np.argmin(distances)
+
+def off_diagonal_frobenius(matrix):
+    """
+    Compute the frobenius norm of off-diagional elements for a real matrix.
+
+    Parameters
+    ----------
+    matrix : numpy.ndarray
+        A 2D real matrix (can be non-square).
+
+    Returns
+    -------
+    float
+        The Frobenius norm of the off-diagonal part of the matrix.
+    """
+    # Ensure input is a numpy array
+    matrix = np.array(matrix)
+
+    # Create the diagonal projection of the matrix
+    diagonal_projection = np.zeros_like(matrix)
+    np.fill_diagonal(diagonal_projection, np.diag(matrix))
+
+    # Compute the Frobenius norm of the difference
+    difference = matrix - diagonal_projection
+    return np.linalg.norm(difference, 'fro')
