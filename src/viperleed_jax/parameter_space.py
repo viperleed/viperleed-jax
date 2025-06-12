@@ -323,14 +323,9 @@ class ParameterSpace:
 
     @property
     def n_param_split(self):
-        return np.array(
-            [
-                self.meta_tree.root.dof,
-                self.vib_tree.root.dof,
-                self.geo_tree.root.dof,
-                self.occ_tree.root.dof,
-            ]
-        )
+        return tuple(sum(root.dof for root in tree.roots)
+                     for tree in self.trees)
+
 
     @property
     def info(self):
