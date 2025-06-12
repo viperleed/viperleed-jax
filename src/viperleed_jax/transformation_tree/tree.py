@@ -517,7 +517,7 @@ class DisplacementTree(LinearTree):
                     msg = (
                         f'{bounds_line.block_name} implicit constraint/'
                         f'boundary "{bounds_line.raw_line}" is in conflict '
-                        f'"with {ancestor.name}". Only one displacement range '
+                        f'with "{ancestor.name}". Only one displacement range '
                         'may be defined per set of linked parameters.'
                     )
                     raise TypeError(msg)
