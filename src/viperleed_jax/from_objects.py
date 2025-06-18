@@ -59,11 +59,15 @@ def calculator_from_objects(
     # take the blocks from the displacements file
     # TODO: take care of multiple blocks!
 
-    offsets_block = disp_file.offsets_block()
+    if disp_file.offsets is not None:
+        logger.debug('Applying offsets from displacements file.')
+        parameter_space.apply_offsets(disp_file.offsets)
+
+    offsets_block = disp_file.offsets
     search_block = (
         disp_file.first_block()
     )  # TODO,FIXME: can only do first block for now
-    parameter_space.apply_search_segment(offsets_block, search_block)
+    parameter_space.apply_search_segment(search_block)
 
     # parameters needed to interpret the tensor data
     ref_calc_lmax = rpars.LMAX.max
