@@ -63,7 +63,7 @@ def calculator_from_objects(
     search_block = (
         disp_file.first_block()
     )  # TODO,FIXME: can only do first block for now
-    parameter_space.apply_displacements(offsets_block, search_block)
+    parameter_space.apply_search_segment(offsets_block, search_block)
 
     # parameters needed to interpret the tensor data
     ref_calc_lmax = rpars.LMAX.max

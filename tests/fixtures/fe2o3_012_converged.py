@@ -387,7 +387,7 @@ def fe2o3_012_converged_parameter_space(
 
     offsets_block = disp_file.offsets_block()
     search_block = disp_file.blocks[0]  # TODO: can only do first block for now
-    parameter_space.apply_displacements(offsets_block, search_block)
+    parameter_space.apply_search_segment(offsets_block, search_block)
     return parameter_space
 
 

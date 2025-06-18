@@ -45,7 +45,7 @@ class ParameterSpace:
         )
 
 
-    def apply_displacements(self, search_block):
+    def apply_search_segment(self, search_block):
         """
         Parse the search block from the displacements file.
 
