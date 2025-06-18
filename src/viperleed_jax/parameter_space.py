@@ -4,9 +4,9 @@ __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-09-02'
 
 import numpy as np
-from viperleed.calc.classes.perturbation_type import PerturbationType
+from viperleed.calc.classes.perturbation_mode import PerturbationMode
 from viperleed.calc.files.new_displacements.reader import (
-    DisplacementFileSections,
+    DISPLACEMENTS_FILE_SECTION,
 )
 
 from viperleed_jax.constants import ATOM_Z_DIR_ID
@@ -44,7 +44,8 @@ class ParameterSpace:
             self.occ_tree,
         )
 
-    def apply_displacements(self, offset_block=None, search_block=None):
+
+    def apply_displacements(self, search_block):
         """
         Parse the search block from the displacements file.
 
@@ -55,21 +56,11 @@ class ParameterSpace:
         if self._displacements_applied:
             raise ValueError('Displacements have already been applied.')
 
-        if offset_block is None and search_block is None:
-            raise ValueError(
-                'Either offset_block or search_block must be provided.'
-            )
+        # first, parse the constraints
+        self._parse_constraints(search_block)
 
-        if offset_block is not None:
-            # parse and set the offsets
-            self._parse_offsets(offset_block)
-
-        if search_block is not None:
-            # first, parse the constraints
-            self._parse_constraints(search_block)
-
-            # parse and set the bounds & check for symmetry violations
-            self._parse_bounds(search_block)
+        # parse and set the bounds & check for symmetry violations
+        self._parse_bounds(search_block)
 
         # apply the implicit constraints & create the subtree root
         for subtree in (self.geo_tree, self.vib_tree, self.occ_tree):
@@ -79,9 +70,9 @@ class ParameterSpace:
         self._displacements_applied = True
 
 
-    def _parse_offsets(self, offsets_block):
+    def apply_offsets(self, offsets_block):
         """
-        Parse the offsets block from the displacements file.
+        Parse the offsets block from the DISPLACEMENTS file.
 
         Parameters
         ----------
@@ -99,44 +90,32 @@ class ParameterSpace:
                 raise ValueError(msg)
 
     def _parse_bounds(self, search_block):
-        # parse geo, vib and occ bounds
-        geo_block = search_block.sections[DisplacementFileSections.GEO_DELTA]
-        vib_block = search_block.sections[DisplacementFileSections.VIB_DELTA]
-        occ_block = search_block.sections[DisplacementFileSections.OCC_DELTA]
-
-        for tree, block in zip(
-            (self.geo_tree, self.vib_tree, self.occ_tree),
-            (geo_block, vib_block, occ_block),
-        ):
-            for line in block:
-                # apply and check for symmetry violations
-                tree.apply_bounds(line)
+        """Parse bounds from the DISPLACEMENTS file."""
+        # Geometric bounds
+        for line in search_block.geo_delta_lines:
+            self.geo_tree.apply_bounds(line)
+        # Vibration bounds
+        for line in search_block.vib_delta_lines:
+            self.vib_tree.apply_bounds(line)
+        # Occupation bounds
+        for line in search_block.occ_delta_lines:
+            self.occ_tree.apply_bounds(line)
 
     def _parse_constraints(self, search_block):
-        """
-        Parse constraints from the displacements file.
-
-        Parameters
-        ----------
-        constrain_block
-        """
-        constraints_block = search_block.sections[
-            DisplacementFileSections.CONSTRAIN
-        ]
-        for constraint_line in constraints_block:
-            if constraint_line.type.type is PerturbationType.GEO:
+        """Parse constraints from the DISPLACEMENTS file."""
+        for constraint_line in search_block.explicit_constraint_lines:
+            if constraint_line.type.type is PerturbationMode.GEO:
                 self.geo_tree.apply_explicit_constraint(constraint_line)
-            elif constraint_line.type.type is PerturbationType.VIB:
+            elif constraint_line.type.type is PerturbationMode.VIB:
                 self.vib_tree.apply_explicit_constraint(constraint_line)
-            elif constraint_line.type.type is PerturbationType.OCC:
+            elif constraint_line.type.type is PerturbationMode.OCC:
                 self.occ_tree.apply_explicit_constraint(constraint_line)
-            elif constraint_line.type.type is PerturbationType.DOM:
+            elif constraint_line.type.type is PerturbationMode.DOM:
                 raise NotImplementedError(
                     'Domain constraints are not supported yet.')
             else:
                 msg = f'Unknown constraint type: {constraint_line.type}'
                 raise ValueError(msg)
-
 
     def _free_params_up_to_layer(self, layer):
         """Return the number of free parameters in all trees up to a layer."""
