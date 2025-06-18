@@ -31,45 +31,42 @@ def test_symmetry_operations_determinant(atom_basis, subtests):
     """The abs of the determinant of symmetry operations should be 1."""
     # create the geometry tree
     tree = GeoTree(atom_basis)
-    assert len(tree.leaves) == len(atom_basis)
+    tree.apply_implicit_constraints()
+    tree.finalize_tree()
 
-    with subtests.test('tree root creation'):
-        # apply implicit constraints to unmodified tree
-        tree.apply_implicit_constraints()
-        tree.finalize_tree()
-        assert tree.root.is_root
-        assert tree.root.is_leaf is False
+    symmetry_roots = tree.roots_up_to_layer(DisplacementTreeLayers.Symmetry)
+    z_only_roots = [root for root in symmetry_roots if root.dof == 1]
+    in_plane_1d_roots = [root for root in symmetry_roots if root.dof == 2]
+    free_roots = [root for root in symmetry_roots if root.dof == 3]
+
+    # TODO: figure out more through tests for the symmetry operations
+    with subtests.test('z_only_roots'):
+        for root in z_only_roots:
+            for leaf in root.leaves:
+                sym_op = leaf.symmetry_operation_to_reference_propagator
+                assert sym_op[0, 0] == pytest.approx(1.0)
+
+    with subtests.test('in_plane_1d_roots'):
+        for root in in_plane_1d_roots:
+            for leaf in root.leaves:
+                sym_op = leaf.symmetry_operation_to_reference_propagator
+
+    with subtests.test('free roots'):
+        for root in free_roots:
+            for leaf in root.leaves:
+                sym_op = leaf.symmetry_operation_to_reference_propagator
+                sym_op_det = np.linalg.det(sym_op)
+                assert abs(sym_op_det) == pytest.approx(1.0)
 
 
-# def test_symmetry_operations_determinant(atom_basis, subtests):
-#     """The abs of the determinant of symmetry operations should be 1."""
-#     # create the geometry tree
-#     tree = GeoTree(atom_basis)
-#     tree.finalize_tree()
-
-#     symmetry_roots = tree.roots_up_to_layer(DisplacementTreeLayers.Symmetry)
-#     z_only_roots = [root for root in symmetry_roots if root.dof == 1]
-#     in_plane_1d_roots = [root for root in symmetry_roots if root.dof == 2]
-#     free_roots = [root for root in symmetry_roots if root.dof == 3]
-
-#     # TODO: figure out more through tests for the symmetry operations
-#     with subtests.test('z_only_roots'):
-#         for root in z_only_roots:
-#             for leaf in root.leaves:
-#                 sym_op = leaf.symmetry_operation_to_reference_propagator
-#                 assert sym_op[0, 0] == pytest.approx(1.0)
-
-#     with subtests.test('in_plane_1d_roots'):
-#         for root in in_plane_1d_roots:
-#             for leaf in root.leaves:
-#                 sym_op = leaf.symmetry_operation_to_reference_propagator
-
-#     with subtests.test('free roots'):
-#         for root in free_roots:
-#             for leaf in root.leaves:
-#                 sym_op = leaf.symmetry_operation_to_reference_propagator
-#                 sym_op_det = np.linalg.det(sym_op)
-#                 assert abs(sym_op_det) == pytest.approx(1.0)
+@fixture
+@parametrize_with_cases(
+    'case', cases=CaseStatesAfterInit.case_fe2o3_012_converged
+)
+def fe2o3_tree(case):
+    state, _ = case
+    atom_basis = AtomBasis(state.slab)
+    return GeoTree(atom_basis)
 
 class TestFe2O3:
     """Test the Fe2O3 structure."""
