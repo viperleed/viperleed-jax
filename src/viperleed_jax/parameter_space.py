@@ -30,6 +30,8 @@ class ParameterSpace:
         self.meta_tree = meta_parameters.MetaTree()
         # set V0r bounds from Rparams object
         self.meta_tree.apply_bounds(rpars)
+        # apply roots – TODO: move to meta tree class methods
+        self.meta_tree._create_root()
 
         # create the structural trees - this automatically sets up all the
         # symmetry constraints
