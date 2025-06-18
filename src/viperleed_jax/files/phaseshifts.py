@@ -88,8 +88,8 @@ class Phaseshifts:
     def __init__(self, raw_phaseshifts, energies, l_max, phaseshift_map):
         """Class to handle phaseshifts.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         raw_phaseshifts : numpy.ndarray
             The raw phaseshifts data.
         energies : numpy.ndarray
@@ -99,7 +99,6 @@ class Phaseshifts:
         phaseshift_map : dict
             A dictionary that maps the SiteElement namedtuple to an int index.
         """
-
         self.l_max = l_max
         self.phaseshift_map = phaseshift_map
         self._phaseshifts = self.interpolate(raw_phaseshifts, energies)
