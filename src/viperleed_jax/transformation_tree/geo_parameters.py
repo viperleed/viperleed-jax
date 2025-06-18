@@ -14,7 +14,7 @@ from .nodes import AtomicLinearNode, LinearConstraintNode, ImplicitLinearConstra
 from .tree import (
     DisplacementTree,
 )
-from viperleed.calc.classes.perturbation_type import PerturbationType
+from viperleed.calc.classes.perturbation_mode import PerturbationMode
 from .reduced_space import Zonotope
 
 
@@ -261,7 +261,7 @@ class GeoTree(DisplacementTree):
         )
 
         # get vector and range information from the GEO_DELTA line
-        n_vectors = len(geo_delta_line.direction.vectors)
+        n_vectors = len(geo_delta_line.direction.vectors_zxy)
 
         ranges = np.vstack([
             np.full(n_vectors, geo_delta_line.range.start),
@@ -269,7 +269,7 @@ class GeoTree(DisplacementTree):
         ])
 
         leaf_range_zonotope = Zonotope(
-            basis=geo_delta_line.direction.vectors,
+            basis=geo_delta_line.direction.vectors_zxy,
             ranges=ranges,
             offset=None,
         )
