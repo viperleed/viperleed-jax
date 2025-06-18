@@ -44,7 +44,6 @@ class ParameterSpace:
             self.occ_tree,
         )
 
-
     def apply_search_segment(self, search_block):
         """
         Parse the search block from the displacements file.
@@ -68,7 +67,6 @@ class ParameterSpace:
             subtree.finalize_tree()
 
         self._displacements_applied = True
-
 
     def apply_offsets(self, offsets_block):
         """
