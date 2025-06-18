@@ -12,7 +12,7 @@ import anytree
 import numpy as np
 from anytree import RenderTree
 from anytree.exporter import UniqueDotExporter
-from viperleed.calc.classes.perturbation_type import PerturbationType
+from viperleed.calc.classes.perturbation_mode import PerturbationMode
 from viperleed.calc.files.new_displacements.lines import ConstraintLine
 
 from viperleed_jax.lib.matrix import closest_to_identity
@@ -249,7 +249,7 @@ class DisplacementTree(LinearTree):
 
         self._offsets_have_been_added = False
         self.functionals = []
-        self.perturbation_type = PerturbationType(perturbation_type)
+        self.perturbation_mode = PerturbationMode(perturbation_type)
         super().__init__(name, root_node_name)
 
     @property
@@ -360,12 +360,12 @@ class DisplacementTree(LinearTree):
 
         # if there is a direction do processing
         if offset_line.direction is not None:
-            if len(offset_line.direction.vectors) != 1:
+            if len(offset_line.direction.vectors_zxy) != 1:
                 msg = (
                     f'Cannot interpret offset for line "{offset_line}".'
                 )
                 raise ValueError(msg)
-            vector = offset_line.direction.vectors[0]
+            vector = offset_line.direction.vectors_zxy[0]
             offset = np.array(vector) * offset
 
         # check construction order
@@ -418,7 +418,7 @@ class DisplacementTree(LinearTree):
         super().apply_explicit_constraint()
 
         # check if the constraint line is of the correct type
-        _check_constraint_line_type(constraint_line, self.perturbation_type)
+        _check_constraint_line_type(constraint_line, self.perturbation_mode)
 
         # resolve the reference (rhs of constraint) into a mask
         link_target_mask = self.atom_basis.selection_mask(
