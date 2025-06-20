@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 
 from jax import config
-from viperleed.calc import LOGGER as logger
+from viperleed.calc import LOGGER
 from viperleed.calc.files.new_displacements.file import DisplacementsFile
 from viperleed.calc.run import run_calc
 
@@ -73,7 +73,7 @@ def calculator_from_paths(inputs_path,
     disp_file.read(displacements_path)
 
     if disp_file.offsets is not None:
-        logger.debug('Applying offsets from displacements file.')
+        LOGGER.debug('Applying offsets from displacements file.')
         parameter_space.apply_offsets(disp_file.offsets)
 
     # skip ahead to the block with the given displacements_id
@@ -114,8 +114,8 @@ def run_viperleed_initialization(calc_path):
 
     console_handler = logging.StreamHandler()
 
-    logger.addHandler(console_handler)
-    logger.info('ViPErLEED initialization successful')
+    LOGGER.addHandler(console_handler)
+    LOGGER.info('ViPErLEED initialization successful')
 
     # get slab and rparams from state
     return state_recorder.last_state
