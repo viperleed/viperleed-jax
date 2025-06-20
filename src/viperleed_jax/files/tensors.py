@@ -146,9 +146,7 @@ def interpret_exit_amps_subblock(split_subblock):
 
 
 def interpret_tensor_file(content, max_l_max, n_beams, n_energies):
-    """
-    Interprets the content of a single tensor file.
-    """
+    """Interprets the content of a single tensor file."""
     file_hash = hash(content)
     energies = np.full((n_energies,), np.nan, dtype=np.float64)
     v0i_substrate = np.full((n_energies,), np.nan, dtype=np.float64)
