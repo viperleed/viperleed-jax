@@ -93,7 +93,7 @@ class TensorFileData:
         return self.ref_amps.shape[1]
 
     def is_consistent(self, other):
-        """Check if two tensor files are consistent
+        """Check if two tensor files are consistent.
 
         Consistency is checked by comparing all data that is
         atom/site-independent. This includes the kinetic energies,
@@ -272,8 +272,28 @@ def interpret_tensor_file(content, max_l_max, n_beams, n_energies):
 
 
 def process_tensor_file(file_name, tensor_path, lmax, n_beams, n_energies):
-    """
-    Reads a single tensor file from the zip archive and processes it.
+    """Read and processes a single tensor file from a zip archive.
+
+    Parameters
+    ----------
+    file_name : str
+        The name of the tensor file within the zip archive.
+    tensor_path : path-like
+        The path to the zip archive containing the tensor files.
+    lmax : int
+        The maximum angular momentum quantum number.
+    n_beams : int
+        The number of beams to process.
+    n_energies : int
+        The number of energy values to process.
+
+    Returns
+    -------
+    tuple
+        A tuple containing:
+            - file_name (str): The name of the processed tensor file.
+            - tensor_data (Any): The processed tensor data as returned by
+              `interpret_tensor_file`.
     """
     with zipfile.ZipFile(tensor_path, 'r') as zip_ref:
         with zip_ref.open(file_name) as file:
@@ -282,9 +302,31 @@ def process_tensor_file(file_name, tensor_path, lmax, n_beams, n_energies):
 
 
 def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
-    """
-    Reads and interprets the contents of a tensor zip file in parallel using Joblib.
-    Returns a dictionary mapping file names to TensorFileData instances.
+    """Read and interpret tensor files from a zip archive.
+
+    Reads and interprets the contents of a tensor zip file in parallel using
+    Joblib. Returns the contents as a dictionary mapping file names to
+    TensorFileData instances.
+    lmax, n_beams, and n_energies are required information to interpret the
+    tensor data.
+
+    Parameters
+    ----------
+    tensor_path : path-like
+        Path to the zip file containing tensor files.
+    lmax : int
+        Maximum value of l (angular momentum quantum number) used to generate
+        the tensors.
+    n_beams : int
+        Number of diffracted beams considered in the calculation.
+    n_energies : int
+        Number of energy values for which the tensors are calculated.
+
+    Returns
+    -------
+    dict
+        A dictionary where keys are file names and values are TensorFileData
+        instances containing the interpreted data from the tensor files.
     """
     with zipfile.ZipFile(tensor_path, 'r') as zip_ref:
         all_files = zip_ref.namelist()
