@@ -9,18 +9,15 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from jax import config
 from viperleed.calc import LOGGER
 from viperleed.calc.files.new_displacements.file import DisplacementsFile
 from viperleed.calc.run import run_calc
 
-from .from_objects import setup_tl_calculator, setup_tl_parameter_space
+from viperleed_jax.from_objects import (
+    setup_tl_calculator,
+    setup_tl_parameter_space,
+)
 
-# set JAX configuration
-config.update('jax_debug_nans', False)
-config.update('jax_enable_x64', True)
-config.update('jax_disable_jit', False)
-config.update('jax_log_compiles', False)
 
 def calculator_from_paths(inputs_path,
                           tensor_path,

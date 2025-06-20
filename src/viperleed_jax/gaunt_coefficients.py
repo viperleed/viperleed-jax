@@ -6,9 +6,7 @@ __created__ = '2024-01-03'
 from functools import partial
 
 import numpy as np
-from jax import config
 
-config.update('jax_enable_x64', True)
 from pathlib import Path
 
 import jax
