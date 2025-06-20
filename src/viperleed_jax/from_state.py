@@ -27,7 +27,35 @@ def calculator_from_paths(inputs_path,
                           displacements_path,
                           displacements_id=0,
                           **kwargs):
+    """Create a TensorLEEDCalculator from input paths.
 
+    This function initializes the ViPErLEED calculation from the given input
+    paths, reads the necessary files, including DISPLACEMENTS, and sets up the
+    parameter space for the calculator. If the displacements_id is provided,
+    it skips to the corresponding block in the DISPLACEMENTS file.
+
+    Parameters
+    ----------
+    inputs_path : path-like
+        Path to the directory containing the input files for the viperleed.calc
+        initialization.
+    tensor_path : path-like
+        Path to the tensor file, which contains the pre-calculated tensors for
+        the calculator.
+    displacements_path : path-like
+        Path to the DISPLACEMENTS file, which contains the displacements data.
+    displacements_id : int, optional
+        The index of the displacements block to use from the DISPLACEMENTS file.
+        Defaults to 0, which means the first block will be used.
+    **kwargs : dict
+        Additional keyword arguments passed to `setup_tl_calculator`.
+
+    Returns
+    -------
+    TensorLEEDCalculator
+        A TensorLEEDCalculator object initialized with the slab, rpars, and
+        the parameter space set up from the input files.
+    """
     # Run ViPErLEED initialization from inputs_path
     last_state = run_viperleed_initialization(inputs_path)
     # get objects from last_state
