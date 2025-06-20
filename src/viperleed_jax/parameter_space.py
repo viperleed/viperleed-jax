@@ -149,6 +149,7 @@ class ParameterSpace:
         return self.vib_tree.dynamic_t_matrix_transformers()
 
     def occ_weight_transformer(self):
+        # TODO: put normalization into here
         return self.occ_tree.collapsed_transformer_scatterer_order
 
     @property
