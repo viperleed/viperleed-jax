@@ -27,6 +27,7 @@ config.update('jax_log_compiles', False)
 def calculator_from_paths(inputs_path,
                           tensor_path,
                           displacements_path,
+                          displacements_id=0,
                           **kwargs):
 
     # Run ViPErLEED initialization from inputs_path
@@ -34,10 +35,31 @@ def calculator_from_paths(inputs_path,
     # get objects from last_state
     slab, rpars = last_state.slab, last_state.rpars
 
+    # Create the parameter space.
+    # We do this now, because if anything fails here, we don't want to waste
+    # time reading the tensor files.
+
+    # create parameter space
+    parameter_space = setup_tl_parameter_space(slab, rpars)
+
+    # load and read the DISPLACEMENTS file
+    disp_file = DisplacementsFile()
+    disp_file.read(displacements_path)
+
+    if disp_file.offsets is not None:
+        logger.debug('Applying offsets from displacements file.')
+        parameter_space.apply_offsets(disp_file.offsets)
+
+    # skip ahead to the block with the given displacements_id
+    for _ in range(displacements_id):
+        search_block = disp_file.next(2.0)
+    parameter_space.apply_search_segment(search_block)
+
     # delegate to calculator_from_objects
-    return calculator_from_objects(
+    return setup_tl_calculator(
         slab, rpars, tensor_path, displacements_path, **kwargs
     )
+
 
 def run_viperleed_initialization(calc_path):
     """Run ViPErLEED initialization with the input data in calc_path.

@@ -47,10 +47,12 @@ def setup_tl_parameter_space(slab, rpars):
     return ParameterSpace(atom_basis, rpars)
 
 
+
+def setup_tl_calculator(
     slab,
     rpars,
     tensor_path,
-    displacements_path,
+    phaseshifts_path,
     t_leed_l_max=None,
     recalculate_ref_t_matrices=None,
     **kwargs,
@@ -67,36 +69,12 @@ def setup_tl_parameter_space(slab, rpars):
     # log info or warning on used GPU/CPU
     check_jax_devices()
 
-    # load and read the DISPLACEMENTS file
-    disp_file = DisplacementsFile()
-    disp_file.read(displacements_path)
-
-    # Create the parameter space.
-    # We do this now, because if anything fails here, we don't want to waste
-    # time reading the tensor files.
-    logger.debug('Creating parameter space.')
-    atom_basis = AtomBasis(slab)
-    parameter_space = ParameterSpace(atom_basis, rpars)
-
-    # take the blocks from the displacements file
-    # TODO: take care of multiple blocks!
-
-    if disp_file.offsets is not None:
-        logger.debug('Applying offsets from displacements file.')
-        parameter_space.apply_offsets(disp_file.offsets)
-
-    offsets_block = disp_file.offsets
-    search_block = (
-        disp_file.first_block()
-    )  # TODO,FIXME: can only do first block for now
-    parameter_space.apply_search_segment(search_block)
-
     # parameters needed to interpret the tensor data
     ref_calc_lmax = rpars.LMAX.max
     n_beams = len(rpars.ivbeams)
     n_energies = len(
         np.arange(
-            rpars.THEO_ENERGIES.start,  # TODO: would be good to make this a property of the EnergyRange class
+            rpars.THEO_ENERGIES.start,                                          # TODO: would be good to make this a property of the EnergyRange class
             rpars.THEO_ENERGIES.stop + 0.01,
             rpars.THEO_ENERGIES.step,
         )
@@ -124,7 +102,7 @@ def setup_tl_parameter_space(slab, rpars):
     logger.debug('Tensor processing successful.')
 
     # read Phaseshift data using existing phaseshift reader
-    phaseshifts_path = displacements_path.parent /'PHASESHIFTS' # TODO: rename!!
+    logger.debug('Reading and interpolating phaseshifts.')
     _, raw_phaseshifts, _, _ = readPHASESHIFTS(
         slab, rpars, readfile=phaseshifts_path, check=True, ignoreEnRange=False
     )
@@ -151,11 +129,9 @@ def setup_tl_parameter_space(slab, rpars):
         **kwargs,
     )
 
-    # free up memory for large objects that are no longer needed
+    # explicitly free up memory for large objects that are no longer needed
     del sorted_tensors
     del tensors
     del raw_phaseshifts
-
-    calculator.set_parameter_space(parameter_space)
 
     return calculator
