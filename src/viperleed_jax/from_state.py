@@ -3,15 +3,13 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-08-28'
 
-from pathlib import Path
-
-from jax import config
-
 import logging
 import os
 import shutil
 import tempfile
+from pathlib import Path
 
+from jax import config
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.files.new_displacements.file import DisplacementsFile
 from viperleed.calc.run import run_calc
