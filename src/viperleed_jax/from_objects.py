@@ -3,14 +3,8 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2025-04-17'
 
-from jax import config
-
-config.update('jax_debug_nans', False)
-config.update('jax_enable_x64', True)
-config.update('jax_disable_jit', False)
-config.update('jax_log_compiles', False)
-
 import numpy as np
+from jax import config
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
@@ -22,6 +16,13 @@ from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.parameter_space import ParameterSpace
 from viperleed_jax.tensor_calculator import TensorLEEDCalculator
 from viperleed_jax.utils import check_jax_devices
+
+# set JAX configuration
+config.update('jax_debug_nans', False)
+config.update('jax_enable_x64', True)
+config.update('jax_disable_jit', False)
+config.update('jax_log_compiles', False)
+
 
 
 def calculator_from_objects(
