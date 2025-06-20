@@ -11,7 +11,6 @@ from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 from viperleed_jax.atom_basis import AtomBasis
 from viperleed_jax.data_structures import process_tensors
 from viperleed_jax.files import phaseshifts as ps
-from viperleed.calc.files.new_displacements.file import DisplacementsFile
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.parameter_space import ParameterSpace
 from viperleed_jax.tensor_calculator import TensorLEEDCalculator
@@ -24,8 +23,30 @@ config.update('jax_disable_jit', False)
 config.update('jax_log_compiles', False)
 
 
+def setup_tl_parameter_space(slab, rpars):
+    """Create a ParameterSpace object for the given slab and rpars.
 
-def calculator_from_objects(
+    This function initializes the atom basis and creates a ParameterSpace
+    that contains and parses all the symmetry information from the slab.
+
+    Parameters
+    ----------
+    slab : Slab
+        The slab object containing the atomic structure.
+    rpars : Rparams
+        The Run parameters from viperleed.calc.
+
+    Returns
+    -------
+    ParameterSpace
+        A ParameterSpace object that contains the atom basis and symmetry
+        information.
+    """
+    logger.debug('Creating parameter space.')
+    atom_basis = AtomBasis(slab)
+    return ParameterSpace(atom_basis, rpars)
+
+
     slab,
     rpars,
     tensor_path,
