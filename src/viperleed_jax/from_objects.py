@@ -57,6 +57,38 @@ def setup_tl_calculator(
     recalculate_ref_t_matrices=None,
     **kwargs,
 ):
+    """Set up a TensorLEEDCalculator from slab, rpars, and tensor file.
+
+    This function reads the tensor file, processes the tensors, and initializes
+    a TensorLEEDCalculator object. It also reads the phaseshift data and
+    prepares the necessary parameters for the calculator.
+
+    Parameters
+    ----------
+    slab : Slab
+        The slab object containing the atomic structure.
+    rpars : Rparams
+        The Run parameters from viperleed.calc.
+    tensor_path : path-like
+        The path to the tensor file.
+    phaseshifts_path : path-like
+        The path to the phaseshift file.
+    t_leed_l_max : int, optional
+        The maximum angular momentum quantum number to be used in the tensor
+        LEED calculation. If not given, defaults to the value from
+        rpars.LMAX.max.
+    recalculate_ref_t_matrices : bool, optional
+        Whether to recalculate the reference T-matrices. If not given, defaults
+        to the value from rpars.SEARCH_RECALC_TMATRICES.
+    **kwargs : dict, optional
+        Additional keyword arguments to be passed to the TensorLEEDCalculator.
+
+    Returns
+    -------
+    TensorLEEDCalculator
+        The TensorLEEDCalculator object. The calculator is not yet initialized,
+        with a parameter space.
+    """
     # set LMAX cutoff
     ref_calc_lmax = rpars.LMAX.max
     if t_leed_l_max is None:
