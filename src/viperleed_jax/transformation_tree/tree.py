@@ -328,20 +328,6 @@ class DisplacementTree(LinearTree):
             selected_roots,
         )
 
-    def _select_constraint(self, constraint_line):
-        # gets the leaves that are affected by a constraint
-
-        # TODO: other constraints ?
-        if constraint_line.value != 'linked':
-            raise NotImplementedError('Only linked constraints are supported.')
-
-        targets = constraint_line.targets
-        implicit_leaves, explicit_leaves, selected_roots = self._target_nodes(
-            targets
-        )
-        return implicit_leaves, explicit_leaves, selected_roots
-
-
     def _get_leaves_and_roots(self, targets):
         """Return the leaves, roots and primary_leaves for the given targets."""
         all_target_leaves = self.leaves[self.atom_basis.selection_mask(targets)]
