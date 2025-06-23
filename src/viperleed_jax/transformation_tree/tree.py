@@ -302,6 +302,19 @@ class DisplacementTree(LinearTree):
         ]
         return stack_transformers(transformers)
 
+    def __call__(self, reduced_params):
+        """Apply the transformation tree to the given parameters."""
+        if not self.finalized:
+            raise ValueError('Subtree root has not yet been created.')
+        # Post-process the values to apply the transformations
+        return self._post_process_values(
+            self._raw_leaf_transformers(reduced_params)
+        )
+
+    # @abstractmethod
+    def _post_process_values(self, raw_values):
+        return raw_values
+
     def _target_nodes(self, targets):
         """Take a BSTarget and returns the corresponding leaves and roots."""
         # gets the leaves that are affected by the targets
