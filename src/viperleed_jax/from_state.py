@@ -80,9 +80,12 @@ def calculator_from_paths(inputs_path,
 
     phaseshifts_path = displacements_path.parent / 'PHASESHIFTS'
     # delegate to calculator_from_objects
-    return setup_tl_calculator(
+    calculator =  setup_tl_calculator(
         slab, rpars, tensor_path, phaseshifts_path, **kwargs
     )
+    # set the parameter space
+    calculator.set_parameter_space(parameter_space)
+    return calculator
 
 
 def run_viperleed_initialization(calc_path):
