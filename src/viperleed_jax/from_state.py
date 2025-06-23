@@ -74,7 +74,7 @@ def calculator_from_paths(inputs_path,
         parameter_space.apply_offsets(disp_file.offsets)
 
     # skip ahead to the block with the given displacements_id
-    for _ in range(displacements_id):
+    for _ in range(displacements_id+1):
         search_block = disp_file.next(2.0)
     parameter_space.apply_search_segment(search_block)
 
