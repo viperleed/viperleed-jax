@@ -78,9 +78,10 @@ def calculator_from_paths(inputs_path,
         search_block = disp_file.next(2.0)
     parameter_space.apply_search_segment(search_block)
 
+    phaseshifts_path = displacements_path.parent / 'PHASESHIFTS'
     # delegate to calculator_from_objects
     return setup_tl_calculator(
-        slab, rpars, tensor_path, displacements_path, **kwargs
+        slab, rpars, tensor_path, phaseshifts_path, **kwargs
     )
 
 
