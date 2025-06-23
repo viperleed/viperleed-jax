@@ -9,23 +9,22 @@ from viperleed_jax.lib.matrix import off_diagonal_frobenius
 class TreeFunctional(ABC):
     """Base class for all transformable properties.
 
-    Transformables are functions of the quantity described in the transformation
-    tree (e.g. geometrical displacements).
-    Transformables can be used to minimize the number of required evaluations of
-    expensive functions by enabling sharing the results of the function
-    evaluations across the tree.
-    Every leaf node in the transformation tree has value for each
-    transformable property. By analyzing the tree, we can determine which nodes
-    share values for a given transformable property, and how they are related.
+    Tree propagated functions are functions of the quantity described in the
+    transformation tree (e.g. geometrical displacements) that need to be
+    evaluated for every leaf node. By using relationships in the tree, we can
+    use the values of some leaf nodes to calculate the values of other leaf
+    thereby reducing the number of required expensive function evaluations.
+    The tree is effectively  statically analyzed and used as a type of
+    computation graph for the propagated function.
 
     Parameters
     ----------
     name : str
-        The name of the property.
+        The name of the propagated property function.
     transformer_class : type, optional
         The (super)class of transformers that can be used to propagate the
-        transformable property. This can be used to restrict the types of
-        transformations that can be applied to the property.
+        function. This can be used to restrict the types of transformations
+        that can be applied to the property.
     node_requirement : callable, optional
         A callable that takes a node as an argument and returns True if the
         node can be used to propagate the property. This can be used to restrict
