@@ -295,8 +295,8 @@ class DisplacementTree(LinearTree):
             self.nodes.append(implicit_fixed_constraint)
 
     @property
-    def collapsed_transformer_scatterer_order(self):
-        """Return the collapsed transformer in the order of the base scatterers."""
+    def _raw_leaf_transformers(self):
+        """Return the raw leaf transformers in the order of the base scatterers."""
         transformers = [
             self.root.transformer_to_descendent(leaf) for leaf in self.leaves
         ]

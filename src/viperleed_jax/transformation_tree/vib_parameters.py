@@ -122,6 +122,10 @@ class VibTree(DisplacementTree):
             )
             self.nodes.append(dummy_symmetry_node)
 
+    @property
+    def _ref_vib_amplitudes(self):
+        """Return the reference vibrational amplitudes for all leaves."""
+        return np.array([leaf.ref_vib_amp for leaf in self.leaves])
 
     def apply_bounds(self, vib_delta_line):
         super().apply_bounds(vib_delta_line)
@@ -156,51 +160,7 @@ class VibTree(DisplacementTree):
             )
             self.nodes.append(implicit_constraint_node)
 
-    ##############################
-    # Vibration specific methods #
-    ##############################
-    def all_vib_amps_transformer(self):
-        """Return a transformer that maps the free parameters to all vibrational
-        amplitudes"""
-        return self.collapsed_transformer_scatterer_order
-
-    def dynamic_t_matrix_transformers(self):
-        """Return a transformer that maps the free parameters to the dynamic
-        vibrational amplitudes."""
-        return [
-            self.root.transformer_to_descendent(node)
-            for node in self.vibration_functional.dynamic_reference_nodes
-        ]
-
-    @property
-    def dynamic_site_elements(self):
-        return tuple(
-            node.site_element
-            for node in self.vibration_functional.dynamic_reference_nodes
-        )
-
-    @property
-    def static_t_matrix_inputs(self):
-        return [(node.site_element,float(value)) for node, value
-                in zip(self.vibration_functional.static_reference_nodes,
-                       self.vibration_functional.static_reference_nodes_values)]
-
-    @property
-    def static_site_elements(self):
-        return tuple(
-            node.site_element
-            for node in self.vibration_functional.static_reference_nodes
-        )
-
-    @property
-    def t_matrix_map(self):
-        # return a tuple with the site_elements for each base parameter
-        return self.vibration_functional.static_dynamic_map
-
-    @property
-    def n_dynamic_t_matrices(self):
-        return self.vibration_functional.n_dynamic_values
-
-    @property
-    def n_static_t_matrices(self):
-        return self.vibration_functional.n_static_values
+    def _post_process_values(self, raw_values):
+        # add reference calculation vibrational amplitudes to raw values
+        # (vib deltas)
+        return raw_values + self._ref_vib_amplitudes

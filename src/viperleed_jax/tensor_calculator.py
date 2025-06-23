@@ -358,15 +358,11 @@ class TensorLEEDCalculator:
         self._reference_displacements = jax.jit(self.parameter_space.reference_displacements(
             self.batch_atoms
         ))
-        self._reference_vib_amps = jax.jit(self.parameter_space.reference_vib_amps(
-            self.batch_atoms
-        ))
+        self._reference_vib_amps = jax.jit(self.parameter_space.vib_tree)
         self._split_free_params = jax.jit(self.parameter_space.split_free_params())
         self._v0r_transformer = jax.jit(self.parameter_space.v0r_transformer())
-        self._occ_weight_transformer = jax.jit(self.parameter_space.occ_weight_transformer())
-        self._all_displacements = jax.jit(
-            self.parameter_space.all_displacements_transformer()
-        )
+        self._occ_weight_transformer = jax.jit(self.parameter_space.occ_tree)
+        self._all_displacements = jax.jit(self.parameter_space.geo_tree)
 
     def _calculate_static_t_matrices(self):
         # This is only done once – perform for maximum lmax and crop later
@@ -455,18 +451,16 @@ class TensorLEEDCalculator:
         )
 
     def _calculate_reference_t_matrices(self, ref_vib_amps, site_elements):
-        def map_fn(pair):
-            vib_amp, site_el = pair
-            return vib_dependent_tmatrix(
+        ref_t_matrices = []
+        for site_el, vib_amp in zip(site_elements, ref_vib_amps):
+            batched_t_matrix = jax.vmap(vib_dependent_tmatrix, in_axes=(None, 0, 0, None))
+            ref_t_matrices.append(batched_t_matrix(
                 self.max_l_max,
                 self.phaseshifts[site_el][:, : self.max_l_max + 1],
                 self.energies,
                 vib_amp,
-            )
-
-        ref_t_matrices = jax.lax.map(
-            map_fn, (ref_vib_amps, site_elements), batch_size=self.batch_atoms
-        )
+            ))
+        ref_t_matrices = jnp.array(ref_t_matrices)
         return jnp.einsum('ael->eal', ref_t_matrices)
 
     def _calc_delta_amp_prefactors(self):
@@ -551,6 +545,20 @@ class TensorLEEDCalculator:
         mirror_propagators = np.array([op[1] for op in ops])
 
         return symmetry_tensors, mirror_propagators
+
+    def expand_params(self, free_params):
+        _free_params = np.asarray(free_params)
+        v0r_params, vib_params, geo_params, occ_params = self.split_free_params(
+            _free_params
+        )
+        v0r_shift = self.parameter_space.v0r_transformer()(v0r_params)
+        vib_amps = self.parameter_space.vib_tree(vib_params)
+        displacements = self.parameter_space.geo_tree(geo_params)
+        unnormalized_weights = self.parameter_space.occ_tree(occ_params)
+        occupations = normalize_occ_vector(
+            unnormalized_weights, tuple(self.atom_ids.tolist())
+        )
+        return v0r_shift, vib_amps, displacements, occupations
 
     def delta_amplitude(self, free_params):
         """Calculate the delta amplitude for a given set of free parameters."""
@@ -759,10 +767,8 @@ class TensorLEEDCalculator:
         slab.update_cartesian_from_fractional()
         slab.update_layer_coordinates()
 
-        # expand the reduced paramter vector
-        v0r, vibrations, displacements, occupations = (
-            self.parameter_space.expand_params(params)
-        )
+        # expand the reduced parameter vector
+        v0r, vibrations, displacements, occupations = self.expand_params(params)
 
         # update V0r in rpars
         rpars.best_v0r = v0r
@@ -779,10 +785,6 @@ class TensorLEEDCalculator:
         slab.update_cartesian_from_fractional()
         slab.update_layer_coordinates()
 
-        # expand the reduced paramter vector
-        v0r, vibrations, displacements, occupations = (
-            self.parameter_space.expand_params(params)
-        )
         # convert to numpy arrays
         v0r = np.array(v0r)
         displacements = np.array(displacements)
@@ -866,7 +868,6 @@ class TensorLEEDCalculator:
             poscar.write(slab, 'POSCAR_TL_optimized', comments='all')
             # write VIBROCC
             writeVIBROCC(slab, rpars, 'VIBROCC_TL_optimized')
-
 
 def calculate_delta_t_matrix(
     propagator, t_matrix_vib, t_matrix_ref, chem_weight

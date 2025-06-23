@@ -9,7 +9,7 @@ import numpy as np
 from ..lib_math import EPS
 from .displacement_tree_layers import DisplacementTreeLayers
 from .functionals import LinearTreeFunctional
-from .linear_transformer import LinearMap
+from .linear_transformer import LinearMap, stack_transformers
 from .nodes import AtomicLinearNode, LinearConstraintNode, ImplicitLinearConstraintNode
 from .tree import (
     DisplacementTree,
@@ -287,16 +287,13 @@ class GeoTree(DisplacementTree):
             )
             self.nodes.append(implicit_constraint_node)
 
+    def _post_process_values(self, raw_values):
+        # reshape to (n_atoms, 3)
+        return super()._post_process_values(raw_values).reshape(-1, 3)
 
     #############################
     # Geometry specific methods #
     #############################
-    def all_displacements_transformer(self):
-        """Return a transformer that gives the displacements for all base
-        scatterers."""
-        collapsed_transformer = self.collapsed_transformer_scatterer_order
-        collapsed_transformer.out_reshape = (-1, 3)
-        return collapsed_transformer
 
     def dynamic_displacements_transformers(self):
         """Return a list of transformers that give the reference displacements
@@ -307,16 +304,6 @@ class GeoTree(DisplacementTree):
         ]
 
     @property
-    def static_propagator_inputs(self):
-        """Return the displacements for the static reference propagators."""
-        return self.displacement_functional.static_reference_nodes_values
-
-    @property
-    def propagator_map(self):
-        """Return a mapping of base scatterers to propagators."""
-        return self.displacement_functional.static_dynamic_map
-
-    @property
     def leaf_plane_symmetry_operations(self):
         """Return the in-plane symmetry operations for each leaf in respect to the
         reference displacement (the one for which the propagator is calculated).
@@ -325,11 +312,3 @@ class GeoTree(DisplacementTree):
             sym_op.weights[1:, 1:]
             for sym_op in self.displacement_functional._arg_transformers
         )
-
-    @property
-    def n_dynamic_propagators(self):
-        return self.displacement_functional.n_dynamic_values
-
-    @property
-    def n_static_propagators(self):
-        return self.displacement_functional.n_static_values

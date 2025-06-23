@@ -21,6 +21,8 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
 )
 
 
+from viperleed_jax.transformation_tree.linear_transformer import stack_transformers
+
 class ParameterSpace:
     def __init__(self, atom_basis, rpars):
         self._displacements_applied = False
@@ -133,24 +135,21 @@ class ParameterSpace:
             )
 
     @property
-    def all_displacements_transformer(self):
-        return self.geo_tree.all_displacements_transformer
-
-    @property
     def dynamic_displacements_transformers(self):
         return self.geo_tree.dynamic_displacements_transformers()
 
     @property
-    def all_vib_amps_transformer(self):
-        return self.vib_tree.all_vib_amps_transformer
-
-    @property
     def dynamic_t_matrix_transformers(self):
-        return self.vib_tree.dynamic_t_matrix_transformers()
+        return [
+            self.vib_tree.root.transformer_to_descendent(node)
+            for node in self.vib_tree.vibration_functional.dynamic_reference_nodes
+        ]
 
-    def occ_weight_transformer(self):
-        # TODO: put normalization into here
-        return self.occ_tree.collapsed_transformer_scatterer_order
+    # def occ_weight_transformer(self):
+    #     # TODO: put normalization into here
+    #     #return stack_transformers(self.occ_tree.raw_leaf_transformers)
+    #     return self.occ_tree._raw_leaf_transformers
+
 
     @property
     def v0r_transformer(self):
@@ -213,15 +212,15 @@ class ParameterSpace:
 
     @property
     def n_dynamic_propagators(self):
-        return self.geo_tree.n_dynamic_propagators
+        return self.geo_tree.displacement_functional.n_dynamic_values
 
     @property
     def n_static_propagators(self):
-        return self.geo_tree.n_static_propagators
+        return self.geo_tree.displacement_functional.n_static_values
 
     @property
     def propagator_map(self):
-        return self.geo_tree.propagator_map
+        return self.geo_tree.displacement_functional.static_dynamic_map
 
     @property
     def propagator_plane_symmetry_operations(self):
@@ -233,27 +232,35 @@ class ParameterSpace:
 
     @property
     def static_propagator_inputs(self):
-        return self.geo_tree.static_propagator_inputs
+        return (
+            self.geo_tree.displacement_functional.static_reference_nodes_values
+        )
 
     @property
     def n_dynamic_t_matrices(self):
-        return self.vib_tree.n_dynamic_t_matrices
+        return self.vib_tree.vibration_functional.n_dynamic_values
 
     @property
     def n_static_t_matrices(self):
-        return self.vib_tree.n_static_t_matrices
+        return self.vib_tree.vibration_functional.n_static_values
 
     @property
     def static_t_matrix_inputs(self):
-        return self.vib_tree.static_t_matrix_inputs
+        return [
+            (node.site_element, node.ref_vib_amp) for node
+            in self.vib_tree.vibration_functional.static_reference_nodes
+        ]
 
     @property
     def dynamic_t_matrix_site_elements(self):
-        return self.vib_tree.dynamic_site_elements
+         return tuple(
+            node.site_element
+            for node in self.vib_tree.vibration_functional.dynamic_reference_nodes
+        )
 
     @property
     def t_matrix_map(self):
-        return self.vib_tree.t_matrix_map
+        return self.vib_tree.vibration_functional.static_dynamic_map
 
     @property
     def is_dynamic_t_matrix(self):
@@ -378,18 +385,8 @@ class ParameterSpace:
 
         return compute
 
-    def expand_params(self, free_params):
-        _free_params = np.asarray(free_params)
-        splitter = self.split_free_params()
-        v0r_params, vib_params, geo_params, occ_params = splitter(
-            np.asarray(_free_params)
-        )
-        v0r_shift = self.v0r_transformer()(v0r_params)
-        vib_amps = self.all_vib_amps_transformer()(vib_params)
-        displacements = self.all_displacements_transformer()(geo_params)
-        weights = self.occ_weight_transformer()(occ_params)
-        return v0r_shift, vib_amps, displacements, weights
-
+    # TODO: rename - these are reference scatterer displacements and
+    # vibrational amplitudes, not the ones from the reference calculation.
     def reference_displacements(self, n_batch_atoms):
         """Return a function that computes displacements for ref. propagators.
 
@@ -434,11 +431,3 @@ class ParameterSpace:
 
         return compute
 
-    def occ_weights(self):
-        """Calculate the occupation weights for all scatters.
-
-        Returns
-        -------
-        weights: The occupation weights for all scatterers.
-        """
-        return self.occ_weight_transformer
