@@ -25,6 +25,7 @@ class OccLeafNode(AtomicLinearNode):
         dof = 1
         super().__init__(dof=dof, atom=atom)
         self._name = f'occ (At_{self.num},{self.site},{self.element})'
+        self.ref_occ = atom.atom.site.occ[self.element]
 
 
 class OccConstraintNode(LinearConstraintNode):
@@ -189,3 +190,13 @@ class OccTree(DisplacementTree):
                 child_zonotope=root_range_zonotope,
             )
             self.nodes.append(implicit_constraint_node)
+
+    @property
+    def _ref_occupations(self):
+        """Return the reference occupations for all leaves."""
+        return np.array([leaf.ref_occ for leaf in self.leaves])
+
+    def _post_process_values(self, raw_values):
+        # add reference calculation occupations to raw values
+        # (vib deltas)
+        return raw_values + self._ref_occupations
