@@ -32,49 +32,9 @@ from viperleed_jax.propagator import (
 )
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
 from viperleed_jax.t_matrix import calculate_t_matrices, vib_dependent_tmatrix
-
-
-@partial(
-    jax.tree_util.register_dataclass,
-    data_fields=[
-        'kappa',
-        'static_propagators',
-        'propagator_transpose_int',
-        'symmetry_operations',
-        'propagator_id',
-        'is_dynamic_propagator',
-    ],
-    meta_fields=[],
-)
-@dataclass
-class PropagatorContext:
-    kappa: jnp.ndarray  # shape (n_energies,)
-    static_propagators: jnp.ndarray  # shape (atom_basis, n_energies, lm, m)
-    propagator_transpose_int: jnp.ndarray  # shape (atom_basis,)
-    symmetry_operations: jnp.ndarray  # shape (atom_basis, lm, m)
-    propagator_id: jnp.ndarray
-    is_dynamic_propagator: jnp.ndarray
-
-
-@partial(
-    jax.tree_util.register_dataclass,
-    data_fields=[
-        'energies',
-        'static_t_matrices',
-        't_matrix_id',
-        'is_dynamic_mask',
-    ],
-    meta_fields=[
-        'dynamic_site_elements',
-    ],
-)
-@dataclass
-class TMatrixContext:
-    energies: jnp.ndarray
-    static_t_matrices: jnp.ndarray
-    dynamic_site_elements: jnp.ndarray = field(metadata=dict(static=True))
-    t_matrix_id: jnp.ndarray
-    is_dynamic_mask: jnp.ndarray
+from viperleed_jax.lib.derived_quantities.base import NormalizedOccupations
+from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
+from viperleed_jax.lib.derived_quantities.propagtor import Propagators
 
 
 class TensorLEEDCalculator:
@@ -280,12 +240,6 @@ class TensorLEEDCalculator:
             logger.debug('Overwriting parameter space.')
         # take delta_slab and set the parameter space
         self._parameter_space = parameter_space
-        logger.info(f'Parameter space set.\n{parameter_space.info}')
-        logger.info(
-            'This parameter space requires dynamic calculation of '
-            f'{self.parameter_space.n_dynamic_t_matrices} t-matrice(s) and '
-            f'{self.parameter_space.n_dynamic_propagators} propagator(s).'
-        )
 
         if self.recalculate_ref_t_matrices:
             # calculate reference t-matrices for full LMAX
@@ -309,146 +263,40 @@ class TensorLEEDCalculator:
         # convert to jnp array
         self.ref_t_matrices = jnp.asarray(ref_t_matrices)
 
-        # pre-calculate the static t-matrices
-        logger.debug(
-            f'Pre-calculating {self.parameter_space.n_static_t_matrices} '
-            'static t-matrice(s).'
+        self._dq_normalized_occupations = NormalizedOccupations(
+            self.parameter_space.occ_tree,
+            self.atom_ids.tolist())
+        self.dq_t_matrix = TMatrix(
+            self.parameter_space.vib_tree,
+            self.energies,
+            self.phaseshifts,
+            self.batch_energies,
+            self.max_l_max,
         )
-        self._calculate_static_t_matrices()
-
-        # rotation angles
-        propagator_symmetry_operations, propagator_transpose = (
-            self._propagator_rotation_factors()
-        )
-        self.propagator_symmetry_operations = jnp.asarray(
-            propagator_symmetry_operations
-        )
-        # NB: Using an integer array here because there seems so be some kind of
-        # bug where jax.jit would flip on of the boolean values for some
-        # cases.
-        self.propagator_transpose_int = propagator_transpose.astype(jnp.int32)
-
-        # pre-calculate the static propagators
-        logger.debug(
-            f'Pre-calculating {self.parameter_space.n_static_propagators} '
-            'static propagator(s).'
-        )
-        self._calculate_static_propagators()
-
-        # set the propagator context
-        self.propagator_context = PropagatorContext(
-            is_dynamic_propagator=self.parameter_space.is_dynamic_propagator,
-            propagator_id=self.parameter_space.propagator_id,
-            kappa=self.kappa,
-            static_propagators=self._static_propagators,
-            propagator_transpose_int=self.propagator_transpose_int,
-            symmetry_operations=self.propagator_symmetry_operations,
-        )
-
-        # set the t-matrix context
-        self.t_matrix_context = TMatrixContext(
-            energies=self.energies,
-            static_t_matrices=self._static_t_matrices,
-            dynamic_site_elements=self.parameter_space.dynamic_t_matrix_site_elements,
-            t_matrix_id=self.parameter_space.t_matrix_id,
-            is_dynamic_mask=self.parameter_space.is_dynamic_t_matrix,
+        self.dq_propagator = Propagators(
+            self.parameter_space.geo_tree,
+            self.kappa,
+            self.energies,
+            self.batch_energies,
+            self.batch_atoms,
+            self.max_l_max,
         )
 
         # set transformations
-        self._reference_displacements = jax.jit(self.parameter_space.reference_displacements(
-            self.batch_atoms
-        ))
+        self._reference_displacements = jax.jit(self.parameter_space.geo_tree)
         self._reference_vib_amps = jax.jit(self.parameter_space.vib_tree)
         self._split_free_params = jax.jit(self.parameter_space.split_free_params())
         self._v0r_transformer = jax.jit(self.parameter_space.v0r_transformer())
-        self._occ_weight_transformer = jax.jit(self.parameter_space.occ_tree)
+        self._occ_weight_transformer = jax.jit(self._dq_normalized_occupations)
         self._all_displacements = jax.jit(self.parameter_space.geo_tree)
 
-    def _calculate_static_t_matrices(self):
-        # This is only done once – perform for maximum lmax and crop later
-        energy_indices = jnp.arange(len(self.energies))
-
-        # Outer loop: iterate over energy indices with batching
-        def energy_fn(e_idx):
-            # For each energy, compute t-matrices for all static input pairs.
-            # self._parameter_space.static_t_matrix_inputs is assumed to be a list
-            # of (site_el, vib_amp) pairs.
-            def compute_t(pair):
-                site_el, vib_amp = pair
-                return vib_dependent_tmatrix(
-                    self.max_l_max,
-                    self.phaseshifts[site_el][e_idx, : self.max_l_max + 1],
-                    self.energies[e_idx],
-                    vib_amp,
-                )
-
-            # Use a Python loop to compute for each pair and stack the results.
-            # This loop is over a typically small list so it shouldn't be a bottleneck.
-            return jnp.stack(
-                [
-                    compute_t(pair)
-                    for pair in self.parameter_space.static_t_matrix_inputs
-                ]
-            )
-
-        # Map over energies with the given batch size.
-        static_t_matrices = jax.lax.map(
-            energy_fn, energy_indices, batch_size=self.batch_energies
-        )
-        # static_t_matrices has shape (num_energies, num_static_inputs, lm, ...),
-        # which is equivalent to the original einsum('ael->eal') result.
-        self._static_t_matrices = static_t_matrices
-
-    def _calculate_static_propagators(self):
-        # Convert static propagator inputs to an array.
-        static_inputs = self.parameter_space.static_propagator_inputs
-        if len(static_inputs) == 0:
-            # If there are no static inputs, store an empty array.
-            self._static_propagators = jnp.array([])
-            return
-
-        displacements_ang = jnp.asarray(static_inputs)
-        displacements_au = atomic_units.to_internal_displacement_vector(
-            displacements_ang
-        )
-        spherical_harmonics_components = jnp.array(
-            [
-                lib_math.spherical_harmonics_components(self.max_l_max, disp)
-                for disp in displacements_au
-            ]
+        logger.info(f'Parameter space set.\n{parameter_space.info}')
+        logger.info(
+            'This parameter space requires dynamic calculation of '
+            f'{self.dq_t_matrix.n_dynamic_t_matrices} t-matrice(s) and '
+            f'{self.dq_propagator.n_dynamic_propagators} propagator(s).'
         )
 
-        # Outer loop: iterate over energy indices.
-        def energy_fn(e_idx):
-            # For each energy, iterate over all displacements.
-            def displacement_fn(i):
-                disp = displacements_au[i]
-                comps = spherical_harmonics_components[i]
-                return calc_propagator(
-                    self.max_l_max,
-                    disp,
-                    comps,
-                    self.kappa[e_idx],
-                )
-
-            return jax.lax.map(
-                displacement_fn,
-                jnp.arange(displacements_au.shape[0]),
-                batch_size=self.batch_atoms,
-            )
-
-        # Map over energies with the specified batch size.
-        static_propagators = jax.lax.map(
-            energy_fn,
-            jnp.arange(len(self.energies)),
-            batch_size=self.batch_energies,
-        )
-        # The result has shape (num_energies, num_displacements, ...).
-        # Use einsum to swap axes so that the final shape is
-        # (num_displacements, num_energies, ...), matching the original ordering.
-        self._static_propagators = jnp.einsum(
-            'ed...->de...', static_propagators
-        )
 
     def _calculate_reference_t_matrices(self, ref_vib_amps, site_elements):
         ref_t_matrices = []
@@ -536,16 +384,6 @@ class TensorLEEDCalculator:
 
         return in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum
 
-    def _propagator_rotation_factors(self):
-        ops = [
-            symmetry_operations(self.max_l_max, plane_sym_op)
-            for plane_sym_op in self.parameter_space.propagator_plane_symmetry_operations
-        ]
-        symmetry_tensors = np.array([op[0] for op in ops])
-        mirror_propagators = np.array([op[1] for op in ops])
-
-        return symmetry_tensors, mirror_propagators
-
     def expand_params(self, free_params):
         _free_params = np.asarray(free_params)
         v0r_params, vib_params, geo_params, occ_params = self.split_free_params(
@@ -598,13 +436,9 @@ class TensorLEEDCalculator:
             energy_ids = jnp.asarray(batch.energy_indices)
 
             # propagators - already rotated
-            propagators = calculate_propagators(
-                self.propagator_context,
+            propagators = self.dq_propagator(
                 displacements_au,
                 energy_ids,
-                self.batch_energies,
-                self.batch_atoms,
-                self.max_l_max,
             )
 
             # crop propagators
@@ -612,13 +446,10 @@ class TensorLEEDCalculator:
                 :, :, : (l_max + 1) ** 2, : (l_max + 1) ** 2
             ]
 
-            # dynamic t-matrices
-            t_matrices = calculate_t_matrices(
-                self.t_matrix_context,
-                l_max,
-                self.batch_energies,
-                self.phaseshifts,
+            # # dynamic t-matrices
+            t_matrices = self.dq_t_matrix(
                 vib_amps_au,
+                l_max,
                 energy_ids,
             )
 

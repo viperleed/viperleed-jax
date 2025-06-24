@@ -145,12 +145,6 @@ class ParameterSpace:
             for node in self.vib_tree.vibration_functional.dynamic_reference_nodes
         ]
 
-    # def occ_weight_transformer(self):
-    #     # TODO: put normalization into here
-    #     #return stack_transformers(self.occ_tree.raw_leaf_transformers)
-    #     return self.occ_tree._raw_leaf_transformers
-
-
     @property
     def v0r_transformer(self):
         return self.meta_tree.collapsed_transformer
@@ -211,18 +205,6 @@ class ParameterSpace:
         return len(self.atom_basis)
 
     @property
-    def n_dynamic_propagators(self):
-        return self.geo_tree.displacement_functional.n_dynamic_values
-
-    @property
-    def n_static_propagators(self):
-        return self.geo_tree.displacement_functional.n_static_values
-
-    @property
-    def propagator_map(self):
-        return self.geo_tree.displacement_functional.static_dynamic_map
-
-    @property
     def propagator_plane_symmetry_operations(self):
         return self.geo_tree.leaf_plane_symmetry_operations
 
@@ -231,58 +213,11 @@ class ParameterSpace:
         return self.atom_basis.site_elements
 
     @property
-    def static_propagator_inputs(self):
-        return (
-            self.geo_tree.displacement_functional.static_reference_nodes_values
-        )
-
-    @property
-    def n_dynamic_t_matrices(self):
-        return self.vib_tree.vibration_functional.n_dynamic_values
-
-    @property
-    def n_static_t_matrices(self):
-        return self.vib_tree.vibration_functional.n_static_values
-
-    @property
-    def static_t_matrix_inputs(self):
-        return [
-            (node.site_element, node.ref_vib_amp) for node
-            in self.vib_tree.vibration_functional.static_reference_nodes
-        ]
-
-    @property
-    def dynamic_t_matrix_site_elements(self):
-         return tuple(
-            node.site_element
-            for node in self.vib_tree.vibration_functional.dynamic_reference_nodes
-        )
-
-    @property
-    def t_matrix_map(self):
-        return self.vib_tree.vibration_functional.static_dynamic_map
-
-    @property
-    def is_dynamic_t_matrix(self):
-        return np.array([val == 'dynamic' for (val, id) in self.t_matrix_map])
-
-    @property
-    def is_dynamic_propagator(self):
-        return np.array([val == 'dynamic' for (val, id) in self.propagator_map])
-
-    @property
     def is_dynamic_scatterer(self):
         return np.logical_or(
             self.is_dynamic_t_matrix, self.is_dynamic_propagator
         )
 
-    @property
-    def t_matrix_id(self):
-        return np.array([id for (val, id) in self.t_matrix_map])
-
-    @property
-    def propagator_id(self):
-        return np.array([id for (val, id) in self.propagator_map])
 
     @property
     def dynamic_scatterer_id(self):
