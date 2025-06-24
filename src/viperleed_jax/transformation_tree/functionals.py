@@ -3,10 +3,11 @@ from abc import ABC, abstractmethod
 import numpy as np
 from anytree.walker import Walker, WalkError
 
-from viperleed_jax.transformation_tree.linear_transformer import LinearMap
 from viperleed_jax.lib.matrix import off_diagonal_frobenius
+from viperleed_jax.transformation_tree.linear_transformer import LinearMap
 
-class TreeFunctional(ABC):
+
+class TreePropagatedFunction(ABC):
     """Base class for all transformable properties.
 
     Tree propagated functions are functions of the quantity described in the
@@ -169,7 +170,7 @@ class TreeFunctional(ABC):
         """Return a sorting key for the nodes in the tree."""
 
 
-class LinearTreeFunctional(TreeFunctional):
+class LinearTreeFunctional(TreePropagatedFunction):
     """Base class for transformables on linear transformation trees."""
 
     def __init__(
