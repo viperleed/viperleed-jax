@@ -276,6 +276,11 @@ class TensorLEEDCalculator:
             self.batch_atoms,
             self.max_l_max,
         )
+        logger.debug(
+            f'This parameter space requires calculation of '
+            f'{self.dq_t_matrix.n_dynamic_values} dynamic t-matrices and '
+            f'{self.dq_propagator.n_dynamic_values} dynamic propagators.'
+        )
 
         # set transformations
         self._reference_displacements = jax.jit(self.parameter_space.geo_tree)

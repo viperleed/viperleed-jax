@@ -10,6 +10,7 @@ from functools import partial
 import jax
 import numpy as np
 from jax import numpy as jnp
+from viperleed.calc import LOGGER as logger
 
 from viperleed_jax import atomic_units
 from viperleed_jax.lib import math
@@ -63,7 +64,9 @@ class Propagators(LinearPropagatedQuantity):
         self.batch_atoms = batch_atoms
         self.max_l_max = max_l_max
 
-        # TODO: logging
+        logger.debug(
+            f'Pre-calculating {self.n_static_values} static propagators.'
+        )
         static_propagators = self._calculate_static_propagators()
 
         # rotation angles

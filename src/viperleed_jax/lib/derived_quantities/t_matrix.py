@@ -10,8 +10,12 @@ from functools import partial
 import jax
 import numpy as np
 from jax import numpy as jnp
+from viperleed.calc import LOGGER as logger
 
-from viperleed_jax.lib.tensor_leed.t_matrix import calculate_t_matrices, vib_dependent_tmatrix
+from viperleed_jax.lib.tensor_leed.t_matrix import (
+    calculate_t_matrices,
+    vib_dependent_tmatrix,
+)
 from viperleed_jax.transformation_tree.derived_quantities import (
     LinearPropagatedQuantity,
 )
@@ -51,6 +55,9 @@ class TMatrix(LinearPropagatedQuantity):
         super().__init__(vib_tree, name='t-matrix', transformer_class=LinearMap)
         self.phaseshifts = phaseshifts
         self.batch_energies = batch_energies
+        logger.debug(
+            f'Pre-calculating {self.n_static_values} static t-matrices.'
+        )
         static_t_matrices = self._calculate_static_t_matrices(energies, batch_energies, max_l_max)
 
         self.context = TMatrixContext(
