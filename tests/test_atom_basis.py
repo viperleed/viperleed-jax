@@ -102,7 +102,7 @@ class TestSelectionMask:
         [
             # simple label matching
             ([TargetToken('A 10')]),
-            ([TargetToken('A 3-1')]),
+            ([TargetToken('A 1-3')]),
             ([TargetToken('Z')]),
             ([TargetToken('B 2')]),
             ([TargetToken('A_sub')]),
