@@ -276,11 +276,6 @@ class TensorLEEDCalculator:
             self.batch_atoms,
             self.max_l_max,
         )
-        logger.debug(
-            f'This parameter space requires calculation of '
-            f'{self.dq_t_matrix.n_dynamic_values} dynamic t-matrices and '
-            f'{self.dq_propagator.n_dynamic_values} dynamic propagators.'
-        )
 
         # set transformations
         self._reference_displacements = jax.jit(self.parameter_space.geo_tree)
@@ -419,11 +414,7 @@ class TensorLEEDCalculator:
         vib_amps_au = self._reference_vib_amps(vib_params)
 
         # chemical weights
-        non_normalized_chem_weights = jnp.asarray(
-            self._occ_weight_transformer(occ_params)
-        )
-        chem_weights = normalize_occ_vector(
-            non_normalized_chem_weights, tuple(self.atom_ids.tolist()))
+        chem_weights = self._dq_normalized_occupations(occ_params)
 
         # Loop over batches
         # -----------------
