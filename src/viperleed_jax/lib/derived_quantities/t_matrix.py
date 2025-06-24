@@ -11,7 +11,7 @@ import jax
 import numpy as np
 from jax import numpy as jnp
 
-from viperleed_jax.t_matrix import calculate_t_matrices, vib_dependent_tmatrix
+from viperleed_jax.lib.tensor_leed.t_matrix import calculate_t_matrices, vib_dependent_tmatrix
 from viperleed_jax.transformation_tree.derived_quantities import (
     LinearPropagatedQuantity,
 )

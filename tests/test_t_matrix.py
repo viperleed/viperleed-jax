@@ -4,7 +4,7 @@ import pytest
 from pytest_cases import case, fixture, parametrize_with_cases
 
 from tests.fixtures.base import LARGE_FILE_PATH
-from viperleed_jax import t_matrix
+from viperleed_jax.lib.tensor_leed import t_matrix
 
 _REF_DATA_PATH = LARGE_FILE_PATH / 't_matrices'
 

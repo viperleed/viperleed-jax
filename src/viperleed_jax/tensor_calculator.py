@@ -28,7 +28,7 @@ from viperleed_jax.lib.derived_quantities.propagtor import Propagators
 from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
-from viperleed_jax.t_matrix import vib_dependent_tmatrix
+from viperleed_jax.lib.tensor_leed.t_matrix import vib_dependent_tmatrix
 
 
 class TensorLEEDCalculator:
