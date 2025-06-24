@@ -135,7 +135,6 @@ class VibTree(DisplacementTree):
             vib_delta_line.targets
         )
 
-        # TODO: check how this works with ref calc vib amp
         vib_range = np.array([[vib_delta_line.range.start,
                               vib_delta_line.range.stop]]).T
 
