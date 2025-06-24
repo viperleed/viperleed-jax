@@ -104,8 +104,11 @@ class TMatrix(LinearPropagatedQuantity):
         return np.array([id for (val, id) in self.t_matrix_map])
 
     def __call__(
-        self, vib_amps_au, l_max, energy_ids
+        self, vib_params, l_max, energy_ids
     ):
+        # vibration amplitudes in atomic units
+        vib_amps_au = self.tree(vib_params) # (already in AU, no need to convert)
+
         return calculate_t_matrices(
             self.context,
             l_max,

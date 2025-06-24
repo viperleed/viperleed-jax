@@ -145,7 +145,14 @@ class Propagators(LinearPropagatedQuantity):
         return symmetry_tensors, mirror_propagators
 
 
-    def __call__(self, displacements_au, energy_ids):
+    def __call__(self, geo_params, energy_ids):
+        """Calculate propagators."""
+        displacements_angstrom = self.tree(geo_params)
+        # Convert displacements to atomic units.
+        displacements_au = atomic_units.to_internal_displacement_vector(
+            displacements_angstrom
+        )
+
         return calculate_propagators(
             self.context,
             displacements_au,

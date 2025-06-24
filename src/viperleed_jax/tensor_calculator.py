@@ -267,9 +267,10 @@ class TensorLEEDCalculator:
         # set transformations
         self._reference_displacements = jax.jit(self.parameter_space.geo_tree)
         self._reference_vib_amps = jax.jit(self.parameter_space.vib_tree)
+        # set split free parameters function
         self._split_free_params = jax.jit(self.parameter_space.split_free_params())
+        # v0r transformer – could be made into a derived quantity
         self._v0r_transformer = jax.jit(self.parameter_space.v0r_transformer())
-        self._all_displacements = jax.jit(self.parameter_space.geo_tree)
 
         logger.info(f'Parameter space set.\n{parameter_space.info}')
         logger.info(
@@ -421,17 +422,6 @@ class TensorLEEDCalculator:
             self._split_free_params(_free_params)
         )
 
-        # displacements, converted to atomic units
-        displacements_ang = self._reference_displacements(
-            geo_params
-        )
-        displacements_au = atomic_units.to_internal_displacement_vector(
-            displacements_ang
-        )
-
-        # vibrational amplitudes, converted to atomic units
-        vib_amps_au = self._reference_vib_amps(vib_params)
-
         # chemical weights
         chem_weights = self.calc_normalized_occupations(occ_params)
 
@@ -447,7 +437,7 @@ class TensorLEEDCalculator:
 
             # propagators - already rotated
             propagators = self.calc_propagators(
-                displacements_au,
+                geo_params,
                 energy_ids,
             )
 
@@ -458,7 +448,7 @@ class TensorLEEDCalculator:
 
             # # dynamic t-matrices
             t_matrices = self.calc_t_matrices(
-                vib_amps_au,
+                vib_params,
                 l_max,
                 energy_ids,
             )
