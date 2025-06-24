@@ -189,11 +189,18 @@ class TensorLEEDCalculator:
         return len(self.ref_vibrational_amps)
 
     def check_parameter_space_set(self):
+        """Check whether the parameter space has been set.
+
+        Raises
+        ------
+            ValueError: If the parameter space is not set.
+        """
         if self._parameter_space is None:
             raise ValueError('Parameter space not set.')
 
     @property
     def parameter_space(self):
+        """Return the parameter space."""
         self.check_parameter_space_set()
         return self._parameter_space
 
