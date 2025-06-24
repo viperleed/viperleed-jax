@@ -269,36 +269,40 @@ class TensorLEEDCalculator:
         self._reference_vib_amps = jax.jit(self.parameter_space.vib_tree)
         self._split_free_params = jax.jit(self.parameter_space.split_free_params())
         self._v0r_transformer = jax.jit(self.parameter_space.v0r_transformer())
-        self._occ_weight_transformer = jax.jit(self._dq_normalized_occupations)
         self._all_displacements = jax.jit(self.parameter_space.geo_tree)
 
         logger.info(f'Parameter space set.\n{parameter_space.info}')
         logger.info(
             'This parameter space requires dynamic calculation of '
-            f'{self.dq_t_matrix.n_dynamic_t_matrices} t-matrice(s) and '
-            f'{self.dq_propagator.n_dynamic_propagators} propagator(s).'
+            f'{self.calc_t_matrices.n_dynamic_t_matrices} t-matrice(s) and '
+            f'{self.calc_propagators.n_dynamic_propagators} propagator(s).'
         )
+
 
     def _setup_derived_quantities(self):
         """Set up derived quantities for the calculator."""
         if self._parameter_space is None:
             raise ValueError('Parameter space not set.')
 
-        # set up derived quantities
-        self.dq_onset_height_change = OnsetHeightChange(
-            self.parameter_space,
-        )
-        self._dq_normalized_occupations = NormalizedOccupations(
+        # onset height of the inner potential
+        self.calc_onset_height_change = OnsetHeightChange(self.parameter_space)
+
+        # normalized occupations (i.e. chemical weights)
+        self.calc_normalized_occupations = NormalizedOccupations(
             self.parameter_space,
             self.atom_ids.tolist())
-        self.dq_t_matrix = TMatrix(
-            self.parameter_space.vib_tree,
+
+        # atomic t-matrices (will calculate static t-matrices during init)
+        self.calc_t_matrices = TMatrix(
+            self.parameter_space,
             self.energies,
             self.phaseshifts,
             self.batch_energies,
             self.max_l_max,
         )
-        self.dq_propagator = Propagators(
+
+        # propagators (will calculate static propagators during init)
+        self.calc_propagators = Propagators(
             self.parameter_space,
             self.kappa,
             self.energies,
@@ -429,7 +433,7 @@ class TensorLEEDCalculator:
         vib_amps_au = self._reference_vib_amps(vib_params)
 
         # chemical weights
-        chem_weights = self._dq_normalized_occupations(occ_params)
+        chem_weights = self.calc_normalized_occupations(occ_params)
 
         # Loop over batches
         # -----------------
@@ -442,7 +446,7 @@ class TensorLEEDCalculator:
             energy_ids = jnp.asarray(batch.energy_indices)
 
             # propagators - already rotated
-            propagators = self.dq_propagator(
+            propagators = self.calc_propagators(
                 displacements_au,
                 energy_ids,
             )
@@ -453,7 +457,7 @@ class TensorLEEDCalculator:
             ]
 
             # # dynamic t-matrices
-            t_matrices = self.dq_t_matrix(
+            t_matrices = self.calc_t_matrices(
                 vib_amps_au,
                 l_max,
                 energy_ids,
@@ -497,7 +501,7 @@ class TensorLEEDCalculator:
         delta_amplitude = self.delta_amplitude(_free_params)
         _, _, geo_params, _ = self._split_free_params(_free_params)
         prefactors = intensity_prefactors(
-            self.dq_onset_height_change(geo_params),
+            self.calc_onset_height_change(geo_params),
             self.n_beams,
             self.theta,
             self.wave_vectors,

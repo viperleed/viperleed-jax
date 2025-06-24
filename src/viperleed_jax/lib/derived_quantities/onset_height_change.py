@@ -3,6 +3,9 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2025-06-24'
 
+from functools import partial
+
+import jax
 from jax import numpy as jnp
 
 from viperleed_jax.constants import ATOM_Z_DIR_ID, DISP_Z_DIR_ID
@@ -30,6 +33,7 @@ class OnsetHeightChange(DerivedQuantitySingleTree):
         """Set the tree for the derived quantity."""
         self.tree = self.parameter_space.geo_tree
 
+    @partial(jax.jit, static_argnames=('self',))
     def __call__(self, params):
         """Calculate the change in onset height."""
         displacements = self.tree(params)

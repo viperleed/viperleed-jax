@@ -51,7 +51,7 @@ class DerivedQuantitySingleTree(DerivedQuantity):
     def _set_tree(self):
         """Set the tree for the derived quantity."""
 
-class PropagatedQuantity(DerivedQuantity):
+class PropagatedQuantity(DerivedQuantitySingleTree):
     """Base class for all transformable properties based on one tree.
 
     Tree propagated functions are functions of the quantity described in the
@@ -214,13 +214,13 @@ class LinearPropagatedQuantity(PropagatedQuantity):
     """Base class for transformables on linear transformation trees."""
 
     def __init__(
-        self, tree, name, transformer_class=LinearMap, node_requirement=None
+        self, parameter_space, name, transformer_class=LinearMap, node_requirement=None
     ):
         self.walker = Walker()
         if not issubclass(transformer_class, LinearMap):
             msg = 'The transformer class must be a subclass of LinearMap.'
             raise TypeError(msg)
-        super().__init__(tree, name, transformer_class, node_requirement)
+        super().__init__(parameter_space, name, transformer_class, node_requirement)
 
     def _transformation_from_to(self, source, target):
         if not source.is_leaf or not target.is_leaf:

@@ -3,6 +3,9 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2025-06-24'
 
+from functools import partial
+
+import jax
 
 from viperleed_jax.atomic_units import to_internal_displacement_vector
 from viperleed_jax.lib.calculator import normalize_occ_vector
@@ -23,6 +26,7 @@ class NormalizedOccupations(DerivedQuantitySingleTree):
         """Set the tree for the derived quantity."""
         self.tree = self.parameter_space.occ_tree
 
+    @partial(jax.jit, static_argnames=('self',))
     def __call__(self, params):
         """Calculate normalized occupations."""
         non_normalized_occupations = self.tree(params)
