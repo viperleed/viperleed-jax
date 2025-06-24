@@ -114,7 +114,17 @@ class Propagators(LinearPropagatedQuantity):
 
     @property
     def propagator_plane_symmetry_operations(self):
-        return self.geo_tree.leaf_plane_symmetry_operations
+        return self.leaf_plane_symmetry_operations
+
+    @property
+    def leaf_plane_symmetry_operations(self):
+        """Return the in-plane symmetry operations for each leaf in respect to the
+        reference displacement (the one for which the propagator is calculated).
+        """
+        return tuple(
+            sym_op.weights[1:, 1:]
+            for sym_op in self._arg_transformers
+        )
 
     def _propagator_rotation_factors(self):
         ops = [
