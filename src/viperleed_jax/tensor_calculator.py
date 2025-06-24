@@ -282,8 +282,7 @@ class TensorLEEDCalculator:
 
     def _setup_derived_quantities(self):
         """Set up derived quantities for the calculator."""
-        if self._parameter_space is None:
-            raise ValueError('Parameter space not set.')
+        self.check_parameter_space_set()
 
         # onset height of the inner potential
         self.calc_onset_height_change = OnsetHeightChange(self.parameter_space)
@@ -706,8 +705,7 @@ def calculate_delta_t_matrix(
     # Equation (33) in Rous, Pendry 1989
     delta_t_matrix = jnp.dot(propagator.T * (1j * t_matrix_vib), propagator.T)
     delta_t_matrix = delta_t_matrix - jnp.diag(1j * t_matrix_ref)
-    delta_t_matrix = delta_t_matrix * chem_weight
-    return delta_t_matrix
+    return delta_t_matrix * chem_weight
 
 
 # @partial(jax.jit, static_argnames=['n_atom_basis', 'batch_atoms'])
