@@ -9,7 +9,6 @@ from viperleed.calc.files.new_displacements.reader import (
     DISPLACEMENTS_FILE_SECTION,
 )
 
-from viperleed_jax.constants import ATOM_Z_DIR_ID
 from viperleed_jax.transformation_tree import (
     geo_parameters,
     meta_parameters,
@@ -127,12 +126,6 @@ class ParameterSpace:
             free_params.append(int(sum(node.dof for node in layer_roots)))
         return free_params
 
-    @property
-    def atoms_ref_z_position(self):
-        """Return the reference z positions of the atoms in the atom basis."""
-        return np.array(
-                [bs.atom.cartpos[ATOM_Z_DIR_ID] for bs in self.atom_basis]
-            )
 
     @property
     def dynamic_displacements_transformers(self):

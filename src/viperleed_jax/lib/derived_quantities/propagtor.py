@@ -49,15 +49,15 @@ class PropagatorContext:
 class Propagators(LinearPropagatedQuantity):
     def __init__(
         self,
-        geo_tree,
+        parameter_space,
         kappa,
         energies,
         batch_energies,
         batch_atoms,
         max_l_max,
     ):
-        super().__init__(geo_tree, name='propagators', transformer_class=LinearMap)
-        self.geo_tree = geo_tree
+        super().__init__(parameter_space=parameter_space, name='propagators', transformer_class=LinearMap)
+
         self.kappa = jnp.asarray(kappa)
         self.energies = jnp.asarray(energies)
         self.batch_energies = batch_energies
@@ -89,6 +89,10 @@ class Propagators(LinearPropagatedQuantity):
             propagator_transpose_int=propagator_transpose_int,
             symmetry_operations=self.propagator_symmetry_operations,
         )
+
+    def _set_tree(self):
+        """Set the tree for the derived quantity."""
+        self.tree = self.parameter_space.geo_tree
 
     @property
     def n_dynamic_propagators(self):

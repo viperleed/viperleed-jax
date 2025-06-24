@@ -46,13 +46,13 @@ class TMatrixContext:
 class TMatrix(LinearPropagatedQuantity):
     def __init__(
         self,
-        vib_tree,
+        parameter_space,
         energies,
         phaseshifts,
         batch_energies,
         max_l_max,
     ):
-        super().__init__(vib_tree, name='t-matrix', transformer_class=LinearMap)
+        super().__init__(parameter_space, name='t-matrix', transformer_class=LinearMap)
         self.phaseshifts = phaseshifts
         self.batch_energies = batch_energies
         logger.debug(
@@ -67,6 +67,10 @@ class TMatrix(LinearPropagatedQuantity):
             t_matrix_id=self.t_matrix_id.copy(),
             is_dynamic_mask=self.is_dynamic_t_matrix.copy(),
         )
+
+    def _set_tree(self):
+        """Set the tree for the derived quantity."""
+        self.tree = self.parameter_space.vib_tree
 
     @property
     def n_dynamic_t_matrices(self):

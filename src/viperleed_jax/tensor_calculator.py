@@ -286,10 +286,10 @@ class TensorLEEDCalculator:
 
         # set up derived quantities
         self.dq_onset_height_change = OnsetHeightChange(
-            self.parameter_space.geo_tree,
+            self.parameter_space,
         )
         self._dq_normalized_occupations = NormalizedOccupations(
-            self.parameter_space.occ_tree,
+            self.parameter_space,
             self.atom_ids.tolist())
         self.dq_t_matrix = TMatrix(
             self.parameter_space.vib_tree,
@@ -299,7 +299,7 @@ class TensorLEEDCalculator:
             self.max_l_max,
         )
         self.dq_propagator = Propagators(
-            self.parameter_space.geo_tree,
+            self.parameter_space,
             self.kappa,
             self.energies,
             self.batch_energies,

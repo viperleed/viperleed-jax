@@ -10,9 +10,8 @@ import numpy as np
 from anytree.walker import Walker, WalkError
 
 from viperleed_jax.lib.matrix import off_diagonal_frobenius
+from viperleed_jax.parameter_space import ParameterSpace
 from viperleed_jax.transformation_tree.linear_transformer import LinearMap
-
-from .tree import LinearTree
 
 
 class DerivedQuantity(ABC):
@@ -24,21 +23,36 @@ class DerivedQuantity(ABC):
     the entire tree.
     """
 
-    def __init__(self, tree):
-        if  not isinstance(tree, LinearTree):
-            raise TypeError('tree must be an instance of LinearTree')
-        if not tree.finalized:
+    def __init__(self, parameter_space):
+        """Initialize the derived quantity."""
+        if not isinstance(parameter_space, ParameterSpace):
+            raise TypeError('parameter_space must be an instance of ParameterSpace')
+        if not all(tree.finalized for tree in parameter_space.trees):
             raise ValueError(
-                'tree must be finalized before creating derived quantities')
-        self.tree = tree
+                'All trees in the parameter space must be finalized before '
+                'creating derived quantities.'
+            )
+        self.parameter_space = parameter_space
 
     @abstractmethod
-    def __call__(self, params):
-        pass
+    def __call__(self, irreducible_params):
+        """Calculate the derived quantity based on the input parameters."""
 
+
+class DerivedQuantitySingleTree(DerivedQuantity):
+    """Base class for derived quantities based on a single tree."""
+
+    def __init__(self, parameter_space):
+        """Initialize the derived quantity with a single tree."""
+        super().__init__(parameter_space)
+        self._set_tree()
+
+    @abstractmethod
+    def _set_tree(self):
+        """Set the tree for the derived quantity."""
 
 class PropagatedQuantity(DerivedQuantity):
-    """Base class for all transformable properties.
+    """Base class for all transformable properties based on one tree.
 
     Tree propagated functions are functions of the quantity described in the
     transformation tree (e.g. geometrical displacements) that need to be
@@ -81,8 +95,8 @@ class PropagatedQuantity(DerivedQuantity):
         transform the values of the reference nodes to the values for each leaf.
     """
 
-    def __init__(self, tree, name, transformer_class=None, node_requirement=None):
-        super().__init__(tree)
+    def __init__(self, parameter_space, name, transformer_class=None, node_requirement=None):
+        super().__init__(parameter_space)
         self.name = name
         self.transformer_class = transformer_class
         self.node_requirement = (
@@ -91,6 +105,7 @@ class PropagatedQuantity(DerivedQuantity):
             else lambda node: True
         )
         self._analyze_tree()
+
 
     @property
     def n_independent_values(self):
