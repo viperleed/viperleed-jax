@@ -17,7 +17,7 @@ from tests.viper_init_states import (
     state_pt_111_10x10_te,
 )
 from viperleed_jax.atom_basis import AtomBasis
-from viperleed_jax.data_structures import process_tensors
+from viperleed_jax.ref_calc_data import process_tensors
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.from_state import run_viperleed_initialization
