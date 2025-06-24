@@ -261,6 +261,30 @@ class TensorLEEDCalculator:
         # convert to jnp array
         self.ref_t_matrices = jnp.asarray(ref_t_matrices)
 
+        # set up the derived quantities
+        self._setup_derived_quantities()
+
+        # set transformations
+        self._reference_displacements = jax.jit(self.parameter_space.geo_tree)
+        self._reference_vib_amps = jax.jit(self.parameter_space.vib_tree)
+        self._split_free_params = jax.jit(self.parameter_space.split_free_params())
+        self._v0r_transformer = jax.jit(self.parameter_space.v0r_transformer())
+        self._occ_weight_transformer = jax.jit(self._dq_normalized_occupations)
+        self._all_displacements = jax.jit(self.parameter_space.geo_tree)
+
+        logger.info(f'Parameter space set.\n{parameter_space.info}')
+        logger.info(
+            'This parameter space requires dynamic calculation of '
+            f'{self.dq_t_matrix.n_dynamic_t_matrices} t-matrice(s) and '
+            f'{self.dq_propagator.n_dynamic_propagators} propagator(s).'
+        )
+
+    def _setup_derived_quantities(self):
+        """Set up derived quantities for the calculator."""
+        if self._parameter_space is None:
+            raise ValueError('Parameter space not set.')
+
+        # set up derived quantities
         self.dq_onset_height_change = OnsetHeightChange(
             self.parameter_space.geo_tree,
         )
@@ -281,21 +305,6 @@ class TensorLEEDCalculator:
             self.batch_energies,
             self.batch_atoms,
             self.max_l_max,
-        )
-
-        # set transformations
-        self._reference_displacements = jax.jit(self.parameter_space.geo_tree)
-        self._reference_vib_amps = jax.jit(self.parameter_space.vib_tree)
-        self._split_free_params = jax.jit(self.parameter_space.split_free_params())
-        self._v0r_transformer = jax.jit(self.parameter_space.v0r_transformer())
-        self._occ_weight_transformer = jax.jit(self._dq_normalized_occupations)
-        self._all_displacements = jax.jit(self.parameter_space.geo_tree)
-
-        logger.info(f'Parameter space set.\n{parameter_space.info}')
-        logger.info(
-            'This parameter space requires dynamic calculation of '
-            f'{self.dq_t_matrix.n_dynamic_t_matrices} t-matrice(s) and '
-            f'{self.dq_propagator.n_dynamic_propagators} propagator(s).'
         )
 
 
