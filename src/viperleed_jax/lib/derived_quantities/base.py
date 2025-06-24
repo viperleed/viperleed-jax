@@ -1,3 +1,8 @@
+"""Module base."""
+
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2025-06-24'
+
 
 from abc import ABC, abstractmethod
 

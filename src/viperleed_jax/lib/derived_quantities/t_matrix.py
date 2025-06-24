@@ -1,3 +1,9 @@
+"""Module t-matrix."""
+
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2025-06-24'
+
+
 from dataclasses import dataclass, field
 from functools import partial
 
