@@ -25,6 +25,9 @@ from viperleed_jax.interpolation import interpolate_ragged_array
 from viperleed_jax.lib import math
 from viperleed_jax.lib.calculator import normalize_occ_vector
 from viperleed_jax.lib.derived_quantities.base import NormalizedOccupations
+from viperleed_jax.lib.derived_quantities.onset_height_change import (
+    OnsetHeightChange,
+)
 from viperleed_jax.lib.derived_quantities.propagtor import Propagators
 from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
 from viperleed_jax.lib.tensor_leed.t_matrix import vib_dependent_tmatrix
@@ -258,6 +261,9 @@ class TensorLEEDCalculator:
         # convert to jnp array
         self.ref_t_matrices = jnp.asarray(ref_t_matrices)
 
+        self.dq_onset_height_change = OnsetHeightChange(
+            self.parameter_space.geo_tree,
+        )
         self._dq_normalized_occupations = NormalizedOccupations(
             self.parameter_space.occ_tree,
             self.atom_ids.tolist())
@@ -481,10 +487,8 @@ class TensorLEEDCalculator:
         _free_params = jnp.asarray(free_params)
         delta_amplitude = self.delta_amplitude(_free_params)
         _, _, geo_params, _ = self._split_free_params(_free_params)
-        displacements = self._all_displacements(geo_params)
         prefactors = intensity_prefactors(
-            displacements,
-            self.parameter_space.atoms_ref_z_position,
+            self.dq_onset_height_change(geo_params),
             self.n_beams,
             self.theta,
             self.wave_vectors,
