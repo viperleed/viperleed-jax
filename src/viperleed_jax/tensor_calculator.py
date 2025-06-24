@@ -24,17 +24,12 @@ from viperleed_jax.dense_quantum_numbers import (
 )
 from viperleed_jax.interpolation import interpolate_ragged_array
 from viperleed_jax.lib.calculator import normalize_occ_vector
-from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
-from viperleed_jax.propagator import (
-    calc_propagator,
-    calculate_propagators,
-    symmetry_operations,
-)
-from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
-from viperleed_jax.t_matrix import calculate_t_matrices, vib_dependent_tmatrix
 from viperleed_jax.lib.derived_quantities.base import NormalizedOccupations
-from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
 from viperleed_jax.lib.derived_quantities.propagtor import Propagators
+from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
+from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
+from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
+from viperleed_jax.t_matrix import vib_dependent_tmatrix
 
 
 class TensorLEEDCalculator:
