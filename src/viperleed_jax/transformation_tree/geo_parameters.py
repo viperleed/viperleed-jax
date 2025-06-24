@@ -212,9 +212,6 @@ class GeoTree(DisplacementTree):
             root_node_name='geo root',
             perturbation_type='geo',
         )
-        self.displacement_functional = DisplacementFunctional()
-        self.functionals.append(self.displacement_functional)
-
 
     def _initialize_tree(self):
         # create leaf nodes
@@ -282,24 +279,3 @@ class GeoTree(DisplacementTree):
         # reshape to (n_atoms, 3)
         return super()._post_process_values(raw_values).reshape(-1, 3)
 
-    #############################
-    # Geometry specific methods #
-    #############################
-
-    def dynamic_displacements_transformers(self):
-        """Return a list of transformers that give the reference displacements
-        for the dynamic propagators."""
-        return [
-            self.root.transformer_to_descendent(node)
-            for node in self.displacement_functional.dynamic_reference_nodes
-        ]
-
-    @property
-    def leaf_plane_symmetry_operations(self):
-        """Return the in-plane symmetry operations for each leaf in respect to the
-        reference displacement (the one for which the propagator is calculated).
-        """
-        return tuple(
-            sym_op.weights[1:, 1:]
-            for sym_op in self.displacement_functional._arg_transformers
-        )

@@ -86,8 +86,6 @@ class VibTree(DisplacementTree):
             root_node_name='vib root',
             perturbation_type='vib',
         )
-        self.vibration_functional = VibrationFunctional()
-        self.functionals.append(self.vibration_functional)
 
     def _initialize_tree(self):
         leaf_nodes = [VibLeafNode(ase) for ase in self.atom_basis]

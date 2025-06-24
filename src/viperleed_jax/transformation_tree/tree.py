@@ -243,7 +243,6 @@ class DisplacementTree(LinearTree):
         self.site_elements = self.atom_basis.site_elements
 
         self._offsets_have_been_added = False
-        self.functionals = []
         self.perturbation_mode = PerturbationMode(perturbation_type)
         super().__init__(name, root_node_name)
 
