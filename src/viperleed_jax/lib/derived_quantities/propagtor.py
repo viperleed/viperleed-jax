@@ -12,7 +12,7 @@ import numpy as np
 from jax import numpy as jnp
 
 from viperleed_jax import atomic_units, lib_math
-from viperleed_jax.propagator import (
+from viperleed_jax.lib.tensor_leed.propagator import (
     calc_propagator,
     calculate_propagators,
     symmetry_operations,

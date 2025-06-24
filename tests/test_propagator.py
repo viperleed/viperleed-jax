@@ -8,7 +8,7 @@ from viperleed.calc.lib.matrix import rotation_matrix_order
 from viperleed_jax.atomic_units import kappa
 from viperleed_jax.constants import BOHR
 from viperleed_jax.lib_math import EPS, spherical_harmonics_components
-from viperleed_jax.propagator import calc_propagator, symmetry_operations
+from viperleed_jax.lib.tensor_leed.propagator import calc_propagator, symmetry_operations
 
 
 @pytest.fixture(scope='session')
