@@ -6,7 +6,7 @@ __created__ = '2025-04-28'
 import jax
 from jax import numpy as jnp
 
-from ..lib_math import apply_fun_grouped, project_onto_plane_sum_1
+from .math import apply_fun_grouped, project_onto_plane_sum_1
 
 
 def normalize_occ_vector(non_norm_occ_vector, atom_ids):

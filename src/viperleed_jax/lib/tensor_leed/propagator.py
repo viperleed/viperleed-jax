@@ -11,7 +11,7 @@ import numpy as np
 
 from viperleed_jax.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 from viperleed_jax.gaunt_coefficients import CSUM_COEFFS
-from viperleed_jax.lib_math import (
+from viperleed_jax.lib.math import (
     EPS,
     bessel,
     safe_norm,

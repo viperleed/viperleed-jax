@@ -5,7 +5,7 @@ __created__ = '2024-09-09'
 
 import numpy as np
 
-from ..lib_math import EPS
+from ..lib.math import EPS
 from .displacement_tree_layers import DisplacementTreeLayers
 from .linear_transformer import AffineTransformer, LinearMap
 from .nodes import (

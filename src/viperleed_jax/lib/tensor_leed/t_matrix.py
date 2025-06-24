@@ -10,7 +10,7 @@ import jax.numpy as jnp
 
 from viperleed_jax.constants import BOHR
 from viperleed_jax.gaunt_coefficients import PRE_CALCULATED_CPPP
-from viperleed_jax.lib_math import bessel
+from viperleed_jax.lib.math import bessel
 
 
 # vmap over sites for which to calculate the t-matrix

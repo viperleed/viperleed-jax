@@ -11,7 +11,8 @@ import jax
 import numpy as np
 from jax import numpy as jnp
 
-from viperleed_jax import atomic_units, lib_math
+from viperleed_jax import atomic_units
+from viperleed_jax.lib import math
 from viperleed_jax.lib.tensor_leed.propagator import (
     calc_propagator,
     calculate_propagators,
@@ -161,7 +162,7 @@ class Propagators(LinearPropagatedQuantity):
         )
         spherical_harmonics_components = jnp.array(
             [
-                lib_math.spherical_harmonics_components(self.max_l_max, disp)
+                math.spherical_harmonics_components(self.max_l_max, disp)
                 for disp in displacements_au
             ]
         )

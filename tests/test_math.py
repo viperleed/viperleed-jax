@@ -7,7 +7,7 @@ from jax import numpy as jnp
 from scipy.special import sph_harm, spherical_jn
 
 from viperleed_jax.dense_quantum_numbers import DENSE_L, DENSE_M
-from viperleed_jax.lib_math import (
+from viperleed_jax.lib.math import (
     EPS,
     _divide_zero_safe,
     bessel,
