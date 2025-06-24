@@ -105,10 +105,9 @@ class TransformationTree(ABC):
         """Finish setting up the tree.
 
         Called after all user constraints have been applied. Applies implicit
-        constraints, creates the root node and performs tree analysis.
+        constraints and creates the root node.
         """
         self._create_root()
-        self._analyze_tree()
 
     @property
     def roots(self):
@@ -124,10 +123,6 @@ class TransformationTree(ABC):
     def _create_root(self):
         """Create a root node that aggregates all root nodes in the subtree."""
         self._check_construction_order(ConstructionOrder.ROOT)
-
-    @abstractmethod
-    def _analyze_tree(self):
-        """Analyze the finalized tree to extract additional information."""
 
     def graphical_export(self, filename):
         """Create and save a graphical representation of the tree to file."""
@@ -263,14 +258,6 @@ class DisplacementTree(LinearTree):
             ]
         )
         return np.array(unordered_leaves)[indices_by_atom_basis]
-
-    def _analyze_tree(self):
-        """Analyze the finalized tree and calculate the functionals."""
-        if not self.finalized:
-            raise ValueError('Root node must be created first.')
-        for functional in self.functionals:
-            functional.analyze_tree(self)
-
 
     def apply_implicit_constraints(self):
         """Apply implicit constraints to the tree."""

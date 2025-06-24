@@ -8,21 +8,12 @@ import numpy as np
 
 from ..lib_math import EPS
 from .displacement_tree_layers import DisplacementTreeLayers
-from .functionals import LinearTreeFunctional
 from .linear_transformer import LinearMap, stack_transformers
 from .nodes import AtomicLinearNode, LinearConstraintNode, ImplicitLinearConstraintNode
 from .tree import (
     DisplacementTree,
 )
-from viperleed.calc.classes.perturbation_mode import PerturbationMode
 from .reduced_space import Zonotope
-
-
-class DisplacementFunctional(LinearTreeFunctional):
-    def __init__(
-        self,
-    ):
-        super().__init__(name='displacement', transformer_class=LinearMap)
 
 
 class GeoLeafNode(AtomicLinearNode):

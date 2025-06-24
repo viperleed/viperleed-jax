@@ -76,12 +76,6 @@ class MetaTree(LinearTree):
             'Meta parameters do not have offsets to apply.'
         )
 
-    def _analyze_tree(self):
-        """Apply the offsets to the meta parameters."""
-        raise NotImplementedError(
-            'Meta parameters do not have offsets to apply.'
-        )
-
     def _bound_V0r_from_rpars(self, rpars):
         """Read and apply the bounds of V0r from Rparams."""
         lower, upper = rpars.IV_SHIFT_RANGE.start, rpars.IV_SHIFT_RANGE.stop

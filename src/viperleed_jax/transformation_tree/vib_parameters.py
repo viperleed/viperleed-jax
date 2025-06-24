@@ -7,7 +7,6 @@ import numpy as np
 
 from ..lib_math import EPS
 from .displacement_tree_layers import DisplacementTreeLayers
-from .functionals import LinearTreeFunctional
 from .linear_transformer import AffineTransformer, LinearMap
 from .nodes import (
     AtomicLinearNode,
@@ -18,14 +17,6 @@ from .reduced_space import Zonotope
 from .tree import (
     DisplacementTree,
 )
-
-
-class VibrationFunctional(LinearTreeFunctional):
-    def __init__(
-        self,
-    ):
-        super().__init__(name='vibration', transformer_class=LinearMap)
-
 
 class VibLeafNode(AtomicLinearNode):
     """Represents a leaf node with vibrational parameters."""
