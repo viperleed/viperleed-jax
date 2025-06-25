@@ -24,7 +24,9 @@ from viperleed_jax.dense_quantum_numbers import (
 from viperleed_jax.interpolation import interpolate_ragged_array
 from viperleed_jax.lib import math
 from viperleed_jax.lib.calculator import normalize_occ_vector
-from viperleed_jax.lib.derived_quantities.base import NormalizedOccupations
+from viperleed_jax.lib.derived_quantities.normalized_occupations import (
+    NormalizedOccupations,
+)
 from viperleed_jax.lib.derived_quantities.onset_height_change import (
     OnsetHeightChange,
 )
