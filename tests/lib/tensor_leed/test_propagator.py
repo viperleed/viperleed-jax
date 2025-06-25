@@ -96,7 +96,14 @@ class TestPropagator:
     @pytest.mark.parametrize('l_max', range(5, 18))
     def test_propagator_zero_displacement(self, l_max):
         disp_vector = np.array([0.0, 0.0, 0.0])
-        propagator = calc_propagator(l_max, disp_vector, kappa(1.0, 1.0))
+        sp_harm_components = spherical_harmonics_components(
+            l_max, disp_vector
+        )
+        sp_harm_components = spherical_harmonics_components(
+            l_max, disp_vector
+        )
+        propagator = calc_propagator(
+            l_max, disp_vector, sp_harm_components, kappa(1.0, 1.0))
         assert propagator == pytest.approx(
             np.identity((l_max + 1) ** 2), abs=1e-8
         )
@@ -114,8 +121,13 @@ class TestPropagator:
             v_imag,
         ) = stored_propagator_reference_values
         reference_value = stored_propagators[n_vector]
+        # spherical harmonics components
+        sp_harm_components = spherical_harmonics_components(
+            l_max, disp_vector
+        )
         # calculate the propagator
-        propagator = calc_propagator(l_max, disp_vector, kappa(energy, v_imag))
+        propagator = calc_propagator(
+            l_max, disp_vector, sp_harm_components, kappa(energy, v_imag))
         assert propagator == pytest.approx(reference_value, rel=1e-6, abs=1e-8)
 
     @pytest.mark.parametrize('disp_vector', list(enumerate(TEST_DISP_VECTORS)))
