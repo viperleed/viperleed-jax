@@ -16,6 +16,13 @@ JIT_T_MATRIX_FUNC = jax.jit(
     t_matrix.vib_dependent_tmatrix, static_argnames='l_max'
 )
 
+# Ensure JAX is configured to use double precision – tests will fail otherwise.
+if jax.config.read('jax_enable_x64') is False:
+    raise ValueError(
+        'This test suite requires JAX to be configured with '
+        '`jax_enable_x64=True`.'
+    )
+
 
 @fixture(scope='session')
 @pytest.mark.parametrize(
