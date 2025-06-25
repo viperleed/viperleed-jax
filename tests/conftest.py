@@ -2,6 +2,7 @@ import pickle
 from pathlib import Path
 
 import pytest
+import jax
 from pytest_cases import fixture, parametrize_with_cases
 
 from tests.fixtures.base import LARGE_FILE_PATH
@@ -28,6 +29,8 @@ FE2O3_UNRELAXED_INPUT_PATH = (
     Path(__file__).parent / 'test_data' / 'Fe2O3_012' / 'unrelaxed'
 )
 
+# Make sure to use double precision for testing
+jax.config.update('jax_enable_x64', True)
 
 @pytest.fixture(scope='session')
 def large_file_path():
