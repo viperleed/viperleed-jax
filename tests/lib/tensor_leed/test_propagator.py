@@ -64,9 +64,9 @@ JIT_JAC_ENERGY_JIT_CALC_PROPAGATOR = jax.jit(
     jax.jacrev(calc_propagator, argnums=2, holomorphic=True),
     static_argnums=(0,),
 )
-def _abs_calc_propagator(l_max, vec, vec_sph_harm_components, e, v_imag):
+def _abs_calc_propagator(l_max, vec, vec_sph_harm_components, kappa):
     return abs(
-        calc_propagator(l_max, vec, vec_sph_harm_components, kappa(e, v_imag))
+        calc_propagator(l_max, vec, vec_sph_harm_components, kappa)
     )
 JIT_JAC_ABS_DISP_CALC_PROPAGATOR = jax.jit(
     jax.jacrev(_abs_calc_propagator, argnums=1), static_argnums=(0,)
