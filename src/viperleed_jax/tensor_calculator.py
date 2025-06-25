@@ -15,7 +15,7 @@ from viperleed.calc.files import poscar
 from viperleed.calc.files.iorfactor import beamlist_to_array
 from viperleed.calc.files.vibrocc import writeVIBROCC
 
-from viperleed_jax import atomic_units, rfactor, utils
+from viperleed_jax import rfactor, utils
 from viperleed_jax.batching import Batching
 from viperleed_jax.constants import BOHR, HARTREE
 from viperleed_jax.dense_quantum_numbers import (
