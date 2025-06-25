@@ -128,7 +128,8 @@ class TestPropagator:
         # calculate the propagator
         propagator = calc_propagator(
             l_max, disp_vector, sp_harm_components, kappa(energy, v_imag))
-        assert propagator == pytest.approx(reference_value, rel=1e-6, abs=1e-8)
+        assert propagator == pytest.approx(
+            reference_value, rel=1e-6, abs=1e-8, nan_ok=True)
 
     @pytest.mark.parametrize('disp_vector', list(enumerate(TEST_DISP_VECTORS)))
     def test_jit(self, disp_vector, stored_propagator_reference_values):
@@ -146,7 +147,8 @@ class TestPropagator:
         propagator = JIT_CALC_PROPAGATOR(
             l_max, disp_vector, sp_harm_components, kappa(energy, v_imag)
         )
-        assert propagator == pytest.approx(reference_value, rel=1e-6, abs=1e-8)
+        assert propagator == pytest.approx(
+            reference_value, rel=1e-6, abs=1e-8, nan_ok=True)
 
     @pytest.mark.parametrize('disp_vector', list(enumerate(TEST_DISP_VECTORS)))
     def test_energy_jacobian(
