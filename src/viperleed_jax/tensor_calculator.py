@@ -415,10 +415,7 @@ class TensorLEEDCalculator:
         v0r_shift = self.parameter_space.v0r_transformer()(v0r_params)
         vib_amps = self.parameter_space.vib_tree(vib_params)
         displacements = self.parameter_space.geo_tree(geo_params)
-        unnormalized_weights = self.parameter_space.occ_tree(occ_params)
-        occupations = normalize_occ_vector(
-            unnormalized_weights, tuple(self.atom_ids.tolist())
-        )
+        occupations = self.calc_normalized_occupations(occ_params)
         return v0r_shift, vib_amps, displacements, occupations
 
     def delta_amplitude(self, free_params):
