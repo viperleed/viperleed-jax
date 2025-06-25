@@ -29,10 +29,28 @@ _DENSE_M_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 2]
 _DENSE_MP_2D = DENSE_QUANTUM_NUMBERS[MAXIMUM_LMAX][:, :, 3]
 
 
-# TODO: @Paul add docstring with references to the storage scheme paper
 def find_index(
     l1: int, l2: int, l3: int, m1: int, m2: int, m3: int
 ) -> jnp.array:
+    r"""Find the index of the Gaunt coefficient in the precomputed array.
+
+    We use an optimized storage scheme for the Gaunt coefficients, which makes
+    use of the selection rules to reduce the number of stored coefficients.
+    The scheme is a simplified version of the one proposed by Rasch and Yu
+    (DOI: 10.1137/S1064827503422932).
+
+    Parameters
+    ----------
+    l1, l2, l3 : int
+        Angular momentum quantum numbers.
+    m1, m2, m3 : int
+        Magnetic quantum numbers.
+
+    Returns
+    -------
+    jnp.array
+        The indices of the Gaunt coefficient in the precomputed array.
+    """
     selection_rule_m = (
         (m1 + m2 + m3 == 0)
         & (abs(m3) <= l3)
@@ -119,9 +137,8 @@ def fetch_stored_gaunt_coeffs(
     return fetch_gaunt(reduced_indices[0], reduced_indices[1])
 
 
-# vectorize integrate_legendre in all arguments
-# Clebsh-Gordon coefficients for computation of temperature-dependent phase shifts
-# used in tscatf; can be jitted
+# vectorize integrate_legendre in all arguments; could be jitted
+# Clebsh-Gordon coefficients for computation of temperature-dependent phaseshifts
 @partial(vmap, in_axes=(0, None, None))
 @partial(vmap, in_axes=(None, 0, None))
 @partial(vmap, in_axes=(None, None, 0))
@@ -202,7 +219,8 @@ CSUM_COEFFS = jnp.array(
         * 1j
         ** (
             _DENSE_L_2D + _DENSE_LP_2D - lpp
-        )  # AI: I found we need this factor, but I still don't understand where it comes from
+        )  # AI: I found we need this factor, but I still don't understand
+           # where it comes from
         for lpp in range(MAXIMUM_LMAX * 2 + 1)
     ]
 )
