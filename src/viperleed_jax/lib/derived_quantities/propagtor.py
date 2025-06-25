@@ -167,7 +167,7 @@ class Propagators(LinearPropagatedQuantity):
         static_inputs = self.static_propagator_inputs
         if len(static_inputs) == 0:
             # If there are no static inputs, store an empty array.
-            self._static_propagators = jnp.array([])
+            return jnp.array([])
 
         displacements_ang = jnp.asarray(static_inputs)
         displacements_au = atomic_units.to_internal_displacement_vector(
