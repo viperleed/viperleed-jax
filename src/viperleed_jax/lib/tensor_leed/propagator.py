@@ -29,7 +29,8 @@ def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
     dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
     dense_mp_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 3]
 
-    # AI: I don't fully understand this, technically it should be MPP = -M - MP
+    # AI: I don't fully understand this, as far as I can tell it should be
+    # MPP = -M - MP
     dense_mpp = dense_mp_2d - dense_m_2d
 
     # pre-computed coeffs, capped to LMAX
