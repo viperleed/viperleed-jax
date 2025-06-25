@@ -226,17 +226,17 @@ def calculate_propagators(
         combined = (1 - trans_int) * combined + trans_int * jnp.transpose(
             combined, (0, 2, 1)
         )
-        # combined remains (atom_basis, lm, m)
-
+        # combined remains shape (atom_basis, lm, m)
         return combined
 
     # Process each energy individually.
-    # Each process_energy returns (atom_basis, lm, m); mapping over energies yields shape:
-    # (num_energies, atom_basis, lm, m)
+    # Each process_energy returns (atom_basis, lm, m); mapping over energies 
+    # yields shape: (num_energies, atom_basis, lm, m)
     per_energy = jax.lax.map(
         process_energy, energy_indices, batch_size=batch_energies
     )
-    # Transpose to (atom_basis, num_energies, lm, m) to match what the symmetry einsum expects.
+    # Transpose to (atom_basis, num_energies, lm, m) to match what the symmetry
+    # einsum expects.
     per_energy = jnp.transpose(per_energy, (1, 0, 2, 3))
 
     # --- Apply rotations (symmetry operations) and rearrange ---
