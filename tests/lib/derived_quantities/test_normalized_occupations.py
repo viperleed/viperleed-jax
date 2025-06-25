@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 import pytest
 
-from viperleed_jax.lib.calculator import (
+from viperleed_jax.lib.derived_quantities.normalized_occupations import (
     _normalize_atom_occ_vector,
     normalize_occ_vector,
 )
