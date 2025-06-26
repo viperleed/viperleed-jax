@@ -272,14 +272,11 @@ class TensorLEEDCalculator:
         # set up the derived quantities
         self._setup_derived_quantities()
 
-        # set transformations
-        self._reference_displacements = jax.jit(self.parameter_space.geo_tree)
-        self._reference_vib_amps = jax.jit(self.parameter_space.vib_tree)
         # set split free parameters function
         self._split_free_params = jax.jit(
             self.parameter_space.split_free_params()
         )
-        # v0r transformer – could be made into a derived quantity
+        # v0r transformer - could be made into a derived quantity
         self._v0r_transformer = jax.jit(self.parameter_space.v0r_transformer())
 
         logger.info(f'Parameter space set.\n{parameter_space.info}')
