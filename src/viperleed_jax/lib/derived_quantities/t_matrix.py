@@ -119,7 +119,7 @@ class TMatrix(LinearPropagatedQuantity):
         )
 
     def _calculate_static_t_matrices(self, energies, batch_energies, max_l_max):
-        # This is only done once – perform for maximum lmax and crop later
+        # This is only done once - perform for maximum lmax and crop later
         energy_indices = jnp.arange(len(energies))
 
         # Outer loop: iterate over energy indices with batching
@@ -137,7 +137,8 @@ class TMatrix(LinearPropagatedQuantity):
                 )
 
             # Use a Python loop to compute for each pair and stack the results.
-            # This loop is over a typically small list so it shouldn't be a bottleneck.
+            # This loop is over a typically small list so it shouldn't be a
+            # bottleneck.
             return jnp.stack(
                 [
                     compute_t(pair)
