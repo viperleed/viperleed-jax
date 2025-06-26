@@ -251,9 +251,10 @@ def cu_111_dynamic_l_max_parameter_space(
     disp_file = DisplacementsFile()
     disp_file.read(cu_111_dynamic_l_max_info.displacements_path)
 
-    offsets_block = disp_file.offsets_block()
-    search_block = disp_file.blocks[0]  # TODO: can only do first block for now
-    parameter_space.apply_search_segment(offsets_block, search_block)
+    if disp_file.offsets is not None:
+        parameter_space.apply_offsets(disp_file.offsets)
+    search_block = disp_file.next(0.9)
+    parameter_space.apply_search_segment(search_block)
     return parameter_space
 
 
