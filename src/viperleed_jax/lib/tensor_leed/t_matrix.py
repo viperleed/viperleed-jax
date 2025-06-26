@@ -159,7 +159,7 @@ def calculate_t_matrices(
     l_max,
     batch_energies,
     phaseshifts,
-    vib_amps,
+    dynamic_vib_amps,
     energy_indices,
 ):
     # Process one energy at a time to reduce memory usage.
@@ -174,7 +174,7 @@ def calculate_t_matrices(
             t_matrix_context.dynamic_site_elements,
             phaseshifts,
             t_matrix_context.energies,
-            vib_amps,
+            dynamic_vib_amps,
             [e_idx],
         )[0]
         # Map the dynamic t-matrix to the atom-site-element basis.

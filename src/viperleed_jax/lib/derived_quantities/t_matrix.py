@@ -108,13 +108,15 @@ class TMatrix(LinearPropagatedQuantity):
     ):
         # vibration amplitudes in atomic units
         vib_amps_au = self.tree(vib_params) # (already in AU, no need to convert)
+        # select the dynamic t-matrices based on the mask
+        dynamic_t_matrices = vib_amps_au[self.is_dynamic_t_matrix]
 
         return calculate_t_matrices(
             self.context,
             l_max,
             self.batch_energies,
             self.phaseshifts,
-            vib_amps_au,
+            dynamic_t_matrices,
             energy_ids,
         )
 
