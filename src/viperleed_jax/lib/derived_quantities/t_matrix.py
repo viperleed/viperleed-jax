@@ -103,11 +103,26 @@ class TMatrix(LinearPropagatedQuantity):
     def t_matrix_id(self):
         return np.array([id for (val, id) in self.t_matrix_map])
 
-    def __call__(
-        self, vib_params, l_max, energy_ids
-    ):
+    def __call__(self, vib_params, l_max, energy_ids):
+        """Calculate the t-matrix for given vibration parameters.
+
+        Parameters
+        ----------
+        vib_params : array-like
+            Irreducible parameters related to vibration amplitudes.
+        l_max : int
+            Maximum angular momentum quantum number.
+        energy_ids : array-like
+            Indices of the energies for which to calculate the t-matrix.
+
+        Returns
+        -------
+        array-like
+            The calculated t-matrices for the given vibration parameters.
+            Indexed as (energy_id, scatterer, l).
+        """
         # vibration amplitudes in atomic units
-        vib_amps_au = self.tree(vib_params) # (already in AU, no need to convert)
+        vib_amps_au = self.tree(vib_params) # already in AU, don't convert
         # select the dynamic t-matrices based on the mask
         dynamic_t_matrices = vib_amps_au[self.is_dynamic_t_matrix]
 
@@ -121,7 +136,7 @@ class TMatrix(LinearPropagatedQuantity):
         )
 
     # TODO: static t-matrix calculation could be simplified and integrated with
-    # the once in lib
+    # the one in lib
     def _calculate_static_t_matrices(self, energies, batch_energies, max_l_max):
         # This is only done once - perform for maximum lmax and crop later
         energy_indices = jnp.arange(len(energies))
