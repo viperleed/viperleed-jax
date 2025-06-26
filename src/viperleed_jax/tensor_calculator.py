@@ -408,7 +408,7 @@ class TensorLEEDCalculator:
 
     def expand_params(self, free_params):
         _free_params = np.asarray(free_params)
-        v0r_params, vib_params, geo_params, occ_params = self.split_free_params(
+        v0r_params, geo_params, vib_params, occ_params = self.split_free_params(
             _free_params
         )
         v0r_shift = self.parameter_space.v0r_transformer()(v0r_params)
