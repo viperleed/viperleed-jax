@@ -226,14 +226,15 @@ def cu_111_fixed_l_max_tensor_calculator_recalc_t_matrices(
     cu_111_fixed_l_max_read_ref_data,
 ):
     slab, rpars = cu_111_fixed_l_max_state_after_init
-    calculator = TensorLEEDCalculator(
-        cu_111_fixed_l_max_read_ref_data,
+    ref_calc_params, ref_calc_result = cu_111_fixed_l_max_read_ref_data
+    return TensorLEEDCalculator(
+        ref_calc_params,
+        ref_calc_result,
         cu_111_fixed_l_max_phaseshifts,
         slab,
         rpars,
         recalculate_ref_t_matrices=True,
     )
-    return calculator
 
 
 @fixture(scope='session')
