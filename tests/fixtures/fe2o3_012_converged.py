@@ -363,14 +363,13 @@ def fe2o3_012_converged_tensor_calculator_recalc_t_matrices(
     fe2o3_012_converged_read_ref_data,
 ):
     slab, rpars = fe2o3_012_converged_state_after_init
-    calculator = TensorLEEDCalculator(
+    return TensorLEEDCalculator(
         fe2o3_012_converged_read_ref_data,
         fe2o3_012_converged_phaseshifts,
         slab,
         rpars,
         recalculate_ref_t_matrices=True,
     )
-    return calculator
 
 
 @fixture(scope='session')
@@ -385,9 +384,10 @@ def fe2o3_012_converged_parameter_space(
     disp_file = DisplacementsFile()
     disp_file.read(fe2o3_012_converged_info.displacements_path)
 
-    offsets_block = disp_file.offsets_block()
-    search_block = disp_file.blocks[0]  # TODO: can only do first block for now
-    parameter_space.apply_search_segment(offsets_block, search_block)
+    if disp_file.offsets is not None:
+        parameter_space.apply_offsets(disp_file.offsets)
+    search_block = disp_file.next(0.9)
+    parameter_space.apply_search_segment(search_block)
     return parameter_space
 
 

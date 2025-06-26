@@ -168,25 +168,25 @@ def test_compare_known_delta_amplitudes_tenserleed(
     calculator, parameters, expected, subtests
 ):
     # get parameters
-    meta_params, vib_params, geo_parms, occ_params = (
-        calculator.parameter_space.split_free_params(parameters)
+    meta_params, geo_params, vib_params, occ_params = (
+        calculator.split_free_params(parameters)
     )
     # calculate delta amplitudes
-    delta_amps = calculator.jit_delta_amplitude(parameters)
+    delta_amps = calculator.delta_amplitude(parameters)
 
     # compare the expanded parameters
     with subtests.test('v0r'):
-        v0r = calculator.parameter_space.v0r_transformer(meta_params)
+        v0r = calculator._v0r_transformer(meta_params)
         assert v0r == pytest.approx(expected['v0r'])
     with subtests.test('vib amplitudes'):
-        vib_amps = calculator.parameter_space.all_vib_amps_transformer(
+        vib_amps = calculator.parameter_space.vib_tree(
             vib_params
         )
         assert vib_amps == pytest.approx(expected['vib_amplitudes'])
     with subtests.test('displacements'):
         displacements = (
-            calculator.parameter_space.all_displacements_transformer()(
-                geo_parms
+            calculator.parameter_space.geo_tree(
+                geo_params
             )
         )
         assert displacements == pytest.approx(expected['displacements'])
