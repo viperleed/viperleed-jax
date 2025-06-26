@@ -120,6 +120,8 @@ class TMatrix(LinearPropagatedQuantity):
             energy_ids,
         )
 
+    # TODO: static t-matrix calculation could be simplified and integrated with
+    # the once in lib
     def _calculate_static_t_matrices(self, energies, batch_energies, max_l_max):
         # This is only done once - perform for maximum lmax and crop later
         energy_indices = jnp.arange(len(energies))
