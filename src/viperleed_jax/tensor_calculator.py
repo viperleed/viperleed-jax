@@ -276,7 +276,9 @@ class TensorLEEDCalculator:
         self._reference_displacements = jax.jit(self.parameter_space.geo_tree)
         self._reference_vib_amps = jax.jit(self.parameter_space.vib_tree)
         # set split free parameters function
-        self._split_free_params = jax.jit(self.parameter_space.split_free_params())
+        self._split_free_params = jax.jit(
+            self.parameter_space.split_free_params()
+        )
         # v0r transformer – could be made into a derived quantity
         self._v0r_transformer = jax.jit(self.parameter_space.v0r_transformer())
 
@@ -422,7 +424,7 @@ class TensorLEEDCalculator:
         self.check_parameter_space_set()
         _free_params = jnp.asarray(free_params)
         # split free parameters
-        (_, vib_params, geo_params, occ_params) = (
+        (_, geo_params, vib_params, occ_params) = (
             self._split_free_params(_free_params)
         )
 
@@ -493,7 +495,7 @@ class TensorLEEDCalculator:
     def intensity(self, free_params):
         _free_params = jnp.asarray(free_params)
         delta_amplitude = self.delta_amplitude(_free_params)
-        _, _, geo_params, _ = self._split_free_params(_free_params)
+        _, geo_params, _, _ = self._split_free_params(_free_params)
         prefactors = intensity_prefactors(
             self.calc_onset_height_change(geo_params),
             self.n_beams,
