@@ -282,7 +282,7 @@ class TensorLEEDCalculator:
         logger.info(f'Parameter space set.\n{parameter_space.info}')
         logger.info(
             'This parameter space requires dynamic calculation of '
-            f'{self.calc_t_matrices.n_dynamic_t_matrices} t-matrice(s) and '
+            f'{self.calc_t_matrices.n_dynamic_t_matrices} t-matrix(-ces) and '
             f'{self.calc_propagators.n_dynamic_propagators} propagator(s).'
         )
 
