@@ -414,7 +414,7 @@ class TensorLEEDCalculator:
         vib_amps = self.parameter_space.vib_tree(vib_params)
         displacements = self.parameter_space.geo_tree(geo_params)
         occupations = self.calc_normalized_occupations(occ_params)
-        return v0r_shift, vib_amps, displacements, occupations
+        return v0r_shift, displacements, vib_amps, occupations
 
     def delta_amplitude(self, free_params):
         """Calculate the delta amplitude for a given set of free parameters."""
@@ -600,7 +600,7 @@ class TensorLEEDCalculator:
         slab.update_layer_coordinates()
 
         # expand the reduced parameter vector
-        v0r, vibrations, displacements, occupations = self.expand_params(params)
+        v0r, displacements, vibrations, occupations = self.expand_params(params)
 
         # update V0r in rpars
         rpars.best_v0r = v0r
