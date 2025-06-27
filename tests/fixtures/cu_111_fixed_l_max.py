@@ -11,7 +11,6 @@ from tests.fixtures.base import LARGE_FILE_PATH
 from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo
 from viperleed_jax.atom_basis import AtomBasis
 from viperleed_jax.files import phaseshifts as ps
-from viperleed_jax.files.deltas import Transform as delta_transform
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.from_state import run_viperleed_initialization
 from viperleed_jax.parameter_space import ParameterSpace
