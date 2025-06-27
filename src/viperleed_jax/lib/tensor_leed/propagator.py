@@ -212,6 +212,8 @@ def calculate_propagators(
             stat = propagtor_context.static_propagators[:, e_idx, :, :]
 
         # --- Map to atom basis using propagator_id ---
+        # TODO: would be possible to save time here by only mapping over dynamic
+        # list elements
         mapped_dyn = dyn # already dispatched over all atoms!
         mapped_stat = stat[propagtor_context.propagator_id]
 
