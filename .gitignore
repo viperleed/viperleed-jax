@@ -162,5 +162,4 @@ cython_debug/
 
 
 # Do not add the large_files directory to keep the git repository size small
-large_files/
 /.vscode
