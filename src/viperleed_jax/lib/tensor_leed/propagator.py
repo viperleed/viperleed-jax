@@ -244,8 +244,9 @@ def calculate_propagators(
     # --- Apply rotations (symmetry operations) and rearrange ---
     propagators = jnp.einsum(
         #'aelm,alm->ealm',
+        'aelm->ealm',
         per_energy,
-        propagtor_context.symmetry_operations,
+        #propagtor_context.symmetry_operations,
         optimize='optimal',
     )
     # Final shape is (energies, atom_basis, lm, m)
