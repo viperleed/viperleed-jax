@@ -96,21 +96,21 @@ class TensorCalculatorsWithTensErLEEDDeltas:
     @case(tags='fe2o3_012')
     def case_fe2o3_012_converged_z(
         self,
-        fe2o3_012_converged_calculator_with_parameter_space,
+        fe2o3_012_converged_calculator_with_parameter_space_z,
         fe2o3_012_converged_tenserleed_reference_z,
     ):
-        calculator = fe2o3_012_converged_calculator_with_parameter_space
+        calculator = fe2o3_012_converged_calculator_with_parameter_space_z
         parameters, expected = fe2o3_012_converged_tenserleed_reference_z
         return calculator, parameters, expected
 
-    # @case(tags="fe2o3_012")
-    # def case_fe2o3_012_converged_x(
-    #     self,
-    #     fe2o3_012_converged_calculator_with_parameter_space,
-    #     fe2o3_012_converged_tenserleed_reference_x):
-    #     calculator = fe2o3_012_converged_calculator_with_parameter_space
-    #     params, reference_delta_amplitudes, abs = fe2o3_012_converged_tenserleed_reference_x
-    #     return calculator, params, reference_delta_amplitudes, abs
+    @case(tags="fe2o3_012")
+    def case_fe2o3_012_converged_x(
+        self,
+        fe2o3_012_converged_calculator_with_parameter_space_x,
+        fe2o3_012_converged_tenserleed_reference_x):
+        calculator = fe2o3_012_converged_calculator_with_parameter_space_x
+        params, expected = fe2o3_012_converged_tenserleed_reference_x
+        return calculator, params, expected
 
 
 @parametrize_with_cases('calculator, info', cases=TensorCalculatorsWithInfo)

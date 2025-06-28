@@ -38,13 +38,10 @@ _REFERENCE_FILE_PATH_X = (
     _LARGE_DATA_PATH / 'Fe2O3_012_TensErLEED_reference_x.npz'
 )
 _REFERENCE_DATA_X = np.load(_REFERENCE_FILE_PATH_X)
-_COMPARE_PARAMS_X = _REFERENCE_DATA_X['parameters']
-_COMPARE_DELTA_AMPLITUDES_X = _REFERENCE_DATA_X['tenserleed_delta_amplitudes_x']
-_COMPARE_PARAMS_AMPS_X = [
-    (_COMPARE_PARAMS_X[i, :], _COMPARE_DELTA_AMPLITUDES_X[i, :])
-    for i in range(len(_COMPARE_PARAMS_X))
-]
 _COMPARE_ABS_X = 5e-4  # for l_max=10
+_comparison_data_x = ComparisonTensErLEEDDeltaAmps(
+    _REFERENCE_DATA_X, _COMPARE_ABS_X
+)
 
 ######################
 #   Converged Fe2O3  #
@@ -373,7 +370,7 @@ def fe2o3_012_converged_tensor_calculator_recalc_t_matrices(
 
 
 @fixture(scope='session')
-def fe2o3_012_converged_parameter_space(
+def fe2o3_012_converged_parameter_space_z(
     fe2o3_012_converged_state_after_init, fe2o3_012_converged_info
 ):
     slab, rparams = fe2o3_012_converged_state_after_init
@@ -382,7 +379,26 @@ def fe2o3_012_converged_parameter_space(
 
     # displacements file
     disp_file = DisplacementsFile()
-    disp_file.read(fe2o3_012_converged_info.displacements_path)
+    disp_file.read(fe2o3_012_converged_info.displacements_path.parent / 'DISPLACEMENTS_z')
+
+    if disp_file.offsets is not None:
+        parameter_space.apply_offsets(disp_file.offsets)
+    search_block = disp_file.next(0.9)
+    parameter_space.apply_search_segment(search_block)
+    return parameter_space
+
+@fixture(scope='session')
+def fe2o3_012_converged_parameter_space_x(
+    fe2o3_012_converged_state_after_init, fe2o3_012_converged_info
+):
+    slab, rparams = fe2o3_012_converged_state_after_init
+    atom_basis = AtomBasis(slab)
+    parameter_space = ParameterSpace(atom_basis, rparams)
+
+    # displacements file
+    disp_file = DisplacementsFile()
+    disp_file.read(
+        fe2o3_012_converged_info.displacements_path.parent / 'DISPLACEMENTS_x')
 
     if disp_file.offsets is not None:
         parameter_space.apply_offsets(disp_file.offsets)
@@ -392,13 +408,20 @@ def fe2o3_012_converged_parameter_space(
 
 
 @fixture(scope='session')
-def fe2o3_012_converged_calculator_with_parameter_space(
-    fe2o3_012_converged_tensor_calculator, fe2o3_012_converged_parameter_space
+def fe2o3_012_converged_calculator_with_parameter_space_z(
+    fe2o3_012_converged_tensor_calculator, fe2o3_012_converged_parameter_space_z
 ):
     calculator = fe2o3_012_converged_tensor_calculator
-    calculator.set_parameter_space(fe2o3_012_converged_parameter_space)
+    calculator.set_parameter_space(fe2o3_012_converged_parameter_space_z)
     return calculator
 
+@fixture(scope='session')
+def fe2o3_012_converged_calculator_with_parameter_space_x(
+    fe2o3_012_converged_tensor_calculator, fe2o3_012_converged_parameter_space_x
+):
+    calculator = fe2o3_012_converged_tensor_calculator
+    calculator.set_parameter_space(fe2o3_012_converged_parameter_space_x)
+    return calculator
 
 @fixture(scope='session')
 def fe2o3_012_converged_calculator_with_parameter_space_recalc_t_matrices(
@@ -420,11 +443,9 @@ def fe2o3_012_converged_tenserleed_reference_z(parameters, expected):
 
 @fixture(scope='session')
 @pytest.mark.parametrize(
-    'parameters, reference_delta_amplitudes',
-    _COMPARE_PARAMS_AMPS_X,
-    ids=[str(p) for p in _COMPARE_PARAMS_X],
+    'parameters, expected', _comparison_data_x, ids=_comparison_data_x.ids
 )
 def fe2o3_012_converged_tenserleed_reference_x(
-    parameters, reference_delta_amplitudes
+    parameters, expected,
 ):
-    return parameters, reference_delta_amplitudes, _COMPARE_ABS_X
+    return parameters, expected
