@@ -148,7 +148,6 @@ def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
     ).real
 
 
-
 def _calculate_dynamic_propagator(
     l_max, batch_atoms, displacements, components, kappa
 ):
@@ -210,7 +209,8 @@ def calculate_propagators(
             if len(propagtor_context.static_propagators) == 0:
                 stat = jnp.zeros_like(dyn)
             else:
-                # Assuming self._static_propagators is indexed as (atom_basis, num_energies, lm, m)
+                # Assuming self._static_propagators is indexed as
+                # (atom_basis, num_energies, lm, m)
                 stat = propagtor_context.static_propagators[:, e_idx, :, :]
 
             # --- Map to atom basis using propagator_id ---
@@ -236,7 +236,7 @@ def calculate_propagators(
             return dyn
 
     # Process each energy individually.
-    # Each process_energy returns (atom_basis, lm, m); mapping over energies 
+    # Each process_energy returns (atom_basis, lm, m); mapping over energies
     # yields shape: (num_energies, atom_basis, lm, m)
     per_energy = jax.lax.map(
         process_energy, energy_indices, batch_size=batch_energies
