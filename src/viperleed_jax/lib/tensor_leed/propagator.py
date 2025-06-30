@@ -29,8 +29,7 @@ def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
     dense_m_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 2]
     dense_mp_2d = DENSE_QUANTUM_NUMBERS[LMAX][:, :, 3]
 
-    # AI: I don't fully understand this, as far as I can tell it should be
-    # MPP = -M - MP
+    # AI: I don't fully understand this, technically it should be MPP = -M - MP
     dense_mpp = dense_mp_2d - dense_m_2d
 
     # pre-computed coeffs, capped to LMAX
@@ -178,6 +177,7 @@ def calculate_propagators(
     batch_energies,
     batch_atoms,
     l_max,
+    use_symmetry=True,
 ):
     # We want the final result indexed as (energies, atom_basis, lm, l'm')
     energy_indices = jnp.array(energy_indices)
@@ -204,32 +204,36 @@ def calculate_propagators(
         else:
             dyn = jnp.zeros_like(propagtor_context.static_propagators[0])
 
-        # --- Static propagators ---
-        if len(propagtor_context.static_propagators) == 0:
-            stat = jnp.zeros_like(dyn)
+        if use_symmetry:
+
+            # --- Static propagators ---
+            if len(propagtor_context.static_propagators) == 0:
+                stat = jnp.zeros_like(dyn)
+            else:
+                # Assuming self._static_propagators is indexed as (atom_basis, num_energies, lm, m)
+                stat = propagtor_context.static_propagators[:, e_idx, :, :]
+
+            # --- Map to atom basis using propagator_id ---
+            mapped_dyn = dyn[propagtor_context.propagator_id]
+            mapped_stat = stat[propagtor_context.propagator_id]
+
+            # --- Combine dynamic and static parts ---
+            # Condition is broadcast along the last two axes.
+            cond = propagtor_context.is_dynamic_propagator[:, None, None]
+            combined = jnp.where(cond, mapped_dyn, mapped_stat)
+            # combined now has shape (atom_basis, lm, m)
+
+            # --- Apply selective transposition ---
+            trans_int = propagtor_context.propagator_transpose_int[:, None, None]
+            combined = (1 - trans_int) * combined + trans_int * jnp.transpose(
+                combined, (0, 2, 1)
+            )
+            # combined remains (atom_basis, lm, m)
+
+            return combined
+
         else:
-            # Assuming self._static_propagators is indexed as (atom_basis, num_energies, lm, m)
-            stat = propagtor_context.static_propagators[:, e_idx, :, :]
-
-        # --- Map to atom basis using propagator_id ---
-        # TODO: would be possible to save time here by only mapping over dynamic
-        # list elements
-        mapped_dyn = dyn # already dispatched over all atoms!
-        mapped_stat = stat[propagtor_context.propagator_id]
-
-        # --- Combine dynamic and static parts ---
-        # Condition is broadcast along the last two axes.
-        cond = propagtor_context.is_dynamic_propagator[:, None, None]
-        combined = jnp.where(cond, mapped_dyn, mapped_stat)
-        # combined now has shape (atom_basis, lm, m)
-
-        # --- Apply selective transposition ---
-        trans_int = propagtor_context.propagator_transpose_int[:, None, None]
-        combined = (1 - trans_int) * combined + trans_int * jnp.transpose(
-            combined, (0, 2, 1)
-        )
-        # combined remains shape (atom_basis, lm, m)
-        return combined
+            return dyn
 
     # Process each energy individually.
     # Each process_energy returns (atom_basis, lm, m); mapping over energies 
@@ -241,13 +245,22 @@ def calculate_propagators(
     # einsum expects.
     per_energy = jnp.transpose(per_energy, (1, 0, 2, 3))
 
-    # --- Apply rotations (symmetry operations) and rearrange ---
-    propagators = jnp.einsum(
-        #'aelm,alm->ealm',
-        'aelm->ealm',
-        per_energy,
-        #propagtor_context.symmetry_operations,
-        optimize='optimal',
-    )
+    if use_symmetry:
+
+        # --- Apply rotations (symmetry operations) and rearrange ---
+        propagators = jnp.einsum(
+            'aelm,alm->ealm',
+            per_energy,
+            propagtor_context.symmetry_operations,
+            optimize='optimal',
+        )
+    else:
+        # --- Apply rotations (symmetry operations) and rearrange ---
+        propagators = jnp.einsum(
+            'aelm->ealm',
+            per_energy,
+            optimize='optimal',
+        )
+
     # Final shape is (energies, atom_basis, lm, m)
     return propagators

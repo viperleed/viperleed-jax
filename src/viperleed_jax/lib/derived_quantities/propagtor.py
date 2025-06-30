@@ -55,6 +55,7 @@ class Propagators(LinearPropagatedQuantity):
         batch_energies,
         batch_atoms,
         max_l_max,
+        use_symmetry,
     ):
         super().__init__(parameter_space=parameter_space, name='propagators', transformer_class=LinearMap)
 
@@ -63,6 +64,7 @@ class Propagators(LinearPropagatedQuantity):
         self.batch_energies = batch_energies
         self.batch_atoms = batch_atoms
         self.max_l_max = max_l_max
+        self.use_symmetry = use_symmetry
 
         logger.debug(
             f'Pre-calculating {self.n_static_values} static propagators.'
@@ -89,6 +91,18 @@ class Propagators(LinearPropagatedQuantity):
             propagator_transpose_int=propagator_transpose_int,
             symmetry_operations=self.propagator_symmetry_operations,
         )
+
+    @property
+    def reference_leaf_nodes(self):
+        return [leaf for leaf in self.tree.leaves
+                if leaf in self.leaf_to_reference_map.values()]
+
+    @property
+    def reference_transformers(self):
+        return [
+            self.tree.root.transformer_to_descendent(leaf)
+            for leaf in self.reference_leaf_nodes
+        ]
 
     def _set_tree(self):
         """Set the tree for the derived quantity."""
@@ -147,11 +161,22 @@ class Propagators(LinearPropagatedQuantity):
 
     def __call__(self, geo_params, energy_ids):
         """Calculate propagators."""
-        displacements_angstrom = self.tree(geo_params)
-        # Convert displacements to atomic units.
-        displacements_au = atomic_units.to_internal_displacement_vector(
-            displacements_angstrom
-        )
+
+        if self.use_symmetry:
+            displacements_angstrom = jnp.stack(
+                [trafo(geo_params) for trafo in self.reference_transformers]
+            )
+            displacements_au = (
+                atomic_units.to_internal_displacement_vector(
+                displacements_angstrom
+            ))
+
+        else:
+            displacements_angstrom = self.tree(jnp.asarray(geo_params))
+            # Convert displacements to atomic units.
+            displacements_au = atomic_units.to_internal_displacement_vector(
+                displacements_angstrom
+            )
 
         return calculate_propagators(
             self.context,
@@ -160,6 +185,7 @@ class Propagators(LinearPropagatedQuantity):
             self.batch_energies,
             self.batch_atoms,
             self.max_l_max,
+            self.use_symmetry,
         )
 
     def _calculate_static_propagators(self):

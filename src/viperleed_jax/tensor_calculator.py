@@ -70,6 +70,7 @@ class TensorLEEDCalculator:
         batch_energies=None,
         batch_atoms=None,
         recalculate_ref_t_matrices=False,
+        use_symmetry=True,
     ):
         self.ref_calc_params = ref_calc_params
         self.ref_calc_result = ref_calc_result
@@ -78,6 +79,7 @@ class TensorLEEDCalculator:
 
         self.interpolation_deg = interpolation_deg
         self.bc_type = bc_type
+        self.use_symmetry = use_symmetry
 
         # get experimental intensities and hk
         if not rparams.expbeams:
@@ -316,6 +318,7 @@ class TensorLEEDCalculator:
             self.batch_energies,
             self.batch_atoms,
             self.max_l_max,
+            use_symmetry=self.use_symmetry,
         )
 
 
