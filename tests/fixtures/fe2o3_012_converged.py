@@ -4,17 +4,17 @@ from pathlib import Path
 import numpy as np
 import pytest
 from pytest_cases import fixture
+from viperleed.calc.files.new_displacements.file import DisplacementsFile
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
 from tests.fixtures.base import LARGE_FILE_PATH
 from tests.fixtures.calc_info import DeltaAmplitudeCalcInfo
 from viperleed_jax.atom_basis import AtomBasis
-from viperleed_jax.ref_calc_data import process_tensors
 from viperleed_jax.files import phaseshifts as ps
-from viperleed.calc.files.new_displacements.file import DisplacementsFile
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.from_state import run_viperleed_initialization
 from viperleed_jax.parameter_space import ParameterSpace
+from viperleed_jax.ref_calc_data import process_tensors
 from viperleed_jax.tensor_calculator import TensorLEEDCalculator
 
 from .base import ComparisonTensErLEEDDeltaAmps
@@ -336,24 +336,6 @@ def fe2o3_012_converged_read_ref_data(
 
 
 @fixture(scope='session')
-def fe2o3_012_converged_tensor_calculator(
-    fe2o3_012_converged_state_after_init,
-    fe2o3_012_converged_phaseshifts,
-    fe2o3_012_converged_read_ref_data,
-):
-    slab, rpars = fe2o3_012_converged_state_after_init
-    ref_calc_params, ref_calc_result = fe2o3_012_converged_read_ref_data
-    return TensorLEEDCalculator(
-        ref_calc_params,
-        ref_calc_result,
-        fe2o3_012_converged_phaseshifts,
-        slab,
-        rpars,
-        recalculate_ref_t_matrices=False,
-    )
-
-
-@fixture(scope='session')
 def fe2o3_012_converged_tensor_calculator_recalc_t_matrices(
     fe2o3_012_converged_state_after_init,
     fe2o3_012_converged_phaseshifts,
@@ -406,20 +388,48 @@ def fe2o3_012_converged_parameter_space_x(
     parameter_space.apply_search_segment(search_block)
     return parameter_space
 
+# NB: The fixtures below produce the calculators which are expensive to create,
+# so they are scoped to 'session' to avoid re-creation in each test. They cannot
+# use a shared fixture because setting the parameter space mutates the
+# calculator.
 
 @fixture(scope='session')
 def fe2o3_012_converged_calculator_with_parameter_space_z(
-    fe2o3_012_converged_tensor_calculator, fe2o3_012_converged_parameter_space_z
+    fe2o3_012_converged_state_after_init,
+    fe2o3_012_converged_phaseshifts,
+    fe2o3_012_converged_read_ref_data,
+    fe2o3_012_converged_parameter_space_z,
 ):
-    calculator = fe2o3_012_converged_tensor_calculator
+    slab, rpars = fe2o3_012_converged_state_after_init
+    ref_calc_params, ref_calc_result = fe2o3_012_converged_read_ref_data
+    calculator = TensorLEEDCalculator(
+        ref_calc_params,
+        ref_calc_result,
+        fe2o3_012_converged_phaseshifts,
+        slab,
+        rpars,
+        recalculate_ref_t_matrices=False,
+    )
     calculator.set_parameter_space(fe2o3_012_converged_parameter_space_z)
     return calculator
 
 @fixture(scope='session')
 def fe2o3_012_converged_calculator_with_parameter_space_x(
-    fe2o3_012_converged_tensor_calculator, fe2o3_012_converged_parameter_space_x
+    fe2o3_012_converged_state_after_init,
+    fe2o3_012_converged_phaseshifts,
+    fe2o3_012_converged_read_ref_data,
+    fe2o3_012_converged_parameter_space_x,
 ):
-    calculator = fe2o3_012_converged_tensor_calculator
+    slab, rpars = fe2o3_012_converged_state_after_init
+    ref_calc_params, ref_calc_result = fe2o3_012_converged_read_ref_data
+    calculator = TensorLEEDCalculator(
+        ref_calc_params,
+        ref_calc_result,
+        fe2o3_012_converged_phaseshifts,
+        slab,
+        rpars,
+        recalculate_ref_t_matrices=False,
+    )
     calculator.set_parameter_space(fe2o3_012_converged_parameter_space_x)
     return calculator
 
