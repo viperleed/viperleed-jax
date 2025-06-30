@@ -169,7 +169,7 @@ def _calculate_dynamic_propagator(
     )
 
 
-@partial(jax.jit, static_argnames=['l_max', 'batch_atoms', 'batch_energies'])
+@partial(jax.jit, static_argnames=['l_max', 'batch_atoms', 'batch_energies', 'use_symmetry'])
 def calculate_propagators(
     propagtor_context,
     displacements,
