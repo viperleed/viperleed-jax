@@ -30,8 +30,8 @@ class Batch:  # TODO: could be a dataclass
     Batches are used to split the computation of delta-amplitudes into smaller
     chunks that can be processed in parallel.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     l_max : int
         The maximum value of l.
     energies : list or array-like
@@ -39,8 +39,8 @@ class Batch:  # TODO: could be a dataclass
     energy_indices : list or array-like
         The indices of the energies in the original dataset.
 
-    Methods:
-    --------
+    Methods
+    -------
     __len__():
         Returns the length of the batch.
     """

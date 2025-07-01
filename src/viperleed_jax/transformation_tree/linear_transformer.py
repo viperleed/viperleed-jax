@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from viperleed_jax.lib.math import EPS
 
 class Transformer(ABC):
     """Abstract base class for transformations."""

@@ -5,9 +5,9 @@ __created__ = '2024-02-27'
 
 import csv
 import datetime
+import logging
 import time
 from pathlib import Path
-import logging
 
 import jax
 import numpy as np
@@ -36,14 +36,16 @@ def benchmark_calculator(
     """
     Benchmarks the execution of two methods on the given calculator object.
 
-    Parameters:
+    Parameters
+    ----------
       calculator: an object with methods jit_R and jit_grad_R.
       free_params: parameters passed to the jit functions.
       n_repeats: number of times to repeat the timed execution.
       csv_file_path: (optional) path to a CSV file where benchmark results will
         be appended.
 
-    Returns:
+    Returns
+    -------
       A tuple of (r_fac_compile_time, r_fac_time, grad_compile_time, grad_time).
     """
     if n_repeats < 1:
@@ -122,11 +124,13 @@ def benchmark_calculator(
 def format_benchmark_results(results):
     """Format the benchmark results for display.
 
-    Parameters:
+    Parameters
+    ----------
       results: a tuple of (r_compile_time, r_time,
         grad_compile_time, grad_time).
 
-    Returns:
+    Returns
+    -------
       A formatted string.
     """
     r_fac_compile_time, r_fac_time, grad_compile_time, grad_time = results

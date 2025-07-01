@@ -5,8 +5,8 @@ __authors__ = (
 )
 __created__ = '2025-03-11'
 
-from abc import ABC, abstractmethod
 import time
+from abc import ABC, abstractmethod
 
 import numpy as np
 

@@ -4,13 +4,11 @@ __authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
 __created__ = '2024-01-03'
 
 from functools import partial
-
-import numpy as np
-
 from pathlib import Path
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 from jax import jit, vmap
 
 from viperleed_jax.dense_quantum_numbers import (

@@ -6,14 +6,17 @@ __created__ = '2024-08-30'
 
 import numpy as np
 
-from ..lib.math import EPS
 from .displacement_tree_layers import DisplacementTreeLayers
-from .linear_transformer import LinearMap, stack_transformers
-from .nodes import AtomicLinearNode, LinearConstraintNode, ImplicitLinearConstraintNode
+from .linear_transformer import LinearMap
+from .nodes import (
+    AtomicLinearNode,
+    ImplicitLinearConstraintNode,
+    LinearConstraintNode,
+)
+from .reduced_space import Zonotope
 from .tree import (
     DisplacementTree,
 )
-from .reduced_space import Zonotope
 
 
 class GeoLeafNode(AtomicLinearNode):
@@ -178,7 +181,6 @@ class GeoSymmetryConstraint(GeoConstraintNode):
 
 class GeoLinkedConstraint(GeoConstraintNode):
     """Class for explicit links of geometric parameters."""
-
 
     # TODO: this needs to be adapted if we allow partial directional linking
     # e.g. linking z coordinates of two atoms, but not x and y

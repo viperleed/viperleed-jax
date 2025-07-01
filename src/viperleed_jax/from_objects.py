@@ -8,10 +8,10 @@ from viperleed.calc import LOGGER as logger
 from viperleed.calc.files.phaseshifts import readPHASESHIFTS
 
 from viperleed_jax.atom_basis import AtomBasis
-from viperleed_jax.ref_calc_data import process_tensors
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.parameter_space import ParameterSpace
+from viperleed_jax.ref_calc_data import process_tensors
 from viperleed_jax.tensor_calculator import TensorLEEDCalculator
 from viperleed_jax.utils import check_jax_devices
 

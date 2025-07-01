@@ -26,7 +26,7 @@ from viperleed_jax.transformation_tree.linear_transformer import LinearMap
 
 
 @partial(
-    jax.tree_util.register_dataclass,   
+    jax.tree_util.register_dataclass,
     data_fields=[
         'kappa',
         'static_propagators',

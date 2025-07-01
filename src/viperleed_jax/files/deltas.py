@@ -76,7 +76,6 @@ def read_delta_file(filename, n_energies, read_header_only=False):
         n_vib and n_geo read in header_block_6;
         they are the number of geometric and vibrational displacements
     """
-
     header_block_1 = []
     header_block_2 = []
     e_kin_array = np.full(n_energies, fill_value=np.nan)
@@ -89,7 +88,7 @@ def read_delta_file(filename, n_energies, read_header_only=False):
 
     # Reading in the data of a file
     try:
-        with open(filename, mode='r') as file:
+        with open(filename) as file:
             content = file.readlines()
     except Exception as err:
         warnings.warn(f'Unable to read Delta file: {filename}')
@@ -281,7 +280,7 @@ def Transform(n_E, directory, filename_list):
 
 
     Returns
-    ----------
+    -------
     phi, theta:
     Angles of how the beam hits the sample
 
@@ -315,7 +314,6 @@ def Transform(n_E, directory, filename_list):
     filename_list:
     List of the filenames that contain the data
     """
-
     data_list_all = {}
     prev_file_constants = None
 
@@ -450,7 +448,7 @@ def read_block(reader, lines, shape, dtype=np.float64):
     llist = []
     len_lim = np.prod(shape)
     for line in lines:
-        llist.extend((v for v in reader.read(line) if v is not None))
+        llist.extend(v for v in reader.read(line) if v is not None)
         if len(llist) >= len_lim:
             break
     return np.array(llist, dtype=dtype).reshape(shape)

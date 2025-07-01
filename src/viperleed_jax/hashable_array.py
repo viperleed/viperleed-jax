@@ -6,10 +6,8 @@ This speeds up the computation of functions that use these arrays as arguments.
 Adapted from https://github.com/google/jax/issues/4572#issuecomment-709809897
 """
 
-from functools import partial
 
 import jax.numpy as jnp
-from jax import jit
 
 
 def simple_sum_hash(x):

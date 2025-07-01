@@ -9,7 +9,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-
 MAXIMUM_LMAX = 18
 
 # load precalculated dense quantum numbers

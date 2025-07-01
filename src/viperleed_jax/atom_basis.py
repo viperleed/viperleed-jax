@@ -6,7 +6,6 @@ __created__ = '2024-10-14'
 from collections import namedtuple
 
 import numpy as np
-
 from viperleed.calc.files.new_displacements.tokens.target import TargetToken
 
 SiteEl = namedtuple('SiteEl', ['site', 'element'])

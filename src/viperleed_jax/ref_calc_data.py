@@ -3,13 +3,13 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-04-29'
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import partial
 
 import jax
-from jax import numpy as jnp
 import numpy as np
 import tqdm
+from jax import numpy as jnp
 
 from viperleed_jax import atomic_units
 from viperleed_jax.constants import HARTREE
@@ -170,7 +170,7 @@ def process_tensors(tensors, fix_lmax=False):
             ] * len(energies)
     else:
         lmax = dynamic_lmax
-    
+
 
     calc_params = RefCalcParams(
         energies=energies,  # in Hartree

@@ -5,9 +5,6 @@ __created__ = '2024-09-02'
 
 import numpy as np
 from viperleed.calc.classes.perturbation_mode import PerturbationMode
-from viperleed.calc.files.new_displacements.reader import (
-    DISPLACEMENTS_FILE_SECTION,
-)
 
 from viperleed_jax.transformation_tree import (
     geo_parameters,
@@ -19,8 +16,6 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
 
-
-from viperleed_jax.transformation_tree.linear_transformer import stack_transformers
 
 class ParameterSpace:
     def __init__(self, atom_basis, rpars):
@@ -174,7 +169,8 @@ class ParameterSpace:
         parameters by summing up the number of symmetry constrained
         parameters from different parameter subtrees.
 
-        Returns:
+        Returns
+        -------
             int: The total number of symmetry constrained parameters.
         """
         return sum(
@@ -188,7 +184,8 @@ class ParameterSpace:
         This method calculates the sum of the number of base parameters from
         different parameter subtrees.
 
-        Returns:
+        Returns
+        -------
             int: The total number of base parameters.
         """
         return sum(self._free_params_up_to_layer(DisplacementTreeLayers.Base))

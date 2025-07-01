@@ -9,6 +9,7 @@ __license__ = 'GPLv3+'
 
 import numpy as np
 
+
 def closest_to_identity(matrices):
     """
     Select the matrix from a set that is closest to the identity matrix.

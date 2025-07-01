@@ -5,7 +5,6 @@ __created__ = '2024-09-09'
 
 import numpy as np
 
-from ..lib.math import EPS
 from .displacement_tree_layers import DisplacementTreeLayers
 from .linear_transformer import AffineTransformer, LinearMap
 from .nodes import (
@@ -17,6 +16,7 @@ from .reduced_space import Zonotope
 from .tree import (
     DisplacementTree,
 )
+
 
 class VibLeafNode(AtomicLinearNode):
     """Represents a leaf node with vibrational parameters."""

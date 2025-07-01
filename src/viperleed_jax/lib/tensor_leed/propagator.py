@@ -232,8 +232,7 @@ def calculate_propagators(
 
             return combined
 
-        else:
-            return dyn
+        return dyn
 
     # Process each energy individually.
     # Each process_energy returns (atom_basis, lm, m); mapping over energies

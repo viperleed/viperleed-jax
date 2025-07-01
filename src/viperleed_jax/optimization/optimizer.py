@@ -44,6 +44,7 @@ class Optimizer(ABC):
     ----------
         fun: Objective function
     """
+
     use_early_stopper = False
 
     def __init__(self, fun):

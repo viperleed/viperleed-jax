@@ -3,7 +3,9 @@
 import numpy as np
 
 from viperleed_jax.lib.math import EPS
-from viperleed_jax.transformation_tree.linear_transformer import AffineTransformer
+from viperleed_jax.transformation_tree.linear_transformer import (
+    AffineTransformer,
+)
 
 
 def apply_affine_to_subspace(

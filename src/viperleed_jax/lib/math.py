@@ -7,9 +7,9 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 from jax.scipy.special import sph_harm
 from spbessax import functions
-import numpy as np
 
 from viperleed_jax.dense_quantum_numbers import DENSE_L, DENSE_M, MAXIMUM_LMAX
 

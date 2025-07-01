@@ -12,7 +12,6 @@ import numpy as np
 from anytree import Node
 from anytree.walker import Walker
 
-from viperleed_jax.lib.math import EPS
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
@@ -22,11 +21,7 @@ from viperleed_jax.transformation_tree.errors import (
 )
 from viperleed_jax.transformation_tree.linear_transformer import (
     AffineTransformer,
-    LinearMap,
     stack_transformers,
-)
-from viperleed_jax.transformation_tree.reduced_space import (
-    orthonormalize_subspace,
 )
 
 
