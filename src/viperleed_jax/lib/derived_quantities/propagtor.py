@@ -94,6 +94,7 @@ class Propagators(LinearPropagatedQuantity):
 
     @property
     def reference_transformers(self):
+        """Return a list of transformers for the reference leaves."""
         return [
             self.tree.root.transformer_to_descendent(leaf)
             for leaf in self.dynamic_reference_nodes
@@ -104,24 +105,13 @@ class Propagators(LinearPropagatedQuantity):
         self.tree = self.parameter_space.geo_tree
 
     @property
-    def n_dynamic_propagators(self):
-        return self.n_dynamic_values
-
-    @property
-    def n_static_propagators(self):
-        return self.n_static_values
-
-    @property
-    def propagator_map(self):
-        return self.static_dynamic_map
-
-    @property
     def is_dynamic_propagator(self):
-        return np.array([val == 'dynamic' for (val, id) in self.propagator_map])
+        return np.array([val == 'dynamic' for (val, id)
+                         in self.static_dynamic_map])
 
     @property
     def propagator_id(self):
-        return np.array([id for (val, id) in self.propagator_map])
+        return np.array([id for (val, id) in self.static_dynamic_map])
 
     @property
     def static_propagator_inputs(self):
@@ -135,8 +125,10 @@ class Propagators(LinearPropagatedQuantity):
 
     @property
     def leaf_plane_symmetry_operations(self):
-        """Return the in-plane symmetry operations for each leaf in respect to the
-        reference displacement (the one for which the propagator is calculated).
+        """Return the in-plane symmetry operations for each leaf.
+
+        Operations are given with respect to the reference displacement (i.e.
+        the one for which the propagator is calculated).
         """
         return tuple(
             sym_op.weights[1:, 1:]
@@ -156,7 +148,6 @@ class Propagators(LinearPropagatedQuantity):
 
     def __call__(self, geo_params, energy_ids):
         """Calculate propagators."""
-
         if self.use_symmetry:
             displacements_angstrom = jnp.stack(
                 [trafo(geo_params) for trafo in self.reference_transformers]
@@ -228,7 +219,7 @@ class Propagators(LinearPropagatedQuantity):
         )
         # The result has shape (num_energies, num_displacements, ...).
         # Use einsum to swap axes so that the final shape is
-        # (num_displacements, num_energies, ...), matching the original ordering.
+        # (num_displacements, num_energies, ...), matching the original ordering
         return jnp.einsum(
             'ed...->de...', static_propagators
         )
