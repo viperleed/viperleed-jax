@@ -127,13 +127,6 @@ class ParameterSpace:
         return self.geo_tree.dynamic_displacements_transformers()
 
     @property
-    def dynamic_t_matrix_transformers(self):
-        return [
-            self.vib_tree.root.transformer_to_descendent(node)
-            for node in self.vib_tree.vibration_functional.dynamic_reference_nodes
-        ]
-
-    @property
     def v0r_transformer(self):
         return self.meta_tree.collapsed_transformer
 
@@ -306,51 +299,5 @@ class ParameterSpace:
             geo_params = free_params[i2:i3]
             occ_params = free_params[i3:]
             return v0r_params, vib_params, geo_params, occ_params
-
-        return compute
-
-    # TODO: rename - these are reference scatterer displacements and
-    # vibrational amplitudes, not the ones from the reference calculation.
-    def reference_displacements(self, n_batch_atoms):
-        """Return a function that computes displacements for ref. propagators.
-
-        Parameters
-        ----------
-        n_batch_atoms: int
-            Batch size for lax.map.
-
-        Returns
-        -------
-        fn: Callable
-            A function geo_free_params -> displacements.
-        """
-
-        def compute(geo_free_params):
-            return [
-                trafo(geo_free_params)
-                for trafo in self.dynamic_displacements_transformers
-            ]
-
-        return compute
-
-    def reference_vib_amps(self, n_batch_atoms):
-        """Return a function that computes vibrational amplitudes for t-matrices.
-
-        Parameters
-        ----------
-        n_batch_atoms: int
-            Batch size for lax.map.
-
-        Returns
-        -------
-        fn: Callable
-            A function vib_free_params -> vib_amps.
-        """
-
-        def compute(vib_free_params):
-            return [
-                trafo(vib_free_params)
-                for trafo in self.dynamic_t_matrix_transformers
-            ]
 
         return compute
