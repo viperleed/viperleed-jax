@@ -86,9 +86,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
 
         # check that all children are in the same linklist
         linklist = children[0].atom.atom.linklist
-        if not all(
-            child.atom.atom in linklist for child in children
-        ):
+        if not all(child.atom.atom in linklist for child in children):
             raise ValueError(
                 'Symmetry linked atoms must be in the same ' 'linklist'
             )
@@ -104,9 +102,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
         freedir = children[0].atom.atom.freedir
         if isinstance(freedir, int) and freedir == 0:
             # check that all children have the same freedir
-            if not all(
-                child.atom.atom.freedir == 0 for child in children
-            ):
+            if not all(child.atom.atom.freedir == 0 for child in children):
                 raise ValueError(
                     'All symmetry linked atoms must have the same '
                     'freedir attribute.'
@@ -121,9 +117,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
 
         elif isinstance(freedir, int) and freedir == 1:
             # check that all children have the same freedir
-            if not all(
-                child.atom.atom.freedir == 1 for child in children
-            ):
+            if not all(child.atom.atom.freedir == 1 for child in children):
                 raise ValueError(
                     'All symmetry linked atoms must have the same '
                     'freedir attribute.'
@@ -141,8 +135,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
         elif freedir.shape == (2,):
             # check that all children have the same freedir
             if not all(
-                child.atom.atom.freedir.shape == (2,)
-                for child in children
+                child.atom.atom.freedir.shape == (2,) for child in children
             ):
                 raise ValueError(
                     'All symmetry linked atoms must have the same '
@@ -217,10 +210,7 @@ class GeoTree(DisplacementTree):
 
     def _initialize_tree(self):
         # create leaf nodes
-        geo_leaf_nodes = [
-            GeoLeafNode(atom)
-            for atom in self.atom_basis
-        ]
+        geo_leaf_nodes = [GeoLeafNode(atom) for atom in self.atom_basis]
         self.nodes.extend(geo_leaf_nodes)
 
         # apply symmetry constraints
@@ -231,16 +221,13 @@ class GeoTree(DisplacementTree):
 
         for link in self.atom_basis.symmetry_links:
             # put all linked atoms in the same symmetry group
-            nodes_to_link = [
-                node for node in self.leaves if node.atom in link
-            ]
+            nodes_to_link = [node for node in self.leaves if node.atom in link]
             if nodes_to_link:
                 self.nodes.append(GeoSymmetryConstraint(children=nodes_to_link))
 
         unlinked_site_el_nodes = [node for node in self.leaves if node.is_root]
         for node in unlinked_site_el_nodes:
             self.nodes.append(GeoSymmetryConstraint(children=[node]))
-
 
     def apply_bounds(self, geo_delta_line):
         super().apply_bounds(geo_delta_line)
@@ -253,10 +240,12 @@ class GeoTree(DisplacementTree):
         # get vector and range information from the GEO_DELTA line
         n_vectors = len(geo_delta_line.direction.vectors_zxy)
 
-        ranges = np.vstack([
-            np.full(n_vectors, geo_delta_line.range.start),
-            np.full(n_vectors, geo_delta_line.range.stop)
-        ])
+        ranges = np.vstack(
+            [
+                np.full(n_vectors, geo_delta_line.range.start),
+                np.full(n_vectors, geo_delta_line.range.stop),
+            ]
+        )
 
         leaf_range_zonotope = Zonotope(
             basis=geo_delta_line.direction.vectors_zxy,
@@ -265,7 +254,9 @@ class GeoTree(DisplacementTree):
         )
 
         for root, primary_leaf in target_roots_and_primary_leaves.items():
-            root_to_leaf_transformer = root.transformer_to_descendent(primary_leaf)
+            root_to_leaf_transformer = root.transformer_to_descendent(
+                primary_leaf
+            )
             leaf_to_root_transformer = root_to_leaf_transformer.pseudo_inverse()
             root_range_zonotope = leaf_range_zonotope.apply_affine(
                 leaf_to_root_transformer
@@ -280,4 +271,3 @@ class GeoTree(DisplacementTree):
     def _post_process_values(self, raw_values):
         # reshape to (n_atoms, 3)
         return super()._post_process_values(raw_values).reshape(-1, 3)
-

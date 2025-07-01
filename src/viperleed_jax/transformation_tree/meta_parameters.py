@@ -23,6 +23,7 @@ from .tree import (
 # In future, this could be extended to try and vary other parameters
 # (e.g. incidence angle, etc.).
 
+
 class V0rLeafNode(LinearLeafNode):
     """Leaf node for the V0r meta parameter."""
 
@@ -56,7 +57,6 @@ class MetaTree(LinearTree):
         )
         self.nodes.append(free_constraint_node)
 
-
     def apply_bounds(self, rpars):
         self._bound_V0r_from_rpars(rpars)
 
@@ -80,9 +80,7 @@ class MetaTree(LinearTree):
         """Read and apply the bounds of V0r from Rparams."""
         lower, upper = rpars.IV_SHIFT_RANGE.start, rpars.IV_SHIFT_RANGE.stop
 
-        v0r_range = np.array(
-            [[lower, upper]]
-        ).T
+        v0r_range = np.array([[lower, upper]]).T
 
         v0r_range_zonotope = Zonotope(
             basis=np.array([[1.0]]),  # 1D zonotope

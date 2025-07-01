@@ -30,10 +30,8 @@ class NormalizedOccupations(DerivedQuantitySingleTree):
     def __call__(self, params):
         """Calculate normalized occupations."""
         non_normalized_occupations = self.tree(params)
-        return normalize_occ_vector(
-            non_normalized_occupations,
-            self.atom_ids
-        )
+        return normalize_occ_vector(non_normalized_occupations, self.atom_ids)
+
 
 class AtomicUnitsDisplacements(DerivedQuantitySingleTree):
     """Derived quantity for atomic units displacements."""

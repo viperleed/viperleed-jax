@@ -19,11 +19,9 @@ from viperleed_jax.from_objects import (
 )
 
 
-def calculator_from_paths(inputs_path,
-                          tensor_path,
-                          displacements_path,
-                          displacements_id=0,
-                          **kwargs):
+def calculator_from_paths(
+    inputs_path, tensor_path, displacements_path, displacements_id=0, **kwargs
+):
     """Create a TensorLEEDCalculator from input paths.
 
     This function initializes the ViPErLEED calculation from the given input

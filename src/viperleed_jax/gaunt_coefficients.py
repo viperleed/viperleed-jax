@@ -218,7 +218,7 @@ CSUM_COEFFS = jnp.array(
         ** (
             _DENSE_L_2D + _DENSE_LP_2D - lpp
         )  # AI: I found we need this factor, but I still don't understand
-           # where it comes from
+        # where it comes from
         for lpp in range(MAXIMUM_LMAX * 2 + 1)
     ]
 )

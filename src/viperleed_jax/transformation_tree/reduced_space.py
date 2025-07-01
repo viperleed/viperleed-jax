@@ -1,5 +1,3 @@
-
-
 import numpy as np
 
 from viperleed_jax.lib.math import EPS
@@ -36,14 +34,15 @@ def apply_affine_to_subspace(
     """
     D, n = basis_vectors.shape
     if coordinate_ranges.shape != (2, n):
-        msg = f'coordinate_ranges must be (2,{n}), got {coordinate_ranges.shape}'
+        msg = (
+            f'coordinate_ranges must be (2,{n}), got {coordinate_ranges.shape}'
+        )
         raise ValueError(msg)
     lows, highs = coordinate_ranges
 
     W, b = transform.weights, transform.biases
     # project basis correctly:
     Bm = W @ basis_vectors  # -> (M, n)
-
 
     # compute new ranges for each coeff
     # (using brute-force corners if n small, but closed form here)
@@ -60,7 +59,7 @@ def apply_affine_to_subspace(
         high_pt = vec * highs[i] + b
         all_edges = np.vstack([low_pt, high_pt])
         new_mins[i] = all_edges.min()
-        new_maxs[i] = all_edges.max() # since lows[i] ≤ highs[i]
+        new_maxs[i] = all_edges.max()  # since lows[i] ≤ highs[i]
     new_ranges = np.vstack([new_mins, new_maxs])
 
     return Bm, new_ranges, b
@@ -135,7 +134,10 @@ class Zonotope:
         if basis_arr.ndim != 2:
             raise ValueError('basis must be shape (D,n)')
         # detect orientation: if ranges matches rows of basis, transpose
-        if ranges_arr.shape[1] == basis_arr.shape[0] and ranges_arr.shape[1] != basis_arr.shape[1]:
+        if (
+            ranges_arr.shape[1] == basis_arr.shape[0]
+            and ranges_arr.shape[1] != basis_arr.shape[1]
+        ):
             basis_arr = basis_arr.T
         # now basis_arr is (D, n)
         D, n = basis_arr.shape
@@ -153,7 +155,7 @@ class Zonotope:
 
         non_zero_range_mask = abs(ranges_arr[0] - ranges_arr[1]) > EPS
 
-        self.basis  = basis_arr[:, non_zero_range_mask]
+        self.basis = basis_arr[:, non_zero_range_mask]
         self.ranges = ranges_arr[:, non_zero_range_mask]
         self.offset = offset
 
@@ -165,9 +167,7 @@ class Zonotope:
         # the sub‐function already returns the new offset b_new
         return Zonotope(Bm, new_ranges, offset=b_new)
 
-    def normalize(
-        self, output_ranges: np.ndarray = None
-    ) -> AffineTransformer:
+    def normalize(self, output_ranges: np.ndarray = None) -> AffineTransformer:
         """
         Collapse and orthonormalize the zonotope’s affine image.
         Returns an AffineTransformer T such that

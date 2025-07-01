@@ -168,7 +168,10 @@ def _calculate_dynamic_propagator(
     )
 
 
-@partial(jax.jit, static_argnames=['l_max', 'batch_atoms', 'batch_energies', 'use_symmetry'])
+@partial(
+    jax.jit,
+    static_argnames=['l_max', 'batch_atoms', 'batch_energies', 'use_symmetry'],
+)
 def calculate_propagators(
     propagtor_context,
     displacements,
@@ -183,10 +186,7 @@ def calculate_propagators(
 
     # Precompute the spherical harmonics components for each displacement.
     displacement_components = jnp.array(
-        [
-            spherical_harmonics_components(l_max, disp)
-            for disp in displacements
-        ]
+        [spherical_harmonics_components(l_max, disp) for disp in displacements]
     )
 
     def process_energy(e_idx):
@@ -204,7 +204,6 @@ def calculate_propagators(
             dyn = jnp.zeros_like(propagtor_context.static_propagators[0])
 
         if use_symmetry:
-
             # --- Static propagators ---
             if len(propagtor_context.static_propagators) == 0:
                 stat = jnp.zeros_like(dyn)
@@ -224,7 +223,9 @@ def calculate_propagators(
             # combined now has shape (atom_basis, lm, m)
 
             # --- Apply selective transposition ---
-            trans_int = propagtor_context.propagator_transpose_int[:, None, None]
+            trans_int = propagtor_context.propagator_transpose_int[
+                :, None, None
+            ]
             return (1 - trans_int) * combined + trans_int * jnp.transpose(
                 combined, (0, 2, 1)
             )

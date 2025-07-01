@@ -210,9 +210,7 @@ class LinearConstraintNode(LinearTreeNode):
                 f'Number of children ({len(_children)}) must match '
                 f'number of transformers ({len(transformers)}).'
             )
-            raise InvalidNodeError(
-                msg
-            )
+            raise InvalidNodeError(msg)
 
         # if everything is fine, set the transformers
         for child, transformer in zip(_children, transformers):
@@ -221,7 +219,6 @@ class LinearConstraintNode(LinearTreeNode):
         # if that went well, set the children
         for child in _children:
             child.parent = self
-
 
     def transformer_to_descendent(self, node):
         """Return the transformer from this node to a descendent."""
@@ -298,9 +295,7 @@ class LinearOffsetNode(LinearConstraintNode):
 
         # create affine transformer for the offset
         offset_trafo = AffineTransformer(
-            weights = np.eye(child.dof),
-            biases = offset,
-            out_reshape=(child.dof,)
+            weights=np.eye(child.dof), biases=offset, out_reshape=(child.dof,)
         )
         # set the transformer for the child
         super().__init__(
@@ -336,15 +331,17 @@ class ImplicitLinearConstraintNode(LinearConstraintNode):
     """
 
     def __init__(self, child, name, child_zonotope):
-
         # can only have one child
         if not isinstance(child, LinearConstraintNode):
             raise TypeError('Child must be a linear node.')
 
-        if any(isinstance(a, ImplicitLinearConstraintNode)
-               for a in [child, *child.ancestors]):
-            raise ValueError('Only one implicit constraint node is allowed '
-                             'per tree.')
+        if any(
+            isinstance(a, ImplicitLinearConstraintNode)
+            for a in [child, *child.ancestors]
+        ):
+            raise ValueError(
+                'Only one implicit constraint node is allowed ' 'per tree.'
+            )
 
         normalization_transformer = child_zonotope.normalize()
 
@@ -361,9 +358,7 @@ class ImplicitLinearConstraintNode(LinearConstraintNode):
                 f'Implicit constraint dof ({implicit_dof}) cannot be larger '
                 f'than child dof ({child.dof}).'
             )
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
 
         super().__init__(
             dof=implicit_dof,

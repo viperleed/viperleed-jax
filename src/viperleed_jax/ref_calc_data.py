@@ -27,9 +27,16 @@ from viperleed_jax.dense_quantum_numbers import (
     jax.tree_util.register_dataclass,
     # Mark all fields as meta fields
     data_fields=[],
-    meta_fields=['energies', 'v0i', 'v0r',
-                 'kx_in', 'ky_in', 'lmax',
-                 'n_tensors', 'n_beams']
+    meta_fields=[
+        'energies',
+        'v0i',
+        'v0r',
+        'kx_in',
+        'ky_in',
+        'lmax',
+        'n_tensors',
+        'n_beams',
+    ],
 )
 @dataclass
 class RefCalcParams:
@@ -86,6 +93,7 @@ class RefCalcParams:
     def max_lmax(self):
         return max(self.lmax)
 
+
 @partial(
     jax.tree_util.register_dataclass,
     data_fields=[
@@ -93,9 +101,8 @@ class RefCalcParams:
         't_matrices',
         'in_amps',
         'out_amps',
-        ],
-    meta_fields=[
     ],
+    meta_fields=[],
 )
 @dataclass
 class RefCalcOutput:
@@ -171,7 +178,6 @@ def process_tensors(tensors, fix_lmax=False):
     else:
         lmax = dynamic_lmax
 
-
     calc_params = RefCalcParams(
         energies=energies,  # in Hartree
         v0r=np.asarray(tensors[0].v0r),  # in Hartree
@@ -190,7 +196,7 @@ def process_tensors(tensors, fix_lmax=False):
         shape=(
             calc_params.n_energies,
             calc_params.n_tensors,
-            calc_params.max_lmax + 1
+            calc_params.max_lmax + 1,
         ),
         dtype=np.complex128,
         fill_value=np.nan,

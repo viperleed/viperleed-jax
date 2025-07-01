@@ -108,7 +108,8 @@ class ParameterSpace:
                 self.occ_tree.apply_explicit_constraint(constraint_line)
             elif constraint_line.type.type is PerturbationMode.DOM:
                 raise NotImplementedError(
-                    'Domain constraints are not supported yet.')
+                    'Domain constraints are not supported yet.'
+                )
             else:
                 msg = f'Unknown constraint type: {constraint_line.type}'
                 raise ValueError(msg)
@@ -207,7 +208,6 @@ class ParameterSpace:
             self.is_dynamic_t_matrix, self.is_dynamic_propagator
         )
 
-
     @property
     def dynamic_scatterer_id(self):
         return np.arange(self.n_atom_basis)[self.is_dynamic_scatterer]
@@ -234,9 +234,9 @@ class ParameterSpace:
 
     @property
     def n_param_split(self):
-        return tuple(sum(root.dof for root in tree.roots)
-                     for tree in self.trees)
-
+        return tuple(
+            sum(root.dof for root in tree.roots) for tree in self.trees
+        )
 
     @property
     def info(self):
@@ -354,4 +354,3 @@ class ParameterSpace:
             ]
 
         return compute
-

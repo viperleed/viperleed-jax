@@ -26,7 +26,9 @@ class DerivedQuantity(ABC):
     def __init__(self, parameter_space):
         """Initialize the derived quantity."""
         if not isinstance(parameter_space, ParameterSpace):
-            raise TypeError('parameter_space must be an instance of ParameterSpace')
+            raise TypeError(
+                'parameter_space must be an instance of ParameterSpace'
+            )
         if not all(tree.finalized for tree in parameter_space.trees):
             raise ValueError(
                 'All trees in the parameter space must be finalized before '
@@ -50,6 +52,7 @@ class DerivedQuantitySingleTree(DerivedQuantity):
     @abstractmethod
     def _set_tree(self):
         """Set the tree for the derived quantity."""
+
 
 class PropagatedQuantity(DerivedQuantitySingleTree):
     """Base class for all transformable properties based on one tree.
@@ -95,7 +98,13 @@ class PropagatedQuantity(DerivedQuantitySingleTree):
         transform the values of the reference nodes to the values for each leaf.
     """
 
-    def __init__(self, parameter_space, name, transformer_class=None, node_requirement=None):
+    def __init__(
+        self,
+        parameter_space,
+        name,
+        transformer_class=None,
+        node_requirement=None,
+    ):
         super().__init__(parameter_space)
         self.name = name
         self.transformer_class = transformer_class
@@ -105,7 +114,6 @@ class PropagatedQuantity(DerivedQuantitySingleTree):
             else lambda node: True
         )
         self._analyze_tree()
-
 
     @property
     def n_independent_values(self):
@@ -183,7 +191,9 @@ class PropagatedQuantity(DerivedQuantitySingleTree):
                     ),
                 )
             )
-            for leaf, dynamic in zip(self.tree.leaves, self.tree.leaf_is_dynamic)
+            for leaf, dynamic in zip(
+                self.tree.leaves, self.tree.leaf_is_dynamic
+            )
         ]
 
     def _can_propagate_up(self, node):
@@ -214,13 +224,19 @@ class LinearPropagatedQuantity(PropagatedQuantity):
     """Base class for transformables on linear transformation trees."""
 
     def __init__(
-        self, parameter_space, name, transformer_class=LinearMap, node_requirement=None
+        self,
+        parameter_space,
+        name,
+        transformer_class=LinearMap,
+        node_requirement=None,
     ):
         self.walker = Walker()
         if not issubclass(transformer_class, LinearMap):
             msg = 'The transformer class must be a subclass of LinearMap.'
             raise TypeError(msg)
-        super().__init__(parameter_space, name, transformer_class, node_requirement)
+        super().__init__(
+            parameter_space, name, transformer_class, node_requirement
+        )
 
     def _transformation_from_to(self, source, target):
         if not source.is_leaf or not target.is_leaf:

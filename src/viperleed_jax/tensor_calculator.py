@@ -288,7 +288,6 @@ class TensorLEEDCalculator:
             f'{self.calc_propagators.n_dynamic_values} propagator(s).'
         )
 
-
     def _setup_derived_quantities(self):
         """Set up derived quantities for the calculator."""
         self.check_parameter_space_set()
@@ -298,8 +297,8 @@ class TensorLEEDCalculator:
 
         # normalized occupations (i.e. chemical weights)
         self.calc_normalized_occupations = NormalizedOccupations(
-            self.parameter_space,
-            self.atom_ids.tolist())
+            self.parameter_space, self.atom_ids.tolist()
+        )
 
         # atomic t-matrices (will calculate static t-matrices during init)
         self.calc_t_matrices = TMatrix(
@@ -321,17 +320,20 @@ class TensorLEEDCalculator:
             use_symmetry=self.use_symmetry,
         )
 
-
     def _calculate_reference_t_matrices(self, ref_vib_amps, site_elements):
         ref_t_matrices = []
         for site_el, vib_amp in zip(site_elements, ref_vib_amps):
-            batched_t_matrix = jax.vmap(vib_dependent_tmatrix, in_axes=(None, 0, 0, None))
-            ref_t_matrices.append(batched_t_matrix(
-                self.max_l_max,
-                self.phaseshifts[site_el][:, : self.max_l_max + 1],
-                self.energies,
-                vib_amp,
-            ))
+            batched_t_matrix = jax.vmap(
+                vib_dependent_tmatrix, in_axes=(None, 0, 0, None)
+            )
+            ref_t_matrices.append(
+                batched_t_matrix(
+                    self.max_l_max,
+                    self.phaseshifts[site_el][:, : self.max_l_max + 1],
+                    self.energies,
+                    vib_amp,
+                )
+            )
         ref_t_matrices = jnp.array(ref_t_matrices)
         return jnp.einsum('ael->eal', ref_t_matrices)
 
@@ -360,7 +362,6 @@ class TensorLEEDCalculator:
             1 / out_k_perp_inside,
             1 / (2 * (self.unit_cell_area)),
         )
-
 
     def _eval_wave_vectors(self):
         e_kin = self.energies
@@ -423,8 +424,8 @@ class TensorLEEDCalculator:
         self.check_parameter_space_set()
         _free_params = jnp.asarray(free_params)
         # split free parameters
-        (_, geo_params, vib_params, occ_params) = (
-            self._split_free_params(_free_params)
+        (_, geo_params, vib_params, occ_params) = self._split_free_params(
+            _free_params
         )
 
         # chemical weights
@@ -702,6 +703,7 @@ class TensorLEEDCalculator:
             poscar.write(slab, 'POSCAR_TL_optimized', comments='all')
             # write VIBROCC
             writeVIBROCC(slab, rpars, 'VIBROCC_TL_optimized')
+
 
 def calculate_delta_t_matrix(
     propagator, t_matrix_vib, t_matrix_ref, chem_weight

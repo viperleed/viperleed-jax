@@ -1,8 +1,6 @@
 """Module matrix from viperleed_jax.lib."""
 
-__authors__ = (
-    'Alexander M. Imre (@amimre)',
-)
+__authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2025-06-10'
 __license__ = 'GPLv3+'
 

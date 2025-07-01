@@ -55,11 +55,11 @@ class CMAESResult(OptimizationResult):
 
     @property
     def _truncated_R_history(self):
-        return self.history.R_history[-self.convergence_generations:]
+        return self.history.R_history[-self.convergence_generations :]
 
     @property
     def _truncated_x_history(self):
-        return self.history.x_history[-self.convergence_generations:]
+        return self.history.x_history[-self.convergence_generations :]
 
     @property
     def best_R(self):
@@ -67,8 +67,10 @@ class CMAESResult(OptimizationResult):
 
     @property
     def best_x(self):
-        min_idx = np.unravel_index(np.argmin(self._truncated_R_history),
-                                   self._truncated_R_history.shape)
+        min_idx = np.unravel_index(
+            np.argmin(self._truncated_R_history),
+            self._truncated_R_history.shape,
+        )
         return self._truncated_x_history[min_idx]
 
     @property

@@ -173,24 +173,23 @@ class AffineTransformer(Transformer):
         return AffineTransformer(new_weights, new_biases, (_bool_mask.sum(),))
 
     def pseudo_inverse(self):
-            """Calculate the pseudo-inverse of the affine transformation."""
-            if self.in_dim == 0:
-                raise ValueError('Cannot calculate pseudo-inverse of zero map')
+        """Calculate the pseudo-inverse of the affine transformation."""
+        if self.in_dim == 0:
+            raise ValueError('Cannot calculate pseudo-inverse of zero map')
 
-            # f(x) = Ax + b
-            # The pseudo-inverse is given by A^+ = (A^T A)^-1 A^T
-            # and b^+ = -A^+ b
+        # f(x) = Ax + b
+        # The pseudo-inverse is given by A^+ = (A^T A)^-1 A^T
+        # and b^+ = -A^+ b
 
-            pseudo_inverse_weights = np.linalg.pinv(self.weights)
-            pseudo_inverse_biases = -pseudo_inverse_weights @ self.biases
-            if self.out_reshape is not None:
-                pseudo_inverse_biases = pseudo_inverse_biases.reshape(
-                    self.out_reshape
-                )
-            return AffineTransformer(
-                pseudo_inverse_weights, pseudo_inverse_biases, self.out_reshape
+        pseudo_inverse_weights = np.linalg.pinv(self.weights)
+        pseudo_inverse_biases = -pseudo_inverse_weights @ self.biases
+        if self.out_reshape is not None:
+            pseudo_inverse_biases = pseudo_inverse_biases.reshape(
+                self.out_reshape
             )
-
+        return AffineTransformer(
+            pseudo_inverse_weights, pseudo_inverse_biases, self.out_reshape
+        )
 
     def __repr__(self):
         """Return a string representation of the transformer."""
@@ -211,10 +210,13 @@ class AffineTransformer(Transformer):
         based on the weights, biases, and output reshape of the transformer.
         """
         return hash(
-            (tuple(self.weights.flatten()),
-             tuple(self.biases),
-             self.out_reshape)
+            (
+                tuple(self.weights.flatten()),
+                tuple(self.biases),
+                self.out_reshape,
+            )
         )
+
 
 class LinearMap(AffineTransformer):
     """A linear map is a AffineTransformer with biases set to zero."""

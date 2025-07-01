@@ -98,7 +98,7 @@ def setup_tl_calculator(
     n_beams = len(rpars.ivbeams)
     n_energies = len(
         np.arange(
-            rpars.THEO_ENERGIES.start,                                          # TODO: would be good to make this a property of the EnergyRange class
+            rpars.THEO_ENERGIES.start,  # TODO: would be good to make this a property of the EnergyRange class
             rpars.THEO_ENERGIES.stop + 0.01,
             rpars.THEO_ENERGIES.step,
         )

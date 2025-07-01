@@ -63,7 +63,9 @@ def _wave_vectors(ref_data, theta, phi, trar, beam_indices):
 @partial(jax.jit, static_argnames=['n_beams'])
 def intensity_prefactors(onset_height_change, n_beams, theta, wave_vectors):
     # from lib_intensity
-    (in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum) = wave_vectors
+    (in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum) = (
+        wave_vectors
+    )
 
     a = out_k_perp_vacuum
     c = in_k_vacuum * jnp.cos(theta)
@@ -76,9 +78,7 @@ def intensity_prefactors(onset_height_change, n_beams, theta, wave_vectors):
                 * onset_height_change
                 / BOHR
                 * (
-                    jnp.outer(
-                        in_k_perp_vacuum, jnp.ones(shape=(n_beams,))
-                    )
+                    jnp.outer(in_k_perp_vacuum, jnp.ones(shape=(n_beams,)))
                     + out_k_perp
                 )
             )

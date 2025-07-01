@@ -34,6 +34,7 @@ anytree.config.ASSERTIONS = True
 
 logger = logging.getLogger(__name__)
 
+
 class ConstructionOrder(IntEnum):
     """Enum for the construction order of transformation trees."""
 
@@ -43,6 +44,7 @@ class ConstructionOrder(IntEnum):
     BOUNDS = 3
     IMPLICIT_CONSTRAINT = 4
     ROOT = 5
+
 
 class TransformationTree(ABC):
     """Abstract base class for a transformation tree."""
@@ -66,14 +68,14 @@ class TransformationTree(ABC):
                 'are allowed.'
             )
         if order < self._current_construction_order:
-            msg = (f'Cannot apply {order.name} after '
-                   f'{self._current_construction_order.name}.')
+            msg = (
+                f'Cannot apply {order.name} after '
+                f'{self._current_construction_order.name}.'
+            )
             raise ValueError(msg)
         if order > self._current_construction_order:
             self._current_construction_order = order
-            logger.debug(
-                f'{self.name}: Construction order {order.name}.'
-            )
+            logger.debug(f'{self.name}: Construction order {order.name}.')
 
     @abstractmethod
     def apply_explicit_constraint(self):
@@ -159,9 +161,13 @@ class LinearTree(InvertibleTransformationTree):
             raise ValueError('No root nodes found in subtree.')
         for root in self.roots:
             all_ancestors = [root, *root.ancestors]
-            if not any(isinstance(node, ImplicitLinearConstraintNode)
-                       for node in all_ancestors):
-                msg = 'Implicit constraints have not been applied for all roots.'
+            if not any(
+                isinstance(node, ImplicitLinearConstraintNode)
+                for node in all_ancestors
+            ):
+                msg = (
+                    'Implicit constraints have not been applied for all roots.'
+                )
                 raise ValueError(msg)
 
         root_dof = sum(node.dof for node in self.roots)
@@ -264,8 +270,10 @@ class DisplacementTree(LinearTree):
         for root in self.roots:
             all_ancestors = [root, *root.ancestors]
             # check if the root has an implicit constraint
-            if any(isinstance(node, ImplicitLinearConstraintNode)
-                       for node in all_ancestors):
+            if any(
+                isinstance(node, ImplicitLinearConstraintNode)
+                for node in all_ancestors
+            ):
                 continue
 
             # if not, top it off with an implicit fixed constraint
@@ -346,9 +354,7 @@ class DisplacementTree(LinearTree):
         # if there is a direction do processing
         if offset_line.direction is not None:
             if len(offset_line.direction.vectors_zxy) != 1:
-                msg = (
-                    f'Cannot interpret offset for line "{offset_line}".'
-                )
+                msg = f'Cannot interpret offset for line "{offset_line}".'
                 raise ValueError(msg)
             vector = offset_line.direction.vectors_zxy[0]
             offset = np.array(vector) * offset
@@ -371,8 +377,10 @@ class DisplacementTree(LinearTree):
                 raise ValueError(msg)
 
             # check that offset is not yet defined
-            if any(isinstance(node, LinearOffsetNode)
-                   for node in [root, *root.ancestors]):
+            if any(
+                isinstance(node, LinearOffsetNode)
+                for node in [root, *root.ancestors]
+            ):
                 msg = (
                     f'Offset line "{offset_line}" is already defined for '
                     f'{root.name}.'
@@ -380,8 +388,9 @@ class DisplacementTree(LinearTree):
                 raise ValueError(msg)
 
             # get the transformation from the primary leaf to the root
-            inv_trafo = root.transformer_to_descendent(primary_leaf
-                                                       ).pseudo_inverse()
+            inv_trafo = root.transformer_to_descendent(
+                primary_leaf
+            ).pseudo_inverse()
             # get the offset in the root coordinates
             offset_at_root = inv_trafo(offset)
 
@@ -392,7 +401,6 @@ class DisplacementTree(LinearTree):
                 name=offset_line.raw_line,
             )
             self.nodes.append(offset_node)
-
 
     def apply_explicit_constraint(self, constraint_line):
         r"""Apply an explicit constraint to the tree.
@@ -407,7 +415,8 @@ class DisplacementTree(LinearTree):
 
         # resolve the reference (rhs of constraint) into a mask
         link_target_mask = self.atom_basis.selection_mask(
-            (constraint_line.link_target,))
+            (constraint_line.link_target,)
+        )
         # if multiple atoms are targeted, we need to select the first one
         link_target = self.leaves[link_target_mask][0]
         link_target_root = link_target.root
@@ -418,7 +427,9 @@ class DisplacementTree(LinearTree):
         # get the roots of the leaves to link
         roots_to_link = [leaf.root for leaf in leaves_to_link]
         # remove the link_target from the list of roots to link
-        roots_to_link = [root for root in roots_to_link if root != link_target_root]
+        roots_to_link = [
+            root for root in roots_to_link if root != link_target_root
+        ]
         # remove duplicates
         roots_to_link = list({root: None for root in roots_to_link}.keys())
 
@@ -461,7 +472,6 @@ class DisplacementTree(LinearTree):
 
         transformations = []
 
-
         # iterate over the roots to link and determine the transformations
         for root in roots_to_link:
             # get primary leaf of the root
@@ -476,7 +486,7 @@ class DisplacementTree(LinearTree):
         transformations = [LinearMap(np.eye(link_target.dof)), *transformations]
         children = [link_target_root, *roots_to_link]
 
-        constraint_node =  LinearConstraintNode(
+        constraint_node = LinearConstraintNode(
             dof=link_target.dof,
             name=constraint_line.raw_line,
             children=children,
@@ -544,6 +554,7 @@ def _map_transformation_from_leaf_to_root(
     T_dash = secondary_root.transformer_to_descendent(secondary_leaf)
     return T @ LinearMap(transformation) @ T_dash.pseudo_inverse()
 
+
 def _select_primary_leaf(root, leaves):
     root_leaves = [leaf for leaf in root.leaves if leaf in leaves]
     if not root_leaves:
@@ -551,8 +562,11 @@ def _select_primary_leaf(root, leaves):
         msg = f'None of the provided leaves matches {root}.'
         raise ValueError(msg)
 
-    primary_leaf_id = closest_to_identity([leaf.transformer.weights for leaf in root_leaves])
+    primary_leaf_id = closest_to_identity(
+        [leaf.transformer.weights for leaf in root_leaves]
+    )
     return root_leaves[primary_leaf_id]
+
 
 def _check_constraint_line_type(constraint_line, expected_perturbation_type):
     """Check if the constraint line is of the expected type."""

@@ -174,8 +174,8 @@ class SciPyOptimizerBase:
             f'\tmaxiter:\t{self.options["maxiter"]}\n'
         )
 
-class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
 
+class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
     jac_strategy = None
 
     def __init__(self, fun, bounds=None, cholesky=None, **kwargs):
@@ -268,7 +268,9 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
             method=self.method,
             tol=self.options['ftol'],
             jac=True if use_combined else _grad,
-            callback=EarlyStopper(ftol=self.options['ftol']) if self.use_early_stopper else None,
+            callback=EarlyStopper(ftol=self.options['ftol'])
+            if self.use_early_stopper
+            else None,
             bounds=bounds if self.use_bounds else None,
             options=self.options,
         )
@@ -319,13 +321,16 @@ class LBFGSBOptimizer(SciPyGradOptimizer):
         grad=None,
         fun_and_grad=None,
         bounds=None,
-        grad_damp_factor=0.1, # default values
+        grad_damp_factor=0.1,  # default values
         **kwargs,
     ):
         super().__init__(
-            fun=fun, grad=grad, fun_and_grad=fun_and_grad,
-            bounds=bounds, grad_damp_factor=grad_damp_factor,
-            **kwargs
+            fun=fun,
+            grad=grad,
+            fun_and_grad=fun_and_grad,
+            bounds=bounds,
+            grad_damp_factor=grad_damp_factor,
+            **kwargs,
         )
         self.bounds = bounds
         self.options['maxcor'] = 20
@@ -361,13 +366,16 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         grad=None,
         fun_and_grad=None,
         bounds=None,
-        grad_damp_factor=0.1, # default values
+        grad_damp_factor=0.1,  # default values
         **kwargs,
     ):
         super().__init__(
-            fun=fun, grad=grad, fun_and_grad=fun_and_grad,
-            bounds=bounds, grad_damp_factor=grad_damp_factor,
-            **kwargs
+            fun=fun,
+            grad=grad,
+            fun_and_grad=fun_and_grad,
+            bounds=bounds,
+            grad_damp_factor=grad_damp_factor,
+            **kwargs,
         )
         self.bounds = bounds
 
@@ -395,8 +403,15 @@ class CMAESOptimizer(NonGradOptimizer):
             function value of the last five generations.
     """
 
-    def __init__(self, fun, pop_size, n_generations, step_size=0.5, ftol=5e-3,
-                 convergence_gens=5):
+    def __init__(
+        self,
+        fun,
+        pop_size,
+        n_generations,
+        step_size=0.5,
+        ftol=5e-3,
+        convergence_gens=5,
+    ):
         self.fun = fun
         self.step_size = step_size
         self.pop_size = pop_size
@@ -454,9 +469,11 @@ class CMAESOptimizer(NonGradOptimizer):
             generation, state, fun_value = sample_and_evaluate(
                 state=state, n_samples=parameters.pop_size
             )
-            opt_history.append(generation_x=generation,
-                               generation_R=fun_value,
-                               step_size=state.step_size)
+            opt_history.append(
+                generation_x=generation,
+                generation_R=fun_value,
+                step_size=state.step_size,
+            )
             min_R_convergence_gens = np.min(opt_history.R_history[-1])
             gen_range.set_postfix({'R': f'{min_R_convergence_gens:.4f}'})
 
@@ -666,6 +683,7 @@ class GradFreeLBFGSBOptimizer(SciPyNonGradOptimizer):
     method = 'L-BFGS-B'
     use_bounds = True
     jac_strategy = '2-point'
+
 
 class PowellOptimizer(SciPyNonGradOptimizer):
     method = 'Powell'

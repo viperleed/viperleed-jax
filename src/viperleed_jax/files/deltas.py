@@ -105,9 +105,7 @@ def read_delta_file(filename, n_energies, read_header_only=False):
             f'Found {len(content)}, '
             'expected at least 2.'
         )
-        raise ValueError(
-            msg
-        )
+        raise ValueError(msg)
     # make into an iterator
     file_lines = iter(content)
 
@@ -142,9 +140,7 @@ def read_delta_file(filename, n_energies, read_header_only=False):
                 f'Found NATOMS={n_atoms}, but only NATOMS=1 '
                 'is supported.'
             )
-            raise NotImplementedError(
-                msg
-            )
+            raise NotImplementedError(msg)
 
     else:
         msg = (
@@ -152,9 +148,7 @@ def read_delta_file(filename, n_energies, read_header_only=False):
             'second line should contain 2 or 3 elements. '
             f'Found (len{header_block_2}'
         )
-        raise ValueError(
-            msg
-        )
+        raise ValueError(msg)
 
     # 3.Block of Header - (h,k) indices of the beams
     beam_indices = read_block(
@@ -177,9 +171,7 @@ def read_delta_file(filename, n_energies, read_header_only=False):
             'be zero. Rerun Refcalc and Delta calulation with a '
             'newer TensErLEED version.'
         )
-        raise NotImplementedError(
-            msg
-        )
+        raise NotImplementedError(msg)
 
     # 5.Block of Header - geometric displacements
     # (Coordinates DISPlaced)
@@ -265,9 +257,7 @@ def read_delta_file(filename, n_energies, read_header_only=False):
             'Number of energies does not match number of blocks in file: '
             f'Found {e_index} blocks'
         )
-        raise ValueError(
-            msg
-        )
+        raise ValueError(msg)
 
     return (
         (phi, theta),

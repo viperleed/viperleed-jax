@@ -111,8 +111,9 @@ class Propagators(LinearPropagatedQuantity):
 
     @property
     def is_dynamic_propagator(self):
-        return np.array([val == 'dynamic' for (val, id)
-                         in self.static_dynamic_map])
+        return np.array(
+            [val == 'dynamic' for (val, id) in self.static_dynamic_map]
+        )
 
     @property
     def propagator_id(self):
@@ -120,9 +121,7 @@ class Propagators(LinearPropagatedQuantity):
 
     @property
     def static_propagator_inputs(self):
-        return (
-            self.static_reference_nodes_values
-        )
+        return self.static_reference_nodes_values
 
     @property
     def propagator_plane_symmetry_operations(self):
@@ -136,8 +135,7 @@ class Propagators(LinearPropagatedQuantity):
         the one for which the propagator is calculated).
         """
         return tuple(
-            sym_op.weights[1:, 1:]
-            for sym_op in self._arg_transformers
+            sym_op.weights[1:, 1:] for sym_op in self._arg_transformers
         )
 
     def _propagator_rotation_factors(self):
@@ -149,7 +147,6 @@ class Propagators(LinearPropagatedQuantity):
         mirror_propagators = np.array([op[1] for op in ops])
 
         return symmetry_tensors, mirror_propagators
-
 
     def __call__(self, geo_params, energy_ids):
         """Calculate propagators."""

@@ -14,6 +14,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+
 def check_jax_devices():
     """Check if JAX can detect GPU devices.
 
@@ -24,13 +25,17 @@ def check_jax_devices():
     except RuntimeError:
         logger.warning(
             'JAX could not detect any GPU devices. The execution will default '
-            'to CPU only which can be significantly slower.')
+            'to CPU only which can be significantly slower.'
+        )
         return
     logger.info(f'JAX detected {len(gpu_devices)} GPU(s).')
 
 
 def benchmark_calculator(
-    calculator, free_params=None, n_repeats=10, csv_file_path=None,
+    calculator,
+    free_params=None,
+    n_repeats=10,
+    csv_file_path=None,
     use_grad=True,
 ):
     """
@@ -75,7 +80,7 @@ def benchmark_calculator(
         print(
             'R factor compilation time is suspiciously low. '
             'The function may have been precompiled.'
-    )
+        )
 
     # --- Benchmark for grad_R (gradients) ---
     if use_grad:
@@ -121,6 +126,7 @@ def benchmark_calculator(
 
     return r_fac_compile_time, r_fac_time, grad_compile_time, grad_time
 
+
 def format_benchmark_results(results):
     """Format the benchmark results for display.
 
@@ -142,6 +148,7 @@ def format_benchmark_results(results):
         f'\tGradient comp. time:\t{grad_compile_time:.4f} s\n'
         f'\tGradient exec. time:\t{1000 * grad_time:.4f} ms'
     )
+
 
 def estimate_function_cost(f, *args):
     fun_cost = jax.jit(f).lower(*args).compile().cost_analysis()

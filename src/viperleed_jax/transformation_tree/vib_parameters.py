@@ -37,10 +37,7 @@ class VibConstraintNode(LinearConstraintNode):
 
         if transformers is None:
             # default to identity
-            transformers = [
-                LinearMap(np.eye(1), (1,))
-                for _ in children
-            ]
+            transformers = [LinearMap(np.eye(1), (1,)) for _ in children]
         super().__init__(
             dof=dof,
             name=name,
@@ -70,9 +67,10 @@ class VibSymmetryConstraint(VibConstraintNode):
             children=children,
             transformers=[
                 AffineTransformer(
-                    weights=np.array([[1.0]]),
-                    biases=np.array([0.0]))
-                for _ in children],
+                    weights=np.array([[1.0]]), biases=np.array([0.0])
+                )
+                for _ in children
+            ],
             name='Symmetry',
             layer=DisplacementTreeLayers.Symmetry,
         )
@@ -124,8 +122,9 @@ class VibTree(DisplacementTree):
             vib_delta_line.targets
         )
 
-        vib_range = np.array([[vib_delta_line.range.start,
-                              vib_delta_line.range.stop]]).T
+        vib_range = np.array(
+            [[vib_delta_line.range.start, vib_delta_line.range.stop]]
+        ).T
 
         leaf_range_zonotope = Zonotope(
             basis=np.array([[1.0]]),  # 1D zonotope
