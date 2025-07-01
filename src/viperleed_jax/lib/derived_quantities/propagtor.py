@@ -4,7 +4,7 @@ __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2025-06-24'
 
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import partial
 
 import jax
