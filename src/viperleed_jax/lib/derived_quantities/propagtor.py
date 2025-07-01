@@ -93,15 +93,10 @@ class Propagators(LinearPropagatedQuantity):
         )
 
     @property
-    def reference_leaf_nodes(self):
-        return [leaf for leaf in self.tree.leaves
-                if leaf in self.leaf_to_reference_map.values()]
-
-    @property
     def reference_transformers(self):
         return [
             self.tree.root.transformer_to_descendent(leaf)
-            for leaf in self.reference_leaf_nodes
+            for leaf in self.dynamic_reference_nodes
         ]
 
     def _set_tree(self):
