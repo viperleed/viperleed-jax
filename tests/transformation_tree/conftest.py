@@ -11,6 +11,7 @@ from pytest_cases import fixture
 @fixture
 def fully_constrained_tree_template(subtests):
     """Test tree creation."""
+
     def fully_constrained_tree_test(atom_basis, tree_class):
         # create the geometry tree
         tree = tree_class(atom_basis)
@@ -24,4 +25,5 @@ def fully_constrained_tree_template(subtests):
             assert tree.root.is_leaf is False
             # no ranges set -> DOF should be 0
             assert sum(node.dof for node in tree.roots) == 0
+
     return fully_constrained_tree_test

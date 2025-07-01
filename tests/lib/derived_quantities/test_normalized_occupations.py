@@ -24,6 +24,7 @@ def test_normalize_atom_occ_vector_above_threshold():
     # Should maintain relative proportions approximately
     assert result[0] > 0 and result[1] > 0
 
+
 def test_normalize_occ_vector_simple_case():
     """Test normalization across multiple atoms."""
     occ_vector = jnp.array([0.6, 0.6, 0.2])

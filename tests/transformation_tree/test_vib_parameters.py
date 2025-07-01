@@ -31,6 +31,7 @@ def test_tree_creation(atom_basis, fully_constrained_tree_template):
     """Test tree creation."""
     fully_constrained_tree_template(atom_basis, VibTree)
 
+
 class TestFe2O3:
     """Test the Fe2O3 structure."""
 
@@ -45,8 +46,9 @@ class TestFe2O3:
 
     def test_more_than_one_dof_constraint(self, fe2o3_tree):
         """Test applying a constraint with more than one DOF."""
-        with pytest.raises(ValueError,
-                           match='Vibrational constraints must have dof=1'):
+        with pytest.raises(
+            ValueError, match='Vibrational constraints must have dof=1'
+        ):
             VibConstraintNode(
                 children=[fe2o3_tree.leaves[0]],
                 name='test',
@@ -69,7 +71,9 @@ class TestFe2O3:
         leaf_1 = VibLeafNode(fe2o3_tree.leaves[0].atom)
         leaf_2 = VibLeafNode(fe2o3_tree.leaves[6].atom)
 
-        with pytest.raises(ValueError, match='Children must have the same site-element.'):
+        with pytest.raises(
+            ValueError, match='Children must have the same site-element.'
+        ):
             VibSymmetryConstraint(
                 children=[leaf_1, leaf_2],
             )
@@ -160,7 +164,7 @@ class TestFe2O3:
         [
             ('Fe_surf = -0.1 0.1', 1),
             ('O_surf = 0.1 -0.1', 1),
-            ('Fe L(1-2) = -0.1 0.2', 4), # 4 indep. atoms, 1 dof each
+            ('Fe L(1-2) = -0.1 0.2', 4),  # 4 indep. atoms, 1 dof each
         ],
     )
     def test_apply_single_vib_delta(

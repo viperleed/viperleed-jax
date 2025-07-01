@@ -262,10 +262,7 @@ class TestLinearMap:
     def test_repr(self):
         weights = [[1, 2], [3, 4]]
         linear_map = LinearMap(weights)
-        assert (
-            repr(linear_map)
-            == 'LinearMap(weights=(2, 2), out_reshape=None)'
-        )
+        assert repr(linear_map) == 'LinearMap(weights=(2, 2), out_reshape=None)'
 
     def test_composition_with_linear_transformer(self):
         weights1 = np.array([[1, 2], [3, 4]])

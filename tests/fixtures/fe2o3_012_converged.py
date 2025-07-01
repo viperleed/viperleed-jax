@@ -360,13 +360,16 @@ def fe2o3_012_converged_parameter_space_z(
 
     # displacements file
     disp_file = DisplacementsFile()
-    disp_file.read(fe2o3_012_converged_info.displacements_path.parent / 'DISPLACEMENTS_z')
+    disp_file.read(
+        fe2o3_012_converged_info.displacements_path.parent / 'DISPLACEMENTS_z'
+    )
 
     if disp_file.offsets is not None:
         parameter_space.apply_offsets(disp_file.offsets)
     search_block = disp_file.next(0.9)
     parameter_space.apply_search_segment(search_block)
     return parameter_space
+
 
 @fixture(scope='session')
 def fe2o3_012_converged_parameter_space_x(
@@ -379,7 +382,8 @@ def fe2o3_012_converged_parameter_space_x(
     # displacements file
     disp_file = DisplacementsFile()
     disp_file.read(
-        fe2o3_012_converged_info.displacements_path.parent / 'DISPLACEMENTS_x')
+        fe2o3_012_converged_info.displacements_path.parent / 'DISPLACEMENTS_x'
+    )
 
     if disp_file.offsets is not None:
         parameter_space.apply_offsets(disp_file.offsets)
@@ -387,10 +391,12 @@ def fe2o3_012_converged_parameter_space_x(
     parameter_space.apply_search_segment(search_block)
     return parameter_space
 
+
 # NB: The fixtures below produce the calculators which are expensive to create,
 # so they are scoped to 'session' to avoid re-creation in each test. They cannot
 # use a shared fixture because setting the parameter space mutates the
 # calculator.
+
 
 @fixture(scope='session')
 def fe2o3_012_converged_calculator_with_parameter_space_z(
@@ -412,6 +418,7 @@ def fe2o3_012_converged_calculator_with_parameter_space_z(
     calculator.set_parameter_space(fe2o3_012_converged_parameter_space_z)
     return calculator
 
+
 @fixture(scope='session')
 def fe2o3_012_converged_calculator_with_parameter_space_x(
     fe2o3_012_converged_state_after_init,
@@ -431,6 +438,7 @@ def fe2o3_012_converged_calculator_with_parameter_space_x(
     )
     calculator.set_parameter_space(fe2o3_012_converged_parameter_space_x)
     return calculator
+
 
 @fixture(scope='session')
 def fe2o3_012_converged_calculator_with_parameter_space_recalc_t_matrices(
@@ -455,6 +463,7 @@ def fe2o3_012_converged_tenserleed_reference_z(parameters, expected):
     'parameters, expected', _comparison_data_x, ids=_comparison_data_x.ids
 )
 def fe2o3_012_converged_tenserleed_reference_x(
-    parameters, expected,
+    parameters,
+    expected,
 ):
     return parameters, expected

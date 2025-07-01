@@ -68,9 +68,9 @@ def fe2o3_tree(case):
     atom_basis = AtomBasis(state.slab)
     return GeoTree(atom_basis)
 
+
 class TestFe2O3:
     """Test the Fe2O3 structure."""
-
 
     def test_apply_offsets(self, fe2o3_tree):
         fe2o3_tree.apply_offsets(OffsetsLine('geo Fe 1 z = 0.1'))
@@ -78,9 +78,11 @@ class TestFe2O3:
         last_node = fe2o3_tree.nodes[-1]
         assert len(last_node.children) == 1
         assert last_node.children[0].transformer.biases == pytest.approx(
-            np.array([0.1, 0.0, 0.0]))
+            np.array([0.1, 0.0, 0.0])
+        )
         assert last_node.children[0].transformer.weights == pytest.approx(
-            np.eye(3))
+            np.eye(3)
+        )
 
     def test_apply_offsets_twice(self, fe2o3_tree):
         fe2o3_tree.apply_offsets(OffsetsLine('geo Fe 1 z = 0.1'))
@@ -109,19 +111,21 @@ class TestFe2O3:
         with pytest.raises(ValueError, match='Wrong constraint type'):
             fe2o3_tree.apply_explicit_constraint(vib_constraint)
 
-
     def test_apply_multiple_constraints(self, fe2o3_tree, subtests):
         """Test applying multiple interconnected constraints."""
         assert sum(root.dof for root in fe2o3_tree.roots) == 45
         fe2o3_tree.apply_explicit_constraint(
-            ConstraintLine('geo Fe L(1) = linked'))
+            ConstraintLine('geo Fe L(1) = linked')
+        )
         assert sum(root.dof for root in fe2o3_tree.roots) == 42
         fe2o3_tree.apply_explicit_constraint(
-            ConstraintLine('geo Fe L(2) = linked'))
+            ConstraintLine('geo Fe L(2) = linked')
+        )
         assert sum(root.dof for root in fe2o3_tree.roots) == 39
         with subtests.test('apply layered constraints'):
             fe2o3_tree.apply_explicit_constraint(
-                ConstraintLine('geo Fe L(1-2) = linked'))
+                ConstraintLine('geo Fe L(1-2) = linked')
+            )
             assert sum(root.dof for root in fe2o3_tree.roots) == 36
         with subtests.test('finalize layered constraints'):
             fe2o3_tree.apply_implicit_constraints()
@@ -145,11 +149,9 @@ class TestFe2O3:
     )
     def test_error_redundant_constraints(self, fe2o3_tree, constraints):
         """Test that redundant constraints raise an error."""
-        with pytest.raises(ValueError, match='redundant'):                      # noqa: PT012
+        with pytest.raises(ValueError, match='redundant'):  # noqa: PT012
             for constraint in constraints:
-                fe2o3_tree.apply_explicit_constraint(
-                    ConstraintLine(constraint))
-
+                fe2o3_tree.apply_explicit_constraint(ConstraintLine(constraint))
 
     @pytest.mark.parametrize(
         'bounds_line,implicit_dof',
@@ -157,10 +159,11 @@ class TestFe2O3:
             ('Fe_surf xyz = -0.1 0.1', 3),
             ('Fe_surf xy = -0.1 0.1', 2),
             ('Fe_surf z = -5 5', 1),
-        ]
+        ],
     )
     def test_apply_single_geo_delta(
-        self, fe2o3_tree, bounds_line, implicit_dof, subtests):
+        self, fe2o3_tree, bounds_line, implicit_dof, subtests
+    ):
         """Test applying a single GeoDelta."""
         geo_delta_line = GeoDeltaLine(bounds_line)
         fe2o3_tree.apply_bounds(geo_delta_line)
@@ -172,6 +175,7 @@ class TestFe2O3:
             # finalize the tree to apply the bounds
             assert sum(root.dof for root in fe2o3_tree.roots) == implicit_dof
 
+
 def test_reflection_preserves_ranges():
     # 1) Set up a 3×3 basis = identity
     basis = np.eye(3)
@@ -180,9 +184,9 @@ def test_reflection_preserves_ranges():
     # 3) Build a “mirror Y” + tiny cross‐coupling
     W = np.array(
         [
-            [1.0,  0.0, 0.0],
+            [1.0, 0.0, 0.0],
             [0.0, -1.0, 0.0],
-            [0.0,  0.0, 1.0],
+            [0.0, 0.0, 1.0],
         ]
     )
     b = np.zeros(3)

@@ -71,6 +71,7 @@ def test_orthonormalize_subspace(Bm, mr, bias, expected_W, expected_b):
     assert np.allclose(trafo.weights, expected_W)
     assert np.allclose(trafo.biases, expected_b)
 
+
 # --- Tests for Zonotope.__init__ and properties ---
 @pytest.mark.parametrize(
     'basis,ranges,offset,expect_error',
@@ -178,4 +179,3 @@ def test_normalize_collapse():
     assert T.out_dim == 2
     # weights should be orthonormal: W.T @ W == I
     assert np.allclose(T.weights.T @ T.weights, np.eye(2), atol=1e-8)
-

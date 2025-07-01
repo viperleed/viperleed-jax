@@ -17,6 +17,7 @@ from viperleed_jax.transformation_tree.meta_parameters import MetaTree
 
 class DummyRParams:
     """Simple dummy rparams class to simulate IV_SHIFT_RANGE."""
+
     def __init__(self, start, stop):
         self.IV_SHIFT_RANGE = SimpleNamespace(start=start, stop=stop)
 
@@ -25,8 +26,8 @@ def test_tree_initialization():
     """Test that the meta parameter tree initializes with expected structure."""
     tree = MetaTree()
     assert len(tree.nodes) == 2
-    assert tree.nodes[0].name == '(1) V0r' # leaf node
-    assert tree.nodes[1].name == '(1) V0r' # dummy symmetry node
+    assert tree.nodes[0].name == '(1) V0r'  # leaf node
+    assert tree.nodes[1].name == '(1) V0r'  # dummy symmetry node
 
 
 def test_apply_bounds_creates_implicit_constraint():

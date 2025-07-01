@@ -12,10 +12,7 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
 
-DISPLACEMENTS_PATH = (
-    Path(__file__).parent / 'test_data' / 'displacements'
-)
-
+DISPLACEMENTS_PATH = Path(__file__).parent / 'test_data' / 'displacements'
 
 
 def _get_space(state):
@@ -72,7 +69,9 @@ class TestFe2O3:
     )
     def fe2o3_valid_displacements_file(self, fname_postfix, n_param_split):
         """Fixture for valid displacements file."""
-        path =  DISPLACEMENTS_PATH / 'Fe2O3_012' / f'DISPLACEMENTS_{fname_postfix}'
+        path = (
+            DISPLACEMENTS_PATH / 'Fe2O3_012' / f'DISPLACEMENTS_{fname_postfix}'
+        )
         disp_file = DisplacementsFile()
         disp_file.read(path)
         return disp_file, n_param_split
@@ -85,13 +84,13 @@ class TestFe2O3:
         state, _ = case
         return _get_space(state)
 
-
     """Test the Fe2O3 structure."""
-    def test_apply_displacements(self, fe2o3_space, fe2o3_valid_displacements_file, subtests):
+
+    def test_apply_displacements(
+        self, fe2o3_space, fe2o3_valid_displacements_file, subtests
+    ):
         disp_file, expected_param_split = fe2o3_valid_displacements_file
-        fe2o3_space.apply_displacements(
-            search_block=disp_file.first_block()
-        )
+        fe2o3_space.apply_displacements(search_block=disp_file.first_block())
         # check that the number of parameters is as expected
         assert fe2o3_space.n_param_split == expected_param_split
 

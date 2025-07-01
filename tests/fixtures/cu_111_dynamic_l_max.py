@@ -202,6 +202,7 @@ def cu_111_dynamic_l_max_read_ref_data(
         fix_lmax=10,
     )
 
+
 @fixture(scope='session')
 def cu_111_dynamic_l_max_tensor_calculator(
     cu_111_dynamic_l_max_state_after_init,

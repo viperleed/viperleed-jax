@@ -66,10 +66,12 @@ JIT_JAC_ENERGY_JIT_CALC_PROPAGATOR = jax.jit(
     jax.jacrev(calc_propagator, argnums=2, holomorphic=True),
     static_argnums=(0,),
 )
+
+
 def _abs_calc_propagator(l_max, vec, vec_sph_harm_components, kappa):
-    return abs(
-        calc_propagator(l_max, vec, vec_sph_harm_components, kappa)
-    )
+    return abs(calc_propagator(l_max, vec, vec_sph_harm_components, kappa))
+
+
 JIT_JAC_ABS_DISP_CALC_PROPAGATOR = jax.jit(
     jax.jacrev(_abs_calc_propagator, argnums=1), static_argnums=(0,)
 )
@@ -99,14 +101,11 @@ class TestPropagator:
     @pytest.mark.parametrize('l_max', range(5, 18))
     def test_propagator_zero_displacement(self, l_max):
         disp_vector = np.array([0.0, 0.0, 0.0])
-        sp_harm_components = spherical_harmonics_components(
-            l_max, disp_vector
-        )
-        sp_harm_components = spherical_harmonics_components(
-            l_max, disp_vector
-        )
+        sp_harm_components = spherical_harmonics_components(l_max, disp_vector)
+        sp_harm_components = spherical_harmonics_components(l_max, disp_vector)
         propagator = calc_propagator(
-            l_max, disp_vector, sp_harm_components, kappa(1.0, 1.0))
+            l_max, disp_vector, sp_harm_components, kappa(1.0, 1.0)
+        )
         assert propagator == pytest.approx(
             np.identity((l_max + 1) ** 2), abs=1e-8
         )
@@ -125,14 +124,14 @@ class TestPropagator:
         ) = stored_propagator_reference_values
         reference_value = stored_propagators[n_vector]
         # spherical harmonics components
-        sp_harm_components = spherical_harmonics_components(
-            l_max, disp_vector
-        )
+        sp_harm_components = spherical_harmonics_components(l_max, disp_vector)
         # calculate the propagator
         propagator = calc_propagator(
-            l_max, disp_vector, sp_harm_components, kappa(energy, v_imag))
+            l_max, disp_vector, sp_harm_components, kappa(energy, v_imag)
+        )
         assert propagator == pytest.approx(
-            reference_value, rel=1e-6, abs=1e-8, nan_ok=True)
+            reference_value, rel=1e-6, abs=1e-8, nan_ok=True
+        )
 
     @pytest.mark.parametrize('disp_vector', list(enumerate(TEST_DISP_VECTORS)))
     def test_jit(self, disp_vector, stored_propagator_reference_values):
@@ -151,7 +150,8 @@ class TestPropagator:
             l_max, disp_vector, sp_harm_components, kappa(energy, v_imag)
         )
         assert propagator == pytest.approx(
-            reference_value, rel=1e-6, abs=1e-8, nan_ok=True)
+            reference_value, rel=1e-6, abs=1e-8, nan_ok=True
+        )
 
     @pytest.mark.parametrize('disp_vector', list(enumerate(TEST_DISP_VECTORS)))
     def test_energy_jacobian(
@@ -167,9 +167,7 @@ class TestPropagator:
         ) = stored_propagator_energy_jacobians
         reference_value = stored_propagators[n_vector]
         # spherical harmonics components
-        sp_harm_components = spherical_harmonics_components(
-            l_max, disp_vector
-        )
+        sp_harm_components = spherical_harmonics_components(l_max, disp_vector)
 
         # calculate the propagator
         propagator_jac = JIT_JAC_ENERGY_JIT_CALC_PROPAGATOR(

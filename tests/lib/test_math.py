@@ -255,19 +255,22 @@ class TestBessel:
 
 
 class TestProjectSum1Plane:
-
     def test_projection_preserves_sum(self):
         """Test that the projection results in a vector summing to 1."""
         x = jnp.array([3.0, 0.0, 0.0])
         proj = project_onto_plane_sum_1(x)
-        assert jnp.allclose(jnp.sum(proj), 1.0), f"Sum after projection was {jnp.sum(proj)}"
+        assert jnp.allclose(
+            jnp.sum(proj), 1.0
+        ), f'Sum after projection was {jnp.sum(proj)}'
 
     def test_projection_of_vector_on_plane_is_identity(self):
         """Test that a vector already on the plane remains unchanged."""
         x = jnp.array([0.5, 0.25, 0.25])
         assert jnp.sum(x), pytest.approx(1.0)  # Pre-check
         proj = project_onto_plane_sum_1(x)
-        assert jnp.allclose(proj, x), "Projection altered a point already on the plane."
+        assert jnp.allclose(
+            proj, x
+        ), 'Projection altered a point already on the plane.'
 
     def test_projection_is_linear_up_to_offset(self):
         """Test that projecting two vectors and summing is predictable."""
@@ -286,14 +289,18 @@ class TestProjectSum1Plane:
         """Test projection in higher dimensions."""
         x = jnp.arange(1, 11, dtype=float)  # 10D vector
         proj = project_onto_plane_sum_1(x)
-        assert jnp.sum(proj) == pytest.approx(1.0), f"Sum after projection was {jnp.sum(proj)}"
+        assert jnp.sum(proj) == pytest.approx(
+            1.0
+        ), f'Sum after projection was {jnp.sum(proj)}'
 
     def test_zero_vector_projection(self):
         """Test projection of a zero vector."""
         x = jnp.zeros(5)
         proj = project_onto_plane_sum_1(x)
         expected = jnp.ones(5) / 5
-        assert np.allclose(proj, expected), f"Projected zero vector is {proj}, expected {expected}"
+        assert np.allclose(
+            proj, expected
+        ), f'Projected zero vector is {proj}, expected {expected}'
 
 
 class TestApplyFunGrouped:
@@ -310,7 +317,6 @@ class TestApplyFunGrouped:
 
         assert result == pytest.approx(expected)
 
-
     def test_apply_fun_grouped_identity(self):
         """Test with the identity function (should return input unchanged)."""
         v = jnp.array([1.0, 2.0, 3.0, 4.0])
@@ -319,7 +325,6 @@ class TestApplyFunGrouped:
         result = apply_fun_grouped(v, ind, lambda x: x)
 
         assert result == pytest.approx(v)
-
 
     def test_apply_fun_grouped_sum_normalization(self):
         """Normalize each group so its sum is 1."""
@@ -342,7 +347,6 @@ class TestApplyFunGrouped:
 
         assert result == pytest.approx(expected)
 
-
     def test_apply_fun_grouped_empty_group_behavior(self):
         """Ensure behavior is fine when some group index is missing (e.g., no '2' label)."""
         v = jnp.array([1.0, 2.0, 3.0])
@@ -355,7 +359,6 @@ class TestApplyFunGrouped:
         expected = jnp.array([2.0, 3.0, 4.0])
 
         assert result == pytest.approx(expected)
-
 
     def test_apply_fun_grouped_singleton_groups(self):
         """Test where each element is its own group."""

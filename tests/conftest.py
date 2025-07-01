@@ -32,6 +32,7 @@ FE2O3_UNRELAXED_INPUT_PATH = (
 # Make sure to use double precision for testing
 jax.config.update('jax_enable_x64', True)
 
+
 @pytest.fixture(scope='session')
 def large_file_path():
     return LARGE_FILE_PATH
@@ -81,6 +82,7 @@ def fe2o3_ref_data_fixed_lmax_12(fe2o3_pickled_tensor):
     fixed_lmax = 12
     tensor_tuple = tuple(fe2o3_pickled_tensor.values())
     return process_tensors(tensor_tuple, fix_lmax=fixed_lmax)
+
 
 # Atom basis for various structures
 @fixture

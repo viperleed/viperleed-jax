@@ -1,6 +1,5 @@
 """Tests for the tensor_calculator module."""
 
-
 import numpy as np
 import pytest
 from pytest_cases import case, parametrize_with_cases
@@ -98,11 +97,12 @@ class TensorCalculatorsWithTensErLEEDDeltas:
         parameters, expected = fe2o3_012_converged_tenserleed_reference_z
         return calculator, parameters, expected
 
-    @case(tags="fe2o3_012")
+    @case(tags='fe2o3_012')
     def case_fe2o3_012_converged_x(
         self,
         fe2o3_012_converged_calculator_with_parameter_space_x,
-        fe2o3_012_converged_tenserleed_reference_x):
+        fe2o3_012_converged_tenserleed_reference_x,
+    ):
         calculator = fe2o3_012_converged_calculator_with_parameter_space_x
         params, expected = fe2o3_012_converged_tenserleed_reference_x
         return calculator, params, expected
@@ -163,8 +163,8 @@ def test_compare_known_delta_amplitudes_tenserleed(
     calculator, parameters, expected, subtests
 ):
     # get parameters
-    v0r, displacements, vib_amps, occupations = (
-        calculator.expand_params(parameters)
+    v0r, displacements, vib_amps, occupations = calculator.expand_params(
+        parameters
     )
     # calculate delta amplitudes
     delta_amps = calculator.delta_amplitude(parameters)

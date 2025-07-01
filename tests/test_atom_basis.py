@@ -17,9 +17,9 @@ test_poscars = parametrize_with_cases(
     filter=(filters.has_tag(Tag.NO_INFO) & (~filters.has_tag(Tag.BULK))),
 )
 
+
 @test_poscars
 def test_atom_basis_from_slab(test_slab):
-
     slab, *_ = test_slab
     if all(at.is_bulk for at in slab.atlist):
         pytest.skip('Bulk slab, skipping test.')
@@ -35,24 +35,30 @@ def test_atom_basis_from_slab(test_slab):
 class FakeAtom:
     def __init__(self, num, label, layer):
         self.num = num
-        self.layer = type("Layer", (), {"num": layer})()
-        self.site = type("Site", (), {"label": label, "el": label, "mixedEls": []})()
+        self.layer = type('Layer', (), {'num': layer})()
+        self.site = type(
+            'Site', (), {'label': label, 'el': label, 'mixedEls': []}
+        )()
         self.symrefm = None
         self.is_bulk = False
 
+
 @pytest.fixture
 def mock_slab():
-    slab = type("FakeSlab", (), {})()
-    slab.sitelist = [FakeAtom(0, label, 0).site for label in ['A', 'A_extra', 'B', 'C']]
+    slab = type('FakeSlab', (), {})()
+    slab.sitelist = [
+        FakeAtom(0, label, 0).site for label in ['A', 'A_extra', 'B', 'C']
+    ]
     slab.atlist = [
-        FakeAtom(1, "A", 0),
-        FakeAtom(2, "A", 1),
-        FakeAtom(3, "A_extra", 2),
-        FakeAtom(4, "B", 0),
-        FakeAtom(5, "C", 1),
+        FakeAtom(1, 'A', 0),
+        FakeAtom(2, 'A', 1),
+        FakeAtom(3, 'A_extra', 2),
+        FakeAtom(4, 'B', 0),
+        FakeAtom(5, 'C', 1),
     ]
     slab.linklists = []
     return slab
+
 
 @pytest.fixture
 def atom_basis(mock_slab):
@@ -61,6 +67,7 @@ def atom_basis(mock_slab):
 
 class TestSelectionMask:
     """Tests for the selection mask creation."""
+
     @pytest.mark.parametrize(
         'targets, exp_mask',
         [
@@ -91,7 +98,6 @@ class TestSelectionMask:
     def test_target_mask_creation(self, atom_basis, targets, exp_mask):
         mask = atom_basis.selection_mask(targets)
         assert all(mask == exp_mask)
-
 
     @pytest.mark.parametrize(
         'targets',

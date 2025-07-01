@@ -68,16 +68,18 @@ def test_linear_tree_node_name_property():
     assert node._name == 'foo'
     assert node.name == '(3) foo'
 
+
 class TestLinearLeafNode:
     # Test LinearLeafNode properties and transformer setting
     def test_linear_leaf_node_properties_and_transformer(self):
-
         node = LinearLeafNode(dof=2, name='leaf')
         assert node.dof == 2
         assert node.name == '(2) leaf'
 
         # test transformer setting
-        valid_transformer = AffineTransformer(weights=np.eye(2), biases=np.zeros(2))
+        valid_transformer = AffineTransformer(
+            weights=np.eye(2), biases=np.zeros(2)
+        )
         node.set_transformer(valid_transformer)
         assert node.transformer == valid_transformer
 
@@ -109,12 +111,12 @@ def test_parent_child_relationship_in_tree_nodes():
     assert child in grandparent.descendants
     assert grandparent in child.ancestors
 
-
     def test_transformer_to_unrelated_node(dummy_leaf_node):
         """Test that transformer_to_descendent raises for unrelated nodes."""
         unrelated_node = LinearLeafNode(dof=3, name='unrelated')
         with pytest.raises(ValueError):
             dummy_leaf_node.transformer_to_descendent(unrelated_node)
+
 
 class TestConstraintNode:
     @pytest.fixture
@@ -122,17 +124,17 @@ class TestConstraintNode:
         """Fixture for a direct map."""
         return LinearMap(np.eye(3))
 
-
-# Test parent-child relationship in tree nodes
+    # Test parent-child relationship in tree nodes
     def test_parent_child_relationship_in_linear_tree_nodes(
         self, dummy_leaf_node, direct_map
     ):
         child = dummy_leaf_node
         parent = LinearConstraintNode(
-            dof=3, layer=DisplacementTreeLayers.Symmetry,
+            dof=3,
+            layer=DisplacementTreeLayers.Symmetry,
             name='sym_parent',
             transformers=[direct_map],
-            children=[child]
+            children=[child],
         )
 
         # test transformer to descendent
@@ -140,20 +142,28 @@ class TestConstraintNode:
 
     def test_error_layer_mismatch(self, direct_map):
         """Test that a node cannot be added to a parent with a lower layer."""
-        child = LinearTreeNode(dof=3, name='child', layer=DisplacementTreeLayers.Root)
+        child = LinearTreeNode(
+            dof=3, name='child', layer=DisplacementTreeLayers.Root
+        )
 
         with pytest.raises(InvalidNodeError):
             LinearConstraintNode(
-                dof=3, layer=DisplacementTreeLayers.Base,
-                name='parent', children=[child], transformers=[direct_map]
+                dof=3,
+                layer=DisplacementTreeLayers.Base,
+                name='parent',
+                children=[child],
+                transformers=[direct_map],
             )
 
     def test_constraint_node_children(self, direct_map):
         """Test that a constraint node must have children."""
         with pytest.raises(InvalidNodeError):
             LinearConstraintNode(
-                dof=3, layer=DisplacementTreeLayers.Symmetry,
-                name='parent', children=[], transformers=[direct_map]
+                dof=3,
+                layer=DisplacementTreeLayers.Symmetry,
+                name='parent',
+                children=[],
+                transformers=[direct_map],
             )
 
     def test_constraint_node_dof_larger_than_children(self, direct_map):
@@ -161,8 +171,11 @@ class TestConstraintNode:
         child = LinearLeafNode(dof=3, name='child')
         with pytest.raises(InvalidNodeError):
             LinearConstraintNode(
-                dof=4, layer=DisplacementTreeLayers.Symmetry,
-                name='parent', children=[child], transformers=[direct_map]
+                dof=4,
+                layer=DisplacementTreeLayers.Symmetry,
+                name='parent',
+                children=[child],
+                transformers=[direct_map],
             )
 
 

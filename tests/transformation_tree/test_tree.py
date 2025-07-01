@@ -68,5 +68,7 @@ def test_linear_tree_add_leaf_node_and_finalize():
 
 def test_linear_tree_finalize_fails_without_root():
     tree = LinearTree(name='Test Tree', root_node_name='Root')
-    with pytest.raises(ValueError, match="Tree does not contain a node with name 'Root'"):
+    with pytest.raises(
+        ValueError, match="Tree does not contain a node with name 'Root'"
+    ):
         tree.finalize_tree()
