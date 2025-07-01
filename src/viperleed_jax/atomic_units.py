@@ -34,8 +34,7 @@ def to_internal_displacement_vector(displacement_vector_ang):
     # convert from Angstrom to Bohr
     vector = vector / BOHR
     # and change into left handed coordinate system by flipping y
-    vector = vector * jnp.array([1, 1, -1])
-    return vector
+    return vector * jnp.array([1, 1, -1])
 
 @jax.jit
 def to_internal_vib_amps(vib_amps_ang):

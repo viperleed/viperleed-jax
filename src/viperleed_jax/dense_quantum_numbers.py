@@ -29,6 +29,7 @@ def _asymmetric_dense_quantum_numbers(lmax_1, lmax_2):
                     valid_quantum_numbers[(L + 1) * (L + 1) - L + M - 1][
                         (LP + 1) * (LP + 1) - LP + MP - 1
                     ] = [L, LP, M, MP]
+    # map the array
     return jnp.array(valid_quantum_numbers)
 
 
@@ -63,8 +64,7 @@ def map_l_array_to_compressed_quantum_index(array, LMAX):
     if array.shape[0] != LMAX + 1:
         raise ValueError('Array shape does not match LMAX')
     broadcast_l_index = DENSE_L[LMAX]
-    mapped_array = jnp.asarray(array)[broadcast_l_index]
-    return mapped_array
+    return jnp.asarray(array)[broadcast_l_index]
 
 _vmapped_l_array_to_compressed_quantum_index = jax.vmap(
     jax.vmap(map_l_array_to_compressed_quantum_index, in_axes=(0, None)),

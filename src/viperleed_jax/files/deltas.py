@@ -90,19 +90,23 @@ def read_delta_file(filename, n_energies, read_header_only=False):
     try:
         with open(filename) as file:
             content = file.readlines()
-    except Exception as err:
+    except Exception:
         warnings.warn(f'Unable to read Delta file: {filename}')
-        raise err
+        raise
 
     if not content:
-        raise ValueError(f'File {filename} is empty.')
+        msg = f'File {filename} is empty.'
+        raise ValueError(msg)
 
     if len(content) < 2:
-        raise ValueError(
+        msg = (
             f'Invalid delta file {filename}. '
             'Not enough lines. '
             f'Found {len(content)}, '
             'expected at least 2.'
+        )
+        raise ValueError(
+            msg
         )
     # make into an iterator
     file_lines = iter(content)
@@ -133,17 +137,23 @@ def read_delta_file(filename, n_energies, read_header_only=False):
     elif len(header_block_2) == 3:
         n_beams, n_atoms, n_geo_vib_grid = header_block_2
         if n_atoms != 1:
-            raise NotImplementedError(
+            msg = (
                 f'Unsupported delta-amplitude file {filename}. '
                 f'Found NATOMS={n_atoms}, but only NATOMS=1 '
                 'is supported.'
             )
+            raise NotImplementedError(
+                msg
+            )
 
     else:
-        raise ValueError(
+        msg = (
             f'Invalid header in file {filename}: '
             'second line should contain 2 or 3 elements. '
             f'Found (len{header_block_2}'
+        )
+        raise ValueError(
+            msg
         )
 
     # 3.Block of Header - (h,k) indices of the beams
@@ -160,12 +170,15 @@ def read_delta_file(filename, n_energies, read_header_only=False):
         reader=ff_reader_10F7_4, lines=file_lines, shape=(3,)
     )
     if np.linalg.norm(pos_undisplaced) > 1e-6:
-        raise NotImplementedError(
+        msg = (
             'A non-zero value of CUNDISP (undisplaced atom '
             f'positions) was read from Delta file {filename}. '
             'This quantity is currently unused and should always '
             'be zero. Rerun Refcalc and Delta calulation with a '
             'newer TensErLEED version.'
+        )
+        raise NotImplementedError(
+            msg
         )
 
     # 5.Block of Header - geometric displacements
@@ -248,9 +261,12 @@ def read_delta_file(filename, n_energies, read_header_only=False):
             )
 
     if e_index > n_energies:
-        raise ValueError(
+        msg = (
             'Number of energies does not match number of blocks in file: '
             f'Found {e_index} blocks'
+        )
+        raise ValueError(
+            msg
         )
 
     return (
@@ -268,7 +284,7 @@ def read_delta_file(filename, n_energies, read_header_only=False):
 
 
 def Transform(n_E, directory, filename_list):
-    """This function transforms the read in data to a form, where it can be read in by the GetInt function
+    """This function transforms the read in data to a form, where it can be read in by the GetInt function.
 
     Parameters
     ----------
@@ -378,7 +394,8 @@ def Transform(n_E, directory, filename_list):
     # push values from individual files into geo_delta, vib_delta arrays
 
     # saving the changing data in arrays
-    CDisp = np.full(shape=(n_disp_atoms, n_geo_max, 3), fill_value=np.nan)
+    # used to be CDisp in TensErLEED
+    np.full(shape=(n_disp_atoms, n_geo_max, 3), fill_value=np.nan)
     amplitudes_del = np.full(
         shape=(n_files, n_E, n_vib_max, n_geo_max, n_beams),
         fill_value=np.nan,
@@ -402,7 +419,7 @@ def Transform(n_E, directory, filename_list):
     # reference amplitudes are same for every file so we can take any
     amplitudes_ref[...] = file_ref_deltas[name][0]
 
-    delta_data = {
+    return {
         'phi': phi,
         'theta': theta,
         'surface_vectors': trar,
@@ -421,7 +438,6 @@ def Transform(n_E, directory, filename_list):
         'filename_list': filename_list,
     }
 
-    return delta_data
 
 
 def read_block(reader, lines, shape, dtype=np.float64):
