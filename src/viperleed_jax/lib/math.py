@@ -23,7 +23,7 @@ def _divide_zero_safe(
     limit_value: float = 0.0,
 ) -> jnp.ndarray:
     """Function that forces the result of dividing by 0 to be equal to a limit
-    value in a jit- and autodiff-compatible way
+    value in a jit- and autodiff-compatible way.
 
     Args:
         numerator: Values in the numerator
@@ -41,13 +41,13 @@ def _divide_zero_safe(
 
 
 def safe_norm(vector: jnp.ndarray) -> jnp.ndarray:
-    """Safe norm calculation to avoid NaNs in gradients"""
+    """Safe norm calculation to avoid NaNs in gradients."""
     # avoids nan in gradient for jnp.linalg.norm(C)
     return jnp.sqrt(jnp.sum(vector**2) + (EPS * 1e-2) ** 2)
 
 
 def _generate_bessel_functions(l_max):
-    """Generate a list of spherical Bessel functions up to order l_max"""
+    """Generate a list of spherical Bessel functions up to order l_max."""
     bessel_functions = []
     for order in range(l_max + 1):
         bessel_functions.append(

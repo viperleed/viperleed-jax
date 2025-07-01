@@ -91,7 +91,7 @@ class Batching:
 
     @property
     def max_batch_size(self):
-        """Returns the maximum size of the batches"""
+        """Returns the maximum size of the batches."""
         return max(len(batch) for batch in self.batches)
 
     @property

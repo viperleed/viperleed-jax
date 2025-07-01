@@ -124,7 +124,7 @@ class Zonotope:
     Represents an affine zonotope Z = { b + B @ x  |  x_i in [l_i, u_i] }.
     - B:  (D×n) basis matrix (columns are generators)
     - ranges: (2×n) array of [lows; highs]
-    - offset: (D,) bias vector b
+    - offset: (D,) bias vector b.
     """
 
     def __init__(
@@ -158,9 +158,7 @@ class Zonotope:
         self.offset = offset
 
     def apply_affine(self, A: 'AffineTransformer') -> 'Zonotope':
-        """
-        Returns a new Zonotope = A(Z), applying Z → { A(z) | z in Z }.
-        """
+        """Returns a new Zonotope = A(Z), applying Z → { A(z) | z in Z }."""
         Bm, new_ranges, b_new = apply_affine_to_subspace(
             self.basis, self.ranges, A
         )
