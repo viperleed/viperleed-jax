@@ -55,7 +55,7 @@ class DerivedQuantitySingleTree(DerivedQuantity):
 
 
 class PropagatedQuantity(DerivedQuantitySingleTree):
-    """Base class for all transformable properties based on one tree.
+    """Base class for all propagated tree-based quantities.
 
     Tree propagated functions are functions of the quantity described in the
     transformation tree (e.g. geometrical displacements) that need to be
@@ -122,12 +122,12 @@ class PropagatedQuantity(DerivedQuantitySingleTree):
 
     @property
     def n_dynamic_values(self):
-        """Return the number of indep. dynamic values of the transformable."""
+        """Return the number of indep. dynamic values of the prop. quantity."""
         return len(self.dynamic_reference_nodes)
 
     @property
     def n_static_values(self):
-        """Return the number of indep. static values of the transformable."""
+        """Return the number of indep. static values of the prop. quantity."""
         return len(self.static_reference_nodes)
 
     def _analyze_tree(self):
@@ -221,7 +221,7 @@ class PropagatedQuantity(DerivedQuantitySingleTree):
 
 
 class LinearPropagatedQuantity(PropagatedQuantity):
-    """Base class for transformables on linear transformation trees."""
+    """Base class for propagated quantities on linear transformation trees."""
 
     def __init__(
         self,
