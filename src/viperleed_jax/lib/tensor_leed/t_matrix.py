@@ -194,7 +194,6 @@ def calculate_t_matrices(
         )
 
     # Process each energy one by one.
-    t_matrices = jax.lax.map(
+    return jax.lax.map(
         energy_fn, energy_indices, batch_size=batch_energies
     )
-    return t_matrices

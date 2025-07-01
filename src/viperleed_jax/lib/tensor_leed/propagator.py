@@ -225,12 +225,11 @@ def calculate_propagators(
 
             # --- Apply selective transposition ---
             trans_int = propagtor_context.propagator_transpose_int[:, None, None]
-            combined = (1 - trans_int) * combined + trans_int * jnp.transpose(
+            return (1 - trans_int) * combined + trans_int * jnp.transpose(
                 combined, (0, 2, 1)
             )
             # combined remains (atom_basis, lm, m)
 
-            return combined
 
         return dyn
 

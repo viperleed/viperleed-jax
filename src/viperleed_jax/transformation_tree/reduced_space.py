@@ -36,7 +36,8 @@ def apply_affine_to_subspace(
     """
     D, n = basis_vectors.shape
     if coordinate_ranges.shape != (2, n):
-        raise ValueError(f'coordinate_ranges must be (2,{n}), got {coordinate_ranges.shape}')
+        msg = f'coordinate_ranges must be (2,{n}), got {coordinate_ranges.shape}'
+        raise ValueError(msg)
     lows, highs = coordinate_ranges
 
     W, b = transform.weights, transform.biases
@@ -140,13 +141,15 @@ class Zonotope:
         D, n = basis_arr.shape
 
         if ranges_arr.shape != (2, n):
-            raise ValueError(f'ranges must be (2,{n}), got {ranges_arr.shape}')
+            msg = f'ranges must be (2,{n}), got {ranges_arr.shape}'
+            raise ValueError(msg)
 
         if offset is None:
             offset = np.zeros(D)
         offset = np.asarray(offset)
         if offset.shape != (D,):
-            raise ValueError(f'offset must be length {D}')
+            msg = f'offset must be length {D}'
+            raise ValueError(msg)
 
         non_zero_range_mask = abs(ranges_arr[0] - ranges_arr[1]) > EPS
 

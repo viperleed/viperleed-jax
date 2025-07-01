@@ -158,7 +158,9 @@ class LinearConstraintNode(LinearTreeNode):
     transformers.
     """
 
-    def __init__(self, dof, layer, name=None, children=[], transformers=None):
+    def __init__(self, dof, layer, name=None, children=None, transformers=None):
+        if children is None:
+            children = []
         _children = list(children)
         super().__init__(
             dof=dof, name=name, layer=layer
@@ -204,9 +206,12 @@ class LinearConstraintNode(LinearTreeNode):
 
         # check that the number of children and transformers match
         if len(_children) != len(transformers):
-            raise InvalidNodeError(
+            msg = (
                 f'Number of children ({len(_children)}) must match '
                 f'number of transformers ({len(transformers)}).'
+            )
+            raise InvalidNodeError(
+                msg
             )
 
         # if everything is fine, set the transformers
@@ -352,9 +357,12 @@ class ImplicitLinearConstraintNode(LinearConstraintNode):
         elif implicit_dof == child.dof:
             name = f'Bound({name})'
         else:
-            raise ValueError(
+            msg = (
                 f'Implicit constraint dof ({implicit_dof}) cannot be larger '
                 f'than child dof ({child.dof}).'
+            )
+            raise ValueError(
+                msg
             )
 
         super().__init__(

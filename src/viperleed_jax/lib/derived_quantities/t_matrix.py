@@ -38,7 +38,7 @@ from viperleed_jax.transformation_tree.linear_transformer import LinearMap
 class TMatrixContext:
     energies: jnp.ndarray
     static_t_matrices: jnp.ndarray
-    dynamic_site_elements: jnp.ndarray = field(metadata=dict(static=True))
+    dynamic_site_elements: jnp.ndarray = field(metadata={'static': True})
     t_matrix_id: jnp.ndarray
     is_dynamic_mask: jnp.ndarray
 
@@ -166,9 +166,8 @@ class TMatrix(LinearPropagatedQuantity):
             )
 
         # Map over energies with the given batch size.
-        static_t_matrices = jax.lax.map(
+        return jax.lax.map(
             energy_fn, energy_indices, batch_size=batch_energies
         )
         # static_t_matrices has shape (num_energies, num_static_inputs, lm, ...),
         # which is equivalent to the original einsum('ael->eal') result.
-        return static_t_matrices

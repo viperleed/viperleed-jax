@@ -87,7 +87,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
         # check that all children are in the same linklist
         linklist = children[0].atom.atom.linklist
         if not all(
-            [child.atom.atom in linklist for child in children]
+            child.atom.atom in linklist for child in children
         ):
             raise ValueError(
                 'Symmetry linked atoms must be in the same ' 'linklist'
@@ -191,7 +191,7 @@ class GeoLinkedConstraint(GeoConstraintNode):
     # If either of these is implemented, the children will not share a propagator
     def __init__(self, children, name):
         # check that all children have the same dof
-        if len(set(child.dof for child in children)) != 1:
+        if len({child.dof for child in children}) != 1:
             raise ValueError('Children must have the same dof.')
         dof = children[0].dof
 

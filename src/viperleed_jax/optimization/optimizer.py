@@ -165,14 +165,13 @@ class SciPyOptimizerBase:
         return self._L_inv @ grad_x
 
     def _start_message(self):
-        msg = (
+        return (
             f'Starting SciPy optimization using {self.method}...\n'
             f'\tUsing gradients:\t{self._uses_grad}\n'
             f'\tPreconditioned:\t{self.cholesky is not None}\n'
             f'\tftol:\t\t{self.options["ftol"]}\n'
             f'\tmaxiter:\t{self.options["maxiter"]}\n'
         )
-        return msg
 
 class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
 

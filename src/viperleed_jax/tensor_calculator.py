@@ -354,13 +354,12 @@ class TensorLEEDCalculator:
         )
 
         # Prefactors from Equation (41) from Rous, Pendry 1989
-        prefactors = jnp.einsum(
+        return jnp.einsum(
             'e,eb,->eb',
             1 / k_inside,
             1 / out_k_perp_inside,
             1 / (2 * (self.unit_cell_area)),
         )
-        return prefactors
 
 
     def _eval_wave_vectors(self):
@@ -659,7 +658,7 @@ class TensorLEEDCalculator:
         slab.update_fractional_from_cartesian()
 
         for site in slab.sitelist:
-            for element in site.vibamp.keys():
+            for element in site.vibamp:
                 siteel_scatterers = [
                     s
                     for s in base_scatterers.scatterers

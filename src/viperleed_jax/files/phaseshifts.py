@@ -41,8 +41,7 @@ def phaseshift_site_el_order(slab, rpars):
             ]
         )
     # make into a dict that maps site element to int index
-    ps_site_el_map = {site_el: i for i, site_el in enumerate(ps_site_el_order)}
-    return ps_site_el_map
+    return {site_el: i for i, site_el in enumerate(ps_site_el_order)}
 
 
 def ps_list_to_array(ps_list):
