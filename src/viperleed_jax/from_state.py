@@ -74,13 +74,13 @@ def calculator_from_paths(inputs_path,
         parameter_space.apply_offsets(disp_file.offsets)
 
     # skip ahead to the block with the given displacements_id
-    for _ in range(displacements_id+1):
+    for _ in range(displacements_id + 1):
         search_block = disp_file.next(2.0)
     parameter_space.apply_search_segment(search_block)
 
     phaseshifts_path = displacements_path.parent / 'PHASESHIFTS'
     # delegate to calculator_from_objects
-    calculator =  setup_tl_calculator(
+    calculator = setup_tl_calculator(
         slab, rpars, tensor_path, phaseshifts_path, **kwargs
     )
     # set the parameter space

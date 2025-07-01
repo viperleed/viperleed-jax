@@ -40,7 +40,6 @@ def setup_tl_parameter_space(slab, rpars):
     return ParameterSpace(atom_basis, rpars)
 
 
-
 def setup_tl_calculator(
     slab,
     rpars,

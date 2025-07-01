@@ -18,6 +18,7 @@ SiteEl = namedtuple('SiteEl', ['site', 'element'])
 # Currently, the internal numbering is a bit inconsitent.
 # Atom numbers start at 1, but layer numbers start at 0.
 
+
 class TargetSelectionError(ValueError):
     """Error raised if target selection goes wrong."""
 
@@ -132,7 +133,6 @@ class AtomBasis:
                     atom_basis.append(Atom(at, siteel))
         return tuple(atom_basis)  # read only from here on out
 
-
     def _selection_mask_from_target_token(self, target_token):
         """Select base scatterers that match the target specification."""
         mask = np.full(len(self), fill_value=True)
@@ -150,7 +150,9 @@ class AtomBasis:
         if target_token.nums is not None:
             # check range for nums
             if any(num < 1 or num > len(self) for num in target_token.nums):
-                msg = f'Invalid atom number for target: {target_token.target_str}'
+                msg = (
+                    f'Invalid atom number for target: {target_token.target_str}'
+                )
                 raise TargetSelectionError(msg)
             num_mask = np.array([bs.num in target_token.nums for bs in self])
             # check if any of the given nums have the wrong label
@@ -175,7 +177,6 @@ class AtomBasis:
             raise TargetSelectionError(msg)
 
         return mask
-
 
     def selection_mask(self, targets):
         """Take the 'or' of all targets, combining masks."""

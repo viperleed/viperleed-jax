@@ -114,6 +114,7 @@ vmap_energy_vib_dependent_tmatrix = jax.vmap(
     vib_dependent_tmatrix, in_axes=(None, 0, 0, None), out_axes=0
 )
 
+
 def _calculate_dynamic_t_matrices(
     l_max,
     batch_energies,
@@ -145,6 +146,7 @@ def _calculate_dynamic_t_matrices(
         energy_map_fn, energy_indices, batch_size=batch_energies
     )
     return jnp.asarray(dynamic_t_matrices)
+
 
 @partial(
     jax.jit,
@@ -194,6 +196,4 @@ def calculate_t_matrices(
         )
 
     # Process each energy one by one.
-    return jax.lax.map(
-        energy_fn, energy_indices, batch_size=batch_energies
-    )
+    return jax.lax.map(energy_fn, energy_indices, batch_size=batch_energies)

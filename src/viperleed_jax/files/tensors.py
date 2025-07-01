@@ -341,7 +341,8 @@ def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
     with Parallel(n_jobs=-1, backend='loky') as parallel:
         results = parallel(
             delayed(process_tensor_file)(
-                file, tensor_path, lmax, n_beams, n_energies)
+                file, tensor_path, lmax, n_beams, n_energies
+            )
             for file in tensor_files
         )
     executor = get_reusable_executor()

@@ -212,7 +212,7 @@ def project_onto_plane_sum_1(vector):
     return project_through_origin @ _vector + offset_to_sum_one_plane
 
 
-@partial(jax.jit, static_argnames=('index','func'))
+@partial(jax.jit, static_argnames=('index', 'func'))
 def apply_fun_grouped(in_vec, index, func):
     """Apply a function separately to groups determined by an index array.
 
@@ -244,7 +244,7 @@ def apply_fun_grouped(in_vec, index, func):
     Examples
     --------
     >>> import jax.numpy as jnp
-    >>> v = jnp.array([1., 2., 3., 4., 5., 6.])
+    >>> v = jnp.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
     >>> ind = jnp.array([0, 1, 0, 1, 2, 2])
     >>> def double(x):
     ...     return x * 2

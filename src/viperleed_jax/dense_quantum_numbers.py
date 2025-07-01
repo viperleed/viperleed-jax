@@ -66,6 +66,7 @@ def map_l_array_to_compressed_quantum_index(array, LMAX):
     broadcast_l_index = DENSE_L[LMAX]
     return jnp.asarray(array)[broadcast_l_index]
 
+
 _vmapped_l_array_to_compressed_quantum_index = jax.vmap(
     jax.vmap(map_l_array_to_compressed_quantum_index, in_axes=(0, None)),
     in_axes=(0, None),

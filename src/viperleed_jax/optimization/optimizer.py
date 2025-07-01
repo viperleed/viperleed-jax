@@ -34,8 +34,9 @@ class EarlyStopper:
         if self.prev_val is not None:
             rel_change = abs(self.prev_val - val) / max(1.0, abs(self.prev_val))
             if rel_change < self.ftol:
-                raise StopIteration("Function value change below ftol.")
+                raise StopIteration('Function value change below ftol.')
         self.prev_val = val
+
 
 class Optimizer(ABC):
     """Base class for all the optimizers.
@@ -71,9 +72,8 @@ class Optimizer(ABC):
         msg += '\t' + result_txt.replace('\n', '\n\t')
         return msg
 
-class GradOptimizer(
-    Optimizer
-):
+
+class GradOptimizer(Optimizer):
     """Class for optimizers that use a gradient.
 
     Parameters
@@ -106,6 +106,7 @@ class GradOptimizer(
         super().__init__(fun=fun)
         self.current_fun = 0
         self.current_grad = 0
+
 
 class NonGradOptimizer(Optimizer):
     """Class for optimizers that do not use gradients."""
@@ -281,6 +282,7 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
         msg += f'\tGrad. damp. f.:\t{self.grad_damp_factor}\n'
         return msg
 
+
 class LBFGSBOptimizer(SciPyGradOptimizer):
     """Class for setting up the L-BFGS-B algorithm for local minimization.
 
@@ -308,7 +310,7 @@ class LBFGSBOptimizer(SciPyGradOptimizer):
             algorithm stops earlier due to convergence.
     """
 
-    method='L-BFGS-B'
+    method = 'L-BFGS-B'
     combined_fun_and_grad = True
 
     def __init__(
@@ -627,6 +629,7 @@ def create_resample_and_evaluate(
 
 # Furhter gradient based optimizers
 
+
 class CGOptimizer(SciPyGradOptimizer):
     method = 'CG'
     use_bounds = False
@@ -642,18 +645,22 @@ class BFGSOptimizer(SciPyGradOptimizer):
     use_bounds = False
     use_early_stopper = True
 
+
 # Further gradient-free optimizers
+
 
 class GradFreeSLSQPOptimizer(SciPyNonGradOptimizer):
     method = 'SLSQP'
     use_bounds = True
     jac_strategy = '2-point'
 
+
 class GradFreeBFGSOptimizer(SciPyNonGradOptimizer):
     method = 'BFGS'
     use_bounds = True
     jac_strategy = '2-point'
     use_early_stopper = True
+
 
 class GradFreeLBFGSBOptimizer(SciPyNonGradOptimizer):
     method = 'L-BFGS-B'
@@ -668,4 +675,3 @@ class PowellOptimizer(SciPyNonGradOptimizer):
 class NelderMeadOptimizer(SciPyNonGradOptimizer):
     method = 'Nelder-Mead'
     use_bounds = True
-

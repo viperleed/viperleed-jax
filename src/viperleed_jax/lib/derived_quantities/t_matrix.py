@@ -122,7 +122,7 @@ class TMatrix(LinearPropagatedQuantity):
             Indexed as (energy_id, scatterer, l).
         """
         # vibration amplitudes in atomic units
-        vib_amps_au = self.tree(vib_params) # already in AU, don't convert
+        vib_amps_au = self.tree(vib_params)  # already in AU, don't convert
         # select the dynamic t-matrices based on the mask
         dynamic_t_matrices = vib_amps_au[self.is_dynamic_t_matrix]
 
@@ -159,15 +159,10 @@ class TMatrix(LinearPropagatedQuantity):
             # This loop is over a typically small list so it shouldn't be a
             # bottleneck.
             return jnp.stack(
-                [
-                    compute_t(pair)
-                    for pair in self.static_t_matrix_inputs
-                ]
+                [compute_t(pair) for pair in self.static_t_matrix_inputs]
             )
 
         # Map over energies with the given batch size.
-        return jax.lax.map(
-            energy_fn, energy_indices, batch_size=batch_energies
-        )
+        return jax.lax.map(energy_fn, energy_indices, batch_size=batch_energies)
         # static_t_matrices has shape (num_energies, num_static_inputs, lm, ...),
         # which is equivalent to the original einsum('ael->eal') result.

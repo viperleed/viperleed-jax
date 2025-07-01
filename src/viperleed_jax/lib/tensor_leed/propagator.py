@@ -230,7 +230,6 @@ def calculate_propagators(
             )
             # combined remains (atom_basis, lm, m)
 
-
         return dyn
 
     # Process each energy individually.
@@ -244,7 +243,6 @@ def calculate_propagators(
     per_energy = jnp.transpose(per_energy, (1, 0, 2, 3))
 
     if use_symmetry:
-
         # --- Apply rotations (symmetry operations) and rearrange ---
         propagators = jnp.einsum(
             'aelm,alm->ealm',

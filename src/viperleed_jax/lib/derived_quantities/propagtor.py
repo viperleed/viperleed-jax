@@ -46,6 +46,7 @@ class PropagatorContext:
     propagator_id: jnp.ndarray
     is_dynamic_propagator: jnp.ndarray
 
+
 class Propagators(LinearPropagatedQuantity):
     def __init__(
         self,
@@ -57,7 +58,11 @@ class Propagators(LinearPropagatedQuantity):
         max_l_max,
         use_symmetry,
     ):
-        super().__init__(parameter_space=parameter_space, name='propagators', transformer_class=LinearMap)
+        super().__init__(
+            parameter_space=parameter_space,
+            name='propagators',
+            transformer_class=LinearMap,
+        )
 
         self.kappa = jnp.asarray(kappa)
         self.energies = jnp.asarray(energies)
@@ -152,10 +157,9 @@ class Propagators(LinearPropagatedQuantity):
             displacements_angstrom = jnp.stack(
                 [trafo(geo_params) for trafo in self.reference_transformers]
             )
-            displacements_au = (
-                atomic_units.to_internal_displacement_vector(
+            displacements_au = atomic_units.to_internal_displacement_vector(
                 displacements_angstrom
-            ))
+            )
 
         else:
             displacements_angstrom = self.tree(jnp.asarray(geo_params))
@@ -220,6 +224,4 @@ class Propagators(LinearPropagatedQuantity):
         # The result has shape (num_energies, num_displacements, ...).
         # Use einsum to swap axes so that the final shape is
         # (num_displacements, num_energies, ...), matching the original ordering
-        return jnp.einsum(
-            'ed...->de...', static_propagators
-        )
+        return jnp.einsum('ed...->de...', static_propagators)

@@ -36,6 +36,7 @@ def to_internal_displacement_vector(displacement_vector_ang):
     # and change into left handed coordinate system by flipping y
     return vector * jnp.array([1, 1, -1])
 
+
 @jax.jit
 def to_internal_vib_amps(vib_amps_ang):
     """Convert from Angstrom to atomic units.

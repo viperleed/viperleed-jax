@@ -121,7 +121,6 @@ class ParameterSpace:
             free_params.append(int(sum(node.dof for node in layer_roots)))
         return free_params
 
-
     @property
     def dynamic_displacements_transformers(self):
         return self.geo_tree.dynamic_displacements_transformers()

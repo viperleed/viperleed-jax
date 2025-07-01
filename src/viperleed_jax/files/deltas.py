@@ -439,7 +439,6 @@ def Transform(n_E, directory, filename_list):
     }
 
 
-
 def read_block(reader, lines, shape, dtype=np.float64):
     """This function reads in the individual blocks of a
     TensErLEED delta-amplitude file.

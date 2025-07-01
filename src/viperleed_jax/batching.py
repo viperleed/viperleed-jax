@@ -66,7 +66,6 @@ class Batching:
             raise ValueError('l_max_per_energy must be in ascending order')
         self.l_max_per_energy = l_max_per_energy
 
-
         self.max_l_max = max(l_max_per_energy)
         self.batches = self.create_batches(energies)
 
@@ -75,7 +74,9 @@ class Batching:
         # iterate over the energies and create batches
         needed_l_max = set(self.l_max_per_energy)
         for batch_id, l_max in enumerate(sorted(needed_l_max)):
-            batch_indices = np.where(np.array(self.l_max_per_energy) == l_max)[0]
+            batch_indices = np.where(np.array(self.l_max_per_energy) == l_max)[
+                0
+            ]
             batch_energies = energies[batch_indices]
             batches.append(
                 Batch(

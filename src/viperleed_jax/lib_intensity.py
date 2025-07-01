@@ -15,6 +15,7 @@ from viperleed_jax.constants import BOHR
 def sum_intensity(prefactors, reference_amplitudes, delta_amplitudes):
     return prefactors * abs(reference_amplitudes + delta_amplitudes) ** 2
 
+
 def _wave_vectors(ref_data, theta, phi, trar, beam_indices):
     e_kin = ref_data.energies
     v_real = ref_data.v0r
@@ -60,12 +61,7 @@ def _wave_vectors(ref_data, theta, phi, trar, beam_indices):
 
 
 @partial(jax.jit, static_argnames=['n_beams'])
-def intensity_prefactors(
-    onset_height_change,
-    n_beams,
-    theta,
-    wave_vectors):
-
+def intensity_prefactors(onset_height_change, n_beams, theta, wave_vectors):
     # from lib_intensity
     (in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum) = wave_vectors
 

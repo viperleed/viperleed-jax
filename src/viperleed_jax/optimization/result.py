@@ -12,7 +12,6 @@ import numpy as np
 
 
 class OptimizationResult(ABC):
-
     @abstractmethod
     def best_R(self):
         return self.best
@@ -32,6 +31,7 @@ class OptimizationResult(ABC):
     @abstractmethod
     def write_to_file(self, file_path):
         """Write the optimization result to a file."""
+
 
 class CMAESResult(OptimizationResult):
     """Class for the output of the CMA-ES algorithm.
@@ -93,6 +93,7 @@ class CMAESResult(OptimizationResult):
             step_size_history=self.history.step_size_history,
             timestamp_history=self.history.timestamp_history,
         )
+
 
 class GradOptimizerResult(OptimizationResult):
     def __init__(self, scipy_result, history):

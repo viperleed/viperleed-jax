@@ -6,7 +6,6 @@ This speeds up the computation of functions that use these arrays as arguments.
 Adapted from https://github.com/google/jax/issues/4572#issuecomment-709809897
 """
 
-
 import jax.numpy as jnp
 
 

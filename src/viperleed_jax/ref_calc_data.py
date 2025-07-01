@@ -265,4 +265,3 @@ def process_tensors(tensors, fix_lmax=False):
         out_amps=jnp.array(tensor_amps_out),
     )
     return calc_params, ref_calc_output
-

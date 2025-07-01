@@ -1,8 +1,6 @@
 """Module optimization.history."""
 
-__authors__ = (
-    'Alexander M. Imre (@amimre)',
-)
+__authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2025-03-11'
 
 import time
@@ -28,6 +26,7 @@ class OptimizationHistory(ABC):
     def duration(self):
         """Return the duration of the optimization process."""
         return self.timestamp_history[-1] - self._start_time
+
 
 class GradOptimizationHistory(OptimizationHistory):
     def __init__(self):
