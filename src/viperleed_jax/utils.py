@@ -11,8 +11,37 @@ from pathlib import Path
 
 import jax
 import numpy as np
+from jax import numpy as jnp
 
 logger = logging.getLogger(__name__)
+
+
+def _simple_sum_hash(x):
+    return hash(x.tobytes())
+
+
+class HashableArray:
+    """Hashable Array wrapper for JAX.
+
+    Helps to make JAX arrays hashable, so they can be used static args in jit.
+    This speeds up the computation of functions that use these arrays as
+    arguments.
+
+    Based on https://github.com/google/jax/issues/4572#issuecomment-709809897.
+    """
+
+    def __init__(self, val):
+        self.val = val
+
+    def __hash__(self):
+        """Calculate the hash of the array."""
+        return _simple_sum_hash(self.val)
+
+    def __eq__(self, other):
+        """Check equality of two HashableArray instances."""
+        return isinstance(other, HashableArray) and jnp.all(
+            jnp.equal(self.val, other.val)
+        )
 
 
 def check_jax_devices():
