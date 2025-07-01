@@ -10,13 +10,13 @@ from viperleed_jax.dense_quantum_numbers import DENSE_L, DENSE_M
 from viperleed_jax.lib.math import (
     EPS,
     _divide_zero_safe,
+    apply_fun_grouped,
     bessel,
     cart_to_polar,
+    project_onto_plane_sum_1,
     safe_norm,
     spherical_harmonics_components,
     spherical_to_cart,
-    project_onto_plane_sum_1,
-    apply_fun_grouped
 )
 
 
@@ -267,7 +267,7 @@ class TestProjectSum1Plane:
         x = jnp.array([0.5, 0.25, 0.25])
         assert jnp.sum(x), pytest.approx(1.0)  # Pre-check
         proj = project_onto_plane_sum_1(x)
-        assert jnp.allclose(proj, x), f"Projection altered a point already on the plane."
+        assert jnp.allclose(proj, x), "Projection altered a point already on the plane."
 
     def test_projection_is_linear_up_to_offset(self):
         """Test that projecting two vectors and summing is predictable."""

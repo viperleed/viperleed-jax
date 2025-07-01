@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
+
 from viperleed_jax.batching import Batch, Batching
+
 
 class TestBatch:
     def test_batch_initialization(self):

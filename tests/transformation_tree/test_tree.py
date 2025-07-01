@@ -11,7 +11,6 @@ from viperleed_jax.transformation_tree.tree import (
 )
 
 
-
 # Test Abstract Base Class
 def test_abstract_transformation_tree():
     with pytest.raises(TypeError):
@@ -30,10 +29,16 @@ def test_abstract_transformation_tree():
 import numpy as np
 import pytest
 
-from viperleed_jax.transformation_tree.tree import LinearTree
-from viperleed_jax.transformation_tree.linear_transformer import AffineTransformer
-from viperleed_jax.transformation_tree.nodes import LinearLeafNode, LinearConstraintNode
-from viperleed_jax.transformation_tree.displacement_tree_layers import DisplacementTreeLayers
+from viperleed_jax.transformation_tree.displacement_tree_layers import (
+    DisplacementTreeLayers,
+)
+from viperleed_jax.transformation_tree.linear_transformer import (
+    AffineTransformer,
+)
+from viperleed_jax.transformation_tree.nodes import (
+    LinearConstraintNode,
+    LinearLeafNode,
+)
 
 
 def test_linear_tree_add_leaf_node_and_finalize():

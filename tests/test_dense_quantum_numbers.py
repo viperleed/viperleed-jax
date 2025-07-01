@@ -10,7 +10,7 @@ def test_correct_stored_quantum_numbers():
         2 * dense_quantum_numbers.MAXIMUM_LMAX
     )
     assert (
-        dense_quantum_numbers._FULL_DENSE_QUANTUM_NUMBERS == expected_qns
+        expected_qns == dense_quantum_numbers._FULL_DENSE_QUANTUM_NUMBERS
     ).all()  # int comparison
 
 

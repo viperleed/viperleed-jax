@@ -4,16 +4,12 @@ __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-11-25'
 
 import pytest
-from tests.calc import poscar_slabs
-from tests.calc.tags import CaseTag as Tag
-from pytest_cases import parametrize_with_cases, filters
-
-from viperleed_jax.atom_basis import AtomBasis, TargetSelectionError
-
-
+from pytest_cases import filters, parametrize_with_cases
 from viperleed.calc.files.new_displacements.tokens.target import TargetToken
 
-
+from tests.calc import poscar_slabs
+from tests.calc.tags import CaseTag as Tag
+from viperleed_jax.atom_basis import AtomBasis, TargetSelectionError
 
 test_poscars = parametrize_with_cases(
     'test_slab',

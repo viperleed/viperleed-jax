@@ -2,9 +2,8 @@ import numpy as np
 import pytest
 
 from viperleed_jax.transformation_tree.linear_transformer import (
-    LinearMap,
     AffineTransformer,
-    Transformer,
+    LinearMap,
 )
 
 
@@ -201,7 +200,7 @@ class TestAdheresToTransformerABC:
         biases = [5, 6]
         transformer = AffineTransformer(weights, biases)
 
-        assert hasattr(transformer, '__call__')
+        assert callable(transformer)
         assert callable(transformer)
         assert hasattr(transformer, 'in_dim')
         assert hasattr(transformer, 'out_dim')

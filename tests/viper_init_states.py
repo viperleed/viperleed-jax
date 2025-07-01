@@ -4,7 +4,6 @@ from pytest_cases import fixture
 
 from viperleed_jax.from_state import run_viperleed_initialization
 
-
 DATA_PATH = Path(__file__).parent / 'test_data'
 
 INPUTS_CU_111_DYNAMIC_LMAX = DATA_PATH / 'Cu_111' / 'dynamic_l_max'

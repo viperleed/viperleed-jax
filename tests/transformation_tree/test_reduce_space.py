@@ -1,8 +1,14 @@
-import pytest
 import numpy as np
+import pytest
 
-from viperleed_jax.transformation_tree.reduced_space import apply_affine_to_subspace, orthonormalize_subspace, Zonotope
-from viperleed_jax.transformation_tree.linear_transformer import AffineTransformer
+from viperleed_jax.transformation_tree.linear_transformer import (
+    AffineTransformer,
+)
+from viperleed_jax.transformation_tree.reduced_space import (
+    Zonotope,
+    apply_affine_to_subspace,
+    orthonormalize_subspace,
+)
 
 
 @pytest.mark.parametrize(

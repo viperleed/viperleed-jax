@@ -1,14 +1,9 @@
 """Tests for the tensor_calculator module."""
 
-from collections import namedtuple
-from pathlib import Path
 
-import jax
 import numpy as np
 import pytest
 from pytest_cases import case, parametrize_with_cases
-
-from viperleed_jax.constants import BOHR
 
 
 class TensorCalculatorsWithInfo:
