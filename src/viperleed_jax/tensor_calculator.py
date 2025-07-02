@@ -587,9 +587,9 @@ class TensorLEEDCalculator:
         logger.info(utils.format_benchmark_results(bench_results) + '\n')
 
     # TODO: needs tests
-    def write_to_slab(
-        self, rpars, slab, base_scatterers, params, write_to_file=True
-    ):
+    def apply_to_slab(self, slab, rpars, free_params):
+        # atom basis from parameter space
+        atom_basis = self.parameter_space.atom_basis
         for atom in slab:
             atom.storeOriState()
         for site in slab.sitelist:
@@ -603,7 +603,8 @@ class TensorLEEDCalculator:
         slab.update_layer_coordinates()
 
         # expand the reduced parameter vector
-        v0r, displacements, vibrations, occupations = self.expand_params(params)
+        v0r, displacements, vibrations, occupations = self.expand_params(
+            free_params)
 
         # update V0r in rpars
         rpars.best_v0r = v0r
@@ -632,10 +633,10 @@ class TensorLEEDCalculator:
             if at.is_bulk:
                 continue
             at_scatterers = [
-                s for s in base_scatterers.scatterers if s.num == at.num
+                s for s in atom_basis.scatterers if s.num == at.num
             ]
             scatterer_indices = [
-                base_scatterers.scatterers.index(s) for s in at_scatterers
+                atom_basis.scatterers.index(s) for s in at_scatterers
             ]
             scatterer_indices = np.array(scatterer_indices)
 
@@ -662,14 +663,14 @@ class TensorLEEDCalculator:
             for element in site.vibamp:
                 siteel_scatterers = [
                     s
-                    for s in base_scatterers.scatterers
+                    for s in atom_basis.scatterers
                     if s.site == site.label and s.element == element
                 ]
                 if len(siteel_scatterers) == 0:
                     continue
 
                 scatterer_indices = [
-                    base_scatterers.scatterers.index(s)
+                    atom_basis.scatterers.index(s)
                     for s in siteel_scatterers
                 ]
                 scatterer_indices = np.array(scatterer_indices)
@@ -697,12 +698,12 @@ class TensorLEEDCalculator:
                     scatterer.atom.disp_vib[element] = rel_vib
                     scatterer.atom.disp_occ[element] = rel_scatterer_occ
 
-        # Optionally write to file
-        if write_to_file:
-            # write POSCAR
-            poscar.write(slab, 'POSCAR_TL_optimized', comments='all')
-            # write VIBROCC
-            writeVIBROCC(slab, rpars, 'VIBROCC_TL_optimized')
+        # # Optionally write to file
+        # if write_to_file:
+        #     # write POSCAR
+        #     poscar.write(slab, 'POSCAR_TL_optimized', comments='all')
+        #     # write VIBROCC
+        #     writeVIBROCC(slab, rpars, 'VIBROCC_TL_optimized')
 
 
 def calculate_delta_t_matrix(
