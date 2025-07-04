@@ -14,7 +14,7 @@ from viperleed_jax import optimization
 class OptimizerIterator:
     """An iterator for managing multiple optimization algorithms in sequence."""
 
-    def __init__(self, rpars, calculator):
+    def __init__(self, rpars, calculator, starting_x=None):
         """
         Initialize the optimizer iterator with the required parameters.
 
@@ -23,10 +23,19 @@ class OptimizerIterator:
         """
         self.rpars = rpars
         self.calculator = calculator
-        self.current_step = 0
         self._cholesky = None # default to None
         self._upcoming_optimizers = self.rpars.VLJ_ALGO
         self._done_optimizers = []
+
+        if starting_x is not None:
+            self.set_x(starting_x)
+        else:
+            # If no starting point is provided, use the suggested starting point
+            # based on the first optimizer in the sequence.
+            logger.debug(
+                'No starting point provided. Using suggested starting point.'
+            )
+            self._current_x = self.suggested_starting_point
 
         self._DISPATCH = {
             'CMAES': self._get_cmaes_optimizer,
@@ -40,6 +49,27 @@ class OptimizerIterator:
                 f"Valid options are: {list(self._DISPATCH.keys())}."
             )
             raise ValueError(msg)
+
+    def set_x(self, x):
+        """Set the parameter vector used as input for the next optimization."""
+        try:
+            x = np.asarray(x, dtype=float)
+        except ValueError as e:
+            raise ValueError(
+                "The input 'x' must be convertible to a float array."
+            ) from e
+        if x.shape != (self.calculator.n_free_parameters,):
+            msg = (
+                f"The input 'x' must have shape "
+                f"({self.calculator.n_free_parameters},)."
+            )
+            raise ValueError(msg)
+        self._current_x = x
+
+    @property
+    def current_x(self):
+        """Return the current point in the optimization process."""
+        return self._current_x
 
     @property
     def cholesky(self):
@@ -72,7 +102,7 @@ class OptimizerIterator:
         return self
 
     def __next__(self):
-        """Return the next optimizer in the sequence.
+        """Run the next part of the optimizer sequence and return the result.
 
         Raises
         ------
@@ -80,21 +110,27 @@ class OptimizerIterator:
         """
         if not self._upcoming_optimizers:
             raise StopIteration
-        self._process_previous_optimizer()
 
         # get the next optimizer from the list
         optimizer_name = self._upcoming_optimizers.pop(0)
-        next_optimizer = self._DISPATCH[optimizer_name]()
-        self._done_optimizers.append(next_optimizer)
-        return next_optimizer
+        optimizer = self._DISPATCH[optimizer_name]()
 
-    def _process_previous_optimizer(self):
+        # run the optimizer with the current parameter vector
+        logger.debug(
+            f'Running optimizer: {optimizer_name} with x={self._current_x}'
+        )
+        result = optimizer(self._current_x)
+        self._done_optimizers.append(optimizer)
+        self._process_result(result)
+
+        return optimizer, result
+
+
+    def _process_result(self, result):
         """Carry over any necessary information from the previous optimizer."""
-        if not self._done_optimizers:
-            return
         last_optimizer = self._done_optimizers[-1]
         if isinstance(last_optimizer, optimization.CMAESOptimizer):
-            self._cholesky = last_optimizer.cholesky
+            self._cholesky = result.cholesky
             logger.debug(
                 'Carrying over Cholesky factor from CMA-ES optimization.'
             )
