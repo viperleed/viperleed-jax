@@ -65,13 +65,13 @@ class TensorLEEDCalculator:
         interpolation_step=0.5,
         interpolation_deg=3,
         bc_type='not-a-knot',
-        recalculate_ref_t_matrices=False,
         use_symmetry=True,
     ):
         self.ref_calc_params = ref_calc_params
         self.ref_calc_result = ref_calc_result
         self.phaseshifts = phaseshifts
-        self.recalculate_ref_t_matrices = recalculate_ref_t_matrices
+        self.recalculate_ref_t_matrices = (
+            rparams.vlj_config.recalc_ref_t_matrices)
 
         self.interpolation_deg = interpolation_deg
         self.bc_type = bc_type
@@ -113,8 +113,10 @@ class TensorLEEDCalculator:
         self.theta = jnp.deg2rad(rparams.THETA)
         self.phi = jnp.deg2rad(rparams.PHI)
 
+        # set l_max
+        self._set_l_max(rparams)
+
         # TODO: refactor into a dataclass
-        self.max_l_max = self.ref_calc_params.max_lmax
         self.energies = jnp.asarray(self.ref_calc_params.energies)
 
         non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
@@ -131,6 +133,7 @@ class TensorLEEDCalculator:
         self.delta_amp_prefactors = self._calc_delta_amp_prefactors()
 
         self.exp_spline = None
+
 
         # determine and set batch sizes
         self._set_batch_sizes(rparams)
@@ -169,6 +172,16 @@ class TensorLEEDCalculator:
         # evaluate the wave vectors
         self.wave_vectors = self._eval_wave_vectors()
 
+    def _set_l_max(self, rparams):
+        """Set the maximum l value based on rparams."""
+        if rparams.vlj_config.t_leed_l_max == -1:
+            # use the maximum l_max from the reference calculation
+            self.max_l_max = self.ref_calc_params.max_lmax
+        else:
+            # use the l_max from the rparams
+            self.max_l_max = rparams.vlj_config.t_leed_l_max
+        logger.debug(f'Setting maximum l value to {self.max_l_max}.')
+
     def _set_batch_sizes(self, rparams):
         """Set batch sizes for energies and atoms based on rparams."""
         # TODO: implement a memory-aware automatic batching
@@ -183,6 +196,11 @@ class TensorLEEDCalculator:
         if batch_energies is -1:
             batch_energies = self.energies.shape[0]
         self.batch_energies = batch_energies
+
+        logger.debug(
+            f'Using batch sizes: {self.batch_energies} energies, '
+            f'{self.batch_atoms} atoms.'
+        )
 
     @property
     def unit_cell_area(self):
