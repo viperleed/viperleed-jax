@@ -10,7 +10,6 @@ import tempfile
 from pathlib import Path
 
 from viperleed.calc import LOGGER
-from viperleed.calc.files.new_displacements.file import DisplacementsFile
 from viperleed.calc.run import run_calc
 
 from viperleed_jax.from_objects import (
@@ -20,7 +19,7 @@ from viperleed_jax.from_objects import (
 
 
 def calculator_from_paths(
-    inputs_path, tensor_path, displacements_path, displacements_id=0, **kwargs
+    inputs_path, tensor_path, displacements_id=0, **kwargs
 ):
     """Create a TensorLEEDCalculator from input paths.
 
@@ -63,9 +62,7 @@ def calculator_from_paths(
     # create parameter space
     parameter_space = setup_tl_parameter_space(slab, rpars)
 
-    # load and read the DISPLACEMENTS file
-    disp_file = DisplacementsFile()
-    disp_file.read(displacements_path)
+    disp_file = rpars.vlj_displacements
 
     if disp_file.offsets is not None:
         LOGGER.debug('Applying offsets from displacements file.')
@@ -76,7 +73,7 @@ def calculator_from_paths(
         search_block = disp_file.next(2.0)
     parameter_space.apply_search_segment(search_block)
 
-    phaseshifts_path = displacements_path.parent / 'PHASESHIFTS'
+    phaseshifts_path = Path(inputs_path) / 'PHASESHIFTS'
     # delegate to calculator_from_objects
     calculator = setup_tl_calculator(
         slab, rpars, tensor_path, phaseshifts_path, **kwargs
