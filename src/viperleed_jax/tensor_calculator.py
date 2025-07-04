@@ -65,7 +65,6 @@ class TensorLEEDCalculator:
         interpolation_step=0.5,
         interpolation_deg=3,
         bc_type='not-a-knot',
-        use_symmetry=True,
     ):
         self.ref_calc_params = ref_calc_params
         self.ref_calc_result = ref_calc_result
@@ -75,7 +74,7 @@ class TensorLEEDCalculator:
 
         self.interpolation_deg = interpolation_deg
         self.bc_type = bc_type
-        self.use_symmetry = use_symmetry
+        self.use_symmetry = rparams.VLJ_CONFIG['use_symmetry']
 
         # get experimental intensities and hk
         if not rparams.expbeams:
