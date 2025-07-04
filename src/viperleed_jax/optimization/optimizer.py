@@ -514,52 +514,6 @@ class CMAESOptimizer(NonGradOptimizer):
         return msg
 
 
-class SequentialOptimizer(Optimizer):
-    """Class to run two optimizers sequentially.
-
-    First, a global optimizer (e.g., CMA-ES) is run, followed by a local
-    optimizer (e.g., SLSQP) for refining the result.
-
-    Parameters
-    ----------
-        global_optimizer: Instance of a global optimizer.
-        local_optimizer: Instance of a local optimizer.
-    """
-
-    def __init__(self, global_optimizer, local_optimizer):
-        self.global_optimizer = global_optimizer
-        self.local_optimizer = local_optimizer
-        super().__init__(fun=global_optimizer.fun)
-
-    def __call__(self, start_point):
-        """Run the optimization pipeline.
-
-        Parameters
-        ----------
-            start_point: Starting point for the global optimizer.
-
-        Returns
-        -------
-            A dictionary containing the results of both optimizations.
-        """
-        logger.info('Starting global optimization (CMA-ES)...')
-        # Run the global optimizer
-        global_result = self.global_optimizer(start_point)
-
-        logger.info('Global optimization finished.\n')
-        logger.info('Starting local optimization')
-        # Use the result of the global optimizer for the local optimizer
-        local_result = self.local_optimizer(global_result.min_individual)
-
-        logger.info('Local optimization finished.')
-
-        # Combine results into a single dictionary
-        return {
-            'global_result': global_result,
-            'local_result': local_result,
-        }
-
-
 def create_resample_and_evaluate(
     sample_individuals,
     evaluate_single,
