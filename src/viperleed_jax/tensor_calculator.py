@@ -71,7 +71,7 @@ class TensorLEEDCalculator:
         self.ref_calc_result = ref_calc_result
         self.phaseshifts = phaseshifts
         self.recalculate_ref_t_matrices = (
-            rparams.vlj_config.recalc_ref_t_matrices)
+            rparams.VLJ_CONFIG['recalc_ref_t_matrices'])
 
         self.interpolation_deg = interpolation_deg
         self.bc_type = bc_type
@@ -174,12 +174,12 @@ class TensorLEEDCalculator:
 
     def _set_l_max(self, rparams):
         """Set the maximum l value based on rparams."""
-        if rparams.vlj_config.t_leed_l_max == -1:
+        if rparams.VLJ_CONFIG['t_leed_l_max'] == -1:
             # use the maximum l_max from the reference calculation
             self.max_l_max = self.ref_calc_params.max_lmax
         else:
             # use the l_max from the rparams
-            self.max_l_max = rparams.vlj_config.t_leed_l_max
+            self.max_l_max = rparams.VLJ_CONFIG['t_leed_l_max']
         logger.debug(f'Setting maximum l value to {self.max_l_max}.')
 
     def _set_batch_sizes(self, rparams):
