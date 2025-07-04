@@ -48,9 +48,15 @@ class Optimizer(ABC):
 
     use_early_stopper = False
 
-    def __init__(self, fun):
+    def __init__(self, fun, name):
         self.fun = fun
         self.fun_history = []
+        self._name
+
+    @property
+    def name(self):
+        """Return the name of the optimizer."""
+        return self._name
 
     @abstractmethod
     def _uses_grad(self):
@@ -88,7 +94,7 @@ class GradOptimizer(Optimizer):
 
     _uses_grad = True
 
-    def __init__(self, fun, grad=None, fun_and_grad=None):
+    def __init__(self, fun, name, grad=None, fun_and_grad=None):
         if grad is None and fun_and_grad is None:
             raise ValueError(
                 'At least one of grad or fun_and_grad must be set.'
@@ -103,7 +109,7 @@ class GradOptimizer(Optimizer):
             if fun_and_grad is not None
             else (lambda arg: (fun(arg), grad(arg)))
         )
-        super().__init__(fun=fun)
+        super().__init__(fun=fun, name=name)
         self.current_fun = 0
         self.current_grad = 0
 
@@ -113,9 +119,9 @@ class NonGradOptimizer(Optimizer):
 
     _uses_grad = False
 
-    def __init__(self, fun):
+    def __init__(self, fun, name):
         self.fun = fun
-        super().__init__(fun=fun)
+        super().__init__(fun=fun, name=name)
 
 
 class SciPyOptimizerBase:
@@ -181,7 +187,7 @@ class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
     def __init__(self, fun, bounds=None, cholesky=None, **kwargs):
         NonGradOptimizer.__init__(self, fun)
         SciPyOptimizerBase.__init__(
-            self, bounds=bounds, cholesky=cholesky, **kwargs
+            self, name=self.method, bounds=bounds, cholesky=cholesky, **kwargs
         )
 
     def __call__(self, x0):
@@ -226,7 +232,8 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
         cholesky=None,
         **kwargs,
     ):
-        GradOptimizer.__init__(self, fun, grad, fun_and_grad)
+        GradOptimizer.__init__(
+            self, fun=fun, name=self.method, grad=grad, fun_and_grad=fun_and_grad)
         SciPyOptimizerBase.__init__(
             self, bounds=bounds, cholesky=cholesky, **kwargs
         )
@@ -418,7 +425,7 @@ class CMAESOptimizer(NonGradOptimizer):
         self.n_generations = n_generations
         self.ftol = ftol
         self.convergence_gens = convergence_gens
-        super().__init__(fun=fun)
+        super().__init__(fun=fun, name='CMA-ES')
 
     def __call__(self, start_point):
         """Start the optimization.
