@@ -192,7 +192,7 @@ class TensorLEEDCalculator:
             batch_atoms = self.n_atoms
         self.batch_atoms = batch_atoms
 
-        if batch_energies is -1:
+        if batch_energies == -1:
             batch_energies = self.energies.shape[0]
         self.batch_energies = batch_energies
 
