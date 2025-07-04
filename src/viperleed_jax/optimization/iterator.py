@@ -58,7 +58,7 @@ class OptimizerIterator:
         """
         first_optimizer =  self._DISPATCH[self.rpars.VLJ_ALGO[0]]
         center = np.array([0.5] * self.calculator.n_free_parameters)
-        if isinstance(first_optimizer, optimization.GradOptimizer):
+        if isinstance(first_optimizer, optimization.optimizer.GradOptimizer):
             # Use a small offset to avoid numerical issues
             pattern = np.array([0.001, -0.001])
             offset = np.tile(
