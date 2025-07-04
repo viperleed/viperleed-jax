@@ -129,6 +129,9 @@ class OptimizerIterator:
 
     def _process_result(self, result):
         """Carry over any necessary information from the previous optimizer."""
+        # update the parameter vector for the next optimizer
+        self._current_x = result.best_x
+
         last_optimizer = self._done_optimizers[-1]
         if isinstance(last_optimizer, optimization.optimizer.CMAESOptimizer):
             self._cholesky = result.cholesky
