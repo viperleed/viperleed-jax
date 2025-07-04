@@ -155,7 +155,9 @@ class OptimizerIterator:
                 fun=self.calculator.R,
                 grad=self.calculator.grad_R,
                 cholesky=self.cholesky,
-                grad_damp=self.rpars.vlj_algo_settings['SLSQP']['grad_damping'],
+                grad_damp_factor=self.rpars.vlj_algo_settings['SLSQP'][
+                    'grad_damping'
+                ],
             )
 
         # otherwise, use the gradient-free SLSQP optimizer
