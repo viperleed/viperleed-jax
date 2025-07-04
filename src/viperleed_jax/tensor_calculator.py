@@ -11,9 +11,7 @@ import jax.numpy as jnp
 import numpy as np
 from interpax import CubicSpline
 from viperleed.calc import LOGGER as logger
-from viperleed.calc.files import poscar
 from viperleed.calc.files.iorfactor import beamlist_to_array
-from viperleed.calc.files.vibrocc import writeVIBROCC
 
 from viperleed_jax import rfactor, utils
 from viperleed_jax.batching import Batching
