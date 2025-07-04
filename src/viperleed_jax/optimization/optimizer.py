@@ -51,7 +51,7 @@ class Optimizer(ABC):
     def __init__(self, fun, name):
         self.fun = fun
         self.fun_history = []
-        self._name
+        self._name = name
 
     @property
     def name(self):
