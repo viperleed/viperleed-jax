@@ -113,7 +113,7 @@ class TensorLEEDCalculator:
         self.phi = jnp.deg2rad(rparams.PHI)
 
         # set l_max
-        self.max_l_max = ref_calc_params.max_l_max
+        self.max_l_max = ref_calc_params.max_lmax
 
         # TODO: refactor into a dataclass
         self.energies = jnp.asarray(self.ref_calc_params.energies)
