@@ -27,6 +27,12 @@ class OptimizerIterator:
         self._upcoming_optimizers = self.rpars.VLJ_ALGO
         self._done_optimizers = []
 
+        self._DISPATCH = {
+            'CMAES': self._get_cmaes_optimizer,
+            'SLSQP': self._get_slsqp_optimizer,
+            'BFGS': self._get_bfgs_optimizer,
+        }
+
         if starting_x is not None:
             self.set_x(starting_x)
         else:
@@ -37,11 +43,6 @@ class OptimizerIterator:
             )
             self._current_x = self.suggested_starting_point
 
-        self._DISPATCH = {
-            'CMAES': self._get_cmaes_optimizer,
-            'SLSQP': self._get_slsqp_optimizer,
-            'BFGS': self._get_bfgs_optimizer,
-        }
 
         if not all(opt in self._DISPATCH for opt in self._upcoming_optimizers):
             msg = (
