@@ -130,7 +130,7 @@ class OptimizerIterator:
     def _process_result(self, result):
         """Carry over any necessary information from the previous optimizer."""
         last_optimizer = self._done_optimizers[-1]
-        if isinstance(last_optimizer, optimization.CMAESOptimizer):
+        if isinstance(last_optimizer, optimization.optimizer.CMAESOptimizer):
             self._cholesky = result.cholesky
             logger.debug(
                 'Carrying over Cholesky factor from CMA-ES optimization.'
@@ -138,7 +138,7 @@ class OptimizerIterator:
 
     def _get_cmaes_optimizer(self):
         logger.debug('Preparing CMA-ES optimizer.')
-        return optimization.CMAESOptimizer(
+        return optimization.optimizer.CMAESOptimizer(
             fun=self.calculator.R,
             n_generations=self.rpars.vlj_algo_settings['CMAES']['max_gens'],
             pop_size=self.rpars.vlj_algo_settings['CMAES']['pop'],
@@ -148,7 +148,7 @@ class OptimizerIterator:
     def _get_slsqp_optimizer(self):
         logger.debug('Preparing SLSQP optimizer.')
         if self.rpars.vlj_algo_settings['SLSQP']['grad']:
-            return optimization.SLSQPOptimzer(
+            return optimization.optimizer.SLSQPOptimizer(
                 fun=self.calculator.R,
                 grad=self.calculator.grad_R,
                 cholesky=self.cholesky,
@@ -156,7 +156,7 @@ class OptimizerIterator:
             )
 
         # otherwise, use the gradient-free SLSQP optimizer
-        return optimization.GradFreeSLSQPOptimizer(
+        return optimization.optimizer.GradFreeSLSQPOptimizer(
             fun=self.calculator.R,
             cholesky=self.cholesky,
         )
@@ -169,7 +169,7 @@ class OptimizerIterator:
                 grad=self.calculator.grad_R,
                 cholesky=self.cholesky,
             )
-        return optimization.GradFreeBFGSOptimizer(
+        return optimization.optimizer.GradFreeBFGSOptimizer(
             fun=self.calculator.R,
             cholesky=self.cholesky,
         )
