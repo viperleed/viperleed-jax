@@ -113,7 +113,7 @@ class TensorLEEDCalculator:
         self.phi = jnp.deg2rad(rparams.PHI)
 
         # set l_max
-        self._set_l_max(rparams)
+        self.max_l_max = ref_calc_params.max_l_max
 
         # TODO: refactor into a dataclass
         self.energies = jnp.asarray(self.ref_calc_params.energies)
@@ -170,16 +170,6 @@ class TensorLEEDCalculator:
 
         # evaluate the wave vectors
         self.wave_vectors = self._eval_wave_vectors()
-
-    def _set_l_max(self, rparams):
-        """Set the maximum l value based on rparams."""
-        if rparams.VLJ_CONFIG['t_leed_l_max'] == -1:
-            # use the maximum l_max from the reference calculation
-            self.max_l_max = self.ref_calc_params.max_lmax
-        else:
-            # use the l_max from the rparams
-            self.max_l_max = rparams.VLJ_CONFIG['t_leed_l_max']
-        logger.debug(f'Setting maximum l value to {self.max_l_max}.')
 
     def _set_batch_sizes(self, rparams):
         """Set batch sizes for energies and atoms based on rparams."""

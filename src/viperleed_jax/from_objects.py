@@ -45,8 +45,6 @@ def setup_tl_calculator(
     rpars,
     tensor_path,
     phaseshifts_path,
-    t_leed_l_max=None,
-    recalculate_ref_t_matrices=None,
     **kwargs,
 ):
     """Set up a TensorLEEDCalculator from slab, rpars, and tensor file.
@@ -65,13 +63,6 @@ def setup_tl_calculator(
         The path to the tensor file.
     phaseshifts_path : path-like
         The path to the phaseshift file.
-    t_leed_l_max : int, optional
-        The maximum angular momentum quantum number to be used in the tensor
-        LEED calculation. If not given, defaults to the value from
-        rpars.LMAX.max.
-    recalculate_ref_t_matrices : bool, optional
-        Whether to recalculate the reference T-matrices. If not given, defaults
-        to the value from rpars.SEARCH_RECALC_TMATRICES.
     **kwargs : dict, optional
         Additional keyword arguments to be passed to the TensorLEEDCalculator.
 
@@ -81,15 +72,6 @@ def setup_tl_calculator(
         The TensorLEEDCalculator object. The calculator is not yet initialized,
         with a parameter space.
     """
-    # set LMAX cutoff
-    ref_calc_lmax = rpars.LMAX.max
-    if t_leed_l_max is None:
-        t_leed_l_max = ref_calc_lmax
-
-    # decide on T-matrix recalculation
-    if recalculate_ref_t_matrices is None:
-        recalculate_ref_t_matrices = rpars.SEARCH_RECALC_TMATRICES
-
     # log info or warning on used GPU/CPU
     check_jax_devices()
 
@@ -109,6 +91,9 @@ def setup_tl_calculator(
         f'Reading tensor file with lmax={ref_calc_lmax},'
         f'n_beams={n_beams}, n_energies={n_energies}.'
     )
+
+    # determine the l_max for the LEED calculation
+    t_leed_l_max = _determine_l_max(rpars)
 
     # read tensor file
     tensors = read_tensor_zip(tensor_path, ref_calc_lmax, n_beams, n_energies)
@@ -149,7 +134,6 @@ def setup_tl_calculator(
         phaseshifts,
         slab,
         rpars,
-        recalculate_ref_t_matrices=recalculate_ref_t_matrices,
         **kwargs,
     )
 
@@ -159,3 +143,12 @@ def setup_tl_calculator(
     del raw_phaseshifts
 
     return calculator
+
+
+def _determine_l_max(rpars):
+    if rpars.VLJ_CONFIG['t_leed_l_max'] == -1:
+        # use the maximum l_max from the reference calculation
+        return rpars.LMAX.max
+
+    # use the l_max from the rparams
+    return rpars.VLJ_CONFIG['t_leed_l_max']
