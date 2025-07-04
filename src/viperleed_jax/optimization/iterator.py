@@ -5,6 +5,7 @@ __authors__ = (
 )
 __created__ = '2025-07-04'
 
+import numpy as np
 from viperleed.calc import LOGGER as logger
 
 from viperleed_jax import optimization
@@ -46,6 +47,23 @@ class OptimizerIterator:
         if not self.rpars.VLJ_CONFIG['precondition']:
             return None
         return self._cholesky
+
+    @property
+    def suggested_starting_point(self):
+        """Return a suggested starting point for the iterator.
+
+        If the first optimizer uses gradients, we want to start slightly away
+        from the center ([0.5, 0.5, 0.5, ...])to avoid numerical issues.
+        If the first optimizer does not use gradients, return the center point.
+        """
+        first_optimizer =  self._DISPATCH[self.rpars.VLJ_ALGO[0]]
+        center = np.array([0.5] * self.calculator.n_parameters)
+        if isinstance(first_optimizer, optimization.GradOptimizer):
+            # Use a small offset to avoid numerical issues
+            pattern = np.array([0.001, -0.001])
+            offset = np.tile(pattern, self.calculator.n_parameters // 2 + 1)
+            center += offset[: self.calculator.n_parameters]
+        return center
 
     def __iter__(self):
         """Return the iterator object itself."""
