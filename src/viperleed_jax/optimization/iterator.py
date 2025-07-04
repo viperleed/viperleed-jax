@@ -57,12 +57,14 @@ class OptimizerIterator:
         If the first optimizer does not use gradients, return the center point.
         """
         first_optimizer =  self._DISPATCH[self.rpars.VLJ_ALGO[0]]
-        center = np.array([0.5] * self.calculator.n_parameters)
+        center = np.array([0.5] * self.calculator.n_free_parameters)
         if isinstance(first_optimizer, optimization.GradOptimizer):
             # Use a small offset to avoid numerical issues
             pattern = np.array([0.001, -0.001])
-            offset = np.tile(pattern, self.calculator.n_parameters // 2 + 1)
-            center += offset[: self.calculator.n_parameters]
+            offset = np.tile(
+                pattern, self.calculator.n_free_parameters // 2 + 1
+            )
+            center += offset[: self.calculator.n_free_parameters]
         return center
 
     def __iter__(self):
