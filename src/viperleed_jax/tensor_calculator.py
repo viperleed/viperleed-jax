@@ -65,8 +65,6 @@ class TensorLEEDCalculator:
         interpolation_step=0.5,
         interpolation_deg=3,
         bc_type='not-a-knot',
-        batch_energies=None,
-        batch_atoms=None,
         recalculate_ref_t_matrices=False,
         use_symmetry=True,
     ):
@@ -134,12 +132,8 @@ class TensorLEEDCalculator:
 
         self.exp_spline = None
 
-        # set batch sizes
-        self.batch_energies = batch_energies
-        if batch_atoms is None:
-            self.batch_atoms = self.n_atoms
-        else:
-            self.batch_atoms = batch_atoms
+        # determine and set batch sizes
+        self._set_batch_sizes(rparams)
 
         # default R-factor is Pendry
         self.rfactor_func = rfactor.pendry_R
@@ -174,6 +168,21 @@ class TensorLEEDCalculator:
 
         # evaluate the wave vectors
         self.wave_vectors = self._eval_wave_vectors()
+
+    def _set_batch_sizes(self, rparams):
+        """Set batch sizes for energies and atoms based on rparams."""
+        # TODO: implement a memory-aware automatic batching
+        batch_energies, batch_atoms = (
+            rparams.VLJ_BATCH['energies'],
+            rparams.VLJ_BATCH['atoms'],
+        )
+        if batch_atoms == -1:
+            batch_atoms = self.n_atoms
+        self.batch_atoms = batch_atoms
+
+        if batch_energies is -1:
+            batch_energies = self.energies.shape[0]
+        self.batch_energies = batch_energies
 
     @property
     def unit_cell_area(self):
