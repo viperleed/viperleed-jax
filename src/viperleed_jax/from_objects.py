@@ -146,9 +146,9 @@ def setup_tl_calculator(
 
 
 def _determine_l_max(rpars):
-    if rpars.VLJ_CONFIG['t_leed_l_max'] == -1:
+    if rpars.VLJ_CONFIG['t-leed-l_max'] == -1:
         # use the maximum l_max from the reference calculation
         return rpars.LMAX.max
 
     # use the l_max from the rparams
-    return rpars.VLJ_CONFIG['t_leed_l_max']
+    return rpars.VLJ_CONFIG['t-leed-l_max']
