@@ -170,13 +170,19 @@ def format_benchmark_results(results):
     """
     r_fac_compile_time, r_fac_time, grad_compile_time, grad_time = results
 
-    return (
+    result_str = (
         'Benchmark results:\n'
         f'\tR factor comp. time:\t{r_fac_compile_time:.4f} s\n'
         f'\tR factor exec. time:\t{1000 * r_fac_time:.4f} ms\n'
-        f'\tGradient comp. time:\t{grad_compile_time:.4f} s\n'
-        f'\tGradient exec. time:\t{1000 * grad_time:.4f} ms'
     )
+    if not np.isnan(grad_compile_time) and not np.isnan(grad_time):
+        result_str += (
+            f'\tGrad comp. time:\t{grad_compile_time:.4f} s\n'
+            f'\tGrad exec. time:\t{1000 * grad_time:.4f} ms\n'
+        )
+    else:
+        result_str += '\tGradients not evaluated.\n'
+    return result_str
 
 
 def estimate_function_cost(f, *args):
