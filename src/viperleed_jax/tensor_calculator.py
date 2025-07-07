@@ -295,8 +295,8 @@ class TensorLEEDCalculator:
         # v0r transformer - could be made into a derived quantity
         self._v0r_transformer = jax.jit(self.parameter_space.v0r_transformer())
 
-        logger.info(f'Parameter space set.\n{parameter_space.info}')
-        logger.info(
+        logger.info('Calculator initialized with parameter space.')
+        logger.debug(
             'This parameter space requires dynamic calculation of '
             f'{self.calc_t_matrices.n_dynamic_t_matrices} t-matrix(-ces) and '
             f'{self.calc_propagators.n_dynamic_values} propagator(s).'
