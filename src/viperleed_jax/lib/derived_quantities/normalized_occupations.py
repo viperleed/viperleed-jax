@@ -8,7 +8,11 @@ from functools import partial
 import jax
 from jax import numpy as jnp
 
-from viperleed_jax.lib.math import apply_fun_grouped, project_onto_plane_sum_1
+from viperleed_jax.lib.math import (
+    apply_fun_grouped,
+    mirror_across_plane_sum_1,
+    project_onto_plane_sum_1,
+)
 from viperleed_jax.transformation_tree.derived_quantities import (
     DerivedQuantitySingleTree,
 )
@@ -17,7 +21,7 @@ from viperleed_jax.transformation_tree.derived_quantities import (
 class NormalizedOccupations(DerivedQuantitySingleTree):
     """Derived quantity for normalized occupations."""
 
-    def __init__(self, parameter_space, atom_ids):
+    def __init__(self, parameter_space, atom_ids, op_type='mirror'):
         super().__init__(parameter_space)
         self.name = 'normalized_occupations'
         self.atom_ids = tuple(atom_ids)
@@ -30,10 +34,12 @@ class NormalizedOccupations(DerivedQuantitySingleTree):
     def __call__(self, params):
         """Calculate normalized occupations."""
         non_normalized_occupations = self.tree(params)
-        return normalize_occ_vector(non_normalized_occupations, self.atom_ids)
+        return normalize_occ_vector(non_normalized_occupations,
+                                    self.atom_ids,
+                                    op_type='mirror')
 
 
-def normalize_occ_vector(non_norm_occ_vector, atom_ids):
+def normalize_occ_vector(non_norm_occ_vector, atom_ids, op_type='mirror'):
     r"""Normalize the occupation vector to <=1 for each atom.
 
     Each scatterer site that can be occupied by multiple chemical species
@@ -71,14 +77,42 @@ def normalize_occ_vector(non_norm_occ_vector, atom_ids):
         msg = 'atom_ids must be hashable (e.g., a tuple)'
         raise TypeError(msg) from err
 
+    # select the operation to be used for normalization
+    if op_type == 'mirror':
+        normalize_func = _normalize_atom_occ_vector_mirror
+    elif op_type == 'projection':
+        normalize_func = _normalize_atom_occ_vector_projection
+    else:
+        msg = (
+            f'Invalid operation type: {op_type}. '
+            'Valid options are "mirror" or "projection".'
+        )
+        raise ValueError(msg)
+
     return apply_fun_grouped(
         in_vec=non_norm_occ_vector,
         index=atom_ids,
-        func=_normalize_atom_occ_vector,
+        func=normalize_func,
     )
 
 
-def _normalize_atom_occ_vector(occ_vector):
+def _normalize_atom_occ_vector_mirror(occ_vector):
+    """Normalize the occupation vector to sum to 1.
+
+    This function is used to normalize the occupation vector for a single
+    atom. It is called by the `normalize_occ_vector` function.
+    """
+    _occ_vector = jnp.asarray(occ_vector)
+
+    return jax.lax.cond(
+        jnp.sum(_occ_vector) <= 1.0,
+        lambda vec: vec,
+        mirror_across_plane_sum_1,
+        operand=_occ_vector,
+    )
+
+
+def _normalize_atom_occ_vector_projection(occ_vector):
     """Normalize the occupation vector to sum to 1.
 
     This function is used to normalize the occupation vector for a single
