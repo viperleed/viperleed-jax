@@ -330,21 +330,11 @@ def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
         all_files = zip_ref.namelist()
     tensor_files = [f for f in all_files if f.startswith('T_')]
 
-    # Note: we need to be very careful with the parallelization here,
-    # since process forking will clash with JAX.
-    # The 'loky' backend will usually default to using spawn, rather than fork,
-    # which is fine – but this may fail when running in a Jupyter notebook
-    # or similar environments. For this case, we use the explict executor
-    # shutdown. Note that this may still give a warning along the lines of
-    # "using fork() with JAX will lead to a deadlock" but this can be safely
-    # ignored.
-    with Parallel(n_jobs=-1, backend='loky') as parallel:
-        results = parallel(
-            delayed(process_tensor_file)(
-                file, tensor_path, lmax, n_beams, n_energies
-            )
-            for file in tensor_files
+    # Use threading explicitly
+    results = Parallel(n_jobs=-1, backend='threading')(
+        delayed(process_tensor_file)(
+            file, tensor_path, lmax, n_beams, n_energies
         )
-    executor = get_reusable_executor()
-    executor.shutdown(wait=True)
+        for file in tensor_files
+    )
     return dict(results)
