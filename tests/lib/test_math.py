@@ -17,6 +17,7 @@ from viperleed_jax.lib.math import (
     safe_norm,
     spherical_harmonics_components,
     spherical_to_cart,
+    mirror_across_plane_sum_1,
 )
 
 
@@ -252,6 +253,37 @@ class TestBessel:
         z = jnp.array([0.1, 1.0, 2.0, 3.0]) - 2.0j
         # For z=0, the expression should be directly computed without vectorization
         assert bessel(z, n1) == pytest.approx(scipy_bessel(n1, z))
+
+
+class TestMirrorAcrossSum1Plane:
+    def test_mirror_preserves_distance_to_plane(self):
+        """Test that the distance to the plane is preserved after mirroring."""
+        x = jnp.array([3.0, 0.0, 0.0])
+        mirror = mirror_across_plane_sum_1(x)
+        deviation_before = jnp.sum(x) - 1.0
+        deviation_after = 1.0 - jnp.sum(mirror)
+        assert deviation_before == pytest.approx(deviation_after)
+
+    def test_mirror_of_vector_on_plane_is_identity(self):
+        """Test that a vector on the plane is unchanged after mirroring."""
+        x = jnp.array([0.5, 0.25, 0.25])
+        mirror = mirror_across_plane_sum_1(x)
+        assert jnp.allclose(mirror, x)
+
+    def test_mirror_moves_sum_symmetric_around_1(self):
+        """Test that the mirror result has a sum symmetric to 1."""
+        x = jnp.array([0.7, 0.2, 0.2])
+        x_sum = jnp.sum(x)
+        mirror = mirror_across_plane_sum_1(x)
+        mirror_sum = jnp.sum(mirror)
+        assert jnp.allclose(x_sum + mirror_sum, 2.0)
+
+    def test_zero_vector_mirroring(self):
+        """Test mirroring of a zero vector."""
+        x = np.zeros(5)
+        mirror = mirror_across_plane_sum_1(x)
+        expected = np.array([0.4, 0.4, 0.4, 0.4, 0.4])
+        assert mirror == pytest.approx(expected)
 
 
 class TestProjectSum1Plane:
