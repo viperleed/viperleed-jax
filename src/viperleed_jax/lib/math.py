@@ -212,6 +212,45 @@ def project_onto_plane_sum_1(vector):
     return project_through_origin @ _vector + offset_to_sum_one_plane
 
 
+def mirror_across_plane_sum_1(vector):
+    """Mirror a vector across the plane defined by sum(x_i) = 1.
+
+    This function reflects an input vector across the hyperplane
+    sum(x_i) = 1, such that the mirrored vector lies on the opposite
+    side of the plane, preserving orthogonal distance.
+
+    Parameters
+    ----------
+    vector : array_like
+        Input 1D vector of shape (n,).
+
+    Returns
+    -------
+    mirrored_vector : jax.Array
+        1D array of shape (n,) representing the mirrored vector.
+
+    Examples
+    --------
+    >>> import jax.numpy as jnp
+    >>> from your_module import mirror_across_plane_sum_1
+    >>> v = jnp.array([0.6, 0.4, 0.2])
+    >>> mirror_across_plane_sum_1(v)
+    Array([0.4666667, 0.2666667, 0.0666667], dtype=float32)
+    >>> jnp.sum(v), jnp.sum(mirror_across_plane_sum_1(v))
+    (Array(1.2, dtype=float32), Array(0.8, dtype=float32))
+    """
+    _vector = jnp.asarray(vector)
+    dim = _vector.shape[0]
+
+    # Compute how far the sum deviates from 1
+    deviation = jnp.sum(_vector) - 1.0
+
+    # Create a correction vector in the direction of (1,1,...,1)
+    correction = (2 * deviation / dim) * jnp.ones_like(_vector)
+
+    return _vector - correction
+
+
 @partial(jax.jit, static_argnames=('index', 'func'))
 def apply_fun_grouped(in_vec, index, func):
     """Apply a function separately to groups determined by an index array.
