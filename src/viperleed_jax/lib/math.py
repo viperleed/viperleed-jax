@@ -22,14 +22,22 @@ def _divide_zero_safe(
     denominator: jnp.ndarray,
     limit_value: float = 0.0,
 ) -> jnp.ndarray:
-    """Function that forces the result of dividing by 0 to be equal to a limit
-    value in a jit- and autodiff-compatible way.
+    """Divide two arrays with a safe handling of division by zero.
 
-    Args:
-        numerator: Values in the numerator
-        denominator: Values in the denominator, may contain zeros
-        limit_value: Value to return where denominator == 0.0
-    Returns:
+    Dorces the result of dividing by 0 to be equal to a limit value in a jit-
+    and autodiff-compatible way.
+
+    Parameters
+    ----------
+        numerator: jnp.ndarray
+            Values in the numerator.
+        denominator: jnp.ndarray
+            Values in the denominator, may contain zeros
+        limit_value: jnp.ndarray, optional..
+            Value to return where denominator == 0.0. Default is 0.0.
+
+    Returns
+    -------
         numerator / denominator with result == 0.0 where denominator == 0.0
     """
     denominator_masked = jnp.where(denominator == 0.0, 1.0, denominator)
