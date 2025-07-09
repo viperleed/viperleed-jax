@@ -11,7 +11,7 @@ import numpy as np
 from spbessax import functions
 
 # in June 2025 jax.scipy.special.sph_harm was deprecated in favor of
-# jax.scipy.special.sph_harm_y
+# jax.scipy.special.sph_harm_y which has swapped theta & phi and m & n
 try:
     from jax.scipy.special import sph_harm_y
 except ImportError:
@@ -35,7 +35,7 @@ def _divide_zero_safe(
 ) -> jnp.ndarray:
     """Divide two arrays with a safe handling of division by zero.
 
-    Dorces the result of dividing by 0 to be equal to a limit value in a jit-
+    Forces the result of dividing by 0 to be equal to a limit value in a jit-
     and autodiff-compatible way.
 
     Parameters
