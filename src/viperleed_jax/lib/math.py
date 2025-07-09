@@ -8,8 +8,19 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import numpy as np
-from jax.scipy.special import sph_harm
 from spbessax import functions
+
+# in June 2025 jax.scipy.special.sph_harm was deprecated in favor of
+# jax.scipy.special.sph_harm_y
+try:
+    from jax.scipy.special import sph_harm_y
+except ImportError:
+    from jax.scipy.special import sph_harm
+
+    def sph_harm_y(n, m, phi, theta, n_max):
+        """Wrap sph_harm_y to maintain compatibility."""
+        return sph_harm(m, n, theta, phi, n_max)
+
 
 from viperleed_jax.dense_quantum_numbers import DENSE_L, DENSE_M, MAXIMUM_LMAX
 
@@ -90,8 +101,8 @@ def spherical_harmonics_components(l_max, vector):
 
     # values at the poles(theta = 0) depend on l and m only
     pole_values = (m == 0) * jnp.sqrt((2 * l + 1) / (4 * jnp.pi))
-    non_pole_values = sph_harm(
-        m, l, jnp.asarray([phi]), jnp.asarray([_theta]), n_max=2 * l_max
+    non_pole_values = sph_harm_y(
+        l, m, jnp.asarray([_theta]), jnp.asarray([phi]), n_max=2 * l_max
     )
 
     return jnp.where(is_on_pole_axis, pole_values, non_pole_values)
