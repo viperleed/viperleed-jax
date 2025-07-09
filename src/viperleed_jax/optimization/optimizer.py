@@ -403,7 +403,7 @@ class CMAESOptimizer(NonGradOptimizer):
         fun: Objective function.
         pop_size: Number of individuals in each generation.
         n_generations: Maximum number of generations to be performed.
-        step_size: The standard deviatian in the initial step and a
+        step_size: The standard deviation in the initial step and a
             parameter for how much the algorithm should focus on exploring.
             A step size of 0.5 is quite large, but showed the best results.
         ftol: Convergence condition on the standard deviation of the minimum
