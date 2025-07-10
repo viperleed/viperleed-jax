@@ -12,3 +12,7 @@ HARTREE = 27.211386245
 
 # Bohr to Angstrom conversion factor
 BOHR = 0.529177211
+
+# array data types for single and double precision
+FLOAT_DTYPE = {'single': 'float32', 'double': 'float64'}
+COMPLEX_DTYPE = {'single': 'complex64', 'double': 'complex128'}
