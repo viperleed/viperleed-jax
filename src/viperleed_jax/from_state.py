@@ -77,7 +77,7 @@ def calculator_from_paths(
     phaseshifts_path = Path(inputs_path) / 'PHASESHIFTS'
     # delegate to calculator_from_objects
     calculator = setup_tl_calculator(
-        slab, rpars, tensor_path, phaseshifts_path, **kwargs
+        slab, rpars, tensor_path, phaseshifts_path, precision, **kwargs
     )
     # set the parameter space
     calculator.set_parameter_space(parameter_space)
