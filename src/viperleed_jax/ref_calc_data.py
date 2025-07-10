@@ -12,15 +12,12 @@ import tqdm
 from jax import numpy as jnp
 
 from viperleed_jax import atomic_units
-from viperleed_jax.constants import HARTREE
+from viperleed_jax.constants import COMPLEX_DTYPE, FLOAT_DTYPE, HARTREE
 from viperleed_jax.dense_quantum_numbers import (
     DENSE_L,
     DENSE_M,
     MINUS_ONE_POW_M,
 )
-
-FLOAT_DTYPE = {'single': 'float32', 'double': 'float64'}
-COMPLEX_DTYPE = {'single': 'complex64', 'double': 'complex128'}
 
 # TODO: keep everything in atomic units (Hartree, Bohr) internally
 # TODO: maybe make property to print into eV, Angstroms, etc.

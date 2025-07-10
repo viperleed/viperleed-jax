@@ -15,7 +15,12 @@ from viperleed.calc.files.iorfactor import beamlist_to_array
 
 from viperleed_jax import rfactor, utils
 from viperleed_jax.batching import Batching
-from viperleed_jax.constants import BOHR, HARTREE
+from viperleed_jax.constants import (
+    BOHR,
+    COMPLEX_DTYPE,
+    FLOAT_DTYPE,
+    HARTREE,
+)
 from viperleed_jax.dense_quantum_numbers import (
     vmapped_l_array_to_compressed_quantum_index,
 )
@@ -33,8 +38,6 @@ from viperleed_jax.lib.tensor_leed.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
 
-FLOAT_DTYPE = {'single': 'float32', 'double': 'float64'}
-COMPLEX_DTYPE = {'single': 'complex64', 'double': 'complex128'}
 
 class TensorLEEDCalculator:
     """Main class for calculating tensor LEED intensities and R-factors.
