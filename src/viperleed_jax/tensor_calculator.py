@@ -70,7 +70,7 @@ class TensorLEEDCalculator:
         interpolation_step=0.5,
         interpolation_deg=3,
         bc_type='not-a-knot',
-        prec='double'
+        precision='double',
     ):
         self.ref_calc_params = ref_calc_params
         self.ref_calc_result = ref_calc_result
@@ -84,7 +84,7 @@ class TensorLEEDCalculator:
 
         self.occ_norm_method = rparams.VLJ_CONFIG['occ_norm']
         
-        self.prec = prec
+        self.prec = precision
 
         # get experimental intensities and hk
         if not rparams.expbeams:
