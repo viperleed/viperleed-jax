@@ -19,6 +19,9 @@ from viperleed_jax.dense_quantum_numbers import (
     MINUS_ONE_POW_M,
 )
 
+FLOAT_DTYPE = {'single': 'float32', 'double': 'float64'}
+COMPLEX_DTYPE = {'single': 'complex64', 'double': 'complex128'}
+
 # TODO: keep everything in atomic units (Hartree, Bohr) internally
 # TODO: maybe make property to print into eV, Angstroms, etc.
 
@@ -130,7 +133,7 @@ class RefCalcOutput:
         )
 
 
-def process_tensors(tensors, fix_lmax=False):
+def process_tensors(tensors, fix_lmax=False, precision='double'):
     """TODO.
 
     Parameters
@@ -161,8 +164,8 @@ def process_tensors(tensors, fix_lmax=False):
     if not np.all(v0i_per_energy == v0i_per_energy[0]):
         raise ValueError('Energy dependent v0i not supported')
 
-    ref_amps = np.asarray(tensors[0].ref_amps)
-    energies = np.asarray(tensors[0].e_kin)
+    ref_amps = np.asarray(tensors[0].ref_amps, dtype=FLOAT_DTYPE[precision])
+    energies = np.asarray(tensors[0].e_kin, dtype=FLOAT_DTYPE[precision])
 
     # energy dependent LMAX – NB: 1 smaller than number of phaseshifts
     dynamic_lmax = tensors[0].n_phaseshifts_per_energy - 1
@@ -184,8 +187,8 @@ def process_tensors(tensors, fix_lmax=False):
         v0i=v0i_per_energy[0],  # in Hartree
         # Note: kx and ky maybe could be simplified as well
         # TODO: pack into a single array (maybe already in read_tensor)
-        kx_in=np.asarray(tensors[0].kx_in),
-        ky_in=np.asarray(tensors[0].ky_in),
+        kx_in=np.asarray(tensors[0].kx_in, dtype=FLOAT_DTYPE[precision]),
+        ky_in=np.asarray(tensors[0].ky_in, dtype=FLOAT_DTYPE[precision]),
         lmax=lmax,
         n_tensors=len(tensors),
         n_beams=ref_amps.shape[1],
@@ -265,9 +268,9 @@ def process_tensors(tensors, fix_lmax=False):
         tensor_amps_out[en_id, ...] = np.asarray(tmp_tensor_amps_out)
 
     ref_calc_output = RefCalcOutput(
-        ref_amps=jnp.array(ref_amps),
-        t_matrices=jnp.array(ref_t_matrix),
-        in_amps=jnp.array(tensor_amps_in),
-        out_amps=jnp.array(tensor_amps_out),
+        ref_amps=jnp.array(ref_amps, dtype=FLOAT_DTYPE[precision]),
+        t_matrices=jnp.array(ref_t_matrix, dtype=COMPLEX_DTYPE[precision]),
+        in_amps=jnp.array(tensor_amps_in, dtype=COMPLEX_DTYPE[precision]),
+        out_amps=jnp.array(tensor_amps_out, dtype=COMPLEX_DTYPE[precision]),
     )
     return calc_params, ref_calc_output

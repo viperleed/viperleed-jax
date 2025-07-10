@@ -33,6 +33,8 @@ from viperleed_jax.lib.tensor_leed.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
 
+FLOAT_DTYPE = {'single': 'float32', 'double': 'float64'}
+COMPLEX_DTYPE = {'single': 'complex64', 'double': 'complex128'}
 
 class TensorLEEDCalculator:
     """Main class for calculating tensor LEED intensities and R-factors.
@@ -65,6 +67,7 @@ class TensorLEEDCalculator:
         interpolation_step=0.5,
         interpolation_deg=3,
         bc_type='not-a-knot',
+        prec='double'
     ):
         self.ref_calc_params = ref_calc_params
         self.ref_calc_result = ref_calc_result
@@ -77,6 +80,8 @@ class TensorLEEDCalculator:
         self.use_symmetry = rparams.VLJ_CONFIG['use_symmetry']
 
         self.occ_norm_method = rparams.VLJ_CONFIG['occ_norm']
+        
+        self.prec = prec
 
         # get experimental intensities and hk
         if not rparams.expbeams:
@@ -118,7 +123,9 @@ class TensorLEEDCalculator:
         self.max_l_max = ref_calc_params.max_lmax
 
         # TODO: refactor into a dataclass
-        self.energies = jnp.asarray(self.ref_calc_params.energies)
+        self.energies = jnp.asarray(
+            self.ref_calc_params.energies, dtype=FLOAT_DTYPE[self.prec]
+        )
 
         non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
         # TODO check this
@@ -127,7 +134,8 @@ class TensorLEEDCalculator:
         )
 
         self.ref_vibrational_amps = jnp.array(
-            [at.site.vibamp[at.el] for at in non_bulk_atoms]
+            [at.site.vibamp[at.el] for at in non_bulk_atoms],
+            dtype=FLOAT_DTYPE[self.prec]
         )
         self.origin_grid = ref_calc_params.incident_energy_ev
 
@@ -168,7 +176,8 @@ class TensorLEEDCalculator:
         )
         self.set_experiment_intensity(mapped_exp_intensities, exp_energies)
 
-        self.kappa = jnp.array(self.ref_calc_params.kappa)
+        self.kappa = jnp.array(self.ref_calc_params.kappa,
+                               dtype=COMPLEX_DTYPE[self.prec])
 
         # evaluate the wave vectors
         self.wave_vectors = self._eval_wave_vectors()
@@ -285,7 +294,9 @@ class TensorLEEDCalculator:
             # use the stored reference t-matrices from reference calculation
             ref_t_matrices = self.ref_calc_result.t_matrices
         # convert to jnp array
-        self.ref_t_matrices = jnp.asarray(ref_t_matrices)
+        self.ref_t_matrices = jnp.asarray(
+            ref_t_matrices, dtype=FLOAT_DTYPE[self.prec]
+        )
 
         # set up the derived quantities
         self._setup_derived_quantities()
@@ -352,7 +363,8 @@ class TensorLEEDCalculator:
                     vib_amp,
                 )
             )
-        ref_t_matrices = jnp.array(ref_t_matrices)
+        ref_t_matrices = jnp.array(ref_t_matrices,
+                                   dtype=COMPLEX_DTYPE[self.prec])
         return jnp.einsum('ael->eal', ref_t_matrices)
 
     def _calc_delta_amp_prefactors(self):
@@ -427,7 +439,7 @@ class TensorLEEDCalculator:
         return in_k_vacuum, in_k_perp_vacuum, out_k_perp, out_k_perp_vacuum
 
     def expand_params(self, free_params):
-        _free_params = np.asarray(free_params)
+        _free_params = np.asarray(free_params, dtype=FLOAT_DTYPE[self.prec])
         v0r_params, geo_params, vib_params, occ_params = self.split_free_params(
             _free_params
         )
@@ -440,7 +452,7 @@ class TensorLEEDCalculator:
     def delta_amplitude(self, free_params):
         """Calculate the delta amplitude for a given set of free parameters."""
         self.check_parameter_space_set()
-        _free_params = jnp.asarray(free_params)
+        _free_params = jnp.asarray(free_params, dtype=FLOAT_DTYPE[self.prec])
         # split free parameters
         (_, geo_params, vib_params, occ_params) = self._split_free_params(
             _free_params
@@ -457,7 +469,9 @@ class TensorLEEDCalculator:
         batched_delta_amps = []
         for batch in self.batching.batches:
             l_max = batch.l_max
-            energy_ids = jnp.asarray(batch.energy_indices)
+            energy_ids = jnp.asarray(
+                batch.energy_indices, dtype=FLOAT_DTYPE[self.prec]
+            )
 
             # propagators - already rotated
             propagators = self.calc_propagators(
@@ -511,7 +525,7 @@ class TensorLEEDCalculator:
         )
 
     def intensity(self, free_params):
-        _free_params = jnp.asarray(free_params)
+        _free_params = jnp.asarray(free_params, dtype=FLOAT_DTYPE[self.prec])
         delta_amplitude = self.delta_amplitude(_free_params)
         _, geo_params, _, _ = self._split_free_params(_free_params)
         prefactors = intensity_prefactors(
@@ -536,7 +550,7 @@ class TensorLEEDCalculator:
         )
 
         prefactors = intensity_prefactors(
-            jnp.array([0.0]),
+            jnp.array([0.0], dtype=FLOAT_DTYPE[self.prec]),
             self.n_beams,
             self.theta,
             self.wave_vectors,
@@ -566,7 +580,7 @@ class TensorLEEDCalculator:
         """Evaluate R-factor."""
         if self.comp_intensity is None:
             raise ValueError('Comparison intensity not set.')
-        _free_params = jnp.asarray(free_params)
+        _free_params = jnp.asarray(free_params, dtype=FLOAT_DTYPE[self.prec])
         non_interpolated_intensity = self.intensity(_free_params)
 
         v0r_param, *_ = self._split_free_params(_free_params)
@@ -586,7 +600,7 @@ class TensorLEEDCalculator:
     def R_val_and_grad(self, free_params):
         """Evaluate R-factor and its gradients."""
         val, grad = jax.value_and_grad(self.R)(free_params)
-        grad = jnp.asarray(grad)
+        grad = jnp.asarray(grad, dtype=FLOAT_DTYPE[self.prec])
         return val, grad
 
     def grad_R(self, free_params):
@@ -640,12 +654,12 @@ class TensorLEEDCalculator:
         slab.update_layer_coordinates()
 
         # convert to numpy arrays
-        v0r = np.array(v0r)
-        displacements = np.array(displacements)
+        v0r = np.array(v0r, dtype=FLOAT_DTYPE[self.prec])
+        displacements = np.array(displacements, dtype=FLOAT_DTYPE[self.prec])
         # convert displacements from zxy to xyz order
         displacements = displacements[:, [1, 2, 0]]
-        vibrations = np.array(vibrations)
-        occupations = np.array(occupations)
+        vibrations = np.array(vibrations, dtype=FLOAT_DTYPE[self.prec])
+        occupations = np.array(occupations, dtype=FLOAT_DTYPE[self.prec])
 
         for at in slab.atlist:
             if at.is_bulk:
@@ -656,7 +670,9 @@ class TensorLEEDCalculator:
             scatterer_indices = [
                 atom_basis.scatterers.index(s) for s in at_scatterers
             ]
-            scatterer_indices = np.array(scatterer_indices)
+            scatterer_indices = np.array(
+                scatterer_indices, dtype=FLOAT_DTYPE[self.prec]
+            )
 
             at_displacements = displacements[scatterer_indices]
             at_occupations = occupations[scatterer_indices]
@@ -691,7 +707,9 @@ class TensorLEEDCalculator:
                     atom_basis.scatterers.index(s)
                     for s in siteel_scatterers
                 ]
-                scatterer_indices = np.array(scatterer_indices)
+                scatterer_indices = np.array(
+                    scatterer_indices, dtype=FLOAT_DTYPE[self.prec]
+                )
 
                 scatterer_vibs = vibrations[scatterer_indices]
                 scatterer_occupations = occupations[scatterer_indices]
