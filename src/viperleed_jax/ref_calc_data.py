@@ -161,7 +161,7 @@ def process_tensors(tensors, fix_lmax=False, precision='double'):
     if not np.all(v0i_per_energy == v0i_per_energy[0]):
         raise ValueError('Energy dependent v0i not supported')
 
-    ref_amps = np.asarray(tensors[0].ref_amps, dtype=FLOAT_DTYPE[precision])
+    ref_amps = np.asarray(tensors[0].ref_amps, dtype=COMPLEX_DTYPE[precision])
     energies = np.asarray(tensors[0].e_kin, dtype=FLOAT_DTYPE[precision])
 
     # energy dependent LMAX – NB: 1 smaller than number of phaseshifts
