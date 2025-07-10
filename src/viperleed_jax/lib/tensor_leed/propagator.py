@@ -59,7 +59,8 @@ def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
         LMAX * 2 + 1,
         propagator_lpp_element,
         jnp.zeros(
-            shape=((LMAX + 1) ** 2, (LMAX + 1) ** 2), dtype=jnp.complex128
+            shape=((LMAX + 1) ** 2, (LMAX + 1) ** 2),
+            dtype=kappa.dtype
         ),
     )
     propagator *= 4 * jnp.pi
