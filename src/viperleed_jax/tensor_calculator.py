@@ -473,7 +473,7 @@ class TensorLEEDCalculator:
         for batch in self.batching.batches:
             l_max = batch.l_max
             energy_ids = jnp.asarray(
-                batch.energy_indices, dtype=FLOAT_DTYPE[self.prec]
+                batch.energy_indices, dtype='int32'
             )
 
             # propagators - already rotated
