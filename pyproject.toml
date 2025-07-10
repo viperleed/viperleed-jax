@@ -12,6 +12,7 @@ license = {file = 'LICENSE'}
 
 dependencies = [
     'jax',
+    'clinamen2>=2024.7.1',
     'numpy<2',
     'viperleed>0.12.1',
     'spbessax>=0.1.3',
