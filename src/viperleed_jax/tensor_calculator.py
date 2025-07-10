@@ -298,7 +298,7 @@ class TensorLEEDCalculator:
             ref_t_matrices = self.ref_calc_result.t_matrices
         # convert to jnp array
         self.ref_t_matrices = jnp.asarray(
-            ref_t_matrices, dtype=FLOAT_DTYPE[self.prec]
+            ref_t_matrices, dtype=COMPLEX_DTYPE[self.prec]
         )
 
         # set up the derived quantities

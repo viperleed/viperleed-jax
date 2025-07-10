@@ -265,7 +265,7 @@ def process_tensors(tensors, fix_lmax=False, precision='double'):
         tensor_amps_out[en_id, ...] = np.asarray(tmp_tensor_amps_out)
 
     ref_calc_output = RefCalcOutput(
-        ref_amps=jnp.array(ref_amps, dtype=FLOAT_DTYPE[precision]),
+        ref_amps=jnp.array(ref_amps, dtype=COMPLEX_DTYPE[precision]),
         t_matrices=jnp.array(ref_t_matrix, dtype=COMPLEX_DTYPE[precision]),
         in_amps=jnp.array(tensor_amps_in, dtype=COMPLEX_DTYPE[precision]),
         out_amps=jnp.array(tensor_amps_out, dtype=COMPLEX_DTYPE[precision]),
