@@ -45,6 +45,7 @@ def setup_tl_calculator(
     rpars,
     tensor_path,
     phaseshifts_path,
+    precision='double',
     **kwargs,
 ):
     """Set up a TensorLEEDCalculator from slab, rpars, and tensor file.
@@ -106,7 +107,7 @@ def setup_tl_calculator(
     # Combine data into a ReferenceData object
     logger.debug('Combining tensor data ...')
     ref_calc_params, ref_calc_results = process_tensors(
-        sorted_tensors, fix_lmax=t_leed_l_max
+        sorted_tensors, fix_lmax=t_leed_l_max, precision=precision
     )
     logger.debug('Tensor processing successful.')
 
@@ -134,6 +135,7 @@ def setup_tl_calculator(
         phaseshifts,
         slab,
         rpars,
+        precision=precision,
         **kwargs,
     )
 
