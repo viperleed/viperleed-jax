@@ -14,6 +14,7 @@ import re
 import zipfile
 from dataclasses import dataclass
 from io import StringIO
+from pathlib import Path
 
 import fortranformat as ff
 import numpy as np
@@ -293,9 +294,15 @@ def process_tensor_file(file_name, tensor_path, lmax, n_beams, n_energies):
             - tensor_data (Any): The processed tensor data as returned by
               `interpret_tensor_file`.
     """
-    with zipfile.ZipFile(tensor_path, 'r') as zip_ref:
-        with zip_ref.open(file_name) as file:
-            content = file.read().decode('utf-8')
+    tensor_path = Path(tensor_path)
+    if zipfile.is_zipfile(tensor_path):
+        with zipfile.ZipFile(tensor_path, 'r') as zip_ref:
+            with zip_ref.open(file_name) as file:
+                content = file.read().decode('utf-8')
+    else:
+        file_path = tensor_path / file_name
+        content = file_path.read_text(encoding='utf-8')
+
     return file_name, interpret_tensor_file(content, lmax, n_beams, n_energies)
 
 
@@ -326,9 +333,16 @@ def read_tensor_zip(tensor_path, lmax, n_beams, n_energies):
         A dictionary where keys are file names and values are TensorFileData
         instances containing the interpreted data from the tensor files.
     """
-    with zipfile.ZipFile(tensor_path, 'r') as zip_ref:
-        all_files = zip_ref.namelist()
-    tensor_files = [f for f in all_files if f.startswith('T_')]
+    tensor_path = Path(tensor_path)
+    if zipfile.is_zipfile(tensor_path):
+        with zipfile.ZipFile(tensor_path, 'r') as zip_ref:
+            tensor_files = [f for f in zip_ref.namelist() if f.startswith('T_')]
+    else:
+        tensor_files = [
+            f.name
+            for f in tensor_path.iterdir()
+            if f.name.startswith('T_') and f.is_file()
+        ]
 
     # Use threading explicitly
     results = Parallel(n_jobs=-1, backend='threading')(
