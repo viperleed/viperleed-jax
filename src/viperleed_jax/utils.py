@@ -12,6 +12,7 @@ from pathlib import Path
 import jax
 import numpy as np
 from jax import numpy as jnp
+from jaxlib.xla_extension import XlaRuntimeError
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +95,15 @@ def benchmark_calculator(
     # --- Benchmark for jit_R (R factor) ---
     # Measure compile time
     start = perf()
-    calculator.R(free_params).block_until_ready()
+    try:
+        calculator.R(free_params).block_until_ready()
+    except XlaRuntimeError as e:
+        if 'RESOURCE_EXHAUSTED: Out of memory' in str(e):
+            msg = ('Ran out of memory during R-factor calculation. Try using '
+                   'a smaller l_max cutoff or decreasing the used batch sizes.')
+            logger.error(msg)
+            raise RuntimeError(msg) from e
+        raise e
     r_fac_compile_time = perf() - start
 
     # Measure average execution time over n_repeats
@@ -114,7 +123,17 @@ def benchmark_calculator(
     # --- Benchmark for grad_R (gradients) ---
     if use_grad:
         start = perf()
-        calculator.grad_R(free_params).block_until_ready()
+        try:
+            calculator.grad_R(free_params).block_until_ready()
+        except XlaRuntimeError as e:
+            if 'RESOURCE_EXHAUSTED: Out of memory' in str(e):
+                msg = ('Ran out of memory during gradient calculation. Try '
+                       'using a smaller l_max cutoff or decreasing the used '
+                       'batch sizes. Alternatively, you can use methods that '
+                       'do not require gradients.')
+                logger.error(msg)
+                raise RuntimeError(msg) from e
+            raise e
         grad_compile_time = perf() - start
 
         start_total = perf()
