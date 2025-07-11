@@ -181,15 +181,15 @@ def calculate_t_matrices(
                 [e_idx],
             )[0]
             # Map the dynamic t-matrix to the atom-site-element basis.
-            dyn_mapped = dyn_t[t_matrix_context.t_matrix_id]
         else:
             # If no dynamic t-matrices are available, return an empty array.
-            dyn_mapped = jnp.zeros_like(t_matrix_context.static_t_matrices)
+            dyn_t = jnp.zeros_like(t_matrix_context.static_t_matrices)
         # Get the corresponding static t-matrix, or zeros if none exist.
         if len(t_matrix_context.static_t_matrices) == 0:
             stat_t = jnp.zeros_like(dyn_t)
         else:
             stat_t = t_matrix_context.static_t_matrices[e_idx, :, :]
+        dyn_mapped = dyn_t[t_matrix_context.t_matrix_id, :]
         stat_mapped = stat_t[t_matrix_context.t_matrix_id, :]
         # Select between dynamic and static for this energy.
         # The condition is broadcasted to shape (num_selected, lm)
