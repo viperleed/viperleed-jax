@@ -68,6 +68,15 @@ class OptimizerIterator:
         self._current_x = x
 
     @property
+    def scheduled_gradients(self):
+        """Return True if any optimizer in the sequence uses gradients."""
+        return any(
+            isinstance(self._DISPATCH[opt](),
+                       optimization.optimizer.GradOptimizer)
+            for opt in self._upcoming_optimizers
+        )
+
+    @property
     def current_x(self):
         """Return the current point in the optimization process."""
         return self._current_x
