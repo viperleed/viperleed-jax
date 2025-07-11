@@ -64,7 +64,7 @@ def check_jax_devices():
 def benchmark_calculator(
     calculator,
     free_params=None,
-    n_repeats=10,
+    n_repeats=5,
     csv_file_path=None,
     use_grad=True,
 ):
