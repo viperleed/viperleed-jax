@@ -170,17 +170,21 @@ def calculate_t_matrices(
     def energy_fn(e_idx):
         # Compute the dynamic t-matrix for a single energy.
         # _calculate_dynamic_t_matrices expects a sequence of energies; here we pass a list of one index.
-        dyn_t = _calculate_dynamic_t_matrices(
-            l_max,
-            batch_energies,
-            t_matrix_context.dynamic_site_elements,
-            phaseshifts,
-            t_matrix_context.energies,
-            dynamic_vib_amps,
-            [e_idx],
-        )[0]
-        # Map the dynamic t-matrix to the atom-site-element basis.
-        dyn_mapped = dyn_t[t_matrix_context.t_matrix_id]
+        if len(t_matrix_context.dynamic_t_matrices) > 0:
+            dyn_t = _calculate_dynamic_t_matrices(
+                l_max,
+                batch_energies,
+                t_matrix_context.dynamic_site_elements,
+                phaseshifts,
+                t_matrix_context.energies,
+                dynamic_vib_amps,
+                [e_idx],
+            )[0]
+            # Map the dynamic t-matrix to the atom-site-element basis.
+            dyn_mapped = dyn_t[t_matrix_context.t_matrix_id]
+        else:
+            # If no dynamic t-matrices are available, return an empty array.
+            dyn_mapped = jnp.zeros_like(t_matrix_context.static_t_matrices)
         # Get the corresponding static t-matrix, or zeros if none exist.
         if len(t_matrix_context.static_t_matrices) == 0:
             stat_t = jnp.zeros_like(dyn_t)
