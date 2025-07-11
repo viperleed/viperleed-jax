@@ -87,7 +87,7 @@ class OptimizerIterator:
         from the center ([0.5, 0.5, 0.5, ...])to avoid numerical issues.
         If the first optimizer does not use gradients, return the center point.
         """
-        first_optimizer =  self._DISPATCH[self.rpars.VLJ_ALGO[0]]
+        first_optimizer = self._DISPATCH[self.rpars.VLJ_ALGO[0]]()
         center = np.array([0.5] * self.calculator.n_free_parameters)
         if isinstance(first_optimizer, optimization.optimizer.GradOptimizer):
             # Use a small offset to avoid numerical issues
