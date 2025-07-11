@@ -183,7 +183,9 @@ def calculate_t_matrices(
             # Map the dynamic t-matrix to the atom-site-element basis.
         else:
             # If no dynamic t-matrices are available, return an empty array.
-            dyn_t = jnp.zeros_like(t_matrix_context.static_t_matrices)
+            dyn_t = jnp.zeros_like(
+                t_matrix_context.static_t_matrices[e_idx, :, :]
+            )
         # Get the corresponding static t-matrix, or zeros if none exist.
         if len(t_matrix_context.static_t_matrices) == 0:
             stat_t = jnp.zeros_like(dyn_t)
