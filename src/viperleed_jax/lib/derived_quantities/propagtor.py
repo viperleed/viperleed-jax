@@ -190,8 +190,8 @@ class Propagators(LinearPropagatedQuantity):
             [
                 math.spherical_harmonics_components(self.max_l_max, disp)
                 for disp in displacements_au
-            ]
-        )
+            ],
+            dtype=jnp.complex128,)
 
         # Outer loop: iterate over energy indices.
         def energy_fn(e_idx):
