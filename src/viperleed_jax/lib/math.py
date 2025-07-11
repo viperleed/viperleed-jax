@@ -65,24 +65,37 @@ def safe_norm(vector: jnp.ndarray) -> jnp.ndarray:
     return jnp.sqrt(jnp.sum(vector**2) + (EPS * 1e-2) ** 2)
 
 
-def _generate_bessel_functions(l_max):
+def _generate_bessel_functions(l_max, dtype='complex128'):
     """Generate a list of spherical Bessel functions up to order l_max."""
     bessel_functions = []
     for order in range(l_max + 1):
         bessel_functions.append(
-            functions.create_j_l(order, dtype=jnp.complex128, output_all=True)
+            functions.create_j_l(order, dtype=dtype, output_all=True)
         )
     return bessel_functions
 
 
 # generate a list of spherical Bessel functions up to order l_max
-BESSEL_FUNCTIONS = _generate_bessel_functions(2 * MAXIMUM_LMAX)
+BESSEL_FUNCTIONS_COMPLEX_128 = _generate_bessel_functions(2 * MAXIMUM_LMAX)
+BESSEL_FUNCTIONS_COMPLEX_64 = _generate_bessel_functions(
+    2 * MAXIMUM_LMAX, dtype='complex64'
+)
 
 
 # Bessel functions from NeuralIL
 def bessel(z, n1):
     """Spherical Bessel functions. Evaluated at z, up to degree n1."""
-    return BESSEL_FUNCTIONS[n1](z + EPS)
+    if str(z.dtype) == 'float64':
+        bessel_functions = BESSEL_FUNCTIONS_COMPLEX_128
+    elif str(z.dtype) == 'float32':
+        bessel_functions = BESSEL_FUNCTIONS_COMPLEX_64
+    else:
+        msg = (
+            f'Unsupported dtype {z.dtype}. '
+            'Supported dtypes are float64 and float32.'
+        )
+        raise ValueError(msg)
+    return bessel_functions[n1](z + EPS)
 
 
 def spherical_harmonics_components(l_max, vector):
