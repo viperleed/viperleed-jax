@@ -99,7 +99,8 @@ def run_viperleed_initialization(calc_path):
         os.chdir(tmp_calc_path)
         try:
             exit_code, state_recorder = run_calc(
-                'tmp_init', preset_params={'RUN': [0]}
+                'tmp_init', preset_params={
+                    'RUN': [0],'BACKEND': {'search': 'viperleed-jax'}}
             )
         finally:  # always change back to the original directory
             os.chdir(home)
