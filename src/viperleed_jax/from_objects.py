@@ -94,6 +94,9 @@ def setup_tl_calculator(
 
     # determine the l_max for the LEED calculation
     t_leed_l_max = _determine_l_max(rpars)
+    logger.info(
+        f'Using l_max={t_leed_l_max} for the tensor-LEED calculation.'
+    )
 
     # read tensor file
     tensors = read_tensor_zip(tensor_path, ref_calc_lmax, n_beams, n_energies)
