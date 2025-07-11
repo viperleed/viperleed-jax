@@ -11,6 +11,7 @@ from pathlib import Path
 
 from viperleed.calc import LOGGER
 from viperleed.calc.run import run_calc
+from viperleed.calc.classes.search_backends import SearchBackend
 
 from viperleed_jax.from_objects import (
     setup_tl_calculator,
@@ -99,8 +100,11 @@ def run_viperleed_initialization(calc_path):
         os.chdir(tmp_calc_path)
         try:
             exit_code, state_recorder = run_calc(
-                'tmp_init', preset_params={
-                    'RUN': [0],'BACKEND': {'search': 'viperleed-jax'}}
+                'tmp_init',
+                preset_params={
+                    'RUN': [0],
+                    'BACKEND': {'search': SearchBackend.VLJ},
+                },
             )
         finally:  # always change back to the original directory
             os.chdir(home)
