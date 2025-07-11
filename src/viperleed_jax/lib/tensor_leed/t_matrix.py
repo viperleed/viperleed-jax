@@ -170,7 +170,7 @@ def calculate_t_matrices(
     def energy_fn(e_idx):
         # Compute the dynamic t-matrix for a single energy.
         # _calculate_dynamic_t_matrices expects a sequence of energies; here we pass a list of one index.
-        if len(t_matrix_context.dynamic_t_matrices) > 0:
+        if dynamic_vib_amps.size > 0:
             dyn_t = _calculate_dynamic_t_matrices(
                 l_max,
                 batch_energies,
