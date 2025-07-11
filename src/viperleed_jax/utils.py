@@ -106,7 +106,7 @@ def benchmark_calculator(
     # If the compile time is less than 3x the average execution time,
     # it likely means the function was already compiled.
     if r_fac_compile_time < 3 * r_fac_time:
-        print(
+        logger.warning(
             'R factor compilation time is suspiciously low. '
             'The function may have been precompiled.'
         )
@@ -123,7 +123,7 @@ def benchmark_calculator(
         grad_time = (perf() - start_total) / n_repeats
 
         if grad_compile_time < 3 * grad_time:
-            print(
+            logger.warning(
                 'Gradient compilation time is suspiciously low. '
                 'The function may have been precompiled.'
             )
@@ -151,7 +151,7 @@ def benchmark_calculator(
                     writer.writeheader()
                 writer.writerow(results)
         except Exception as e:
-            print(f'Error writing to CSV file: {e}')
+            logger.error(f'Error writing to CSV file: {e}')
 
     return r_fac_compile_time, r_fac_time, grad_compile_time, grad_time
 
@@ -190,7 +190,7 @@ def estimate_function_cost(f, *args):
     fun_cost = int(fun_cost[0]['flops'])
     jac_cost = jax.jit(jax.jacfwd(f)).lower(*args).compile().cost_analysis()
     jac_cost = int(jac_cost[0]['flops'])
-    print(
+    logger.info(
         f'Function Cost:\t{fun_cost} FLOPS\n'
         f'Jacfwd Cost:\t{jac_cost} FLOPS\n'
     )
