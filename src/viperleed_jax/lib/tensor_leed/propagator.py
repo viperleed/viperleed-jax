@@ -141,26 +141,6 @@ def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
     ).real
 
 
-def _calculate_dynamic_propagator(
-    l_max, batch_atoms, displacements, components, kappa
-):
-    """
-    Compute dynamic propagators for a single energy index.
-
-    Returns an array of shape (num_displacements, ...).
-    """
-    return jax.lax.map(
-        lambda atom_idx: calc_propagator(
-            l_max,
-            displacements[atom_idx],
-            components[atom_idx],
-            kappa,
-        ),
-        jnp.arange(len(displacements)),
-        batch_size=batch_atoms,
-    )
-
-
 @partial(
     jax.jit,
     static_argnames=['l_max', 'batch_atoms', 'batch_energies', 'use_symmetry'],
@@ -178,21 +158,65 @@ def calculate_propagators(
     energy_indices = jnp.array(energy_indices)
 
     # Precompute the spherical harmonics components for each displacement.
-    displacement_components = jnp.array(
-        [spherical_harmonics_components(l_max, disp) for disp in displacements]
+    displacement_components = [
+        spherical_harmonics_components(l_max, disp) for disp in displacements
+    ]
+
+    # compute the factors multiplied onto the components
+    dense_m_2d = DENSE_QUANTUM_NUMBERS[l_max][:, :, 2]
+    dense_mp_2d = DENSE_QUANTUM_NUMBERS[l_max][:, :, 3]
+
+    # AI: I don't fully understand this, technically it should be MPP = -M - MP
+    dense_mpp = dense_mp_2d - dense_m_2d
+
+    # pre-computed coeffs, capped to LMAX
+    capped_coeffs = CSUM_COEFFS[
+        : 2 * l_max + 1, : (l_max + 1) ** 2, : (l_max + 1) ** 2
+    ]
+
+    idx_lookup = jnp.stack(
+        [lpp * lpp + lpp - dense_mpp for lpp in range(2 * l_max + 1)]
+    )  # shape: (2*LMAX+1, n, n)
+
+    components_with_prefactors = [
+        jnp.array(
+            [
+                y_lm[idx_lookup[lpp]] * capped_coeffs[lpp, ...]
+                for lpp in range(2 * l_max + 1)
+            ]
+        )
+        for y_lm in displacement_components
+    ]
+    components_with_prefactors = jnp.stack(components_with_prefactors)
+    print(
+        f'components_with_prefactors.shape: {components_with_prefactors.shape}'
     )
 
+    c_norm = jax.vmap(safe_norm)(displacements)
+
+    @jax.checkpoint
     def process_energy(e_idx):
         # --- Dynamic propagators ---
         if len(displacements) > 0:
             # Now call the per-energy dynamic propagator.
-            dyn = _calculate_dynamic_propagator(
-                l_max,
-                batch_atoms,
-                displacements,
-                displacement_components,
-                propagtor_context.kappa[e_idx],
+
+            # evaluate bessel functions for all displacements and kappas
+            mapped_bessel_f = jax.vmap(bessel, in_axes=(0, None))
+            mapped_bessel = mapped_bessel_f(
+                c_norm * propagtor_context.kappa[e_idx], 2 * l_max
             )
+            print(f'mapped_bessel.shape: {mapped_bessel.shape}')
+
+            dyn = jnp.einsum(
+                'ap,aplm->alm', mapped_bessel, components_with_prefactors
+            )
+            dyn *= 4 * jnp.pi
+            dyn = jnp.where(
+                c_norm[:, None, None] >= EPS * 100,
+                dyn,
+                jnp.identity((l_max + 1) ** 2),
+            )
+
         else:
             dyn = jnp.zeros_like(propagtor_context.static_propagators[0])
 
