@@ -189,6 +189,7 @@ def calculate_propagators(
     components_with_prefactors = jnp.stack(components_with_prefactors)
 
     c_norm = jax.vmap(safe_norm)(displacements)
+    mapped_bessel_f = jax.vmap(bessel, in_axes=(0, None))
 
     @jax.checkpoint
     def process_energy(e_idx):
@@ -197,7 +198,6 @@ def calculate_propagators(
             # Now call the per-energy dynamic propagator.
 
             # evaluate bessel functions for all displacements and kappas
-            mapped_bessel_f = jax.vmap(bessel, in_axes=(0, None))
             mapped_bessel = mapped_bessel_f(
                 c_norm * propagtor_context.kappa[e_idx], 2 * l_max
             )
