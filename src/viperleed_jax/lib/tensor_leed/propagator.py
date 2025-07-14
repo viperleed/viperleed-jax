@@ -19,7 +19,6 @@ from viperleed_jax.lib.math import (
 )
 
 
-# @partial(jax.profiler.annotate_function, name="calc_propagator")
 def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
     c_norm = safe_norm(c)
 
@@ -208,9 +207,12 @@ def calculate_propagators(
             print(f'mapped_bessel.shape: {mapped_bessel.shape}')
 
             dyn = jnp.einsum(
-                'ap,aplm->alm', mapped_bessel, components_with_prefactors
+                'ap,aplm->alm',
+                mapped_bessel,
+                components_with_prefactors,
+                optimize='optimal',
             )
-            dyn *= 4 * jnp.pi
+            dyn *= 4 * jnp.pi  # pre-factor of 4pi
             dyn = jnp.where(
                 c_norm[:, None, None] >= EPS * 100,
                 dyn,
