@@ -139,7 +139,7 @@ def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
         / 1j
     ).real
 
-
+@jax.checkpoint
 @partial(
     jax.jit,
     static_argnames=['l_max', 'batch_atoms', 'batch_energies', 'use_symmetry'],
