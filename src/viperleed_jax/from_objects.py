@@ -45,6 +45,7 @@ def setup_tl_calculator(
     rpars,
     tensor_path,
     phaseshifts_path,
+    t_leed_l_max=None,
     **kwargs,
 ):
     """Set up a TensorLEEDCalculator from slab, rpars, and tensor file.
@@ -93,7 +94,10 @@ def setup_tl_calculator(
     )
 
     # determine the l_max for the LEED calculation
-    t_leed_l_max = _determine_l_max(rpars)
+    if t_leed_l_max is None:
+        # if no l_max is provided, determine it from the rpars
+        logger.debug('No l_max provided, determining from rpars.')
+        t_leed_l_max = _determine_l_max(rpars)
     logger.info(
         f'Using l_max={t_leed_l_max} for the tensor-LEED calculation.'
     )

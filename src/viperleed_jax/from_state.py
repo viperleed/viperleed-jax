@@ -20,7 +20,7 @@ from viperleed_jax.from_objects import (
 
 
 def calculator_from_paths(
-    inputs_path, tensor_path, displacements_id=0, **kwargs
+    inputs_path, tensor_path, displacements_id=0, t_leed_l_max=None, **kwargs
 ):
     """Create a TensorLEEDCalculator from input paths.
 
@@ -77,7 +77,7 @@ def calculator_from_paths(
     phaseshifts_path = Path(inputs_path) / 'PHASESHIFTS'
     # delegate to calculator_from_objects
     calculator = setup_tl_calculator(
-        slab, rpars, tensor_path, phaseshifts_path, **kwargs
+        slab, rpars, tensor_path, phaseshifts_path, t_leed_l_max, **kwargs
     )
     # set the parameter space
     calculator.set_parameter_space(parameter_space)
