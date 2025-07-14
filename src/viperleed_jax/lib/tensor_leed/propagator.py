@@ -44,7 +44,7 @@ def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
     propagator = jnp.zeros(((LMAX + 1) ** 2, (LMAX + 1) ** 2), dtype=jnp.complex128)
 
     # we could skip some computations because some elements are guaranteed
-    # to give zero contributions, but this would need a way around the 
+    # to give zero contributions, but this would need a way around the
     # non-static array sizes
     for lpp in range(LMAX * 2 + 1):
         bessel_values = BJ[lpp]
@@ -52,7 +52,6 @@ def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
         propagator += bessel_values * ylm_values * capped_coeffs[lpp, :, :]
 
     propagator *= 4 * jnp.pi
-
 
     # Using equation (34) from Rous, Pendry 1989 it is easy to show that the
     # propagator for a vanishing displacement is the identity matrix.
@@ -63,8 +62,6 @@ def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
     return jnp.where(
         c_norm >= EPS * 100, propagator, jnp.identity((LMAX + 1) ** 2)
     )
-
-
 
 
 def symmetry_operations(l_max, plane_symmetry_operation):
