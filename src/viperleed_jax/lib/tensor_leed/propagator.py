@@ -41,7 +41,9 @@ def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
     )  # shape: (2*LMAX+1, n, n)
 
     # This is the propagator from the origin to C
-    propagator = jnp.zeros(((LMAX + 1) ** 2, (LMAX + 1) ** 2), dtype=jnp.complex128)
+    propagator = jnp.zeros(
+        ((LMAX + 1) ** 2, (LMAX + 1) ** 2), dtype=jnp.complex128
+    )
 
     # we could skip some computations because some elements are guaranteed
     # to give zero contributions, but this would need a way around the
