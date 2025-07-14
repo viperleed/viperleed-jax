@@ -139,7 +139,8 @@ def get_plane_symmetry_operation_rotation_angle(plane_symmetry_operation):
         / 1j
     ).real
 
-@jax.checkpoint
+
+@partial(jax.checkpoint, static_argnums=(3, 4, 5, 6))
 @partial(
     jax.jit,
     static_argnames=['l_max', 'batch_atoms', 'batch_energies', 'use_symmetry'],
@@ -179,6 +180,7 @@ def calculate_propagators(
         [lpp * lpp + lpp - dense_mpp for lpp in range(2 * l_max + 1)]
     )  # shape: (2*LMAX+1, n, n)
 
+    @jax.checkpoint
     def apply_prefactors(y_lm):
         def process_lpp(lpp):
             idx = idx_lookup[lpp]  # shape: (lmlm, lmlm)
