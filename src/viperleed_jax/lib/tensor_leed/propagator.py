@@ -41,38 +41,31 @@ def calc_propagator(LMAX, c, c_sph_harm_components, kappa):
         [lpp * lpp + lpp - dense_mpp for lpp in range(2 * LMAX + 1)]
     )  # shape: (2*LMAX+1, n, n)
 
-    def propagator_lpp_element(lpp, running_sum):
+    # This is the propagator from the origin to C
+    propagator = jnp.zeros(((LMAX + 1) ** 2, (LMAX + 1) ** 2), dtype=jnp.complex128)
+
+    # we could skip some computations because some elements are guaranteed
+    # to give zero contributions, but this would need a way around the 
+    # non-static array sizes
+    for lpp in range(LMAX * 2 + 1):
         bessel_values = BJ[lpp]
         ylm_values = YLM[idx_lookup[lpp]]
-        # Equation (34) from Rous, Pendry 1989
-        return (
-            running_sum + bessel_values * ylm_values * capped_coeffs[lpp, :, :]
-        )  # * (abs(dense_mpp) <= lpp)
+        propagator += bessel_values * ylm_values * capped_coeffs[lpp, :, :]
 
-    # we could skip some computations because some lpp are guaranteed to give
-    # zero contributions, but this would need a way around the non-static array
-    # sizes
-
-    # This is the propagator from the origin to C
-    propagator = jax.lax.fori_loop(
-        0,
-        LMAX * 2 + 1,
-        propagator_lpp_element,
-        jnp.zeros(
-            shape=((LMAX + 1) ** 2, (LMAX + 1) ** 2), dtype=jnp.complex128
-        ),
-    )
     propagator *= 4 * jnp.pi
+
+
+    # Using equation (34) from Rous, Pendry 1989 it is easy to show that the
+    # propagator for a vanishing displacement is the identity matrix.
+    # (The Bessel functions for zero argument are zero for all non-zero orders, thus
+    # l''=0 is the only non-zero term in the sum. If l'' is 0, m''=0 and l=l' are
+    # necessary conditions.)
+
     return jnp.where(
         c_norm >= EPS * 100, propagator, jnp.identity((LMAX + 1) ** 2)
     )
 
 
-# Using equation (34) from Rous, Pendry 1989 it is easy to show that the
-# propagator for a vanishing displacement is the identity matrix.
-# (The Bessel functions for zero argument are zero for all non-zero orders, thus
-# l''=0 is the only non-zero term in the sum. If l'' is 0, m''=0 and l=l' are
-# necessary conditions.)
 
 
 def symmetry_operations(l_max, plane_symmetry_operation):
