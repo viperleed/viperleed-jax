@@ -187,9 +187,6 @@ def calculate_propagators(
         for y_lm in displacement_components
     ]
     components_with_prefactors = jnp.stack(components_with_prefactors)
-    print(
-        f'components_with_prefactors.shape: {components_with_prefactors.shape}'
-    )
 
     c_norm = jax.vmap(safe_norm)(displacements)
 
@@ -204,7 +201,6 @@ def calculate_propagators(
             mapped_bessel = mapped_bessel_f(
                 c_norm * propagtor_context.kappa[e_idx], 2 * l_max
             )
-            print(f'mapped_bessel.shape: {mapped_bessel.shape}')
 
             dyn = jnp.einsum(
                 'ap,aplm->alm',
