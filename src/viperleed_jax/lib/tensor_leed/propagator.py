@@ -157,9 +157,11 @@ def calculate_propagators(
     energy_indices = jnp.array(energy_indices)
 
     # Precompute the spherical harmonics components for each displacement.
-    displacement_components = [
-        spherical_harmonics_components(l_max, disp) for disp in displacements
-    ]
+    displacement_components = jax.lax.map(
+        lambda disp: spherical_harmonics_components(l_max, disp),
+        displacements,
+        batch_size=batch_atoms,
+    )
 
     # compute the factors multiplied onto the components
     dense_m_2d = DENSE_QUANTUM_NUMBERS[l_max][:, :, 2]
@@ -177,16 +179,17 @@ def calculate_propagators(
         [lpp * lpp + lpp - dense_mpp for lpp in range(2 * l_max + 1)]
     )  # shape: (2*LMAX+1, n, n)
 
-    components_with_prefactors = [
-        jnp.array(
-            [
-                y_lm[idx_lookup[lpp]] * capped_coeffs[lpp, ...]
-                for lpp in range(2 * l_max + 1)
-            ]
-        )
-        for y_lm in displacement_components
-    ]
-    components_with_prefactors = jnp.stack(components_with_prefactors)
+    def apply_prefactors(y_lm):
+        def process_lpp(lpp):
+            idx = idx_lookup[lpp]  # shape: (lmlm, lmlm)
+            coeff = capped_coeffs[lpp]  # shape: (lmlm, lmlm)
+            return y_lm[idx] * coeff  # shape: (lmlm, lmlm)
+
+        return jax.lax.map(process_lpp, jnp.arange(2 * l_max + 1))
+
+    components_with_prefactors = jax.lax.map(
+        apply_prefactors, displacement_components, batch_size=batch_atoms
+    )
 
     c_norm = jax.vmap(safe_norm)(displacements)
     mapped_bessel_f = jax.vmap(bessel, in_axes=(0, None))
