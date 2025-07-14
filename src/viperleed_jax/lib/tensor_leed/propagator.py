@@ -222,61 +222,43 @@ def calculate_propagators(
         else:
             dyn = jnp.zeros_like(propagtor_context.static_propagators[0])
 
-        if use_symmetry:
-            # --- Static propagators ---
-            if len(propagtor_context.static_propagators) == 0:
-                stat = jnp.zeros_like(dyn)
-            else:
-                # Assuming self._static_propagators is indexed as
-                # (atom_basis, num_energies, lm, m)
-                stat = propagtor_context.static_propagators[:, e_idx, :, :]
+        if not use_symmetry:
+            # If symmetry is not used, return the dynamic propagator directly.
+            return dyn
 
-            # --- Map to atom basis using propagator_id ---
-            mapped_dyn = dyn[propagtor_context.propagator_id]
-            mapped_stat = stat[propagtor_context.propagator_id]
+        # --- Static propagators ---
+        if len(propagtor_context.static_propagators) == 0:
+            stat = jnp.zeros_like(dyn)
+        else:
+            # Assuming self._static_propagators is indexed as
+            # (atom_basis, num_energies, lm, m)
+            stat = propagtor_context.static_propagators[:, e_idx, :, :]
 
-            # --- Combine dynamic and static parts ---
-            # Condition is broadcast along the last two axes.
-            cond = propagtor_context.is_dynamic_propagator[:, None, None]
-            combined = jnp.where(cond, mapped_dyn, mapped_stat)
-            # combined now has shape (atom_basis, lm, m)
+        # --- Map to atom basis using propagator_id ---
+        mapped_dyn = dyn[propagtor_context.propagator_id]
+        mapped_stat = stat[propagtor_context.propagator_id]
 
-            # --- Apply selective transposition ---
-            trans_int = propagtor_context.propagator_transpose_int[
-                :, None, None
-            ]
-            return (1 - trans_int) * combined + trans_int * jnp.transpose(
-                combined, (0, 2, 1)
-            )
-            # combined remains (atom_basis, lm, m)
+        # --- Combine dynamic and static parts ---
+        # Condition is broadcast along the last two axes.
+        cond = propagtor_context.is_dynamic_propagator[:, None, None]
+        combined = jnp.where(cond, mapped_dyn, mapped_stat)
+        # combined now has shape (atom_basis, lm, m)
 
-        return dyn
+        # --- Apply selective transposition ---
+        trans_int = propagtor_context.propagator_transpose_int[:, None, None]
+        combined = (1 - trans_int) * combined + trans_int * jnp.transpose(
+            combined, (0, 2, 1)
+        )
+        # --- Apply rotations (symmetry operations) ---
+        combined = combined * propagtor_context.symmetry_operations
+        return combined
 
     # Process each energy individually.
     # Each process_energy returns (atom_basis, lm, m); mapping over energies
     # yields shape: (num_energies, atom_basis, lm, m)
-    per_energy = jax.lax.map(
+    propagators = jax.lax.map(
         process_energy, energy_indices, batch_size=batch_energies
     )
-    # Transpose to (atom_basis, num_energies, lm, m) to match what the symmetry
-    # einsum expects.
-    # per_energy = jnp.transpose(per_energy, (1, 0, 2, 3))
-
-    if use_symmetry:
-        # --- Apply rotations (symmetry operations) and rearrange ---
-        propagators = jnp.einsum(
-            'ealm,alm->ealm',
-            per_energy,
-            propagtor_context.symmetry_operations,
-            optimize='optimal',
-        )
-    else:
-        # --- Apply rotations (symmetry operations) and rearrange ---
-        propagators = jnp.einsum(
-            'ealm->ealm',
-            per_energy,
-            optimize='optimal',
-        )
 
     # Final shape is (energies, atom_basis, lm, m)
     return propagators
