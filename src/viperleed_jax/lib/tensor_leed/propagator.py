@@ -241,12 +241,12 @@ def calculate_propagators(
     )
     # Transpose to (atom_basis, num_energies, lm, m) to match what the symmetry
     # einsum expects.
-    per_energy = jnp.transpose(per_energy, (1, 0, 2, 3))
+    # per_energy = jnp.transpose(per_energy, (1, 0, 2, 3))
 
     if use_symmetry:
         # --- Apply rotations (symmetry operations) and rearrange ---
         propagators = jnp.einsum(
-            'aelm,alm->ealm',
+            'ealm,alm->ealm',
             per_energy,
             propagtor_context.symmetry_operations,
             optimize='optimal',
@@ -254,7 +254,7 @@ def calculate_propagators(
     else:
         # --- Apply rotations (symmetry operations) and rearrange ---
         propagators = jnp.einsum(
-            'aelm->ealm',
+            'ealm->ealm',
             per_energy,
             optimize='optimal',
         )
