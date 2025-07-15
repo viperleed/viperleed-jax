@@ -14,7 +14,6 @@ import logging
 
 import numpy as np
 from jax import numpy as jnp
-from jax.tree_util import register_pytree_node_class
 
 from viperleed_jax.atom_basis import SiteEl
 
@@ -81,7 +80,6 @@ def regrid_phaseshifts(old_grid, new_grid, phaseshifts):
     return new_phaseshifts
 
 
-@register_pytree_node_class
 class Phaseshifts:
     def __init__(self, raw_phaseshifts, energies, l_max, phaseshift_map):
         """Class to handle phaseshifts.
@@ -107,6 +105,13 @@ class Phaseshifts:
     def __getitem__(self, site_el):
         index = self.phaseshift_map[site_el]
         return self._phaseshifts[index, ...]
+
+    def __hash__(self):
+        """Return a hash of the phaseshifts object.
+
+        This is necessary for using Phaseshifts as static arguments in JAX.
+        """
+        return int(self._phaseshifts.sum())
 
     # TODO: We should consider a spline interpolation instead of a linear
     def interpolate(self, raw_phaseshifts, energies):
@@ -140,13 +145,3 @@ class Phaseshifts:
                     stored_phaseshifts[:, site, l],
                 )
         return interpolated
-
-    # PyTree methods
-    def tree_flatten(self):
-        return (self._phaseshifts, self.l_max), None
-
-    @classmethod
-    def tree_unflatten(cls, aux_data, children):
-        new_ps = cls.__new__(cls)
-        new_ps._phaseshifts, new_ps.l_max = children
-        return new_ps
