@@ -5,10 +5,14 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "cSpell.words": [
+        "expbeams",
+        "INTPOL",
         "LEED",
         "LMAX",
         "ndarray",
+        "phaseshift",
         "phaseshifts",
+        "rparams",
         "viperleed"
     ]
 }
