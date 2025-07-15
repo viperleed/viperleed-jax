@@ -21,8 +21,8 @@ from viperleed_jax.atom_basis import SiteEl
 logger = logging.getLogger(__name__)
 
 
-# TODO: probably this should move into the main viperleed package
 def phaseshift_site_el_order(slab, rpars):
+    """Return a dict that maps SiteEl to an int index."""
     # this reproduces the order of blocks contained in PHASESHIFTS:
     ps_site_el_order = []
     for el in slab.elements:
@@ -45,6 +45,7 @@ def phaseshift_site_el_order(slab, rpars):
 
 
 def ps_list_to_array(ps_list):
+    """Convert a list of phaseshift tuples to a numpy array."""
     n_energies = len(ps_list)
     ps_energy_values = np.array([ps_list[ii][0] for ii in range(n_energies)])
 
@@ -61,14 +62,12 @@ def ps_list_to_array(ps_list):
     return ps_energy_values, phaseshifts
 
 
-# could easily be vectorized
-
-
 def interpolate_phaseshift(phaseshifts, ps_energies, interp_energy, el_id, l):
     return np.interp(interp_energy, ps_energies, phaseshifts[el_id, :, l])
 
 
 def regrid_phaseshifts(old_grid, new_grid, phaseshifts):
+    """Calculate interpolated phaseshifts on a new energy grid."""
     n_elem, n_en, n_l = phaseshifts.shape
     new_phaseshifts = np.full(
         shape=(n_elem, len(new_grid), n_l), fill_value=np.nan
@@ -141,8 +140,6 @@ class Phaseshifts:
                     stored_phaseshifts[:, site, l],
                 )
         return interpolated
-
-    # TODO: methods for easier access
 
     # PyTree methods
     def tree_flatten(self):
