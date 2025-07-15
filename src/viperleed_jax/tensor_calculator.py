@@ -63,7 +63,7 @@ class TensorLEEDCalculator:
         slab,
         rparams,
         interpolation_step=0.5,
-        interpolation_deg=3,
+        interpolation_deg=None,
         bc_type='not-a-knot',
     ):
         self.ref_calc_params = ref_calc_params
@@ -72,7 +72,12 @@ class TensorLEEDCalculator:
         self.recalculate_ref_t_matrices = (
             rparams.VLJ_CONFIG['recalc_ref_t_matrices'])
 
-        self.interpolation_deg = interpolation_deg
+        self.interpolation_deg = rparams.INTPOL_DEG
+        if interpolation_deg is not None:
+            logger.debug(
+                f'Overriding interpolation degree to {interpolation_deg}'
+            )
+            self.interpolation_deg = interpolation_deg
         self.bc_type = bc_type
         self.use_symmetry = rparams.VLJ_CONFIG['use_symmetry']
 
@@ -143,7 +148,12 @@ class TensorLEEDCalculator:
         self.rfactor_func = rfactor.pendry_R
 
         if self.interpolation_deg != 3:
-            raise NotImplementedError
+            msg = (
+                'Only cubic interpolation (degree 3) is currently supported. '
+                'This is a limitation of the underlying interpolation '
+                'library.'
+            )
+            raise NotImplementedError(msg)
 
         # calculate batching
         self.batching = Batching(self.energies, ref_calc_params.lmax)
