@@ -125,24 +125,14 @@ class TensorLEEDCalculator:
         # TODO: refactor into a dataclass
         self.energies = jnp.asarray(self.ref_calc_params.energies)
 
-        non_bulk_atoms = [at for at in slab.atlist if not at.is_bulk]
-        # TODO check this
-        self.is_surface_atom = jnp.array(
-            [at.layer.num == 0 for at in non_bulk_atoms]
-        )
-
-        self.ref_vibrational_amps = jnp.array(
-            [at.site.vibamp[at.el] for at in non_bulk_atoms]
-        )
         self.origin_grid = ref_calc_params.incident_energy_ev
 
         self.delta_amp_prefactors = self._calc_delta_amp_prefactors()
 
         self.exp_spline = None
 
-
-        # determine and set batch sizes
-        self._set_batch_sizes(rparams)
+        self._requested_batch_energies = rparams.VLJ_BATCH['energies']
+        self._requested_batch_atoms = rparams.VLJ_BATCH['atoms']
 
         # default R-factor is Pendry
         self.rfactor_func = rfactor.pendry_R
@@ -183,15 +173,15 @@ class TensorLEEDCalculator:
         # evaluate the wave vectors
         self.wave_vectors = self._eval_wave_vectors()
 
-    def _set_batch_sizes(self, rparams):
+    def _set_batch_sizes(self):
         """Set batch sizes for energies and atoms based on rparams."""
         # TODO: implement a memory-aware automatic batching
         batch_energies, batch_atoms = (
-            rparams.VLJ_BATCH['energies'],
-            rparams.VLJ_BATCH['atoms'],
+            self._requested_batch_energies,
+            self._requested_batch_atoms,
         )
         if batch_atoms == -1:
-            batch_atoms = self.n_atoms
+            batch_atoms = len(self.parameter_space.atom_basis.scatterers)
         self.batch_atoms = batch_atoms
 
         if batch_energies == -1:
@@ -212,10 +202,6 @@ class TensorLEEDCalculator:
     @property
     def reciprocal_unit_cell(self):
         return 2 * jnp.pi * jnp.linalg.inv(self.unit_cell)
-
-    @property
-    def n_atoms(self):
-        return len(self.ref_vibrational_amps)
 
     def check_parameter_space_set(self):
         """Check whether the parameter space has been set.
@@ -274,6 +260,10 @@ class TensorLEEDCalculator:
             logger.debug('Overwriting parameter space.')
         # take delta_slab and set the parameter space
         self._parameter_space = parameter_space
+
+        # determine and set batch sizes
+        # (needs to be done here, since we need atom info from parameter space)
+        self._set_batch_sizes()
 
         if self.recalculate_ref_t_matrices:
             # calculate reference t-matrices for full LMAX
