@@ -201,16 +201,15 @@ class GeoLinkedConstraint(GeoConstraintNode):
 
 class GeoTree(DisplacementTree):
     def __init__(self, atom_basis):
+        self._leaf_node = GeoLeafNode
+        self._constraint_node = GeoConstraintNode
+
         super().__init__(
             atom_basis,
             name='Geometric Parameters',
             root_node_name='geo root',
             perturbation_type='geo',
         )
-
-        # set the leaf and constraint node classes
-        self._leaf_node = GeoLeafNode
-        self._constraint_node = GeoConstraintNode
 
         unlinked_site_el_nodes = [node for node in self.leaves if node.is_root]
         for node in unlinked_site_el_nodes:

@@ -78,15 +78,15 @@ class VibSymmetryConstraint(VibConstraintNode):
 
 class VibTree(DisplacementTree):
     def __init__(self, atom_basis):
+        self._leaf_node = VibLeafNode
+        self._symmetry_node = VibSymmetryConstraint
+
         super().__init__(
             atom_basis,
             name='Vibrational Parameters',
             root_node_name='vib root',
             perturbation_type='vib',
         )
-
-        self._leaf_node = VibLeafNode
-        self._symmetry_node = VibSymmetryConstraint
 
     @property
     def _ref_vib_amplitudes(self):

@@ -123,15 +123,15 @@ class OccTree(DisplacementTree):
     """
 
     def __init__(self, atom_basis):
+        self._leaf_node = OccLeafNode
+        self._symmetry_node = OccSymmetryConstraint
+
         super().__init__(
             atom_basis,
             name='Occupational Parameters',
             root_node_name='occ root',
             perturbation_type='occ',
         )
-
-        self._leaf_node = OccLeafNode
-        self._symmetry_node = OccSymmetryConstraint
 
     def apply_bounds(self, occ_delta_line):
         super().apply_bounds(occ_delta_line)
