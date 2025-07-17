@@ -305,10 +305,7 @@ class DisplacementTree(LinearTree):
                 ]
                 if not nodes_to_link:
                     continue
-                symmetry_node = self._symmetry_node(
-                    children=nodes_to_link,
-                    name='Symmetry',
-                )
+                symmetry_node = self._symmetry_node(children=nodes_to_link)
                 self.nodes.append(symmetry_node)
 
         unlinked_site_el_nodes = [node for node in self.leaves if node.is_root]

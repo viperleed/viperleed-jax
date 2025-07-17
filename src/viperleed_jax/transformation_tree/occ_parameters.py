@@ -48,7 +48,7 @@ class OccConstraintNode(LinearConstraintNode):
 class OccSymmetryConstraint(OccConstraintNode):
     """Constraint for enforcing symmetry in occupation."""
 
-    def __init__(self, children, name):
+    def __init__(self, children):
         # Check that all children have the same dof
         if len({child.dof for child in children}) != 1:
             raise ValueError('Children must have the same dof.')
@@ -62,7 +62,7 @@ class OccSymmetryConstraint(OccConstraintNode):
             transformers.append(AffineTransformer(weights, bias, (dof,)))
         super().__init__(
             dof=dof,
-            name=name,
+            name='Symmetry',
             children=children,
             transformers=transformers,
             layer=DisplacementTreeLayers.Symmetry,
