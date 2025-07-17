@@ -58,7 +58,7 @@ class TMatrix(LinearPropagatedQuantity):
         self.phaseshifts = phaseshifts
         self.batch_energies = batch_energies
         logger.debug(
-            f'Pre-calculating {self.n_static_values} static t-matrices.'
+            f'Pre-calculating {self.n_static_values} static t-matrix(-ces).'
         )
         static_t_matrices = self._calculate_static_t_matrices(
             energies, batch_energies, max_l_max

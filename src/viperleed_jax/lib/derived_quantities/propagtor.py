@@ -72,7 +72,7 @@ class Propagators(LinearPropagatedQuantity):
         self.use_symmetry = use_symmetry
 
         logger.debug(
-            f'Pre-calculating {self.n_static_values} static propagators.'
+            f'Pre-calculating {self.n_static_values} static propagator(s).'
         )
         static_propagators = self._calculate_static_propagators()
 
