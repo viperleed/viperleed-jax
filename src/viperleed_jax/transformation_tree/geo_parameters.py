@@ -208,22 +208,9 @@ class GeoTree(DisplacementTree):
             perturbation_type='geo',
         )
 
-    def _initialize_tree(self):
-        # create leaf nodes
-        geo_leaf_nodes = [GeoLeafNode(atom) for atom in self.atom_basis]
-        self.nodes.extend(geo_leaf_nodes)
-
-        # apply symmetry constraints
-        for siteel in self.site_elements:
-            site_el_params = [
-                node for node in self.leaves if node.site_element == siteel
-            ]
-
-        for link in self.atom_basis.symmetry_links:
-            # put all linked atoms in the same symmetry group
-            nodes_to_link = [node for node in self.leaves if node.atom in link]
-            if nodes_to_link:
-                self.nodes.append(GeoSymmetryConstraint(children=nodes_to_link))
+        # set the leaf and constraint node classes
+        self._leaf_node = GeoLeafNode
+        self._constraint_node = GeoConstraintNode
 
         unlinked_site_el_nodes = [node for node in self.leaves if node.is_root]
         for node in unlinked_site_el_nodes:

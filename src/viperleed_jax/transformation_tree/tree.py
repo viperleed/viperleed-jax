@@ -288,6 +288,30 @@ class DisplacementTree(LinearTree):
             )
             self.nodes.append(implicit_fixed_constraint)
 
+    def _initialize_tree(self):
+        # create leaf nodes
+        geo_leaf_nodes = [self._leaf_node(atom) for atom in self.atom_basis]
+        self.nodes.extend(geo_leaf_nodes)
+
+        # apply symmetry constraints
+        for siteel in self.site_elements:
+            site_el_leaves = [
+                node for node in self.leaves if node.site_element == siteel
+            ]
+            for link in self.atom_basis.symmetry_links:
+                # put all linked atoms in the same symmetry group
+                nodes_to_link = [
+                    node for node in site_el_leaves if node.atom in link
+                ]
+                if not nodes_to_link:
+                    continue
+                symmetry_node = self._symmetry_node(children=nodes_to_link)
+                self.nodes.append(symmetry_node)
+
+        unlinked_site_el_nodes = [node for node in self.leaves if node.is_root]
+        for node in unlinked_site_el_nodes:
+            self.nodes.append(self._symmetry_node(children=[node]))
+
     @property
     def _raw_leaf_transformers(self):
         """Return the raw leaf transformers in the order of the base scatterers."""

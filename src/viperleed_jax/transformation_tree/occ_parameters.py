@@ -130,35 +130,8 @@ class OccTree(DisplacementTree):
             perturbation_type='occ',
         )
 
-    def _initialize_tree(self):
-        # initially, every atom-site-element has a free chemical weight
-        # to allow for (partial) vacancies
-        occ_leaf_nodes = [OccLeafNode(ase) for ase in self.atom_basis]
-        self.nodes.extend(occ_leaf_nodes)
-
-        # occupational parameters need to fulfill symmetry constraints
-
-        for link in self.atom_basis.atom_number_symmetry_links:
-            # put all linked atoms in the same symmetry group
-
-            nodes_to_link = [
-                node for node in occ_leaf_nodes if node.num in link
-            ]
-            if not nodes_to_link:
-                continue
-            symmetry_node = OccSymmetryConstraint(
-                children=nodes_to_link, name='Symmetry'
-            )
-            self.nodes.append(symmetry_node)
-
-        unlinked_site_el_nodes = [
-            node for node in occ_leaf_nodes if node.is_root
-        ]
-        for node in unlinked_site_el_nodes:
-            symmetry_node = OccSymmetryConstraint(
-                children=[node], name='Symmetry'
-            )
-            self.nodes.append(symmetry_node)
+        self._leaf_node = OccLeafNode
+        self._symmetry_node = OccSymmetryConstraint
 
     def apply_bounds(self, occ_delta_line):
         super().apply_bounds(occ_delta_line)

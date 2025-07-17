@@ -85,29 +85,8 @@ class VibTree(DisplacementTree):
             perturbation_type='vib',
         )
 
-    def _initialize_tree(self):
-        leaf_nodes = [VibLeafNode(ase) for ase in self.atom_basis]
-
-        self.nodes.extend(leaf_nodes)
-
-        # vibrations need to fulfill symmetry constraints
-        for link in self.atom_basis.atom_number_symmetry_links:
-            # put all linked atoms in the same symmetry group
-
-            nodes_to_link = [node for node in leaf_nodes if node.num in link]
-            if not nodes_to_link:
-                continue
-            symmetry_node = VibSymmetryConstraint(
-                children=nodes_to_link,
-            )
-            self.nodes.append(symmetry_node)
-
-        unlinked_vib_leaves = [node for node in leaf_nodes if not node.parent]
-        for node in unlinked_vib_leaves:
-            dummy_symmetry_node = VibSymmetryConstraint(
-                children=[node],
-            )
-            self.nodes.append(dummy_symmetry_node)
+        self._leaf_node = VibLeafNode
+        self._symmetry_node = VibSymmetryConstraint
 
     @property
     def _ref_vib_amplitudes(self):
