@@ -202,7 +202,7 @@ class GeoLinkedConstraint(GeoConstraintNode):
 class GeoTree(DisplacementTree):
     def __init__(self, atom_basis):
         self._leaf_node = GeoLeafNode
-        self._constraint_node = GeoConstraintNode
+        self._symmetry_node = GeoSymmetryConstraint
 
         super().__init__(
             atom_basis,
