@@ -1,0 +1,17 @@
+= Vibration Amplitudes
+O_surf = 0.256
+Me_layer_1 = Rh 0.14, Pt 0.11
+Me_layer_2_upper = Rh 0.14, Pt 0.11
+Me_layer_2_lower = Rh 0.14, Pt 0.11
+Me_layer_3 = Rh 0.14, Pt 0.11
+Me_layer_4 = Rh 0.14, Pt 0.11
+Me_def = Rh 0.14, Pt 0.11
+
+= Occupations
+Me_layer_1 = Rh 0.75, Pt 0.25
+Me_layer_2_upper = Rh 0.75, Pt 0.25
+Me_layer_2_lower = Rh 0.75, Pt 0.25
+Me_layer_3 = Rh 0.75, Pt 0.25
+Me_layer_4 = Rh 0.75, Pt 0.25
+Me_def = Rh 0.75, Pt 0.25
+

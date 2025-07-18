@@ -1,0 +1,38 @@
+! ####### GLOBAL PARAMETERS #######
+RUN = 3
+
+# Sporn paper says they only calculate up to 400eV!
+THEO_ENERGIES = 30 400 3
+
+BACKEND search = viperleed-jax
+
+BEAM_INCIDENCE = theta 0.0, phi 0.0
+
+LOG_DEBUG = True
+
+N_CORES = 48
+ELEMENT_MIX Me = Rh Pt
+
+# value used by Sporn
+V0_IMAG = 6.5
+
+# FD optimization
+# OPTIMIZE ab = step 0.005, convergence 0.001
+# OPTIMIZE c = step 0.005, convergence 0.001
+
+
+! ####### PARAMETERS FOR INTERPRETING POSCAR #######
+! BULK_LIKE_BELOW = 0.45            ! line commented out automatically
+
+SITE_DEF O = surf 1 2
+SITE_DEF Me = layer_1 3-5, layer_2_upper 7, layer_2_lower 6 8, layer_3 9-11, layer_4 12-14
+
+
+
+! ######################################################
+! #  THE FOLLOWING LINES WERE GENERATED AUTOMATICALLY  #
+! ######################################################
+
+BULK_REPEAT = [1.35000 1.35000 1.90919] ! Automatically detected repeat vector
+LAYER_CUTS = 0.3500 0.4500 0.5500 0.6500 0.7500
+N_BULK_LAYERS = 1
