@@ -12,6 +12,7 @@ INPUTS_FE2O3_012_CONVERGED = DATA_PATH / 'Fe2O3_012' / 'converged'
 INPUTS_FE2O3_012_UNRELAXED = DATA_PATH / 'Fe2O3_012' / 'unrelaxed'
 INPUTS_FE3O4_111 = DATA_PATH / 'Fe3O4_111'
 INPUTS_PT_111_10x10_TE = DATA_PATH / 'Pt_111_10x10_Te' / 'converged'
+INPUTS_PT2575_O_3x1 = DATA_PATH / 'Pt25Rh75_O_3x1'
 
 
 @fixture
@@ -42,3 +43,7 @@ def state_fe3o4_111():
 @fixture
 def state_pt_111_10x10_te():
     return run_viperleed_initialization(INPUTS_PT_111_10x10_TE)
+
+@fixture
+def init_state_pt25rh75_o_3x1():
+    return run_viperleed_initialization(INPUTS_PT2575_O_3x1)

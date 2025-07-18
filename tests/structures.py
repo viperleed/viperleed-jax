@@ -62,6 +62,8 @@ PT_111_10x10_TE_INFO = ParameterSpaceInfo(
     symmetry_size=ParameterSpaceSize(1, 229, 92, 92),
 )
 
+PT25RH75_O_3x1_INFO = ParameterSpaceInfo()
+
 
 class CaseStatesAfterInit:
     """Collection of cases with structures after viperleed.calc init."""
@@ -114,3 +116,8 @@ class CaseStatesAfterInit:
     def case_pt_111_10x10_te(self, state_pt_111_10x10_te):
         state = state_pt_111_10x10_te
         return state, PT_111_10x10_TE_INFO
+
+    @case
+    def case_pt25rh75_o_3x1(self, init_state_pt25rh75_o_3x1):
+        state = init_state_pt25rh75_o_3x1
+        return state, PT25RH75_O_3x1_INFO

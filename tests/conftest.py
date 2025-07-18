@@ -16,6 +16,7 @@ from tests.viper_init_states import (
     state_fe2o3_012_unrelaxed,
     state_fe3o4_111,
     state_pt_111_10x10_te,
+    init_state_pt25rh75_o_3x1,
 )
 from viperleed_jax.atom_basis import AtomBasis
 from viperleed_jax.ref_calc_data import process_tensors
