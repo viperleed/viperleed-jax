@@ -14,7 +14,7 @@ dependencies = [
     'jax',
     'clinamen2>=2024.7.1',
     'numpy<2',
-    'viperleed>0.12.1',
+    'viperleed>=0.14.1',
     'spbessax>=0.1.3',
     'tqdm',
     'interpax',
