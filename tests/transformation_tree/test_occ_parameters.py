@@ -75,11 +75,11 @@ class TestPt25Rh75_O_3x1:
             non_normalized_occupations, atom_ids, op_type=normalization_method
         )
 
-        # The sum of the normalized occupations should to
-        # 2 (oxygen atoms) + 15* total_occ (for Rh and Pt)
+        # The sum of the normalized occupations should sum up to
+        # 8 + 9 * total_occ (8 100% occupied atoms + 9 atoms with total_occ%)
         sum_occ = normalized_occupations.sum()
         with subtests.test('sum of occupations'):
-            assert sum_occ == pytest.approx(2 + 15 * total_occ)
+            assert sum_occ == pytest.approx(8 + 9 * total_occ)
 
     KNOWN_OCC_PARAM_TO_VALUES = {
         tuple([0.0] * 6): np.array(
@@ -195,13 +195,19 @@ class TestPt25Rh75_O_3x1:
     @pytest.mark.parametrize('input_params', KNOWN_OCC_PARAM_TO_VALUES.keys())
     def test_known_occ_params(
         self,
-        total_occ_tree,
+        ptrh_tree,
         input_params,
     ):
         """Test known occupation parameters."""
-        tree, _ = total_occ_tree
+        line = ConstraintLine('occ Me* L(1-3) = total 1.0')
+        ptrh_tree.apply_explicit_constraint(line)
+        bounds_line = OccDeltaLine('Me* L(1-3) = Rh 0.10 0.90, Pt 0.90 0.10')
+        ptrh_tree.apply_bounds(bounds_line)
 
-        non_normalized_occupations = tree(np.array(input_params))
+        ptrh_tree.apply_implicit_constraints()
+        ptrh_tree.finalize_tree()
+
+        non_normalized_occupations = ptrh_tree(np.array(input_params))
 
         assert non_normalized_occupations == pytest.approx(
             self.KNOWN_OCC_PARAM_TO_VALUES[input_params]
