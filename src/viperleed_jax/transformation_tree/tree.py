@@ -439,7 +439,7 @@ class DisplacementTree(LinearTree):
         _check_constraint_line_type(constraint_line, self.perturbation_mode)
 
         # resolve the reference (rhs of constraint) into a mask
-        link_target_mask = self.atom_basis.selection_mask(
+        link_target_mask = self.atom_basis.target_selection_mask(
             (constraint_line.link_target,)
         )
         # if multiple atoms are targeted, we need to select the first one
@@ -447,7 +447,9 @@ class DisplacementTree(LinearTree):
         link_target_root = link_target.root
 
         # select which atoms to link by interpreting the target token
-        to_link_mask = self.atom_basis.selection_mask(constraint_line.targets)
+        to_link_mask = self.atom_basis.target_selection_mask(
+            constraint_line.targets
+        )
         leaves_to_link = self.leaves[to_link_mask]
         # get the roots of the leaves to link
         roots_to_link = [leaf.root for leaf in leaves_to_link]

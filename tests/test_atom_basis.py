@@ -96,7 +96,7 @@ class TestSelectionMask:
         ids=lambda x: str(x),
     )
     def test_target_mask_creation(self, atom_basis, targets, exp_mask):
-        mask = atom_basis.selection_mask(targets)
+        mask = atom_basis.target_selection_mask(targets)
         assert all(mask == exp_mask)
 
     @pytest.mark.parametrize(
@@ -113,4 +113,4 @@ class TestSelectionMask:
     )
     def test_target_selection_errors(self, atom_basis, targets):
         with pytest.raises(TargetSelectionError):
-            atom_basis.selection_mask(targets)
+            atom_basis.target_selection_mask(targets)

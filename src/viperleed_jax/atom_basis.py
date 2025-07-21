@@ -84,7 +84,7 @@ class AtomBasis:
 
     @property
     def atom_ids(self):
-        """Return """
+        """Return"""
         ids = [scat.atom.num for scat in self.scatterers]
         return tuple(ids)
 
@@ -184,7 +184,7 @@ class AtomBasis:
 
         return mask
 
-    def selection_mask(self, targets):
+    def target_selection_mask(self, targets):
         """Take the 'or' of all targets, combining masks."""
         if not all(isinstance(target, TargetToken) for target in targets):
             raise TargetSelectionError(
@@ -214,7 +214,9 @@ class AtomBasis:
         try:
             _elements = list(elements)
         except TypeError as err:
-            raise TypeError('elements must be an iterable of element symbols.') from err
+            raise TypeError(
+                'elements must be an iterable of element symbols.'
+            ) from err
 
         mask = np.array([bs.element in _elements for bs in self])
         if not np.any(mask):
