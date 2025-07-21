@@ -136,4 +136,6 @@ class VibTree(DisplacementTree):
         """Check if the vibrational tree is centered."""
         super().is_centered()
         centered_vibrations = self([0.5] * self.root.dof)
-        return np.sum(np.abs(centered_vibrations - self._ref_vib_amplitudes)) < EPS
+        return (
+            np.sum(np.abs(centered_vibrations - self._ref_vib_amplitudes)) < EPS
+        )

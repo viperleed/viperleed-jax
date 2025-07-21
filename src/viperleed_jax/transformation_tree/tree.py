@@ -360,7 +360,9 @@ class DisplacementTree(LinearTree):
 
     def _get_leaves_and_roots(self, targets):
         """Return the leaves, roots and primary_leaves for the given targets."""
-        all_target_leaves = self.leaves[self.atom_basis.selection_mask(targets)]
+        all_target_leaves = self.leaves[
+            self.atom_basis.target_selection_mask(targets)
+        ]
         target_roots = [leaf.root for leaf in all_target_leaves]
         target_roots = {
             root: _select_primary_leaf(root, all_target_leaves)
