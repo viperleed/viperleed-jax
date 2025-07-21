@@ -3,8 +3,11 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-09-02'
 
+import logging
 import numpy as np
 from viperleed.calc.classes.perturbation_mode import PerturbationMode
+
+logger = logging.getLogger(__name__)
 
 from viperleed_jax.transformation_tree import (
     geo_parameters,
