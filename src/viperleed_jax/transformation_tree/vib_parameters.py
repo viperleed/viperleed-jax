@@ -5,6 +5,7 @@ __created__ = '2024-09-09'
 
 import numpy as np
 
+from viperleed_jax.lib.math import EPS
 from .displacement_tree_layers import DisplacementTreeLayers
 from .linear_transformer import AffineTransformer, LinearMap
 from .nodes import (
@@ -130,3 +131,9 @@ class VibTree(DisplacementTree):
         # add reference calculation vibrational amplitudes to raw values
         # (vib deltas)
         return raw_values + self._ref_vib_amplitudes
+
+    def is_centered(self):
+        """Check if the vibrational tree is centered."""
+        super().is_centered
+        centered_vibrations = self([0.5] * self.root.dof)
+        return np.sum(np.abs(centered_vibrations - self._ref_vib_amplitudes)) < EPS
