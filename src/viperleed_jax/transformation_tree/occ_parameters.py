@@ -180,7 +180,3 @@ class OccTree(DisplacementTree):
         """Return the reference occupations for all leaves."""
         return np.array([leaf.ref_occ for leaf in self.leaves])
 
-    def _post_process_values(self, raw_values):
-        # add reference calculation occupations to raw values
-        # (vib deltas)
-        return raw_values + self._ref_occupations
