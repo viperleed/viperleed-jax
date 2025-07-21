@@ -180,3 +180,13 @@ class OccTree(DisplacementTree):
         """Return the reference occupations for all leaves."""
         return np.array([leaf.ref_occ for leaf in self.leaves])
 
+    def _centered_occupations(self):
+        """Return the centered occupations based on the parameters."""
+        return self(np.array([0.5] * self.root.dof))
+
+    @property
+    def is_centered(self):
+        """Check if the occupational tree is centered."""
+        super().is_centered
+        centered_occupations = self._centered_occupations()
+        return np.allclose(self._ref_occupations, centered_occupations)
