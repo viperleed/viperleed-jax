@@ -190,3 +190,24 @@ class OccTree(DisplacementTree):
         super().is_centered
         centered_occupations = self._centered_occupations()
         return np.allclose(self._ref_occupations, centered_occupations)
+
+
+def _fixed_occ_constraint_linear_map(n_children):
+    """Create a linear map for the fixed occupation constraint."""
+    if n_children < 2:
+        raise ValueError(
+            'At least two children are required for a total occupation constraint.')
+
+    transformers = []
+    for i in range(n_children - 1):
+        arr = np.zeros([1, n_children - 1])
+        arr[0, i] = 1.0
+        bias = np.zeros([1])
+        transformers.append(AffineTransformer(arr, bias))
+    # The last child is minus the sum of the others
+
+    arr = -np.ones([1, n_children - 1])
+    bias = np.array([1.0])
+    transformers.append(AffineTransformer(arr, bias))
+
+    return transformers
