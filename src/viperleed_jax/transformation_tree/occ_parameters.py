@@ -207,16 +207,25 @@ class OccTree(DisplacementTree):
         roots_to_link = list({root: None for root in roots_to_link}.keys())
 
         while roots_to_link:
-            # take the first root and find all leaves that are children of this root
+            # take the first root and find all leaves that are children
             primary_root = roots_to_link[0]
 
             # select all roots that have a leaf with the same atom number
-            atom_nums = [leaf.atom.num for leaf in primary_root.children]
+            atom_nums = [leaf.atom.num for leaf in primary_root.leaves]
             shared_occ_roots = [
                 root
                 for root in roots_to_link
-                if any(leaf.atom.num in atom_nums for leaf in root.children)
+                if any(leaf.atom.num in atom_nums for leaf in root.leaves)
             ]
+
+            if len(shared_occ_roots) == 1:
+                # all nodes are already linked somehow...
+                msg = (
+                    f'The total occupation constraint '
+                    f'"{constraint_line.raw_line}" is trying to link (at '
+                    'least) two occupations that are already linked.'
+                )
+                raise ValueError(msg)
 
             # none of the roots should have dof > 1
             # failsafe in case we implement dof > 1 in the future
