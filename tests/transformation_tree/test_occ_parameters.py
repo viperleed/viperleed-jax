@@ -59,7 +59,7 @@ class TestPt25Rh75_O_3x1:
         It should not be centered because the reference occupations are 25/75%
         while the range is symmetric around 50/50%!"""
         tree, _ = total_occ_tree
-        assert not tree.is_centered
+        assert not tree.is_centered()
 
     @pytest.mark.parametrize('normalization_method', ['projection', 'mirror'])
     def test_tree_total_occ_sum(
