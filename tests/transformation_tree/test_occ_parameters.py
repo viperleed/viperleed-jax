@@ -41,6 +41,31 @@ def ptrh_tree(case):
 class TestPt25Rh75_O_3x1:
     """Tests with the Pt25Rh75_O_3x1 structure."""
 
+    def test_simple_linked_constraints(self, ptrh_tree):
+        """Test simple linked constraints."""
+
+        # A constraint that links all occupations together
+        line = ConstraintLine('occ Me* L(1-3) = linked')
+        ptrh_tree.apply_explicit_constraint(line)
+        bounds_line = OccDeltaLine('Me* L(1-3) = Rh 0.10 0.90, Pt 0.90 0.10')
+        ptrh_tree.apply_bounds(bounds_line)
+        ptrh_tree.apply_implicit_constraints()
+        ptrh_tree.finalize_tree()
+
+        # all linked, so only one degree of freedom
+        assert ptrh_tree.root.dof == 1
+
+    def test_redundant_total_occ_constraint(self, ptrh_tree):
+        """Test application of a redundant total occupation constraint."""
+
+        # A constraint that links all occupations together
+        line = ConstraintLine('occ Me* L(1-3) = linked')
+        ptrh_tree.apply_explicit_constraint(line)
+
+        line = ConstraintLine('occ Me* L(1-3) = total 1.0')
+        with pytest.raises(ValueError):
+            ptrh_tree.apply_explicit_constraint(line)
+
     @fixture
     @pytest.mark.parametrize('total_occ', [1.0, 0.5, 0.25])
     def total_occ_tree(self, ptrh_tree, total_occ):
