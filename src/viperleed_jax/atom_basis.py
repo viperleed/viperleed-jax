@@ -197,3 +197,27 @@ class AtomBasis:
                 combined_mask | self._selection_mask_from_target_token(target)
             )
         return combined_mask
+
+    def element_selection_mask(self, elements):
+        """Select atoms based on their element.
+
+        Parameters
+        ----------
+        elements : iterable of str
+            List of element symbols to select.
+
+        Returns
+        -------
+        np.ndarray
+            A boolean mask array where True indicates the atom is selected.
+        """
+        try:
+            _elements = list(elements)
+        except TypeError as err:
+            raise TypeError('elements must be an iterable of element symbols.') from err
+
+        mask = np.array([bs.element in _elements for bs in self])
+        if not np.any(mask):
+            msg = f'No atoms found for elements: {_elements}'
+            raise TargetSelectionError(msg)
+        return mask
