@@ -175,6 +175,70 @@ class OccTree(DisplacementTree):
             )
             self.nodes.append(implicit_constraint_node)
 
+    def apply_explicit_constraint(self, constraint_line):
+        """Apply an explicit constraint to the occupational parameters.
+
+        If the constraint is a normal linear constraint, dispatch to the
+        superclass method. If the constraint is a total occupation constraint,
+        handle it separately.
+        """
+        if not constraint_line.is_total_occupation:
+            super().apply_explicit_constraint(constraint_line)
+            return
+
+        # handle total occupation constraint
+        self._check_construction_order(ConstructionOrder.EXPLICIT_CONSTRAINT)
+
+
+        # select the atoms that are to be linked
+        to_link_mask = self.atom_basis.target_selection_mask(constraint_line.targets)
+        leaves_to_link = self.leaves[to_link_mask]
+        roots_to_link = [leaf.root for leaf in leaves_to_link]
+        # remove duplicate roots
+        roots_to_link = list(set(roots_to_link))
+
+        while roots_to_link:
+            # take the first root and find all leaves that are children of this root
+            primary_root = roots_to_link[0]
+
+            # select all roots that have a leaf with the same atom number
+            atom_nums = [leaf.atom.num for leaf in primary_root.children]
+            shared_occ_roots = [
+                root for root in roots_to_link
+                if any(leaf.atom.num in atom_nums for leaf in root.children)
+            ]
+
+            # none of the roots should have dof > 1
+            # failsafe in case we implement dof > 1 in the future
+            if any(root.dof > 1 for root in shared_occ_roots):
+                raise ValueError(
+                    'Cannot link occupations with dof > 1. '
+                    'This is not supported by the current implementation.'
+                )
+
+            # TODO: could be made into a custom Constraint Node class
+            # create the linked constraint node for the primary root
+            linked_constraint_node = LinearConstraintNode(
+                dof=len(shared_occ_roots)-1,
+                children=shared_occ_roots,
+                transformers=_fixed_occ_constraint_linear_map(
+                    len(shared_occ_roots)
+                ),
+                name=constraint_line.raw_line,
+                layer=DisplacementTreeLayers.User_Constraints,
+            )
+            for trafo in _fixed_occ_constraint_linear_map(
+                    len(shared_occ_roots)):
+                print('Linked constraint node:', trafo.weights, trafo.biases)
+
+
+            # remove linked roots from the list of roots to link
+            roots_to_link = [
+                root for root in roots_to_link if root not in shared_occ_roots
+            ]
+            # add the linked constraint node to the tree
+            self.nodes.append(linked_constraint_node)
+
     @property
     def _ref_occupations(self):
         """Return the reference occupations for all leaves."""
