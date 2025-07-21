@@ -204,7 +204,7 @@ class OccTree(DisplacementTree):
         leaves_to_link = self.leaves[to_link_mask]
         roots_to_link = [leaf.root for leaf in leaves_to_link]
         # remove duplicate roots
-        roots_to_link = list(set(roots_to_link))
+        roots_to_link = list({root: None for root in roots_to_link}.keys())
 
         while roots_to_link:
             # take the first root and find all leaves that are children of this root
