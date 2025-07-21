@@ -541,6 +541,15 @@ class DisplacementTree(LinearTree):
                     )
                     raise TypeError(msg)
 
+    @property
+    @abstractmethod
+    def is_centered(self):
+        """Check if the tree is centered."""
+        if not self.finalized:
+            raise ValueError(
+                'Tree must be finalized before checking if it is centered.'
+            )
+
 
 def _map_transformation_from_leaf_to_root(
     primary_leaf, secondary_leaf, transformation
