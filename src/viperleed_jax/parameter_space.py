@@ -16,8 +16,25 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
 
-
 class ParameterSpace:
+    """Parameter space for the LEED calculator.
+
+    TODO
+
+    Notes
+    -----
+    Since the transformations in the tree are linear, and the user has to
+    specify bounds for all parameters, the center of the parameter space may not
+    be 'centered' around the point of the reference calculation (three points
+    are not necessarily on a straight line!). This is can be true even if no
+    explicit offsets are given.
+    For an example, consider an alloy that (in the) reference calculation has a
+    25/75% occupation of two elements. If the user specifies bounds of 0-100%
+    for the two elements, the center of the parameter space will be at 50%
+    occupation of both elements, which is not the same as the reference
+    calculation!"""
+
+
     def __init__(self, atom_basis, rpars):
         self._displacements_applied = False
         self.atom_basis = atom_basis
@@ -65,6 +82,11 @@ class ParameterSpace:
             subtree.finalize_tree()
 
         self._displacements_applied = True
+
+        # check if subtrees are centered
+        for subtree in (self.geo_tree, self.vib_tree, self.occ_tree):
+            if not subtree.is_centered:
+                logger.warning('Parameter space is not centered.')
 
     def apply_offsets(self, offsets_block):
         """
