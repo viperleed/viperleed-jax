@@ -460,6 +460,8 @@ class DisplacementTree(LinearTree):
         # remove duplicates
         roots_to_link = list({root: None for root in roots_to_link}.keys())
 
+        print('roots to link:', roots_to_link)
+
         # if there are no roots to link, complain
         if len(roots_to_link) == 0:
             msg = (
@@ -603,14 +605,14 @@ def _select_primary_leaf(root, leaves):
     return root_leaves[primary_leaf_id]
 
 
-def _check_constraint_line_type(constraint_line, expected_perturbation_type):
+def _check_constraint_line_type(constraint_line, expected_perturbation_mode):
     """Check if the constraint line is of the expected type."""
     if not isinstance(constraint_line, ConstraintLine):
         msg = 'Constraint must be a ConstraintLine.'
         raise TypeError(msg)
-    if constraint_line.type.type != expected_perturbation_type:
+    if constraint_line.mode.mode != expected_perturbation_mode:
         msg = (
-            f'Wrong constraint type for {expected_perturbation_type} '
-            f'parameter: {constraint_line.type}.'
+            f'Wrong constraint type for {expected_perturbation_mode} '
+            f'parameter: {constraint_line.mode}.'
         )
         raise ValueError(msg)
