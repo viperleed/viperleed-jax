@@ -229,8 +229,8 @@ class TensorLEEDCalculator:
 
     @property
     def atom_ids(self):
-        # atom ids that will be batched over
-        return jnp.arange(self.parameter_space.n_atom_basis)
+        self.check_parameter_space_set()
+        return self._atom_ids
 
     def set_rfactor(self, rfactor_name):
         _rfactor_name = rfactor_name.lower().strip()
@@ -260,6 +260,9 @@ class TensorLEEDCalculator:
             logger.debug('Overwriting parameter space.')
         # take delta_slab and set the parameter space
         self._parameter_space = parameter_space
+
+        # set the atom IDs from the parameter space
+        self._atom_ids = self.parameter_space.atom_basis.atom_ids
 
         # determine and set batch sizes
         # (needs to be done here, since we need atom info from parameter space)
@@ -314,7 +317,6 @@ class TensorLEEDCalculator:
         # normalized occupations (i.e. chemical weights)
         self.calc_normalized_occupations = NormalizedOccupations(
             self.parameter_space,
-            self.atom_ids.tolist(),
             op_type= self.occ_norm_method,
         )
 
