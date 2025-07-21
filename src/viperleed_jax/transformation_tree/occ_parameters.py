@@ -14,9 +14,9 @@ from .nodes import (
 )
 from .reduced_space import Zonotope
 from .tree import (
+    ConstructionOrder,
     DisplacementTree,
 )
-
 
 class OccLeafNode(AtomicLinearNode):
     """Represents a leaf node with occupational parameters."""
