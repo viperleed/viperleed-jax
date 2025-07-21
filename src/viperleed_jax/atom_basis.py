@@ -83,6 +83,12 @@ class AtomBasis:
         return len(self.scatterers)
 
     @property
+    def atom_ids(self):
+        """Return """
+        ids = [scat.atom.num for scat in self.scatterers]
+        return tuple(ids)
+
+    @property
     def max_atom_number(self):
         return max(scat.num for scat in self)
 
