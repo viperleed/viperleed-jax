@@ -432,7 +432,7 @@ class DisplacementTree(LinearTree):
         This method applies explicit, user defined constraints to the tree.
         """
         # check construction order
-        super().apply_explicit_constraint()
+        self._check_construction_order(ConstructionOrder.EXPLICIT_CONSTRAINT)
 
         # check if the constraint line is of the correct type
         _check_constraint_line_type(constraint_line, self.perturbation_mode)
