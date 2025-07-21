@@ -259,9 +259,8 @@ class GeoTree(DisplacementTree):
         # reshape to (n_atoms, 3)
         return super()._post_process_values(raw_values).reshape(-1, 3)
 
-    @property
     def is_centered(self):
         """Check if the geometric tree is centered."""
-        super().is_centered
+        super().is_centered()
         mid_range_displacements = self([0.5] * self.root.dof)
         return np.sum(np.abs(mid_range_displacements)) < EPS

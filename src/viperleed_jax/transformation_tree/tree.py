@@ -540,7 +540,6 @@ class DisplacementTree(LinearTree):
                     )
                     raise TypeError(msg)
 
-    @property
     @abstractmethod
     def is_centered(self):
         """Check if the tree is centered."""

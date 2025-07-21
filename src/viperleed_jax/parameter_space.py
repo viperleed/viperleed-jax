@@ -19,6 +19,7 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
 
+
 class ParameterSpace:
     """Parameter space for the LEED calculator.
 
@@ -36,7 +37,6 @@ class ParameterSpace:
     for the two elements, the center of the parameter space will be at 50%
     occupation of both elements, which is not the same as the reference
     calculation!"""
-
 
     def __init__(self, atom_basis, rpars):
         self._displacements_applied = False
@@ -88,7 +88,7 @@ class ParameterSpace:
 
         # check if subtrees are centered
         for subtree in (self.geo_tree, self.vib_tree, self.occ_tree):
-            if not subtree.is_centered:
+            if not subtree.is_centered():
                 logger.warning('Parameter space is not centered.')
 
     def apply_offsets(self, offsets_block):
