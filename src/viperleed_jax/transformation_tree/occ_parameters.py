@@ -180,6 +180,11 @@ class OccTree(DisplacementTree):
         """Return the reference occupations for all leaves."""
         return np.array([leaf.ref_occ for leaf in self.leaves])
 
+    def _post_process_values(self, raw_values):
+        # For any nodes that are not dynamic, we return the reference
+        # occupations instead of the raw values.
+        return raw_values + ~self.leaf_is_dynamic *self._ref_occupations
+
     def _centered_occupations(self):
         """Return the centered occupations based on the parameters."""
         return self(np.array([0.5] * self.root.dof))
