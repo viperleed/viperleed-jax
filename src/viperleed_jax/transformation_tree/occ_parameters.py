@@ -18,6 +18,7 @@ from .tree import (
     DisplacementTree,
 )
 
+
 class OccLeafNode(AtomicLinearNode):
     """Represents a leaf node with occupational parameters."""
 
@@ -151,15 +152,19 @@ class OccTree(DisplacementTree):
             # so we can use 1D zonotopes
 
             occ_range = np.array(
-                [[element_ranges[primary_leaf.element].start,
-                  element_ranges[primary_leaf.element].stop]]
+                [
+                    [
+                        element_ranges[primary_leaf.element].start,
+                        element_ranges[primary_leaf.element].stop,
+                    ]
+                ]
             ).T
 
             leaf_range_zonotope = Zonotope(
                 basis=np.array([[1.0]]),  # 1D zonotope
                 ranges=occ_range,
                 offset=None,
-        )
+            )
 
             root_to_leaf_transformer = root.transformer_to_descendent(
                 primary_leaf
@@ -186,12 +191,16 @@ class OccTree(DisplacementTree):
             super().apply_explicit_constraint(constraint_line)
             return
 
+        # get total occupation form the constraint line tokens
+        total_occupation = constraint_line.linear_operation.total_occupation
+
         # handle total occupation constraint
         self._check_construction_order(ConstructionOrder.EXPLICIT_CONSTRAINT)
 
-
         # select the atoms that are to be linked
-        to_link_mask = self.atom_basis.target_selection_mask(constraint_line.targets)
+        to_link_mask = self.atom_basis.target_selection_mask(
+            constraint_line.targets
+        )
         leaves_to_link = self.leaves[to_link_mask]
         roots_to_link = [leaf.root for leaf in leaves_to_link]
         # remove duplicate roots
@@ -204,7 +213,8 @@ class OccTree(DisplacementTree):
             # select all roots that have a leaf with the same atom number
             atom_nums = [leaf.atom.num for leaf in primary_root.children]
             shared_occ_roots = [
-                root for root in roots_to_link
+                root
+                for root in roots_to_link
                 if any(leaf.atom.num in atom_nums for leaf in root.children)
             ]
 
@@ -219,18 +229,14 @@ class OccTree(DisplacementTree):
             # TODO: could be made into a custom Constraint Node class
             # create the linked constraint node for the primary root
             linked_constraint_node = LinearConstraintNode(
-                dof=len(shared_occ_roots)-1,
+                dof=len(shared_occ_roots) - 1,
                 children=shared_occ_roots,
                 transformers=_fixed_occ_constraint_linear_map(
-                    len(shared_occ_roots)
+                    len(shared_occ_roots), total_occupation
                 ),
                 name=constraint_line.raw_line,
                 layer=DisplacementTreeLayers.User_Constraints,
             )
-            for trafo in _fixed_occ_constraint_linear_map(
-                    len(shared_occ_roots)):
-                print('Linked constraint node:', trafo.weights, trafo.biases)
-
 
             # remove linked roots from the list of roots to link
             roots_to_link = [
@@ -247,7 +253,7 @@ class OccTree(DisplacementTree):
     def _post_process_values(self, raw_values):
         # For any nodes that are not dynamic, we return the reference
         # occupations instead of the raw values.
-        return raw_values + ~self.leaf_is_dynamic *self._ref_occupations
+        return raw_values + ~self.leaf_is_dynamic * self._ref_occupations
 
     def _centered_occupations(self):
         """Return the centered occupations based on the parameters."""
@@ -261,22 +267,26 @@ class OccTree(DisplacementTree):
         return np.allclose(self._ref_occupations, centered_occupations)
 
 
-def _fixed_occ_constraint_linear_map(n_children):
+def _fixed_occ_constraint_linear_map(n_children, total_occ):
     """Create a linear map for the fixed occupation constraint."""
     if n_children < 2:
         raise ValueError(
-            'At least two children are required for a total occupation constraint.')
+            'At least two children are required for a total occupation constraint.'
+        )
+
+    if total_occ < 0 or total_occ > 1:
+        raise ValueError('Total occupation must be between 0 and 1.')
 
     transformers = []
     for i in range(n_children - 1):
         arr = np.zeros([1, n_children - 1])
-        arr[0, i] = 1.0
+        arr[0, i] = 1.0 / total_occ
         bias = np.zeros([1])
         transformers.append(AffineTransformer(arr, bias))
     # The last child is minus the sum of the others
 
-    arr = -np.ones([1, n_children - 1])
-    bias = np.array([1.0])
+    arr = -np.ones([1, n_children - 1]) / (n_children - 1) / total_occ
+    bias = np.array([total_occ])
     transformers.append(AffineTransformer(arr, bias))
 
     return transformers
