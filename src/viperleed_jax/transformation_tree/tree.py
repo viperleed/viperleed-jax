@@ -329,7 +329,6 @@ class DisplacementTree(LinearTree):
             self._raw_leaf_transformers(reduced_params)
         )
 
-    # @abstractmethod
     def _post_process_values(self, raw_values):
         return raw_values
 
