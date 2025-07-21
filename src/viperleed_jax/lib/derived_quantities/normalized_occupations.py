@@ -21,14 +21,14 @@ from viperleed_jax.transformation_tree.derived_quantities import (
 class NormalizedOccupations(DerivedQuantitySingleTree):
     """Derived quantity for normalized occupations."""
 
-    def __init__(self, parameter_space, atom_ids, op_type='mirror'):
+    def __init__(self, parameter_space, op_type='mirror'):
         super().__init__(parameter_space)
         self.name = 'normalized_occupations'
-        self.atom_ids = tuple(atom_ids)
 
     def _set_tree(self):
         """Set the tree for the derived quantity."""
         self.tree = self.parameter_space.occ_tree
+        self.atom_ids = tuple(self.tree.basis.atom_ids)
 
     @partial(jax.jit, static_argnames=('self',))
     def __call__(self, params):
