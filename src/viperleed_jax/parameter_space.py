@@ -100,14 +100,14 @@ class ParameterSpace:
         offsets_block
         """
         for line in offsets_block.lines:
-            if line.offset_type == 'geo':
+            if line.mode.mode == 'geo':
                 self.geo_tree.apply_offsets(line)
-            elif line.offset_type == 'vib':
+            elif line.mode.mode == 'vib':
                 self.vib_tree.apply_offsets(line)
-            elif line.offset_type == 'occ':
+            elif line.mode.mode == 'occ':
                 self.occ_tree.apply_offsets(line)
             else:
-                msg = f'Unknown offset mode: {line.offset_type}'
+                msg = f'Unknown offset mode: {line.mode.mode}'
                 raise ValueError(msg)
 
     def _parse_bounds(self, search_block):
