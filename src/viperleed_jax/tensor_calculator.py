@@ -670,7 +670,9 @@ class TensorLEEDCalculator:
             at_displacements = displacements[scatterer_indices]
             at_occupations = occupations[scatterer_indices]
 
-            averaged_displacement = at_displacements * at_occupations
+            averaged_displacement = (
+                at_displacements * at_occupations[:, np.newaxis]
+            )
             averaged_displacement = (
                 averaged_displacement.sum(axis=0) / at_occupations.sum()
             )
