@@ -69,8 +69,9 @@ class TensorLEEDCalculator:
         self.ref_calc_params = ref_calc_params
         self.ref_calc_result = ref_calc_result
         self.phaseshifts = phaseshifts
-        self.recalculate_ref_t_matrices = (
-            rparams.VLJ_CONFIG['recalc_ref_t_matrices'])
+        self.recalculate_ref_t_matrices = rparams.VLJ_CONFIG[
+            'recalc_ref_t_matrices'
+        ]
 
         self.interpolation_deg = rparams.INTPOL_DEG
         if interpolation_deg is not None:
@@ -317,7 +318,7 @@ class TensorLEEDCalculator:
         # normalized occupations (i.e. chemical weights)
         self.calc_normalized_occupations = NormalizedOccupations(
             self.parameter_space,
-            op_type= self.occ_norm_method,
+            op_type=self.occ_norm_method,
         )
 
         # atomic t-matrices (will calculate static t-matrices during init)
@@ -624,7 +625,8 @@ class TensorLEEDCalculator:
 
         # expand the reduced parameter vector
         v0r, displacements, vibrations, occupations = self.expand_params(
-            free_params)
+            free_params
+        )
 
         # update V0r in rpars
         rpars.best_v0r = v0r
@@ -690,8 +692,7 @@ class TensorLEEDCalculator:
                     continue
 
                 scatterer_indices = [
-                    atom_basis.scatterers.index(s)
-                    for s in siteel_scatterers
+                    atom_basis.scatterers.index(s) for s in siteel_scatterers
                 ]
                 scatterer_indices = np.array(scatterer_indices)
 
