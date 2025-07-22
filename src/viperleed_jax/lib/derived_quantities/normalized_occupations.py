@@ -24,6 +24,7 @@ class NormalizedOccupations(DerivedQuantitySingleTree):
     def __init__(self, parameter_space, op_type='mirror'):
         super().__init__(parameter_space)
         self.name = 'normalized_occupations'
+        self.op_type = op_type
 
     def _set_tree(self):
         """Set the tree for the derived quantity."""
@@ -34,9 +35,9 @@ class NormalizedOccupations(DerivedQuantitySingleTree):
     def __call__(self, params):
         """Calculate normalized occupations."""
         non_normalized_occupations = self.tree(params)
-        return normalize_occ_vector(non_normalized_occupations,
-                                    self.atom_ids,
-                                    op_type='mirror')
+        return normalize_occ_vector(
+            non_normalized_occupations, self.atom_ids, op_type=self.op_type
+        )
 
 
 def normalize_occ_vector(non_norm_occ_vector, atom_ids, op_type='mirror'):
