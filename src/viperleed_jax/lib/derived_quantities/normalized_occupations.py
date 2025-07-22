@@ -29,7 +29,7 @@ class NormalizedOccupations(DerivedQuantitySingleTree):
     def _set_tree(self):
         """Set the tree for the derived quantity."""
         self.tree = self.parameter_space.occ_tree
-        self.atom_ids = tuple(self.tree.basis.atom_ids)
+        self.atom_ids = tuple(self.tree.atom_basis.atom_ids)
 
     @partial(jax.jit, static_argnames=('self',))
     def __call__(self, params):
