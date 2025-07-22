@@ -36,7 +36,8 @@ class ParameterSpace:
     25/75% occupation of two elements. If the user specifies bounds of 0-100%
     for the two elements, the center of the parameter space will be at 50%
     occupation of both elements, which is not the same as the reference
-    calculation!"""
+    calculation!
+    """
 
     def __init__(self, atom_basis, rpars):
         self._displacements_applied = False
