@@ -308,6 +308,10 @@ class TensorLEEDCalculator:
             f'{self.calc_propagators.n_dynamic_values} propagator(s).'
         )
 
+        logger.info(
+            '\nParameter space set\n-----------------------\n' f'{self.info}'
+        )
+
     def _setup_derived_quantities(self):
         """Set up derived quantities for the calculator."""
         self.check_parameter_space_set()
