@@ -309,7 +309,8 @@ class TensorLEEDCalculator:
         )
 
         logger.info(
-            '\nParameter space set\n-----------------------\n' f'{self.info}'
+            '\nParameter space set\n-----------------------\n'
+            f'{self.parameter_space.info}'
         )
 
     def _setup_derived_quantities(self):
