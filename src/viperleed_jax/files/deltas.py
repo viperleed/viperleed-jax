@@ -9,6 +9,7 @@ __created__ = '2024-10-01'
 
 import warnings
 
+from pathlib import Path
 import fortranformat as ff
 import numpy as np
 from tqdm import tqdm
@@ -333,7 +334,7 @@ def Transform(n_E, directory, filename_list):
     n_vib = np.full(shape=(n_disp_atoms,), dtype=np.int32, fill_value=np.nan)
 
     for ii, name in enumerate(tqdm(filename_list)):
-        filename = directory + name
+        filename = directory / name
         data_list_all[name] = read_delta_file(filename, n_E)
 
         (
