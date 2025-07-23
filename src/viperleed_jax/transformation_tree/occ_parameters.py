@@ -262,7 +262,10 @@ class OccTree(DisplacementTree):
     def _post_process_values(self, raw_values):
         # For any nodes that are not dynamic, we return the reference
         # occupations instead of the raw values.
-        return raw_values + ~self.leaf_is_dynamic * self._ref_occupations
+        return (
+            self.leaf_is_dynamic * raw_values
+            + ~self.leaf_is_dynamic * self._ref_occupations
+        )
 
     def _centered_occupations(self):
         """Return the centered occupations based on the parameters."""
