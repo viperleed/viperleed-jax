@@ -446,7 +446,19 @@ class TensorLEEDCalculator:
         return v0r_shift, displacements, vib_amps, occupations
 
     def delta_amplitude(self, free_params):
-        """Calculate the delta amplitude for a given set of free parameters."""
+        """Calculate the delta amplitude for a given set of free parameters.
+
+        Note on chemical weights
+        ------------------------
+        The effect of chemical perturbations (i.e. substitutions) is calculated
+        by simply multiplying the t-matrix with the (always positive) occupation
+        weights in the calculate_delta_t_matrix() function.
+        This seems weird at first glance, as one may expect that species species
+        that have decreased occupations in respect to the reference
+        calculation should have their contributions subtracted.
+        However, this is not the case in the mixed t-matrix formalism, and is
+        shown e.g. in the TensErLEED paper by Blum and Heinz eqs. (28-31).
+        """
         self.check_parameter_space_set()
         _free_params = jnp.asarray(free_params)
         # split free parameters
@@ -742,6 +754,9 @@ def calculate_delta_t_matrix(
     # Equation (33) in Rous, Pendry 1989
     delta_t_matrix = jnp.dot(propagator.T * (1j * t_matrix_vib), propagator.T)
     delta_t_matrix = delta_t_matrix - jnp.diag(1j * t_matrix_ref)
+
+    # see note in delta_amplitude() docstring on why we multiply
+    # with (always positive) chemical weights here
     return delta_t_matrix * chem_weight
 
 
