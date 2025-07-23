@@ -64,14 +64,23 @@ class TensorLEEDCalculator:
         rparams,
         interpolation_step=0.5,
         interpolation_deg=None,
+        recalculate_ref_t_matrices=None,
         bc_type='not-a-knot',
     ):
         self.ref_calc_params = ref_calc_params
         self.ref_calc_result = ref_calc_result
         self.phaseshifts = phaseshifts
-        self.recalculate_ref_t_matrices = rparams.VLJ_CONFIG[
-            'recalc_ref_t_matrices'
-        ]
+
+        if recalculate_ref_t_matrices is None:
+            self.recalculate_ref_t_matrices = rparams.VLJ_CONFIG[
+                'recalc_ref_t_matrices'
+            ]
+        else:
+            logger.debug(
+                'Overriding recalculate_ref_t_matrices to '
+                f'{recalculate_ref_t_matrices}'
+            )
+            self.recalculate_ref_t_matrices = recalculate_ref_t_matrices
 
         self.interpolation_deg = rparams.INTPOL_DEG
         if interpolation_deg is not None:
