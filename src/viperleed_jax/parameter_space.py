@@ -20,6 +20,16 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
 )
 
 
+from anytree import RenderTree
+from anytree.exporter import UniqueDotExporter
+from copy import deepcopy
+
+from viperleed_jax.transformation_tree.linear_transformer import (
+    LinearMap,
+)
+from viperleed_jax.transformation_tree.nodes import LinearConstraintNode
+
+
 class ParameterSpace:
     """Parameter space for the LEED calculator.
 
@@ -327,3 +337,39 @@ class ParameterSpace:
             return v0r_params, vib_params, geo_params, occ_params
 
         return compute
+
+    def _dummy_parent(self):
+        subtree_roots = [
+            deepcopy(self.meta_tree.root),
+            deepcopy(self.geo_tree.root),
+            deepcopy(self.vib_tree.root),
+            deepcopy(self.occ_tree.root),
+        ]
+
+        dof_sum = sum(node.dof for node in subtree_roots)
+
+        # dummy parent node to hold the subtrees
+        # can have arbitrary transformers
+        return LinearConstraintNode(
+            dof=dof_sum,
+            layer=DisplacementTreeLayers.Root,
+            name='Parameter Space',
+            children=subtree_roots,
+            transformers=[
+                LinearMap(np.eye(node.dof, dof_sum)) for node in subtree_roots
+            ],
+        )
+
+    def graphical_export(self, filename):
+        """Create and save a graphical representation of the tree to file."""
+        dummy_parent = self._dummy_parent()
+
+        # Export the tree structure to a PDF file
+        UniqueDotExporter(dummy_parent, options=['rankdir=LR']).to_picture(
+            filename=filename,
+        )
+
+    def __repr__(self):
+        """Return a string representation of the parameter space."""
+        dummy_parent = self._dummy_parent()
+        return RenderTree(dummy_parent).by_attr()
