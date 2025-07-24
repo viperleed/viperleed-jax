@@ -748,20 +748,6 @@ class TensorLEEDCalculator:
                     scatterer.atom.disp_occ[element] = rel_scatterer_occ
 
 
-# def calculate_delta_t_matrix(
-#     propagator, t_matrix_vib, t_matrix_ref, chem_weight
-# ):
-#     # delta_t_matrix is the change of the atomic t-matrix with new
-#     # vibrational amplitudes and after applying the displacement
-#     # Equation (33) in Rous, Pendry 1989
-#     delta_t_matrix = jnp.dot(propagator.T * (1j * t_matrix_vib), propagator.T)
-#     delta_t_matrix = delta_t_matrix - jnp.diag(1j * t_matrix_ref)
-
-#     # see note in delta_amplitude() docstring on why we multiply
-#     # with (always positive) chemical weights here
-#     return delta_t_matrix * chem_weight
-
-
 def evaluate_perturbed_t_matrix(propagator, vib_t_matrix):
     """Evaluate the perturbed t-matrix for a given propagator and vibrational t-matrix."""
     # Equation (33) in Rous, Pendry 1989
