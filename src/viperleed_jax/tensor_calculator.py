@@ -769,39 +769,6 @@ def calculate_delta_t_matrix(
     return delta_t_matrix * chem_weight
 
 
-# @partial(jax.jit, static_argnames=['n_atom_basis', 'batch_atoms'])
-def calc_energy(
-    e_id,
-    propagators,
-    t_matrix_vib,
-    t_matrix_ref,
-    amps_in,
-    amps_out,
-    chem_weights,
-    n_atom_basis,
-    batch_atoms,
-):
-    def compute_atom_contrib(a):
-        delta_t_matrix = calculate_delta_t_matrix(
-            propagators[e_id, a].conj(),
-            t_matrix_vib[e_id, a],
-            t_matrix_ref[e_id, a],
-            chem_weights[a],
-        )
-        return jnp.einsum(
-            'bl,lk,k->b',
-            amps_out[e_id, a],
-            delta_t_matrix,
-            amps_in[e_id, a],
-            optimize='optimal',
-        )
-
-    contribs = jax.lax.map(
-        compute_atom_contrib, jnp.arange(n_atom_basis), batch_size=batch_atoms
-    )
-    return jnp.sum(contribs, axis=0)
-
-
 @partial(jax.jit, static_argnames=['batch_atoms', 'n_atom_basis'])
 def batch_delta_amps(
     energy_ids,
