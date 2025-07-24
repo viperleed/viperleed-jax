@@ -527,7 +527,7 @@ class TensorLEEDCalculator:
                 self.ref_calc_result.in_amps,
                 self.ref_calc_result.out_amps,
                 chem_weights,
-                self.parameter_space.n_atom_basis,
+                self.atom_ids,
                 self.batch_atoms,
             )
             batched_delta_amps.append(l_delta_amps)
@@ -748,21 +748,67 @@ class TensorLEEDCalculator:
                     scatterer.atom.disp_occ[element] = rel_scatterer_occ
 
 
-def calculate_delta_t_matrix(
-    propagator, t_matrix_vib, t_matrix_ref, chem_weight
-):
-    # delta_t_matrix is the change of the atomic t-matrix with new
-    # vibrational amplitudes and after applying the displacement
+# def calculate_delta_t_matrix(
+#     propagator, t_matrix_vib, t_matrix_ref, chem_weight
+# ):
+#     # delta_t_matrix is the change of the atomic t-matrix with new
+#     # vibrational amplitudes and after applying the displacement
+#     # Equation (33) in Rous, Pendry 1989
+#     delta_t_matrix = jnp.dot(propagator.T * (1j * t_matrix_vib), propagator.T)
+#     delta_t_matrix = delta_t_matrix - jnp.diag(1j * t_matrix_ref)
+
+#     # see note in delta_amplitude() docstring on why we multiply
+#     # with (always positive) chemical weights here
+#     return delta_t_matrix * chem_weight
+
+
+def evaluate_perturbed_t_matrix(propagator, vib_t_matrix):
+    """Evaluate the perturbed t-matrix for a given propagator and vibrational t-matrix."""
     # Equation (33) in Rous, Pendry 1989
-    delta_t_matrix = jnp.dot(propagator.T * (1j * t_matrix_vib), propagator.T)
-    delta_t_matrix = delta_t_matrix - jnp.diag(1j * t_matrix_ref)
-
-    # see note in delta_amplitude() docstring on why we multiply
-    # with (always positive) chemical weights here
-    return delta_t_matrix * chem_weight
+    perturbed_t_matrix = jnp.dot(
+        propagator.T * (1j * vib_t_matrix), propagator.T
+    )
+    return perturbed_t_matrix
 
 
-@partial(jax.jit, static_argnames=['batch_atoms', 'n_atom_basis'])
+def average_perturbed_t_matrices(
+    perturbed_t_matrices, atom_ids, chem_weights, n_atoms
+):
+    """Average the perturbed t-matrices over the atom basis."""
+    _atom_ids = jnp.asarray(atom_ids)  # needed as array for jax.ops.segment_sum
+    _atom_ids = _atom_ids - 1  # convert to zero-based indexing
+    n_atom_basis = _atom_ids.size
+    if n_atom_basis != chem_weights.size:
+        raise ValueError('atom_ids and chem_weights must have the same size.')
+    elif perturbed_t_matrices.shape[0] != n_atom_basis:
+        raise ValueError(
+            'perturbed_t_matrices must have the same number of rows as atom_ids.'
+        )
+    # multiply each perturbed t-matrix with the corresponding chemical weight
+    weighted_t_matrices = (
+        perturbed_t_matrices * chem_weights[:, jnp.newaxis, jnp.newaxis]
+    )
+    # sum over the atom basis
+    averaged_t_matrix = jax.ops.segment_sum(
+        data=weighted_t_matrices,
+        segment_ids=_atom_ids,
+        num_segments=n_atoms,
+    )
+    print('n_atoms', n_atoms)
+    print('segment_ids', _atom_ids.shape, _atom_ids)
+    print('weighted_t_matrices', weighted_t_matrices.shape)
+    print('averaged_t_matrix', averaged_t_matrix.shape)
+    return averaged_t_matrix
+
+
+def evaluate_delta_t_matrix(perturbed_t_matrix, t_matrix_ref):
+    """Evaluate the delta t-matrix."""
+    # Equation (33) in Rous, Pendry 1989
+    delta_t_matrix = perturbed_t_matrix - jnp.diag(1j * t_matrix_ref)
+    return delta_t_matrix
+
+
+@partial(jax.jit, static_argnames=['batch_atoms', 'atom_ids'])
 def batch_delta_amps(
     energy_ids,
     propagators,
@@ -771,33 +817,82 @@ def batch_delta_amps(
     amps_in,
     amps_out,
     chem_weights,
-    n_atom_basis,
+    atom_ids,
     batch_atoms,
 ):
-    @jax.checkpoint
+    print('inside batch_delta_amps')
+    print('batch_atoms', batch_atoms)
+    print('energy_ids', energy_ids.shape)
+    print('propagators', propagators.shape)
+    print('mapped_t_matrix_vib', t_matrix_vib.shape)
+    print('mapped_t_matrix_ref', t_matrix_ref.shape)
+    print('in_amps', amps_in.shape)
+    print('out_amps', amps_out.shape)
+    print('chem_weights', chem_weights.shape)
+
+    n_atom_basis = propagators.shape[1]
+    n_atoms = max(atom_ids)
+
+    # @jax.checkpoint
     def calc_energy(e_id):
+        def compute_perturbed_t_matrices(a):
+            # get the propagator for the current atom
+            propagator = propagators[e_id, a]
+            # get the vibrational t-matrix for the current atom
+            t_matrix_vib_a = t_matrix_vib[e_id, a]
+            # calculate the perturbed t-matrix
+            return evaluate_perturbed_t_matrix(propagator, t_matrix_vib_a)
+
+        perturbed_t_matrices = jax.lax.map(
+            compute_perturbed_t_matrices,
+            jnp.arange(n_atom_basis),
+            batch_size=batch_atoms,
+        )
+        print('perturbed_t_matrices', perturbed_t_matrices.shape)
+
+        # average the perturbed t-matrices over the atom basis
+        averaged_t_matrix = average_perturbed_t_matrices(
+            perturbed_t_matrices,
+            atom_ids,
+            chem_weights,
+            n_atoms,
+        )
+
+        def compute_delta_t_matrix(a):
+            # get the perturbed t-matrix for the current atom
+            perturbed_t_matrix = averaged_t_matrix[a]
+            # get the reference t-matrix for the current atom
+            t_matrix_ref_a = t_matrix_ref[e_id, a]
+            # calculate the delta t-matrix
+            return evaluate_delta_t_matrix(perturbed_t_matrix, t_matrix_ref_a)
+
+        delta_t_matrix = jax.lax.map(
+            compute_delta_t_matrix,
+            jnp.arange(n_atoms),
+            batch_size=batch_atoms,
+        )
+        print('amps_out', amps_out[e_id].shape)
+        print('delta_t_matrix', delta_t_matrix.shape)
+        print('amps_in', amps_in[e_id].shape)
+
         def compute_atom_contrib(a):
-            delta_t_matrix = calculate_delta_t_matrix(
-                propagators[e_id, a].conj(),
-                t_matrix_vib[e_id, a],
-                t_matrix_ref[e_id, a],
-                chem_weights[a],
-            )
+            # get the propagator for the current atom
             return jnp.einsum(
                 'bl,lk,k->b',
                 amps_out[e_id, a],
-                delta_t_matrix,
+                delta_t_matrix[a],
                 amps_in[e_id, a],
                 optimize='optimal',
             )
 
-        contribs = jax.lax.map(
+        beam_contribs = jax.lax.map(
             compute_atom_contrib,
-            jnp.arange(n_atom_basis),
+            jnp.arange(n_atoms),
             batch_size=batch_atoms,
         )
-        return jnp.sum(contribs, axis=0)
+        return jnp.sum(beam_contribs, axis=0)
 
+    # batch over energies?
     return jax.lax.map(calc_energy, energy_ids)
 
 
