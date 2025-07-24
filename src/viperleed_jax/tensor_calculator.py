@@ -907,6 +907,7 @@ def calc_r_factor(
 
     # apply v0r shift
     theo_spline = CubicSpline(
+        # V0r (potential) offset gets applied here to the origin grid
         origin_grid + v0r_shift,
         non_interpolated_intensity,
         check=False,
