@@ -837,7 +837,7 @@ def batch_delta_amps(
     def calc_energy(e_id):
         def compute_perturbed_t_matrices(a):
             # get the propagator for the current atom
-            propagator = propagators[e_id, a]
+            propagator = propagators[e_id, a].conj()
             # get the vibrational t-matrix for the current atom
             t_matrix_vib_a = t_matrix_vib[e_id, a]
             # calculate the perturbed t-matrix
