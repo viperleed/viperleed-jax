@@ -800,9 +800,6 @@ def average_perturbed_t_matrices(
         segment_ids=_scatterer_to_atom_map,
         num_segments=n_atoms,
     )
-    print('n_atoms', n_atoms)
-    print('weighted_t_matrices', weighted_t_matrices.shape)
-    print('averaged_t_matrix', averaged_t_matrix.shape)
     return averaged_t_matrix
 
 
@@ -844,7 +841,6 @@ def batch_delta_amps(
             jnp.arange(n_scatterers),
             batch_size=batch_atoms,
         )
-        print('perturbed_t_matrices', perturbed_t_matrices.shape)
 
         # average the perturbed t-matrices over the atom basis
         averaged_t_matrix = average_perturbed_t_matrices(
@@ -867,9 +863,6 @@ def batch_delta_amps(
             jnp.arange(n_atoms),
             batch_size=batch_atoms,
         )
-        print('amps_out', amps_out[e_id].shape)
-        print('delta_t_matrix', delta_t_matrix.shape)
-        print('amps_in', amps_in[e_id].shape)
 
         def compute_atom_contrib(a):
             # get the propagator for the current atom
