@@ -747,13 +747,6 @@ class TensorLEEDCalculator:
                     scatterer.atom.disp_vib[element] = rel_vib
                     scatterer.atom.disp_occ[element] = rel_scatterer_occ
 
-        # # Optionally write to file
-        # if write_to_file:
-        #     # write POSCAR
-        #     poscar.write(slab, 'POSCAR_TL_optimized', comments='all')
-        #     # write VIBROCC
-        #     writeVIBROCC(slab, rpars, 'VIBROCC_TL_optimized')
-
 
 def calculate_delta_t_matrix(
     propagator, t_matrix_vib, t_matrix_ref, chem_weight
