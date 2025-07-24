@@ -836,8 +836,8 @@ def batch_delta_amps(
     print('out_amps', amps_out.shape)
     print('chem_weights', chem_weights.shape)
 
-    n_atom_basis = propagators.shape[1]
-    n_atoms = max(atom_ids)
+    n_scatterers = t_matrix_vib.shape[1]
+    n_atoms = t_matrix_ref.shape[1]
 
     # @jax.checkpoint
     def calc_energy(e_id):
@@ -851,7 +851,7 @@ def batch_delta_amps(
 
         perturbed_t_matrices = jax.lax.map(
             compute_perturbed_t_matrices,
-            jnp.arange(n_atom_basis),
+            jnp.arange(n_scatterers),
             batch_size=batch_atoms,
         )
         print('perturbed_t_matrices', perturbed_t_matrices.shape)
@@ -859,7 +859,7 @@ def batch_delta_amps(
         # average the perturbed t-matrices over the atom basis
         averaged_t_matrix = average_perturbed_t_matrices(
             perturbed_t_matrices,
-            atom_ids,
+            scatterer_to_atom_map,
             chem_weights,
             n_atoms,
         )
