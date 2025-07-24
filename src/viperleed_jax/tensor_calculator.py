@@ -801,10 +801,10 @@ def average_perturbed_t_matrices(
     return averaged_t_matrix
 
 
-def evaluate_delta_t_matrix(perturbed_t_matrix, t_matrix_ref):
+def evaluate_delta_t_matrix(averaged_t_matrix, t_matrix_ref):
     """Evaluate the delta t-matrix."""
     # Equation (33) in Rous, Pendry 1989
-    delta_t_matrix = perturbed_t_matrix - jnp.diag(1j * t_matrix_ref)
+    delta_t_matrix = averaged_t_matrix - jnp.diag(1j * t_matrix_ref)
     return delta_t_matrix
 
 
