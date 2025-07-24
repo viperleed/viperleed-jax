@@ -32,6 +32,7 @@ from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
 from viperleed_jax.lib.tensor_leed.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
+from viperleed_jax.lib.calculator import map_indices
 
 
 class TensorLEEDCalculator:
@@ -120,6 +121,11 @@ class TensorLEEDCalculator:
             rparams.THEO_ENERGIES.start,
             rparams.THEO_ENERGIES.stop,
             self.interpolation_step,
+        )
+
+        # set up atom numbers
+        self._atom_nums = np.array(
+            [at.num for at in slab.atlist if not at.is_bulk]
         )
 
         # unit cell in Bohr radii
@@ -241,6 +247,21 @@ class TensorLEEDCalculator:
     def atom_ids(self):
         self.check_parameter_space_set()
         return self._atom_ids
+
+    @property
+    def scatterer_to_atom_map(self):
+        """Map scatterer IDs to atom IDs."""
+        # TODO: move to parameter space or AtomBasis
+        self.check_parameter_space_set()
+        return map_indices(self.atom_ids, self._atom_nums)
+
+    @property
+    def n_atoms(self):
+        """Return the number of atoms in the parameter space.
+
+        This is (usually) different from the number of scatterers!
+        """
+        return np.unique(np.array(self.atom_ids)).size
 
     def set_rfactor(self, rfactor_name):
         _rfactor_name = rfactor_name.lower().strip()
@@ -527,7 +548,7 @@ class TensorLEEDCalculator:
                 self.ref_calc_result.in_amps,
                 self.ref_calc_result.out_amps,
                 chem_weights,
-                self.atom_ids,
+                self.scatterer_to_atom_map,
                 self.batch_atoms,
             )
             batched_delta_amps.append(l_delta_amps)
@@ -758,12 +779,11 @@ def evaluate_perturbed_t_matrix(propagator, vib_t_matrix):
 
 
 def average_perturbed_t_matrices(
-    perturbed_t_matrices, atom_ids, chem_weights, n_atoms
+    perturbed_t_matrices, scatterer_to_atom_map, chem_weights, n_atoms
 ):
     """Average the perturbed t-matrices over the atom basis."""
-    _atom_ids = jnp.asarray(atom_ids)  # needed as array for jax.ops.segment_sum
-    _atom_ids = _atom_ids - 1  # convert to zero-based indexing
-    n_atom_basis = _atom_ids.size
+    _scatterer_to_atom_map = np.asarray(scatterer_to_atom_map)
+    n_atom_basis = _scatterer_to_atom_map.size
     if n_atom_basis != chem_weights.size:
         raise ValueError('atom_ids and chem_weights must have the same size.')
     elif perturbed_t_matrices.shape[0] != n_atom_basis:
@@ -777,7 +797,7 @@ def average_perturbed_t_matrices(
     # sum over the atom basis
     averaged_t_matrix = jax.ops.segment_sum(
         data=weighted_t_matrices,
-        segment_ids=_atom_ids,
+        segment_ids=_scatterer_to_atom_map,
         num_segments=n_atoms,
     )
     print('n_atoms', n_atoms)
@@ -794,7 +814,7 @@ def evaluate_delta_t_matrix(averaged_t_matrix, t_matrix_ref):
     return delta_t_matrix
 
 
-@partial(jax.jit, static_argnames=['batch_atoms', 'atom_ids'])
+@partial(jax.jit, static_argnames=['batch_atoms', 'scatterer_to_atom_map'])
 def batch_delta_amps(
     energy_ids,
     propagators,
@@ -803,7 +823,7 @@ def batch_delta_amps(
     amps_in,
     amps_out,
     chem_weights,
-    atom_ids,
+    scatterer_to_atom_map,
     batch_atoms,
 ):
     print('inside batch_delta_amps')
