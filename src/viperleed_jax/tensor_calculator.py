@@ -801,7 +801,6 @@ def average_perturbed_t_matrices(
         num_segments=n_atoms,
     )
     print('n_atoms', n_atoms)
-    print('segment_ids', _atom_ids.shape, _atom_ids)
     print('weighted_t_matrices', weighted_t_matrices.shape)
     print('averaged_t_matrix', averaged_t_matrix.shape)
     return averaged_t_matrix
@@ -826,16 +825,7 @@ def batch_delta_amps(
     scatterer_to_atom_map,
     batch_atoms,
 ):
-    print('inside batch_delta_amps')
-    print('batch_atoms', batch_atoms)
-    print('energy_ids', energy_ids.shape)
-    print('propagators', propagators.shape)
-    print('mapped_t_matrix_vib', t_matrix_vib.shape)
-    print('mapped_t_matrix_ref', t_matrix_ref.shape)
-    print('in_amps', amps_in.shape)
-    print('out_amps', amps_out.shape)
-    print('chem_weights', chem_weights.shape)
-
+    # the number of scatterers != number of atoms (shared occupations)
     n_scatterers = t_matrix_vib.shape[1]
     n_atoms = t_matrix_ref.shape[1]
 
