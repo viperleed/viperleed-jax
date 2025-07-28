@@ -612,7 +612,7 @@ class TensorLEEDCalculator:
             self.bc_type,
         )
 
-    def R(self, free_params):
+    def R(self, free_params, per_beam=False):
         """Evaluate R-factor."""
         if self.comp_intensity is None:
             raise ValueError('Comparison intensity not set.')
@@ -631,6 +631,7 @@ class TensorLEEDCalculator:
             self.interpolation_step,
             self.target_grid,
             self.exp_spline,
+            per_beam=per_beam,
         )
 
     def R_val_and_grad(self, free_params):
@@ -902,6 +903,7 @@ def calc_r_factor(
     interpolation_step,
     target_grid,
     exp_spline,
+    per_beam=False,
 ):
     v0i_electron_volt = -ref_calc_params.v0i * HARTREE
 
@@ -920,6 +922,7 @@ def calc_r_factor(
         interpolation_step,
         target_grid,
         exp_spline,
+        per_beam=per_beam,
     )
 
 
