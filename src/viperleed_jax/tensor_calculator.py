@@ -891,6 +891,7 @@ def batch_delta_amps(
     static_argnames=(
         'interpolation_step',
         'rfactor_func',
+        'per_beam',
         #'ref_calc_params',
     ),
 )
