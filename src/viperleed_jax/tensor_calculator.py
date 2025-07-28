@@ -166,13 +166,15 @@ class TensorLEEDCalculator:
 
         # determine the mapping
         exp_beam_mapping = []
-        for b in beam_indices:
-            if b in exp_hk:
-                exp_beam_mapping.append(exp_hk.index(b))
+        for theo_beam in rparams.ivbeams:
+            for exp_id, exp_beam in enumerate(rparams.expbeams):
+                if theo_beam.isEqual(exp_beam):
+                    exp_beam_mapping.append(exp_id)
+                    break
             else:
-                exp_beam_mapping.append(False)
+                exp_beam_mapping.append(-1)
 
-        mask_out_expbeam = [b is False for b in exp_beam_mapping]
+        mask_out_expbeam = [b == -1 for b in exp_beam_mapping]
         exp_beam_mapping = np.array(exp_beam_mapping, dtype=np.int32)
 
         # apply the mapping
