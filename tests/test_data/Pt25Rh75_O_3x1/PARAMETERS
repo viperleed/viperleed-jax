@@ -1,5 +1,5 @@
 ! ####### GLOBAL PARAMETERS #######
-RUN = 3
+RUN = 1
 
 # Sporn paper says they only calculate up to 400eV!
 THEO_ENERGIES = 30 400 3
