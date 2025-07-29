@@ -277,6 +277,10 @@ class OccTree(DisplacementTree):
         centered_occupations = self._centered_occupations()
         return np.allclose(self._ref_occupations, centered_occupations)
 
+    @property
+    def ref_calc_values(self):
+        return self._ref_occupations
+
 
 def _fixed_occ_constraint_linear_map(n_children, total_occ):
     """Create a linear map for the fixed occupation constraint."""

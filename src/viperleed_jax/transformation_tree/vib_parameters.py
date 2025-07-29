@@ -139,3 +139,8 @@ class VibTree(DisplacementTree):
         return (
             np.sum(np.abs(centered_vibrations - self._ref_vib_amplitudes)) < EPS
         )
+
+    @property
+    def ref_calc_values(self):
+        """Return the reference calculation values for all leaves."""
+        return np.array([leaf.ref_vib_amp for leaf in self.leaves])

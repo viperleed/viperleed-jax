@@ -264,3 +264,8 @@ class GeoTree(DisplacementTree):
         super().is_centered()
         mid_range_displacements = self(np.array([0.5] * self.root.dof))
         return np.sum(np.abs(mid_range_displacements)) < EPS
+
+    @property
+    def ref_calc_values(self):
+        """Return the reference calculation values for all leaves."""
+        return np.array([[0.0, 0.0, 0.0] for leaf in self.leaves])

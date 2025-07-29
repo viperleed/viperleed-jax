@@ -15,6 +15,7 @@ from anytree.exporter import UniqueDotExporter
 from viperleed.calc.classes.perturbation_mode import PerturbationMode
 from viperleed.calc.files.new_displacements.lines import ConstraintLine
 
+from viperleed_jax.lib.math import EPS
 from viperleed_jax.lib.matrix import closest_to_identity
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
@@ -554,6 +555,14 @@ class DisplacementTree(LinearTree):
                 'Tree must be finalized before checking if it is centered.'
             )
 
+    @property
+    @abstractmethod
+    def ref_calc_values(self):
+        """Return the reference values for the tree."""
+        if not self.finalized:
+            raise ValueError(
+                'Tree must be finalized before getting reference values.'
+            )
 
 def _map_transformation_from_leaf_to_root(
     primary_leaf, secondary_leaf, transformation
