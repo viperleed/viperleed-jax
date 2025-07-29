@@ -13,7 +13,7 @@ from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.parameter_space import ParameterSpace
 from viperleed_jax.ref_calc_data import process_tensors
 from viperleed_jax.tensor_calculator import TensorLEEDCalculator
-from viperleed_jax.utils import check_jax_devices
+from viperleed_jax.utils import check_jax_devices, check_jax_compilation_cache
 
 
 def setup_tl_parameter_space(slab, rpars):
@@ -75,6 +75,8 @@ def setup_tl_calculator(
     """
     # log info or warning on used GPU/CPU
     check_jax_devices()
+    # check if JAX compilation cache is set
+    check_jax_compilation_cache
 
     # parameters needed to interpret the tensor data
     ref_calc_lmax = rpars.LMAX.max
