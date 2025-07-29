@@ -564,6 +564,36 @@ class DisplacementTree(LinearTree):
                 'Tree must be finalized before getting reference values.'
             )
 
+    def reference_parameters(self):
+        """Return the parameter values that recreate the reference state.
+
+        The reference state is combination of parameters that recreate the
+        reference structure of the system (as close as possible).
+        """
+        if not self.finalized:
+            raise ValueError(
+                'Tree must be finalized before getting reference parameters.'
+            )
+
+        # get the raw leaf transformers and invert
+        raw_trafo = self._raw_leaf_transformers
+        if raw_trafo.in_dim == 0:
+            # if there are no free parameters, return empty array
+            return np.array([])
+
+        pseudo_inverse = raw_trafo.pseudo_inverse()
+
+        # get closest to the reference occupations
+        ref_parameters = pseudo_inverse(self.ref_calc_values)
+        leaf_values = self.__call__(ref_parameters)
+
+        if np.sum(abs(leaf_values - self.ref_calc_values)) > EPS:
+            raise ValueError(
+                'Reference parameters do not recreate the reference values. '
+            )
+        return ref_parameters
+
+
 def _map_transformation_from_leaf_to_root(
     primary_leaf, secondary_leaf, transformation
 ):
