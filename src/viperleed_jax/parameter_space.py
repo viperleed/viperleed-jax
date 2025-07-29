@@ -53,6 +53,8 @@ class ParameterSpace:
         self._displacements_applied = False
         self.atom_basis = atom_basis
 
+        self._previous_best_v0r = rpars.best_v0r
+
         # create the meta parameter subtree
         self.meta_tree = meta_parameters.MetaTree()
         # set V0r bounds from Rparams object
@@ -355,8 +357,18 @@ class ParameterSpace:
         # get the reference parameters from all trees
         reference_parameters = []
 
-        # for V0r, set to 0.5
-        reference_parameters.append(np.array([0.5]))
+        # treat V0r separately
+        if self._previous_best_v0r is None:
+            # if no previous best V0r is set, use the default value of 0.0
+            previous_best_v0r = np.array([0.0])
+        else:
+            previous_best_v0r = np.array([self._previous_best_v0r])
+        v0r_transform = self.meta_tree.root.transformer_to_descendent(
+            self.meta_tree.v0r_node
+        )
+        inverse_v0r_transform = v0r_transform.pseudo_inverse()
+        v0r_ref = inverse_v0r_transform(previous_best_v0r)
+        reference_parameters.append(v0r_ref)
 
         for subtree in (self.geo_tree, self.vib_tree, self.occ_tree):
             try:
