@@ -93,13 +93,17 @@ class OptimizerIterator:
         """Return a suggested starting point for the iterator.
 
         If the first optimizer uses gradients, we want to start slightly away
-        from the center ([0.5, 0.5, 0.5, ...])to avoid numerical issues.
-        If the first optimizer does not use gradients, return the center point.
+        from the reference calculation. Therefore we want to apply a small
+        perturbation because the calculation of gradients may be masked/zeroed
+        out at the center point for geometric parameters due to numerical
+        issues.
+        If the first optimizer does not use gradients, simply return the
+        reference point.
         """
         first_optimizer = self._DISPATCH[self.rpars.VLJ_ALGO[0]]()
-        center = np.array([0.5] * self.calculator.n_free_parameters)
+        center = self.calculator.parameter_space.reference_parameters()
         if isinstance(first_optimizer, optimization.optimizer.GradOptimizer):
-            # Use a small offset to avoid numerical issues
+            # apply a small perturbation to the reference point
             pattern = np.array([0.001, -0.001])
             offset = np.tile(
                 pattern, self.calculator.n_free_parameters // 2 + 1
