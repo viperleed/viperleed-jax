@@ -338,6 +338,35 @@ class ParameterSpace:
 
         return compute
 
+    def reference_parameters(self):
+        """Return the reference parameters of the parameter space.
+
+        Returns
+        -------
+        np.ndarray
+            The reference parameters of the parameter space.
+        """
+        if not self._displacements_applied:
+            raise ValueError(
+                'Displacements must be applied before getting '
+                'reference parameters.'
+            )
+
+        # get the reference parameters from all trees
+        reference_parameters = []
+
+        # for V0r, set to 0.5
+        reference_parameters.append(np.array([0.5]))
+
+        for subtree in (self.geo_tree, self.vib_tree, self.occ_tree):
+            try:
+                tree_ref_param = subtree.reference_parameters()
+            except ValueError:
+                # unable to get reference parameters, default to 0.5
+                tree_ref_param = np.array([0.5] * subtree.root.dof)
+            reference_parameters.append(tree_ref_param)
+        return np.concatenate(reference_parameters)
+
     def _dummy_parent(self):
         subtree_roots = [
             deepcopy(self.meta_tree.root),
