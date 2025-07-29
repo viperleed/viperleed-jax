@@ -91,7 +91,7 @@ def calculator_from_paths(
     )
     # set the parameter space
     calculator.set_parameter_space(parameter_space)
-    return calculator
+    return calculator, last_state
 
 
 def run_viperleed_initialization(calc_path):
