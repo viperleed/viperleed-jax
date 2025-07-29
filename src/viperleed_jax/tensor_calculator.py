@@ -12,6 +12,7 @@ import numpy as np
 from interpax import CubicSpline
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.files.iorfactor import beamlist_to_array
+from viperleed.calc.lib import leedbase
 
 from viperleed_jax import rfactor, utils
 from viperleed_jax.batching import Batching
@@ -21,6 +22,7 @@ from viperleed_jax.dense_quantum_numbers import (
 )
 from viperleed_jax.interpolation import interpolate_ragged_array
 from viperleed_jax.lib import math
+from viperleed_jax.lib.calculator import map_indices
 from viperleed_jax.lib.derived_quantities.normalized_occupations import (
     NormalizedOccupations,
 )
@@ -32,7 +34,6 @@ from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
 from viperleed_jax.lib.tensor_leed.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
-from viperleed_jax.lib.calculator import map_indices
 
 
 class TensorLEEDCalculator:
@@ -164,27 +165,11 @@ class TensorLEEDCalculator:
         # calculate batching
         self.batching = Batching(self.energies, ref_calc_params.lmax)
 
-        # determine the mapping
-        exp_beam_mapping = []
-        for theo_beam in rparams.ivbeams:
-            for exp_id, exp_beam in enumerate(rparams.expbeams):
-                if theo_beam.isEqual(exp_beam):
-                    exp_beam_mapping.append(exp_id)
-                    break
-            else:
-                exp_beam_mapping.append(-1)
+        beam_correspondence = leedbase.getBeamCorrespondence(slab, rparams)
+        self.beam_correspondence = tuple(beam_correspondence)
+        logger.debug(f'Beam correspondence: {self.beam_correspondence}')
 
-        mask_out_expbeam = [b == -1 for b in exp_beam_mapping]
-        exp_beam_mapping = np.array(exp_beam_mapping, dtype=np.int32)
-
-        # apply the mapping
-        mapped_exp_intensities = exp_intensities[:, exp_beam_mapping]
-
-        # mask out the beams that are not in the expbeams
-        mapped_exp_intensities = np.where(
-            mask_out_expbeam, np.nan, mapped_exp_intensities
-        )
-        self.set_experiment_intensity(mapped_exp_intensities, exp_energies)
+        self.set_experiment_intensity(exp_intensities, exp_energies)
 
         self.kappa = jnp.array(self.ref_calc_params.kappa)
 
@@ -619,10 +604,17 @@ class TensorLEEDCalculator:
         if self.comp_intensity is None:
             raise ValueError('Comparison intensity not set.')
         _free_params = jnp.asarray(free_params)
-        non_interpolated_intensity = self.intensity(_free_params)
 
         v0r_param, *_ = self._split_free_params(_free_params)
         v0r_shift = self._v0r_transformer(v0r_param)
+
+        # calculate the non-interpolated intensity
+        non_interpolated_intensity = self.intensity(_free_params)
+
+        # average the intensities according to the beam correspondence
+        non_interpolated_intensity = average_beam_array(
+            non_interpolated_intensity, self.beam_correspondence
+        )
 
         return calc_r_factor(
             non_interpolated_intensity,
@@ -957,3 +949,48 @@ def _interpolate_intensity(
     for _ in range(deriv_deg):
         spline = spline.derivative()
     return spline(target_grid)
+
+
+@partial(jax.jit, static_argnames=['beam_correspondence'])
+def average_beam_array(beam_array, beam_correspondence):
+    """Average the beam array over the beam correspondence.
+
+    Parameters
+    ----------
+    beam_array : array_like
+        The beam array to average, shape (n_energies, n_beams).
+    beam_correspondence : tuple
+        A tuple containing the beam correspondence, which maps the
+        experimental beams to the theoretical beams. It should be a 1D array
+        of integers with shape (n_beams,).
+
+    Returns
+    -------
+    array_like
+        The averaged beam array, shape (n_energies, n_averaged_beams).
+
+    Raises
+    ------
+    ValueError
+        If the number of beams in the beam array does not match the length of
+        the beam correspondence.
+    """
+    beam_corr = np.array(beam_correspondence, dtype=np.int32)
+    n_averaged_beams = np.unique(beam_corr).size
+
+    if beam_array.shape[1] != beam_corr.shape[0]:
+        raise ValueError(
+            'Beam array and beam correspondence must have the same number of beams.'
+        )
+
+    # get weights for averaging
+    ones = jnp.ones_like(beam_corr, dtype=float)
+    summed = jax.ops.segment_sum(ones, beam_corr, num_segments=n_averaged_beams)
+    averaged_beam_weights = jnp.reciprocal(summed)
+
+    # sum beams according to the beam correspondence
+    mix_beams_vmap = jax.vmap(jax.ops.segment_sum, in_axes=(0, None, None))
+    averaged = mix_beams_vmap(beam_array, beam_corr, n_averaged_beams)
+
+    # apply the averaged weights
+    return averaged * averaged_beam_weights[jnp.newaxis, :]
