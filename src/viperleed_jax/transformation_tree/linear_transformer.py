@@ -183,13 +183,7 @@ class AffineTransformer(Transformer):
 
         pseudo_inverse_weights = np.linalg.pinv(self.weights)
         pseudo_inverse_biases = -pseudo_inverse_weights @ self.biases
-        if self.out_reshape is not None:
-            pseudo_inverse_biases = pseudo_inverse_biases.reshape(
-                self.out_reshape
-            )
-        return AffineTransformer(
-            pseudo_inverse_weights, pseudo_inverse_biases, self.out_reshape
-        )
+        return AffineTransformer(pseudo_inverse_weights, pseudo_inverse_biases)
 
     def __repr__(self):
         """Return a string representation of the transformer."""
