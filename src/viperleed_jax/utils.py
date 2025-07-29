@@ -60,6 +60,20 @@ def check_jax_devices():
         return
     logger.info(f'JAX detected {len(gpu_devices)} GPU(s).')
 
+def check_jax_compilation_cache():
+    """Check if JAX compilation cache is set.
+
+    If not set, a warning is logged. The compilation cache can significantly
+    speed up the execution of JAX functions by reusing compiled code across
+    different runs.
+    """
+    if jax.config.jax_compilation_cache_dir is None:
+        logger.warning(
+            'JAX compilation cache is not set. This can lead to slower '
+            'performance due to repeated compilations. See JAX documentation '
+            'for instruction on how to set it up.'
+        )
+
 
 def benchmark_calculator(
     calculator,
