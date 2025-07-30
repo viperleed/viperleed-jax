@@ -185,7 +185,7 @@ class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
     jac_strategy = None
 
     def __init__(self, fun, bounds=None, cholesky=None, **kwargs):
-        NonGradOptimizer.__init__(self, fun)
+        NonGradOptimizer.__init__(self, fun, name=self.method)
         SciPyOptimizerBase.__init__(
             self, name=self.method, bounds=bounds, cholesky=cholesky, **kwargs
         )
