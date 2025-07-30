@@ -72,6 +72,11 @@ def check_jax_compilation_cache():
             'performance due to repeated compilations. See JAX documentation '
             'for instruction on how to set it up.'
         )
+    else:
+        logger.debug(
+            'JAX compilation cache is set to '
+            f'{jax.config.jax_compilation_cache_dir}.'
+        )
 
 
 def benchmark_calculator(
