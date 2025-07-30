@@ -175,6 +175,7 @@ def benchmark_calculator(
     # Prepare the results with a timestamp
     results = {
         'timestamp': datetime.datetime.now().isoformat(),
+        'l_max': calculator.max_l_max,
         'r_fac_compile_time': r_fac_compile_time,
         'r_fac_time': r_fac_time,
         'grad_compile_time': grad_compile_time,
