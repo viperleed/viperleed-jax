@@ -130,9 +130,7 @@ class OptimizerIterator:
         optimizer = self._DISPATCH[optimizer_name]()
 
         # run the optimizer with the current parameter vector
-        logger.debug(
-            f'Running optimizer: {optimizer_name} with x={self._current_x}'
-        )
+        logger.debug(f'Running optimizer: {optimizer_name}.')
         result = optimizer(self._current_x)
         self._done_optimizers.append(optimizer)
         self._process_result(result)
