@@ -17,6 +17,7 @@ from .reduced_space import Zonotope
 from .tree import (
     DisplacementTree,
 )
+from viperleed.calc import LOGGER as logger
 
 
 class VibLeafNode(AtomicLinearNode):
@@ -116,6 +117,15 @@ class VibTree(DisplacementTree):
             root_to_leaf_transformer = root.transformer_to_descendent(
                 primary_leaf
             )
+            # check if the range would go below zero amplitude
+            primary_leaf_ref_vib_amp = primary_leaf.ref_vib_amp
+            if any(primary_leaf_ref_vib_amp + vib_range < 0):
+                msg = (
+                    f'Vibrational range {vib_delta_line} would lead to '
+                    'below zero amplitude. Please adjust the range.'
+                )
+                logger.error(msg)
+                raise ValueError(msg)
             leaf_to_root_transformer = root_to_leaf_transformer.pseudo_inverse()
             root_range_zonotope = leaf_range_zonotope.apply_affine(
                 leaf_to_root_transformer
