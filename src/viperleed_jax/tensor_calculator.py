@@ -975,13 +975,22 @@ def average_beam_array(beam_array, beam_correspondence):
         If the number of beams in the beam array does not match the length of
         the beam correspondence.
     """
+    # convert beam correspondence to numpy array
     beam_corr = np.array(beam_correspondence, dtype=np.int32)
-    n_averaged_beams = np.unique(beam_corr).size
 
+    # check if beam_array and beam_corr have the same number of beams
     if beam_array.shape[1] != beam_corr.shape[0]:
         raise ValueError(
             'Beam array and beam correspondence must have the same number of beams.'
         )
+
+    # beam_corr may contain -1 for beams that have no correspondence; these
+    # need to be filtered out
+    valid_beam_mask = beam_corr != -1
+    beam_corr = beam_corr[valid_beam_mask]
+    filtered_beam_array = beam_array[:, valid_beam_mask]
+    # determine the number of averaged beams after filtering
+    n_averaged_beams = np.unique(beam_corr).size
 
     # get weights for averaging
     ones = jnp.ones_like(beam_corr, dtype=float)
@@ -990,7 +999,7 @@ def average_beam_array(beam_array, beam_correspondence):
 
     # sum beams according to the beam correspondence
     mix_beams_vmap = jax.vmap(jax.ops.segment_sum, in_axes=(0, None, None))
-    averaged = mix_beams_vmap(beam_array, beam_corr, n_averaged_beams)
+    averaged = mix_beams_vmap(filtered_beam_array, beam_corr, n_averaged_beams)
 
     # apply the averaged weights
     return averaged * averaged_beam_weights[jnp.newaxis, :]
