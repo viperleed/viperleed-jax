@@ -165,6 +165,9 @@ class TensorLEEDCalculator:
         # calculate batching
         self.batching = Batching(self.energies, ref_calc_params.lmax)
 
+        # get beam correspondence
+        # note that beams with no experimental correspondence are assigned -1
+        # this is handled in average_beam_array()
         beam_correspondence = leedbase.getBeamCorrespondence(slab, rparams)
         self.beam_correspondence = tuple(beam_correspondence)
         logger.debug(f'Beam correspondence: {self.beam_correspondence}')
