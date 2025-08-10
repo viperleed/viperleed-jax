@@ -79,7 +79,7 @@ def check_jax_compilation_cache():
         )
 
 
-def _get_best_v0r_on_grid(calculator, parameters):
+def get_best_v0r_on_grid(calculator, parameters):
     meta_tree = calculator.parameter_space.meta_tree
     v0r_trafo = meta_tree.root.transformer_to_descendent(meta_tree.v0r_node)
     inverse_v0r_trafo = v0r_trafo.pseudo_inverse()

@@ -9,6 +9,7 @@ import numpy as np
 from viperleed.calc import LOGGER as logger
 
 from viperleed_jax import optimization
+from viperleed_jax.utils import get_best_v0r_on_grid
 
 
 class OptimizerIterator:
@@ -102,6 +103,10 @@ class OptimizerIterator:
         """
         first_optimizer = self._DISPATCH[self.rpars.VLJ_ALGO[0]]()
         center = self.calculator.parameter_space.reference_parameters()
+        if self.rpars.VLJ_CONFIG.preopt_v0r:
+            best_v0r_param = get_best_v0r_on_grid(self.calculator)
+            center = np.concatenate([best_v0r_param, center[1:]])
+
         if isinstance(first_optimizer, optimization.optimizer.GradOptimizer):
             # apply a small perturbation to the reference point
             pattern = np.array([0.001, -0.001])
