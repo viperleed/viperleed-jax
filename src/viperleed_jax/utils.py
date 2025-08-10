@@ -101,12 +101,6 @@ def get_best_v0r_on_grid(calculator, parameters):
     return best_v0r_param
 
 
-def get_v0r_pre_optimized_parameter_vector(calculator):
-    ref_param_vector = calculator.parameter_space.reference_parameters()
-    best_v0r_param = _get_best_v0r_on_grid(calculator, ref_param_vector)
-    return np.concatenate([best_v0r_param, ref_param_vector[1:]])
-
-
 def benchmark_calculator(
     calculator,
     free_params=None,
