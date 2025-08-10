@@ -11,7 +11,10 @@ import jax.numpy as jnp
 import numpy as np
 from interpax import CubicSpline
 from viperleed.calc import LOGGER as logger
-from viperleed.calc.files.iorfactor import beamlist_to_array
+from viperleed.calc.files.iorfactor import (
+    beamlist_to_array,
+    prepare_rfactor_energy_ranges,
+)
 from viperleed.calc.lib import leedbase
 
 from viperleed_jax import rfactor, utils
@@ -122,6 +125,15 @@ class TensorLEEDCalculator:
             rparams.THEO_ENERGIES.start,
             rparams.THEO_ENERGIES.stop,
             self.interpolation_step,
+        )
+
+        # get V0r shift steps
+        _rparams_copy = copy.deepcopy(rparams)
+        _, _, iv_shift_range, _ = prepare_rfactor_energy_ranges(_rparams_copy)
+        self._v0r_shift_steps = np.arange(
+            iv_shift_range.start,
+            iv_shift_range.stop + iv_shift_range.step,
+            iv_shift_range.step,
         )
 
         # set up atom numbers

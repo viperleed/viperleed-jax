@@ -79,6 +79,34 @@ def check_jax_compilation_cache():
         )
 
 
+def _get_best_v0r_on_grid(calculator, parameters):
+    meta_tree = calculator.parameter_space.meta_tree
+    v0r_trafo = meta_tree.root.transformer_to_descendent(meta_tree.v0r_node)
+    inverse_v0r_trafo = v0r_trafo.pseudo_inverse()
+    v0r_step_params = [
+        inverse_v0r_trafo(step) for step in calculator._v0r_shift_steps
+    ]
+
+    v0r_r_factors = []
+    for v0r_step in v0r_step_params:
+        param_vector = np.concatenate([v0r_step, parameters[1:]])
+        v0r_r_factors.append(calculator.R(param_vector))
+    argmin = np.argmin(v0r_r_factors)
+    best_v0r_param = v0r_step_params[np.argmin(v0r_r_factors)]
+    if argmin == 0 or argmin == len(v0r_step_params):
+        best_v0r = calculator._v0r_transformer(best_v0r_param)[0]
+        msg = 'Pre-optimized V0r shift is at the edge of the given range. '
+        msg += f'Best shift = {best_v0r:.1f} eV.'
+        logger.warning(msg)
+    return best_v0r_param
+
+
+def get_v0r_pre_optimized_parameter_vector(calculator):
+    ref_param_vector = calculator.parameter_space.reference_parameters()
+    best_v0r_param = _get_best_v0r_on_grid(calculator, ref_param_vector)
+    return np.concatenate([best_v0r_param, ref_param_vector[1:]])
+
+
 def benchmark_calculator(
     calculator,
     free_params=None,
