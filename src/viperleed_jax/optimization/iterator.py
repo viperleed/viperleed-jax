@@ -104,7 +104,9 @@ class OptimizerIterator:
         first_optimizer = self._DISPATCH[self.rpars.VLJ_ALGO[0]]()
         center = self.calculator.parameter_space.reference_parameters()
         if self.rpars.VLJ_CONFIG['preoptimize_v0r']:
-            best_v0r_param = get_best_v0r_on_grid(self.calculator)
+            best_v0r_param = get_best_v0r_on_grid(
+                self.calculator, parameters=center
+            )
             center = np.concatenate([best_v0r_param, center[1:]])
 
         if isinstance(first_optimizer, optimization.optimizer.GradOptimizer):
