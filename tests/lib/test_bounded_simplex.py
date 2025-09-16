@@ -6,7 +6,7 @@ import pytest
 from jax.scipy.special import logit as jax_logit
 
 from viperleed_jax.lib.bounded_simplex import (
-    validate_bounds,
+    validate_simplex_bounds,
     bounded_softmax_from_unit,
 )
 
@@ -72,13 +72,13 @@ class TestValidateBounds:
         lower, upper = bounds
 
         # should not raise
-        validate_bounds(lower, upper)
+        validate_simplex_bounds(lower, upper)
 
     def test_shape_mismatch_raises(self):
         lower = np.array([0.1, 0.2])
         upper = np.array([0.9, 0.8, 0.7])
         with pytest.raises(ValueError, match=r'Shape mismatch'):
-            validate_bounds(
+            validate_simplex_bounds(
                 lower,
                 upper,
             )
@@ -89,13 +89,13 @@ class TestValidateBounds:
         with pytest.raises(
             ValueError, match=r'Require lower\[i\] <= upper\[i\]'
         ):
-            validate_bounds(lower, upper)
+            validate_simplex_bounds(lower, upper)
 
     def test_infeasible_sum_lower_gt_one_raises(self):
         lower = np.array([0.6, 0.5])  # sum = 1.1
         upper = np.array([0.8, 0.9])
         with pytest.raises(ValueError, match=r'Infeasible bounds'):
-            validate_bounds(
+            validate_simplex_bounds(
                 lower,
                 upper,
             )
@@ -104,7 +104,7 @@ class TestValidateBounds:
         lower = np.array([0.1, 0.1, 0.1])  # sum(lower) = 0.3
         upper = np.array([0.2, 0.2, 0.2])  # sum(upper) = 0.6 < 1
         with pytest.raises(ValueError, match=r'Infeasible bounds'):
-            validate_bounds(
+            validate_simplex_bounds(
                 lower,
                 upper,
             )
@@ -122,7 +122,7 @@ class TestValidateBounds:
         upper = simplex_caps.copy()
         upper[0] = simplex_caps[0] + 2 * eps  # push just beyond the cap
         with pytest.raises(ValueError, match=r'simplex-implied cap'):
-            validate_bounds(lower, upper)
+            validate_simplex_bounds(lower, upper)
 
     def test_at_cap_is_ok(self, eps):
         """
@@ -132,11 +132,11 @@ class TestValidateBounds:
         lower = np.array([0.4, 0.4, 0.1], dtype=float)
         simplex_caps = 1.0 - (lower.sum() - lower)  # [0.5, 0.5, 0.8]
         upper = simplex_caps.copy()  # exactly at caps
-        validate_bounds(lower, upper, tol=eps)  # should not raise
+        validate_simplex_bounds(lower, upper, tol=eps)  # should not raise
 
         # Also allow being smaller than the cap
         upper2 = simplex_caps - 1e-6
-        validate_bounds(lower, upper2, tol=eps)  # should not raise
+        validate_simplex_bounds(lower, upper2, tol=eps)  # should not raise
 
     @pytest.mark.parametrize('d', [2, 3, 5])
     def test_random_feasible_boxes_pass(self, d, rng):
@@ -167,7 +167,7 @@ class TestValidateBounds:
         upper = np.maximum(upper, lower)
 
         # should not raise
-        validate_bounds(lower, upper)
+        validate_simplex_bounds(lower, upper)
 
 
 class TestBoundedSoftmaxFromUnit:

@@ -15,7 +15,7 @@ from jax.scipy.special import logit as jax_logit
 from viperleed_jax.lib.math import EPS
 
 
-def validate_bounds(lower, upper, tol=EPS):
+def validate_simplex_bounds(lower, upper, tol=EPS):
     """
     Validate box bounds for intersection with the probability simplex.
 
