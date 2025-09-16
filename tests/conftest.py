@@ -1,8 +1,9 @@
 import pickle
 from pathlib import Path
 
-import pytest
 import jax
+import numpy as np
+import pytest
 from pytest_cases import fixture, parametrize_with_cases
 
 from tests.fixtures.base import LARGE_FILE_PATH
@@ -10,19 +11,19 @@ from tests.fixtures.cu_111_dynamic_l_max import *
 from tests.fixtures.cu_111_fixed_l_max import *
 from tests.fixtures.fe2o3_012_converged import *
 from tests.viper_init_states import (
+    init_state_pt25rh75_o_3x1,
     state_cu_111_dynamic_l_max,
     state_cu_111_fixed_l_max,
     state_fe2o3_012_converged,
     state_fe2o3_012_unrelaxed,
     state_fe3o4_111,
     state_pt_111_10x10_te,
-    init_state_pt25rh75_o_3x1,
 )
 from viperleed_jax.atom_basis import AtomBasis
-from viperleed_jax.ref_calc_data import process_tensors
 from viperleed_jax.files import phaseshifts as ps
 from viperleed_jax.files.tensors import read_tensor_zip
 from viperleed_jax.from_state import run_viperleed_initialization
+from viperleed_jax.ref_calc_data import process_tensors
 
 from .structures import CaseStatesAfterInit
 
