@@ -5,7 +5,10 @@ import numpy as np
 import pytest
 from jax.scipy.special import logit as jax_logit
 
-from viperleed_jax.lib.bounded_simplex import bounded_softmax_from_unit
+from viperleed_jax.lib.bounded_simplex import (
+    validate_bounds,
+    bounded_softmax_from_unit,
+)
 
 _TEST_EPS = 1e-6
 _ITERATIONS = 5000
@@ -62,6 +65,110 @@ def uniform_vector(low, high, rng):
 # -----------------------------
 # Tests
 # -----------------------------
+
+class TestValidateBounds:
+    @pytest.mark.parametrize('bounds', _BOUNDS)
+    def test_valid_cases(self, bounds):
+        lower, upper = bounds
+
+        # should not raise
+        validate_bounds(lower, upper)
+
+    def test_shape_mismatch_raises(self):
+        lower = np.array([0.1, 0.2])
+        upper = np.array([0.9, 0.8, 0.7])
+        with pytest.raises(ValueError, match=r'Shape mismatch'):
+            validate_bounds(
+                lower,
+                upper,
+            )
+
+    def test_elementwise_order_violation_raises(self):
+        lower = np.array([0.2, 0.5, 0.3])
+        upper = np.array([0.6, 0.4, 0.7])  # lower[1] > upper[1]
+        with pytest.raises(
+            ValueError, match=r'Require lower\[i\] <= upper\[i\]'
+        ):
+            validate_bounds(lower, upper)
+
+    def test_infeasible_sum_lower_gt_one_raises(self):
+        lower = np.array([0.6, 0.5])  # sum = 1.1
+        upper = np.array([0.8, 0.9])
+        with pytest.raises(ValueError, match=r'Infeasible bounds'):
+            validate_bounds(
+                lower,
+                upper,
+            )
+
+    def test_infeasible_sum_upper_lt_one_raises(self):
+        lower = np.array([0.1, 0.1, 0.1])  # sum(lower) = 0.3
+        upper = np.array([0.2, 0.2, 0.2])  # sum(upper) = 0.6 < 1
+        with pytest.raises(ValueError, match=r'Infeasible bounds'):
+            validate_bounds(
+                lower,
+                upper,
+            )
+
+    def test_simplex_cap_violation_raises(self, eps):
+        """
+        If upper[i] > 1 - (sum(lower) - lower[i]) + tol, raise.
+        Example:
+        lower = [0.4, 0.4, 0.1] -> sum(lower)=0.9
+        simplex cap for i=0: 1 - (0.9 - 0.4) = 0.5
+        set upper[0] = 0.5 + 2*eps  -> violation
+        """
+        lower = np.array([0.4, 0.4, 0.1], dtype=float)
+        simplex_caps = 1.0 - (lower.sum() - lower)  # [0.5, 0.5, 0.8]
+        upper = simplex_caps.copy()
+        upper[0] = simplex_caps[0] + 2 * eps  # push just beyond the cap
+        with pytest.raises(ValueError, match=r'simplex-implied cap'):
+            validate_bounds(lower, upper)
+
+    def test_at_cap_is_ok(self, eps):
+        """
+        If upper[i] == cap (within tol), it should pass.
+        Using the same lower from the previous test, but not exceeding the cap.
+        """
+        lower = np.array([0.4, 0.4, 0.1], dtype=float)
+        simplex_caps = 1.0 - (lower.sum() - lower)  # [0.5, 0.5, 0.8]
+        upper = simplex_caps.copy()  # exactly at caps
+        validate_bounds(lower, upper, tol=eps)  # should not raise
+
+        # Also allow being smaller than the cap
+        upper2 = simplex_caps - 1e-6
+        validate_bounds(lower, upper2, tol=eps)  # should not raise
+
+    @pytest.mark.parametrize('d', [2, 3, 5])
+    def test_random_feasible_boxes_pass(self, d, rng):
+        """
+        Random feasible boxes: ensure sum(lower) < 1 < sum(upper) and no cap violations.
+        """
+        # Construct lowers with small total
+        lower = rng.uniform(0.0, 0.2, size=d)
+        # Ensure sum(lower) < 1
+        sL = lower.sum()
+        if sL >= 0.9:
+            lower *= 0.9 / sL
+
+        # Choose spans and build uppers
+        span = rng.uniform(0.2, 0.8, size=d)
+        upper = lower + span
+
+        # Ensure sum(upper) > 1
+        sU = upper.sum()
+        if sU <= 1.05:
+            upper += (1.1 - sU) / d
+
+        # Ensure no simplex-cap violations: upper[i] <= 1 - (sum(lower) - lower[i])
+        caps = 1.0 - (lower.sum() - lower)
+        upper = np.minimum(upper, caps)
+
+        # Finally, keep elementwise order
+        upper = np.maximum(upper, lower)
+
+        # should not raise
+        validate_bounds(lower, upper)
+
 
 class TestBoundedSoftmaxFromUnit:
     """Tests for bounded_softmax_from_unit function."""
