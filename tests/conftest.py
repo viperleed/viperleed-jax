@@ -33,6 +33,10 @@ FE2O3_UNRELAXED_INPUT_PATH = (
 # Make sure to use double precision for testing
 jax.config.update('jax_enable_x64', True)
 
+@pytest.fixture(scope='package')
+def rng():
+    """Use fixed seed for reproducibility."""
+    return np.random.default_rng(42)
 
 @pytest.fixture(scope='session')
 def large_file_path():
