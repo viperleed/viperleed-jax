@@ -2,9 +2,11 @@ import jax
 import jax.numpy as jnp
 from jax import lax
 from jax.scipy.special import logit as jax_logit
+from functools import partial
 
+from viperleed_jax.lib.math import EPS
 
-def _validate_bounds_numpy(lower, upper, tol=1e-12):
+def _validate_bounds_numpy(lower, upper, tol=EPS):
     # For eager use before jitting (optional but handy to fail fast).
     lower_sum = float(jnp.sum(lower))
     upper_sum = float(jnp.sum(upper))
@@ -19,37 +21,34 @@ def _validate_bounds_numpy(lower, upper, tol=1e-12):
 
 
 def bounded_softmax_jax(
-    z, lower, upper, temperature=1.0, tol=1e-12, max_iter=None
+    z, lower, upper, temperature=1.0, tol=EPS, max_iter=None
 ):
+    """Capped softmax allocator with fixed-length loop (no 'done' flag)."""
     z = jnp.asarray(z, dtype=jnp.float64)
     lower = jnp.asarray(lower, dtype=jnp.float64)
     upper = jnp.asarray(upper, dtype=jnp.float64)
 
     n = z.shape[0]
-
-    # >>> Python-level defaulting (ok inside jit; it's a plain Python branch)
-    max_iter_val = (n + 2) if (max_iter is None) else int(max_iter)
-    # make it a JAX scalar for comparisons later
-    max_iter_val = jnp.asarray(max_iter_val, dtype=jnp.int32)
+    max_steps = (n + 2) if (max_iter is None) else int(max_iter)
 
     c0 = lower
     caps0 = upper - lower
     S0 = 1.0 - jnp.sum(c0)
     active0 = caps0 > tol
 
-    def cond_fn(state):
-        c, caps, S, active, it = state
-        return (S > tol) & jnp.any(active) & (it < max_iter_val)
+    temp = jnp.maximum(temperature, 1e-12)
 
-    def body_fn(state):
-        c, caps, S, active, it = state
-        temp = jnp.maximum(temperature, 1e-12)
+    def body_fn(_, state):
+        c, caps, S, active = state
+
+        # softmax over active coords; inactive get -inf -> weight 0
         z_masked = jnp.where(active, z / temp, -jnp.inf)
         z_shift = z_masked - jnp.max(z_masked)
         w = jnp.exp(z_shift)
         W = jnp.sum(w)
         k = jnp.sum(active)
 
+        # if W ~ 0 (no active or extreme logits), fall back to uniform over active
         alloc_weights = jnp.where(
             W > tol,
             w / jnp.where(W > 0, W, 1.0),
@@ -63,12 +62,14 @@ def bounded_softmax_jax(
         S_next = S - jnp.sum(step)
         caps_next = caps - step
         active_next = caps_next > tol
-        return (c_next, caps_next, S_next, active_next, it + 1)
 
-    c, caps, S, active, _ = lax.while_loop(
-        cond_fn, body_fn, (c0, caps0, S0, active0, jnp.array(0, jnp.int32))
+        return (c_next, caps_next, S_next, active_next)
+
+    c, caps, S, active = lax.fori_loop(
+        0, max_steps, body_fn, (c0, caps0, S0, active0)
     )
 
+    # Residue sweep: if mass remains and capacity exists, distribute proportionally
     def residue_fix(args):
         c, caps, S, active = args
         frac = jnp.where(active, caps, 0.0)
@@ -83,22 +84,24 @@ def bounded_softmax_jax(
         (c, caps, S, active),
     )
 
+    # Final clip and tiny interior correction to hit sum=1 without breaking bounds
     c = jnp.clip(c, lower, upper)
     err = 1.0 - jnp.sum(c)
-    interior = jnp.logical_and(c > lower + 1e-12, c < upper - 1e-12)
+    interior = jnp.logical_and(c > lower + tol, c < upper - tol)
     m = jnp.sum(interior)
     delta = jnp.where(m > 0, err / m, 0.0)
     c = jnp.clip(c + jnp.where(interior, delta, 0.0), lower, upper)
     return c
 
 
+@partial(jax.jit, static_argnames=('temperature', 'tol', 'max_iter'))
 def bounded_softmax_from_unit(
     x,
     lower,
     upper,
     *,
-    temperature: float = 1.0,
-    tol: float = 1e-8,
+    temperature=1.0,
+    tol=EPS,
     max_iter=None,
 ):
     r"""
@@ -139,7 +142,10 @@ def bounded_softmax_from_unit(
     lower = jnp.asarray(lower, dtype=x.dtype)
     upper = jnp.asarray(upper, dtype=x.dtype)
 
-    z = jax_logit(x)
+    # Clip to avoid ±inf logits → NaNs in softmax normalization.
+    x_clipped = jnp.clip(x, tol, 1.0 - tol)
+    z = jax_logit(x_clipped)
+
     return bounded_softmax_jax(
         z, lower, upper, temperature=temperature, tol=tol, max_iter=max_iter
     )
