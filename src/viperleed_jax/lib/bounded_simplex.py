@@ -1,21 +1,80 @@
+"""Module Bounded Simplex Projection."""
+
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2025-09-16'
+
+
+from functools import partial
+
 import jax
 import jax.numpy as jnp
+import numpy as np
 from jax import lax
 from jax.scipy.special import logit as jax_logit
-from functools import partial
 
 from viperleed_jax.lib.math import EPS
 
-def _validate_bounds_numpy(lower, upper, tol=EPS):
-    # For eager use before jitting (optional but handy to fail fast).
-    lower_sum = float(jnp.sum(lower))
-    upper_sum = float(jnp.sum(upper))
-    if not jnp.all(lower <= upper):
+
+def _validate_bounds(lower, upper, tol: float = EPS):
+    """
+    Validate box bounds for intersection with the probability simplex.
+
+    Raises
+    ------
+    ValueError
+        If:
+          - lower[i] > upper[i] for some i
+          - sum(lower) > 1 + tol or sum(upper) < 1 - tol (empty feasible set)
+          - some upper[i] > simplex-implied cap = 1 - (sum(lower) - lower[i]) + tol
+
+    Notes
+    -----
+    Feasibility for {c: sum(c)=1, lower <= c <= upper} requires:
+      sum(lower) <= 1 <= sum(upper).
+    Additionally, because of the simplex constraint, each c_i cannot exceed
+      1 - sum_{j!=i} lower_j.
+    If upper[i] is greater than this value, that part of the upper box is
+    unattainable and is treated as invalid here.
+    """
+    lower = np.asarray(lower)
+    upper = np.asarray(upper)
+
+    if lower.shape != upper.shape:
+        msg = (
+            f'Shape mismatch: lower.shape={lower.shape}, '
+            f'upper.shape={upper.shape}'
+        )
+        raise ValueError(msg)
+
+    # Basic elementwise check
+    if not bool(np.all(lower <= upper)):
         raise ValueError('Require lower[i] <= upper[i] for all i.')
+
+    # Feasibility check
+    lower_sum = float(np.sum(lower))
+    upper_sum = float(np.sum(upper))
     if lower_sum > 1.0 + tol or upper_sum < 1.0 - tol:
         msg = (
             f'Infeasible bounds: need sum(lower) <= 1 <= sum(upper), '
-            f'got sum(lower)={lower_sum}, sum(upper)={upper_sum}.'
+            f'got sum(lower)={lower_sum:.12g}, sum(upper)={upper_sum:.12g}.'
+        )
+        raise ValueError(msg)
+
+    # Check simplex-implied caps
+    simplex_caps = 1.0 - (
+        lower_sum - lower
+    )  # element wise max allowed by simplex
+    invalid_mask = upper > (simplex_caps + tol)
+    if bool(np.any(invalid_mask)):
+        idx = np.nonzero(invalid_mask, size=invalid_mask.size)[0]
+        ups = upper[idx]
+        caps = simplex_caps[idx]
+        msg = (
+            'Some upper bounds exceed the simplex-implied cap. '
+            'These uppers are unattainable under the given lowers.\n'
+            f'indices: {tuple(map(int, idx.tolist()))}\n'
+            f'upper:    {ups.tolist()}\n'
+            f'cap:      {caps.tolist()}'
         )
         raise ValueError(msg)
 
