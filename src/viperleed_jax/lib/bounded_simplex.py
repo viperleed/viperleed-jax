@@ -15,7 +15,7 @@ from jax.scipy.special import logit as jax_logit
 from viperleed_jax.lib.math import EPS
 
 
-def _validate_bounds(lower, upper, tol: float = EPS):
+def validate_bounds(lower, upper, tol=EPS):
     """
     Validate box bounds for intersection with the probability simplex.
 
@@ -66,7 +66,7 @@ def _validate_bounds(lower, upper, tol: float = EPS):
     )  # element wise max allowed by simplex
     invalid_mask = upper > (simplex_caps + tol)
     if bool(np.any(invalid_mask)):
-        idx = np.nonzero(invalid_mask, size=invalid_mask.size)[0]
+        idx = np.nonzero(invalid_mask)[0]
         ups = upper[idx]
         caps = simplex_caps[idx]
         msg = (
