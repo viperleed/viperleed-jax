@@ -271,7 +271,7 @@ def mirror_across_plane_sum_1(vector):
 
 
 @partial(jax.jit, static_argnames=('index', 'func'))
-def apply_fun_grouped(in_vec, index, func):
+def apply_fun_grouped(in_vec, index, func, group_args):
     """Apply a function separately to groups determined by an index array.
 
     For each unique index value in `index`, this function collects all elements
@@ -311,13 +311,17 @@ def apply_fun_grouped(in_vec, index, func):
     """
     unique_inds = np.unique(index)
 
+    if not isinstance(group_args, (tuple, list)):
+        group_args = (group_args,)
+    group_args = tuple(group_args)
+
     # prepare output buffer
-    out_vec = jnp.zeros_like(in_vec)
+    out_vec = jnp.zeros(in_vec.shape[0])
 
     for idx in unique_inds:
         mask = index == idx
         group = in_vec[mask]
-        transformed = func(group)
+        transformed = func(group, *(arg[idx] for arg in group_args))
         # Store the mask and transformed group
         # put into the output vector
         out_vec = out_vec.at[mask].set(transformed)

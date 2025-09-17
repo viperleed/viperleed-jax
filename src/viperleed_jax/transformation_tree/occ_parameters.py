@@ -27,6 +27,7 @@ class OccLeafNode(AtomicLinearNode):
         super().__init__(dof=dof, atom=atom)
         self._name = f'occ (At_{self.num},{self.site},{self.element})'
         self.ref_occ = atom.atom.site.occ[self.element]
+        # self.occ_range = (0.0, 1.0)
 
 
 class OccConstraintNode(LinearConstraintNode):
@@ -89,6 +90,61 @@ class OccLinkedConstraint(OccConstraintNode):
             children=children,
             transformers=transformers,
             name=f"CONSTRAIN '{name}'",
+            layer=DisplacementTreeLayers.User_Constraints,
+        )
+
+
+class OccTotalOccupationConstraint(OccConstraintNode):
+    """Constraint enforcing a fixed total occupation across children.
+
+    For n children, introduces n-1 free parameters; the last child's
+    occupation is determined by the fixed total.
+    """
+
+    def __init__(self, children, total_occupation, name):
+        # Require identical dof and scalar nodes
+        if len({child.dof for child in children}) != 1:
+            raise ValueError('Children must have the same dof.')
+        if children[0].dof != 1:
+            raise ValueError(
+                'Total occupation constraint only supports dof == 1.'
+            )
+
+        self.total_occupation = total_occupation
+
+        n_children = len(children)
+        if n_children < 2:
+            raise ValueError(
+                'At least two children are required for a total occupation constraint.'
+            )
+
+        if not (0.0 <= total_occupation <= 1.0):
+            raise ValueError('Total occupation must be between 0 and 1.')
+        if total_occupation == 0.0:
+            raise ValueError('Total occupation cannot be zero.')
+
+        dof = n_children - 1
+
+        # Vectorized transformer build
+        scale = 1.0 / total_occupation
+        base_weights = np.eye(dof) * scale
+        base_biases = np.zeros(dof)
+        transformers = [
+            AffineTransformer(
+                base_weights[i : i + 1, :], np.array([base_biases[i]])
+            )
+            for i in range(dof)
+        ]
+
+        last_weights = -np.ones((1, dof)) / dof * scale
+        last_bias = np.array([total_occupation])
+        transformers.append(AffineTransformer(last_weights, last_bias))
+
+        super().__init__(
+            dof=dof,
+            children=children,
+            transformers=transformers,
+            name=name,
             layer=DisplacementTreeLayers.User_Constraints,
         )
 
@@ -159,6 +215,11 @@ class OccTree(DisplacementTree):
                     ]
                 ]
             ).T
+            # primary_leaf.occ_range = (
+            #     element_ranges[primary_leaf.element].start,
+            #     element_ranges[primary_leaf.element].stop,
+            # )
+            # dummy_occ_range = np.array([[0.0, 1.0]]).T
 
             leaf_range_zonotope = Zonotope(
                 basis=np.array([[1.0]]),  # 1D zonotope
@@ -235,16 +296,11 @@ class OccTree(DisplacementTree):
                     'This is not supported by the current implementation.'
                 )
 
-            # TODO: could be made into a custom Constraint Node class
-            # create the linked constraint node for the primary root
-            linked_constraint_node = LinearConstraintNode(
-                dof=len(shared_occ_roots) - 1,
+            # create the total-occupation constraint node for the primary root
+            linked_constraint_node = OccTotalOccupationConstraint(
                 children=shared_occ_roots,
-                transformers=_fixed_occ_constraint_linear_map(
-                    len(shared_occ_roots), total_occupation
-                ),
+                total_occupation=total_occupation,
                 name=constraint_line.raw_line,
-                layer=DisplacementTreeLayers.User_Constraints,
             )
 
             # remove linked roots from the list of roots to link
@@ -282,26 +338,26 @@ class OccTree(DisplacementTree):
         return self._ref_occupations
 
 
-def _fixed_occ_constraint_linear_map(n_children, total_occ):
-    """Create a linear map for the fixed occupation constraint."""
-    if n_children < 2:
-        raise ValueError(
-            'At least two children are required for a total occupation constraint.'
-        )
+# def _fixed_occ_constraint_linear_map(n_children, total_occ):
+#     """Create a linear map for the fixed occupation constraint."""
+#     if n_children < 2:
+#         raise ValueError(
+#             'At least two children are required for a total occupation constraint.'
+#         )
 
-    if total_occ < 0 or total_occ > 1:
-        raise ValueError('Total occupation must be between 0 and 1.')
+#     if total_occ < 0 or total_occ > 1:
+#         raise ValueError('Total occupation must be between 0 and 1.')
 
-    transformers = []
-    for i in range(n_children - 1):
-        arr = np.zeros([1, n_children - 1])
-        arr[0, i] = 1.0 / total_occ
-        bias = np.zeros([1])
-        transformers.append(AffineTransformer(arr, bias))
-    # The last child is minus the sum of the others
+#     transformers = []
+#     for i in range(n_children - 1):
+#         arr = np.zeros([1, n_children - 1])
+#         arr[0, i] = 1.0 / total_occ
+#         bias = np.zeros([1])
+#         transformers.append(AffineTransformer(arr, bias))
+#     # The last child is minus the sum of the others
 
-    arr = -np.ones([1, n_children - 1]) / (n_children - 1) / total_occ
-    bias = np.array([total_occ])
-    transformers.append(AffineTransformer(arr, bias))
+#     arr = -np.ones([1, n_children - 1]) / (n_children - 1) / total_occ
+#     bias = np.array([total_occ])
+#     transformers.append(AffineTransformer(arr, bias))
 
-    return transformers
+#     return transformers
