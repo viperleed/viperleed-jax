@@ -96,8 +96,6 @@ class TensorLEEDCalculator:
         self.bc_type = bc_type
         self.use_symmetry = rparams.VLJ_CONFIG['use_symmetry']
 
-        self.occ_norm_method = rparams.VLJ_CONFIG['occ_norm']
-
         # get experimental intensities and hk
         if not rparams.expbeams:
             msg = (
@@ -355,7 +353,6 @@ class TensorLEEDCalculator:
         # normalized occupations (i.e. chemical weights)
         self.calc_normalized_occupations = NormalizedOccupations(
             self.parameter_space,
-            op_type=self.occ_norm_method,
         )
 
         # atomic t-matrices (will calculate static t-matrices during init)
