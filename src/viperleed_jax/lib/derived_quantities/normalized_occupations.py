@@ -3,33 +3,31 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2025-06-25'
 
-from functools import partial
 
-import jax
-from jax import numpy as jnp
 import numpy as np
+from jax import numpy as jnp
 
+from viperleed_jax.lib.bounded_simplex import bounded_softmax_from_unit
 from viperleed_jax.lib.math import (
+    EPS,
     apply_fun_grouped,
-    mirror_across_plane_sum_1,
-    project_onto_plane_sum_1,
 )
 from viperleed_jax.transformation_tree.derived_quantities import (
     DerivedQuantitySingleTree,
 )
-from viperleed_jax.lib.bounded_simplex import bounded_softmax_from_unit
-from viperleed_jax.lib.math import EPS
 from viperleed_jax.transformation_tree.occ_parameters import (
     OccTotalOccupationConstraint,
 )
 
+_MAX_ITERATIONS = 100
+
+
 class NormalizedOccupations(DerivedQuantitySingleTree):
     """Derived quantity for normalized occupations."""
 
-    def __init__(self, parameter_space, op_type='mirror'):
+    def __init__(self, parameter_space):
         super().__init__(parameter_space)
         self.name = 'normalized_occupations'
-        self.op_type = op_type
 
         # get the min and max possible concentrations for each site
         min_results = self.tree(np.zeros((self.tree.root.dof,)))
@@ -85,117 +83,88 @@ class NormalizedOccupations(DerivedQuantitySingleTree):
             group_args=(self.max_vacancies, self.min_vacancies),
         )
 
-        # return normalize_occ_vector(
-        #     non_normalized_occupations, self.atom_ids, op_type=self.op_type
-        # )
-
 
 def apply_bounded_simplex(in_vecs, max_vacancy, min_vacancy):
-    """Apply bounded simplex to a vector."""
+    """
+    Project a group's occupation vector onto a bounded simplex.
+
+    Uses a "slack-variable" augmentation and a bounded softmax map.
+
+    Given per-atom lower/upper bounds and a per-group min/max vacancy
+    allowance, this function appends one vacancy parameter to the
+    concentration vector and maps the (n+1)-vector through
+    ``bounded_softmax_from_unit`` such that the returned first n entries
+    (the concentrations) satisfy both the box constraints and the
+    simplex-like sum constraint implied by the vacancy.
+
+    Parameters
+    ----------
+    in_vecs : jax.Array
+        2D array of shape (n, 3) holding, **per row**, the triplet
+        ``[x_i, lower_i, upper_i]``:
+        - ``x``: unconstrained (pre-normalized) concentrations (shape (n,))
+        - ``lower``: per-element lower bounds (shape (n,))
+        - ``upper``: per-element upper bounds (shape (n,))
+        Internally this function reads columns via
+        ``x = in_vecs[:, 0]``, ``lower = in_vecs[:, 1]``,
+        ``upper = in_vecs[:, 2]``.
+        If any `lower_i == upper_i`, that concentration is fixed to that value.
+    max_vacancy : float or jax.Array
+        Upper bound for the group's vacancy parameter (scalar or 0-D array).
+        The effective vacancy after mapping will not exceed this value.
+        If equal `min_vacancy`, the vacancy is fixed.
+    min_vacancy : float or jax.Array
+        Lower bound for the group's vacancy parameter (scalar or 0-D array).
+        The effective vacancy after mapping will be at least this value.
+
+    Returns
+    -------
+    bounded_x : jax.Array
+        1D array of shape (n,) with concentrations that:
+        - respect per-element bounds ``lower <= bounded_x <= upper``
+        - together with the implied vacancy sum to 1 (within numerical tolerance).
+
+    Notes
+    -----
+    - The augmented vector is constructed as:
+      ``c_bar = concat([x, v])`` with ``v = (n - sum(x)) / n`` (a slack vacancy).
+      Bounds are augmented analogously with ``[lower, min_vacancy]`` and
+      ``[upper, max_vacancy]``.
+    - The core mapping is delegated to ``bounded_softmax_from_unit``, using
+      globals ``EPS`` and ``_MAX_ITERATIONS`` for numerical stability and
+      iteration control.
+    - ``max_vacancy`` / ``min_vacancy`` are assumed to be scalars for the
+      **group** (not per element). If they arrive as 0-D arrays, they are
+      reshaped to length-1 vectors for concatenation.
+
+    Examples
+    --------
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([0.6, 0.6, 0.1])
+    >>> lo = jnp.array([0.0, 0.0, 0.0])
+    >>> hi = jnp.array([1.0, 1.0, 1.0])
+    >>> in_vecs = jnp.stack([x, lo, hi], axis=1)  # shape (3,3)
+    >>> apply_bounded_simplex(in_vecs, max_vacancy=0.5, min_vacancy=0.0).shape
+    (3,)
+    """
     x, lower, upper = in_vecs[:, 0], in_vecs[:, 1], in_vecs[:, 2]
-    # max_vacancy, min_vacancy = group_args
     n = x.shape[0]
 
+    # slack "vacancy" before mapping
     vac_parameter = (n - x.sum()) / n
+
+    # augment variables and bounds with the vacancy slot
     c_bar = jnp.concatenate([x, vac_parameter.reshape(-1)])
-    c_bar_lower = jnp.concatenate([lower, min_vacancy.reshape(-1)])
-    c_bar_upper = jnp.concatenate([upper, max_vacancy.reshape(-1)])
+    c_bar_lower = jnp.concatenate([lower, jnp.asarray(min_vacancy).reshape(-1)])
+    c_bar_upper = jnp.concatenate([upper, jnp.asarray(max_vacancy).reshape(-1)])
+
     bounded = bounded_softmax_from_unit(
         c_bar,
         c_bar_lower,
         c_bar_upper,
         temperature=1.0,
         tol=EPS,
-        max_iter=100,
+        max_iter=_MAX_ITERATIONS,
     )
-    # return only the first n elements (the concentrations)
+    # return the concentrations (c_i) only, drop the vacancy slot
     return bounded[:-1]
-
-
-def normalize_occ_vector(non_norm_occ_vector, atom_ids, op_type='mirror'):
-    r"""Normalize the occupation vector to <=1 for each atom.
-
-    Each scatterer site that can be occupied by multiple chemical species
-    whose sum of occupations must be less than or equal to 1.
-    This function normalizes the occupation vector for any scatterers that
-    would otherwise exceed this limit. Occupations for scatterers that do not
-    exceed the limit are left unchanged.
-    The normalization is done by projecting the occupation vector onto the
-    plane defined by the constraint \sum{c_i}=1, where c_i are the
-    concentrations of the elements occupying the scatterer site.
-
-    non_norm_occ_vector and atom_ids must be of the same length. atom_ids must
-    be a hashable collection (e.g., a tuple) of integers that represent which
-    atoms in the non_norm_occ_vector should be normalized together. This should
-    be taken from the atom_ids property of the calculator.
-
-    Parameters
-    ----------
-    non_norm_occ_vector : array_like
-        The occupation vector to be normalized.
-    atom_ids : tuple
-        The atom IDs for which the occupation vector should be normalized.
-        This must be hashable (e.g., a tuple).
-
-    Returns
-    -------
-    jax.Array
-        The normalized occupation vector, where the sum of the elements
-        corresponding to the specified atom IDs is equal to 1.
-    """
-    # raise error is atom_ids is not hashable (most likely a tuple)
-    try:
-        hash(atom_ids)
-    except TypeError as err:
-        msg = 'atom_ids must be hashable (e.g., a tuple)'
-        raise TypeError(msg) from err
-
-    # select the operation to be used for normalization
-    if op_type == 'mirror':
-        normalize_func = _normalize_atom_occ_vector_mirror
-    elif op_type == 'projection':
-        normalize_func = _normalize_atom_occ_vector_projection
-    else:
-        msg = (
-            f'Invalid operation type: {op_type}. '
-            'Valid options are "mirror" or "projection".'
-        )
-        raise ValueError(msg)
-
-    return apply_fun_grouped(
-        in_vec=non_norm_occ_vector,
-        index=atom_ids,
-        func=normalize_func,
-    )
-
-
-def _normalize_atom_occ_vector_mirror(occ_vector):
-    """Normalize the occupation vector to sum to 1.
-
-    This function is used to normalize the occupation vector for a single
-    atom. It is called by the `normalize_occ_vector` function.
-    """
-    _occ_vector = jnp.asarray(occ_vector)
-
-    return jax.lax.cond(
-        jnp.sum(_occ_vector) <= 1.0,
-        lambda vec: vec,
-        mirror_across_plane_sum_1,
-        operand=_occ_vector,
-    )
-
-
-def _normalize_atom_occ_vector_projection(occ_vector):
-    """Normalize the occupation vector to sum to 1.
-
-    This function is used to normalize the occupation vector for a single
-    atom. It is called by the `normalize_occ_vector` function.
-    """
-    _occ_vector = jnp.asarray(occ_vector)
-
-    return jax.lax.cond(
-        jnp.sum(_occ_vector) <= 1.0,
-        lambda vec: vec,
-        project_onto_plane_sum_1,
-        operand=_occ_vector,
-    )
