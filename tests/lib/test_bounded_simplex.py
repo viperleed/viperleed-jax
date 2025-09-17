@@ -8,15 +8,18 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from jax.scipy.special import logit as jax_logit
 
 from viperleed_jax.lib.bounded_simplex import (
     validate_simplex_bounds,
     bounded_softmax_from_unit,
 )
 
+from ..bounded_simplex_helpers import (
+    uniform_vector,
+    BOUNDS,
+    SAMPLING_INTERATIONS,
+)
 _TEST_EPS = 1e-6
-_ITERATIONS = 5000
 
 
 # -----------------------------
@@ -32,27 +35,6 @@ def dims(request):
 @pytest.fixture(scope='module')
 def eps():
     return _TEST_EPS
-
-
-_BOUNDS = [  # format lower, upper
-    # 2D cases
-    (np.array([0.0, 0.0]), np.array([1.0, 1.0])),
-    (np.array([0.2, 0.3]), np.array([0.7, 0.8])),
-    (np.array([0.0, 0.5]), np.array([0.5, 1.0])),
-    (np.array([0.4, 0.4]), np.array([0.6, 0.6])),  # tight box
-    # 3D cases
-    (np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])),
-    (np.array([0.1, 0.1, 0.1]), np.array([0.7, 0.7, 0.7])),
-    (np.array([0.2, 0.3, 0.1]), np.array([0.5, 0.6, 0.4])),
-    (np.array([0.0, 0.0, 0.5]), np.array([0.5, 0.5, 0.5])),  # one fixed dim
-    (np.array([0.3, 0.3, 0.3]), np.array([0.4, 0.4, 0.4])),  # tight box
-    # 5D cases
-    (np.array([0.1, 0.1, 0.1, 0.1, 0.1]), np.array([0.5, 0.5, 0.5, 0.5, 0.5])),
-    (
-        np.array([0.2, 0.1, 0.1, 0.1, 0.1]),
-        np.array([0.4, 0.4, 0.4, 0.1, 0.1]),
-    ),  # two dims fixed
-]
 
 
 # -----------------------------
@@ -72,7 +54,7 @@ def uniform_vector(low, high, rng):
 # -----------------------------
 
 class TestValidateBounds:
-    @pytest.mark.parametrize('bounds', _BOUNDS)
+    @pytest.mark.parametrize('bounds', BOUNDS)
     def test_valid_cases(self, bounds):
         lower, upper = bounds
 
@@ -178,7 +160,7 @@ class TestValidateBounds:
 class TestBoundedSoftmaxFromUnit:
     """Tests for bounded_softmax_from_unit function."""
 
-    @pytest.mark.parametrize('bounds', _BOUNDS)
+    @pytest.mark.parametrize('bounds', BOUNDS)
     def test_iteration_min_max_observed(self, rng, bounds):
         """
         Run many random x in [0,1]^3 and track per-dim mins/maxs of outputs.
@@ -189,7 +171,7 @@ class TestBoundedSoftmaxFromUnit:
         mins = np.ones_like(low, dtype=np.float64) * 1.0
         maxs = np.ones_like(low, dtype=np.float64) * -1.0
 
-        for _ in range(_ITERATIONS):
+        for _ in range(SAMPLING_ITERATIONS):
             x = uniform_vector(np.zeros_like(low), np.ones_like(high), rng)
             projected = bounded_softmax_from_unit(x, low, high)
             mins = np.minimum(mins, projected)
@@ -199,7 +181,6 @@ class TestBoundedSoftmaxFromUnit:
             assert (projected <= high).all()
             assert np.isclose(projected.sum(), 1.0, rtol=0, atol=1e-12)
 
-        print(f'Bounds: {low} to {high}')
         # The observed mins/maxs must be within bounds
         assert (mins >= low).all()
         assert (maxs <= high).all()
@@ -236,7 +217,7 @@ class TestBoundedSoftmaxFromUnit:
         lower = np.array([0.2, 0.2, 0.1], dtype=np.float64)
         upper = np.array([0.6, 0.6, 0.9], dtype=np.float64)
 
-        for _ in range(_ITERATIONS):
+        for _ in range(SAMPLING_ITERATIONS):
             # Draw a 2D point and duplicate one coord to make a 3D point:
             x_2d = uniform_vector(np.zeros(2), np.ones(2), rng)
             x = np.array([x_2d[0], x_2d[0], x_2d[1]], dtype=np.float64)
@@ -258,7 +239,7 @@ class TestBoundedSoftmaxFromUnit:
         d = 5
         failures = 0
 
-        for _ in range(_ITERATIONS):
+        for _ in range(SAMPLING_ITERATIONS):
             lower = rng.uniform(0.0, 0.2, size=d).astype(np.float64)
             upper = (lower + rng.uniform(0.3, 0.8, size=d)).astype(np.float64)
             x = uniform_vector(np.zeros(d), np.ones(d), rng)
@@ -274,9 +255,9 @@ class TestBoundedSoftmaxFromUnit:
             if entropy(c_cold) > entropy(c_hot):
                 failures += 1
 
-        rate = failures / _ITERATIONS
+        rate = failures / SAMPLING_ITERATIONS
         assert rate <= 0.01, (
-            f'Entropy ordering violated too often: {failures}/{_ITERATIONS} '
+            f'Entropy ordering violated too often: {failures}/{SAMPLING_ITERATIONS} '
             f'trials ({rate:.2%}) > 1% threshold'
         )
 
