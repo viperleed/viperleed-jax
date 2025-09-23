@@ -338,28 +338,3 @@ class OccTree(DisplacementTree):
     @property
     def ref_calc_values(self):
         return self._ref_occupations
-
-
-# def _fixed_occ_constraint_linear_map(n_children, total_occ):
-#     """Create a linear map for the fixed occupation constraint."""
-#     if n_children < 2:
-#         raise ValueError(
-#             'At least two children are required for a total occupation constraint.'
-#         )
-
-#     if total_occ < 0 or total_occ > 1:
-#         raise ValueError('Total occupation must be between 0 and 1.')
-
-#     transformers = []
-#     for i in range(n_children - 1):
-#         arr = np.zeros([1, n_children - 1])
-#         arr[0, i] = 1.0 / total_occ
-#         bias = np.zeros([1])
-#         transformers.append(AffineTransformer(arr, bias))
-#     # The last child is minus the sum of the others
-
-#     arr = -np.ones([1, n_children - 1]) / (n_children - 1) / total_occ
-#     bias = np.array([total_occ])
-#     transformers.append(AffineTransformer(arr, bias))
-
-#     return transformers
