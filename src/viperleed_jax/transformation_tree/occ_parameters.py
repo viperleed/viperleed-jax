@@ -125,9 +125,11 @@ class OccTotalOccupationConstraint(OccConstraintNode):
 
         dof = n_children - 1
 
-        # Vectorized transformer build
-        scale = 1.0 / total_occupation
-        base_weights = np.eye(dof) * scale
+        # Build the transformer matrices
+        # Each of the first n-1 children gets one parameter directly
+        # The last child gets the negative sum of all previous parameters
+        # such that rho_n = 1 - sum_{i=1}^{n-1} rho_i
+        base_weights = np.eye(dof)
         base_biases = np.zeros(dof)
         transformers = [
             AffineTransformer(
@@ -136,8 +138,8 @@ class OccTotalOccupationConstraint(OccConstraintNode):
             for i in range(dof)
         ]
 
-        last_weights = -np.ones((1, dof)) / dof * scale
-        last_bias = np.array([total_occupation])
+        last_weights = -np.ones((1, dof)) / dof
+        last_bias = np.array([1.0])
         transformers.append(AffineTransformer(last_weights, last_bias))
 
         super().__init__(
@@ -299,7 +301,7 @@ class OccTree(DisplacementTree):
             # create the total-occupation constraint node for the primary root
             linked_constraint_node = OccTotalOccupationConstraint(
                 children=shared_occ_roots,
-                total_occupation=total_occupation,
+                total_occupation=total_occupation,  # store total occupation
                 name=constraint_line.raw_line,
             )
 
