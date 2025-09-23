@@ -217,11 +217,6 @@ class OccTree(DisplacementTree):
                     ]
                 ]
             ).T
-            # primary_leaf.occ_range = (
-            #     element_ranges[primary_leaf.element].start,
-            #     element_ranges[primary_leaf.element].stop,
-            # )
-            # dummy_occ_range = np.array([[0.0, 1.0]]).T
 
             leaf_range_zonotope = Zonotope(
                 basis=np.array([[1.0]]),  # 1D zonotope
