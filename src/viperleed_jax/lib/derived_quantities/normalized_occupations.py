@@ -42,7 +42,7 @@ class NormalizedOccupations(DerivedQuantitySingleTree):
             atom_indices = np.where(np.array(self.atom_ids) == i)[0]
             sum_group_min_occs.append(np.sum(self.lows[atom_indices]))
             sum_group_max_occs.append(np.sum(self.highs[atom_indices]))
-        max_vacancies = jnp.clip(1 - jnp.array(sum_group_min_occs), max=1.0)
+        max_vacancies = 1 - jnp.array(sum_group_min_occs)
         min_vacancies = jnp.clip(1 - jnp.array(sum_group_max_occs), min=0.0)
         for i, leaf in enumerate(self.tree.leaves):
             for ancestor in leaf.ancestors:
