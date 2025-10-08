@@ -217,6 +217,18 @@ class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
             options=self.options,
         )
         wrapped = GradOptimizerResult(result, opt_history)
+
+        if result.message == 'Inequality constraints incompatible':
+            msg = (
+                'SciPy optimization failed reporting incompatible inequality '
+                'constraints. This is misleading, as the optimizer in '
+                'viperleed_jax is not using any such constraints. Rather, this '
+                'is usually caused by the objective function (the R factor) or '
+                'its gradient returning NaN or Inf values. Check the '
+                'history of the optimization (result.history).'
+            )
+            logger.error(msg)
+
         logger.info(self._end_message(wrapped))
         return wrapped
 
