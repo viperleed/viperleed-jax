@@ -102,6 +102,7 @@ class GradOptimizerResult(OptimizationResult):
         self.iterations = scipy_result.nit
         self.message = scipy_result.message
         self.history = history
+        self.scipy_result = scipy_result
 
     @property
     def best_R(self):
