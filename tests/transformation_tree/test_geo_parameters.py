@@ -166,7 +166,8 @@ class TestFe2O3:
     ):
         """Test applying a single GeoDelta."""
         geo_delta_line = GeoDeltaLine(bounds_line)
-        fe2o3_tree.apply_bounds(geo_delta_line)
+        fe2o3_tree.apply_bounds_line(geo_delta_line)
+        fe2o3_tree.apply_bounds()
         assert bounds_line in str(fe2o3_tree)
 
         # apply implicit constraints

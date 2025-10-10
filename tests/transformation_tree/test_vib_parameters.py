@@ -172,7 +172,8 @@ class TestFe2O3:
     ):
         """Test applying a single VIB_DELTA line."""
         vib_delta_line = VibDeltaLine(bounds_line)
-        fe2o3_tree.apply_bounds(vib_delta_line)
+        fe2o3_tree.apply_bounds_line(vib_delta_line)
+        fe2o3_tree.apply_bounds()
         assert bounds_line in str(fe2o3_tree)
 
         # apply implicit constraints
