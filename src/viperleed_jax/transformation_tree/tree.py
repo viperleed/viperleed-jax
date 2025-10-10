@@ -649,9 +649,9 @@ def _check_constraint_line_type(constraint_line, expected_perturbation_mode):
     if not isinstance(constraint_line, ConstraintLine):
         msg = 'Constraint must be a ConstraintLine.'
         raise TypeError(msg)
-    if constraint_line.mode.mode != expected_perturbation_mode:
+    if constraint_line.mode_token.mode != expected_perturbation_mode:
         msg = (
             f'Wrong constraint type for {expected_perturbation_mode} '
-            f'parameter: {constraint_line.mode}.'
+            f'parameter: {constraint_line.mode_token}.'
         )
         raise ValueError(msg)
