@@ -5,6 +5,9 @@ from viperleed_jax.transformation_tree.linear_transformer import (
     AffineTransformer,
 )
 
+class ZonotopeNotOrthogonalError(ValueError):
+    """Raised when two Zonotopes are not orthogonal and cannot be added."""
+
 
 def apply_affine_to_subspace(
     basis_vectors: np.ndarray,
