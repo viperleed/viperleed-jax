@@ -162,9 +162,9 @@ class TestFe2O3:
     @pytest.mark.parametrize(
         'bounds_line,implicit_dof',
         [
-            ('Fe_surf = -0.1 0.1', 1),
+            ('Fe_surf = -0.05 0.1', 1),
             ('O_surf = 0.1 -0.1', 1),
-            ('Fe L(1-2) = -0.1 0.2', 4),  # 4 indep. atoms, 1 dof each
+            ('Fe L(1-2) = -0.05 0.2', 4),  # 4 indep. atoms, 1 dof each
         ],
     )
     def test_apply_single_vib_delta(
