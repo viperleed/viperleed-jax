@@ -162,8 +162,52 @@ class Zonotope:
         self.ranges = ranges_arr[:, non_zero_range_mask]
         self.offset = offset
 
+    @property
+    def dim(self) -> int:
+        return self.basis.shape[0]
+
+    @property
+    def order(self) -> int:
+        return self.basis.shape[1]
+
+    def add_orthogonal_same_center(self, other: 'Zonotope'):
+        """Add orhogonal zonotope with same center.
+
+        Return self ⊕ other, but only if:
+        (i) offsets (centers) match within `tol`, and
+        (ii) span(self.basis) ⟂ span(other.basis) within `tol`.
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a Zonotope.
+        ValueError
+            If dimensions differ, centers differ, or subspaces are not orthogonal.
+        """
+        if not isinstance(other, Zonotope):
+            raise TypeError('other must be a Zonotope')
+        if self.dim != other.dim:
+            raise ValueError(f'dimension mismatch: {self.dim} vs {other.dim}')
+
+        if not np.allclose(self.offset, other.offset, atol=EPS, rtol=0.0):
+            raise ValueError('centers (offsets) differ beyond tolerance')
+
+        if not self.is_orthogonal_to(other):
+            raise ZonotopeNotOrthogonalError(
+                'subspaces are not orthogonal within tolerance'
+            )
+
+        # Concatenate generators; stack ranges; center stays the same
+        if self.order or other.order:
+            B = np.hstack([self.basis, other.basis])
+            ranges = np.concatenate([self.ranges, other.ranges], axis=1)
+        else:
+            B = np.zeros((self.dim, 0))
+            ranges = np.zeros((2, 0))
+        return Zonotope(B, ranges, offset=self.offset.copy())
+
     def apply_affine(self, A: 'AffineTransformer') -> 'Zonotope':
-        """Returns a new Zonotope = A(Z), applying Z → { A(z) | z in Z }."""
+        """Return a new Zonotope = A(Z), applying Z → { A(z) | z in Z }."""
         Bm, new_ranges, b_new = apply_affine_to_subspace(
             self.basis, self.ranges, A
         )
@@ -183,10 +227,28 @@ class Zonotope:
             output_ranges=output_ranges,
         )
 
-    @property
-    def dim(self) -> int:
-        return self.basis.shape[0]
+    def is_orthogonal_to(self, other):
+        """
+        Return True if span(self.basis) ⟂ span(other.basis).
 
-    @property
-    def order(self) -> int:
-        return self.basis.shape[1]
+        Uses QR to get orthonormal bases Q1, Q2 and checks ||Q1ᵀ Q2||₂ ≤ tol,
+        i.e. all principal angles are ~90°.
+        """
+        if type(other) is not Zonotope:
+            raise TypeError('other must be a Zonotope')
+
+        B1 = self.basis
+        B2 = other.basis
+        if B1.size == 0 or B2.size == 0:
+            # Empty subspace is orthogonal to everything
+            return True
+
+        # Orthonormal bases for the column spaces
+        Q1, _ = np.linalg.qr(B1, mode='reduced')
+        Q2, _ = np.linalg.qr(B2, mode='reduced')
+
+        # Cross Gram; spectral norm equals max singular value = cos(min principal angle)
+        M = Q1.T @ Q2
+        # Use largest singular value (spectral norm)
+        smax = np.linalg.svd(M, compute_uv=False)[0]
+        return bool(smax <= EPS)

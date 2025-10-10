@@ -192,51 +192,28 @@ class OccTree(DisplacementTree):
             perturbation_type='occ',
         )
 
-    def apply_bounds(self, occ_delta_line):
-        super().apply_bounds(occ_delta_line)
-
-        # resolve targets
-        _, target_roots_and_primary_leaves = self._get_leaves_and_roots(
-            occ_delta_line.targets
-        )
+    def _zonotope_from_bounds_line(self, occ_delta_line, primary_leaf):
         # extract element ranges from the delta line
         element_ranges = {
             elem_token.symbol: range_token
             for (elem_token, range_token) in occ_delta_line.element_ranges
         }
-
-        for root, primary_leaf in target_roots_and_primary_leaves.items():
-            # Leaf nodes represent the occupation with a single element,
-            # so we can use 1D zonotopes
-
-            occ_range = np.array(
+        # Leaf nodes represent the occupation with a single element,
+        # so we can use 1D zonotopes
+        occ_range = np.array(
+            [
                 [
-                    [
-                        element_ranges[primary_leaf.element].start,
-                        element_ranges[primary_leaf.element].stop,
-                    ]
+                    element_ranges[primary_leaf.element].start,
+                    element_ranges[primary_leaf.element].stop,
                 ]
-            ).T
+            ]
+        ).T
 
-            leaf_range_zonotope = Zonotope(
-                basis=np.array([[1.0]]),  # 1D zonotope
-                ranges=occ_range,
-                offset=None,
-            )
-
-            root_to_leaf_transformer = root.transformer_to_descendent(
-                primary_leaf
-            )
-            leaf_to_root_transformer = root_to_leaf_transformer.pseudo_inverse()
-            root_range_zonotope = leaf_range_zonotope.apply_affine(
-                leaf_to_root_transformer
-            )
-            implicit_constraint_node = ImplicitLinearConstraintNode(
-                child=root,
-                name=occ_delta_line.raw_line,
-                child_zonotope=root_range_zonotope,
-            )
-            self.nodes.append(implicit_constraint_node)
+        return Zonotope(
+            basis=np.array([[1.0]]),  # 1D zonotope
+            ranges=occ_range,
+            offset=None,
+        )
 
     def apply_explicit_constraint(self, constraint_line):
         """Apply an explicit constraint to the occupational parameters.

@@ -127,13 +127,16 @@ class ParameterSpace:
         """Parse bounds from the DISPLACEMENTS file."""
         # Geometric bounds
         for line in search_block.geo_delta_lines:
-            self.geo_tree.apply_bounds(line)
+            self.geo_tree.apply_bounds_line(line)
+        self.geo_tree.apply_bounds()
         # Vibration bounds
         for line in search_block.vib_delta_lines:
-            self.vib_tree.apply_bounds(line)
+            self.vib_tree.apply_bounds_line(line)
+        self.vib_tree.apply_bounds()
         # Occupation bounds
         for line in search_block.occ_delta_lines:
-            self.occ_tree.apply_bounds(line)
+            self.occ_tree.apply_bounds_line(line)
+        self.occ_tree.apply_bounds()
 
     def _parse_constraints(self, search_block):
         """Parse constraints from the DISPLACEMENTS file."""

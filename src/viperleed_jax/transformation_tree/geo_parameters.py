@@ -216,14 +216,7 @@ class GeoTree(DisplacementTree):
         for node in unlinked_site_el_nodes:
             self.nodes.append(GeoSymmetryConstraint(children=[node]))
 
-    def apply_bounds(self, geo_delta_line):
-        super().apply_bounds(geo_delta_line)
-
-        # resolve targets
-        _, target_roots_and_primary_leaves = self._get_leaves_and_roots(
-            geo_delta_line.targets
-        )
-
+    def _zonotope_from_bounds_line(self, geo_delta_line, primary_leaf):
         # get vector and range information from the GEO_DELTA line
         n_vectors = len(geo_delta_line.direction.vectors_zxy)
 
@@ -233,27 +226,11 @@ class GeoTree(DisplacementTree):
                 np.full(n_vectors, geo_delta_line.range.stop),
             ]
         )
-
-        leaf_range_zonotope = Zonotope(
+        return Zonotope(
             basis=geo_delta_line.direction.vectors_zxy,
             ranges=ranges,
             offset=None,
         )
-
-        for root, primary_leaf in target_roots_and_primary_leaves.items():
-            root_to_leaf_transformer = root.transformer_to_descendent(
-                primary_leaf
-            )
-            leaf_to_root_transformer = root_to_leaf_transformer.pseudo_inverse()
-            root_range_zonotope = leaf_range_zonotope.apply_affine(
-                leaf_to_root_transformer
-            )
-            implicit_constraint_node = ImplicitLinearConstraintNode(
-                child=root,
-                name=geo_delta_line.raw_line,
-                child_zonotope=root_range_zonotope,
-            )
-            self.nodes.append(implicit_constraint_node)
 
     def _post_process_values(self, raw_values):
         # reshape to (n_atoms, 3)

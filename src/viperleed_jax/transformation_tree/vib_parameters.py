@@ -95,47 +95,26 @@ class VibTree(DisplacementTree):
         """Return the reference vibrational amplitudes for all leaves."""
         return np.array([leaf.ref_vib_amp for leaf in self.leaves])
 
-    def apply_bounds(self, vib_delta_line):
-        super().apply_bounds(vib_delta_line)
-
-        # resolve targets
-        _, target_roots_and_primary_leaves = self._get_leaves_and_roots(
-            vib_delta_line.targets
-        )
-
+    def _zonotope_from_bounds_line(self, vib_delta_line, primary_leaf):
         vib_range = np.array(
             [[vib_delta_line.range.start, vib_delta_line.range.stop]]
         ).T
 
-        leaf_range_zonotope = Zonotope(
+        # check if the range would go below zero amplitude
+        primary_leaf_ref_vib_amp = primary_leaf.ref_vib_amp
+        if any(primary_leaf_ref_vib_amp + vib_range < 0):
+            msg = (
+                f'Vibrational range {vib_delta_line} would lead to '
+                'below zero amplitude. Please adjust the range.'
+            )
+            logger.error(msg)
+            raise ValueError(msg)
+
+        return Zonotope(
             basis=np.array([[1.0]]),  # 1D zonotope
             ranges=vib_range,
             offset=None,
         )
-
-        for root, primary_leaf in target_roots_and_primary_leaves.items():
-            root_to_leaf_transformer = root.transformer_to_descendent(
-                primary_leaf
-            )
-            # check if the range would go below zero amplitude
-            primary_leaf_ref_vib_amp = primary_leaf.ref_vib_amp
-            if any(primary_leaf_ref_vib_amp + vib_range < 0):
-                msg = (
-                    f'Vibrational range {vib_delta_line} would lead to '
-                    'below zero amplitude. Please adjust the range.'
-                )
-                logger.error(msg)
-                raise ValueError(msg)
-            leaf_to_root_transformer = root_to_leaf_transformer.pseudo_inverse()
-            root_range_zonotope = leaf_range_zonotope.apply_affine(
-                leaf_to_root_transformer
-            )
-            implicit_constraint_node = ImplicitLinearConstraintNode(
-                child=root,
-                name=vib_delta_line.raw_line,
-                child_zonotope=root_range_zonotope,
-            )
-            self.nodes.append(implicit_constraint_node)
 
     def _post_process_values(self, raw_values):
         # add reference calculation vibrational amplitudes to raw values

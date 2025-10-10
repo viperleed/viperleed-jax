@@ -27,7 +27,7 @@ from viperleed_jax.transformation_tree.nodes import (
 )
 
 from .linear_transformer import AffineTransformer, LinearMap, stack_transformers
-from .reduced_space import Zonotope
+from .reduced_space import Zonotope, ZonotopeNotOrthogonalError
 
 # Enable checks for the anytree library; we don't deal with huge trees so this
 # should not be a performance issue.
@@ -45,6 +45,35 @@ class ConstructionOrder(IntEnum):
     BOUNDS = 3
     IMPLICIT_CONSTRAINT = 4
     ROOT = 5
+
+
+class ZonotopeAccumulator:
+    def __init__(self):
+        self._accumulated = {}
+
+    def add(self, key, zonotope, name):
+        if key not in self._accumulated:
+            self._accumulated[key] = (zonotope, name)
+            return
+        # otherwise add the zonotopes and names
+        existing_zonotope, existing_name = self._accumulated[key]
+        try:
+            combined_zonotope = existing_zonotope.add_orthogonal_same_center(
+                zonotope
+            )
+        except ZonotopeNotOrthogonalError as e:
+            msg = (
+                f'Cannot combine range zonotope from "{name}" with existing '
+                f'zonotope from "{existing_name}": {e}. Ensure that the '
+                'specified ranges are orthogonal to each other.'
+            )
+            raise ValueError(msg) from e
+        combined_name = f'{existing_name}; {name}'
+        self._accumulated[key] = (combined_zonotope, combined_name)
+
+    def __iter__(self):
+        """Iterate over the accumulated zonotopes."""
+        return iter(self._accumulated.items())
 
 
 class TransformationTree(ABC):
@@ -251,6 +280,8 @@ class DisplacementTree(LinearTree):
 
         self._offsets_have_been_added = False
         self.perturbation_mode = PerturbationMode(perturbation_type)
+
+        self._zonotope_accumulator = ZonotopeAccumulator()
         super().__init__(name, root_node_name)
 
     @property
@@ -526,26 +557,58 @@ class DisplacementTree(LinearTree):
         self.nodes.append(constraint_node)
 
     @abstractmethod
-    def apply_bounds(self, bounds_line):
-        """Apply bounds to the children of the node."""
-        super().apply_bounds()
+    def _zonotope_from_bounds_line(self, bounds_line, primary_leaf):
+        """Create a zonotope for the leaf node from a bounds line."""
 
-        # check for conflicts
+    def apply_bounds_line(self, bounds_line):
         # resolve targets
         _, target_roots_and_primary_leaves = self._get_leaves_and_roots(
             bounds_line.targets
         )
-        for root in target_roots_and_primary_leaves:
+
+        for root, primary_leaf in target_roots_and_primary_leaves.items():
+            leaf_zonotope = self._zonotope_from_bounds_line(
+                bounds_line, primary_leaf
+            )
+            # get the transformation from the primary leaf to the root
+            root_to_leaf_transformer = root.transformer_to_descendent(
+                primary_leaf
+            )
+            leaf_to_root_transformer = root_to_leaf_transformer.pseudo_inverse()
+            root_range_zonotope = leaf_zonotope.apply_affine(
+                leaf_to_root_transformer
+            )
+            self._zonotope_accumulator.add(
+                key=root,
+                zonotope=root_range_zonotope,
+                name=bounds_line.raw_line,
+            )
+
+    def apply_bounds(self):
+        """Apply bounds to the children of the node."""
+        super().apply_bounds()
+
+        # apply the accumulated zonotopes
+        for root, (zonotope, name) in self._zonotope_accumulator:
+            # double check that no implicit constraint exists yet
             root_and_ancestors = [root, *root.ancestors]
             for ancestor in root_and_ancestors:
                 if isinstance(ancestor, ImplicitLinearConstraintNode):
                     msg = (
-                        f'{bounds_line.block_name} implicit constraint/'
-                        f'boundary "{bounds_line.raw_line}" is in conflict '
-                        f'with "{ancestor.name}". Only one displacement range '
+                        f'{self.perturbation_mode} implicit constraint/'
+                        f'boundary "{name}" is in conflict with '
+                        f'"{ancestor.name}". Only one displacement range '
                         'may be defined per set of linked parameters.'
                     )
                     raise TypeError(msg)
+
+            # from the zonotope, create and apply an implicit constraint node
+            implicit_constraint_node = ImplicitLinearConstraintNode(
+                child=root,
+                name=name,
+                child_zonotope=zonotope,
+            )
+            self.nodes.append(implicit_constraint_node)
 
     @abstractmethod
     def is_centered(self):
