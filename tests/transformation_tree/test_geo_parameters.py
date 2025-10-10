@@ -176,6 +176,63 @@ class TestFe2O3:
             # finalize the tree to apply the bounds
             assert sum(root.dof for root in fe2o3_tree.roots) == implicit_dof
 
+    @pytest.mark.parametrize(
+        'bounds_lines,implicit_dof',
+        [
+            (
+                [
+                    'Fe_surf x = -0.1 0.1',
+                    'Fe_surf y = -0.2 0.2',
+                ],
+                2,
+            ),
+            (
+                [
+                    'Fe_surf xy = -0.5 0.5',
+                    'Fe_surf z = -0.1 0.1',
+                ],
+                3,
+            ),
+        ],
+    )
+    def test_apply_multiple_geo_delta(
+        self, fe2o3_tree, bounds_lines, implicit_dof, subtests
+    ):
+        """Test applying multiple compatible lines of geo bounds."""
+        for line in bounds_lines:
+            geo_delta_line = GeoDeltaLine(line)
+            fe2o3_tree.apply_bounds_line(geo_delta_line)
+        fe2o3_tree.apply_bounds()
+        for line in bounds_lines:
+            assert line in str(fe2o3_tree)
+
+        # apply implicit constraints
+        fe2o3_tree.apply_implicit_constraints()
+        with subtests.test('check dof'):
+            # finalize the tree to apply the bounds
+            assert sum(root.dof for root in fe2o3_tree.roots) == implicit_dof
+
+    @pytest.mark.parametrize(
+        'bounds_lines',
+        [
+            (
+                'Fe_surf xy[1 1] = -0.1 0.1',
+                'Fe_surf y = -0.2 0.2',
+            ),
+            (
+                'Fe_surf xy = -0.5 0.5',
+                'Fe_surf x = -0.1 0.1',
+            ),
+        ],
+    )
+    def test_non_orthogonal_geo_delta(self, fe2o3_tree, bounds_lines):
+        """Test applying multiple compatible lines of geo bounds."""
+        line_1, line_2 = bounds_lines
+        # apply first
+        fe2o3_tree.apply_bounds_line(GeoDeltaLine(line_1))
+        with pytest.raises(ValueError, match='Cannot combine range zonotope'):
+            fe2o3_tree.apply_bounds_line(GeoDeltaLine(line_2))
+
 
 def test_reflection_preserves_ranges():
     # 1) Set up a 3×3 basis = identity
