@@ -28,7 +28,7 @@ from viperleed_jax.dense_quantum_numbers import DENSE_L, DENSE_M, MAXIMUM_LMAX
 EPS = 1e-8
 
 
-def _divide_zero_safe(
+def divide_zero_safe(
     numerator: jnp.ndarray,
     denominator: jnp.ndarray,
     limit_value: float = 0.0,
@@ -120,7 +120,7 @@ def cart_to_polar(c):
     x_y_norm = jnp.hypot(x, y)
     r = jnp.linalg.norm(c)
     theta = 2 * jnp.arctan(
-        _divide_zero_safe(
+        divide_zero_safe(
             x_y_norm,
             (jnp.hypot(x_y_norm, z) + z),
             (1 / EPS) * (1 - jnp.sign(z)),
@@ -131,7 +131,7 @@ def cart_to_polar(c):
     # phi = 2*jnp.arctan(
     #     _divide_zero_safe(y, (x_y_norm+x)+EPS, 0.0)
     # )
-    phi = jnp.sign(y) * jnp.arccos(_divide_zero_safe(x, (x_y_norm) + EPS, 0.0))
+    phi = jnp.sign(y) * jnp.arccos(divide_zero_safe(x, (x_y_norm) + EPS, 0.0))
     phi = jnp.where(y != 0.0, phi, jnp.heaviside(-x, 0) * jnp.pi)
 
     return r, theta, phi
@@ -150,7 +150,7 @@ def cart_to_polar_2(c):
     x_y_norm = jnp.hypot(x, y)
     r = jnp.linalg.norm(c)
     theta = 2 * jnp.arctan(
-        _divide_zero_safe(
+        divide_zero_safe(
             x_y_norm,
             (jnp.hypot(x_y_norm, z) + z),
             (1 / EPS) * (1 - jnp.sign(z)),
@@ -161,7 +161,7 @@ def cart_to_polar_2(c):
     # phi = 2*jnp.arctan(
     #     _divide_zero_safe(y, (x_y_norm+x)+EPS, 0.0)
     # )
-    phi = jnp.sign(y) * jnp.arccos(_divide_zero_safe(x, (x_y_norm) + EPS, 0.0))
+    phi = jnp.sign(y) * jnp.arccos(divide_zero_safe(x, (x_y_norm) + EPS, 0.0))
     phi = jnp.where(y != 0.0, phi, jnp.heaviside(-x, 0) * jnp.pi)
 
     return r, theta, phi

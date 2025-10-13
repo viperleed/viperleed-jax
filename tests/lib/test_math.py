@@ -9,7 +9,7 @@ from scipy.special import sph_harm, spherical_jn
 from viperleed_jax.dense_quantum_numbers import DENSE_L, DENSE_M
 from viperleed_jax.lib.math import (
     EPS,
-    _divide_zero_safe,
+    divide_zero_safe,
     apply_fun_grouped,
     bessel,
     cart_to_polar,
@@ -31,7 +31,7 @@ class TestDivideZeroSafe:
     def test_basic_division(self):
         numerator = jnp.array([1.0, 2.0, 3.0])
         denominator = jnp.array([2.0, 1.0, 0.0])
-        result = _divide_zero_safe(numerator, denominator)
+        result = divide_zero_safe(numerator, denominator)
         expected_result = jnp.array([0.5, 2.0, 0.0])
         jnp.allclose(result, expected_result)
 
@@ -39,7 +39,7 @@ class TestDivideZeroSafe:
     def test_custom_limit_value(self):
         numerator = jnp.array([1.0, 2.0, 3.0])
         denominator = jnp.array([2.0, 1.0, 0.0])
-        result = _divide_zero_safe(numerator, denominator, limit_value=999.0)
+        result = divide_zero_safe(numerator, denominator, limit_value=999.0)
         expected_result = jnp.array([0.5, 2.0, 999.0])
         jnp.allclose(result, expected_result)
 
@@ -47,7 +47,7 @@ class TestDivideZeroSafe:
     def test_zero_division(self):
         numerator = jnp.array([1.0, 2.0, 3.0])
         denominator = jnp.array([0.0, 0.0, 0.0])
-        result = _divide_zero_safe(numerator, denominator)
+        result = divide_zero_safe(numerator, denominator)
         expected_result = jnp.array([0.0, 0.0, 0.0])
         jnp.allclose(result, expected_result)
 
@@ -55,7 +55,7 @@ class TestDivideZeroSafe:
     def test_zero_division_with_custom_limit_value(self):
         numerator = jnp.array([1.0, 2.0, 3.0])
         denominator = jnp.array([0.0, 0.0, 0.0])
-        result = _divide_zero_safe(numerator, denominator, limit_value=-999.0)
+        result = divide_zero_safe(numerator, denominator, limit_value=-999.0)
         expected_result = jnp.array([-999.0, -999.0, -999.0])
         jnp.allclose(result, expected_result)
 
@@ -63,7 +63,7 @@ class TestDivideZeroSafe:
     def test_non_zero_division(self):
         numerator = jnp.array([1.0, 2.0, 3.0])
         denominator = jnp.array([2.0, 4.0, 5.0])
-        result = _divide_zero_safe(numerator, denominator)
+        result = divide_zero_safe(numerator, denominator)
         expected_result = jnp.array([0.5, 0.5, 0.6])
         jnp.allclose(result, expected_result)
 
@@ -71,7 +71,7 @@ class TestDivideZeroSafe:
     def test_non_zero_division_with_custom_limit_value(self):
         numerator = jnp.array([1.0, 2.0, 3.0])
         denominator = jnp.array([2.0, 4.0, 5.0])
-        result = _divide_zero_safe(numerator, denominator, limit_value=-999.0)
+        result = divide_zero_safe(numerator, denominator, limit_value=-999.0)
         expected_result = jnp.array([0.5, 0.5, 0.6])
         jnp.allclose(result, expected_result)
 
