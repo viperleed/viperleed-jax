@@ -11,6 +11,7 @@ from viperleed_jax.lib.bounded_simplex import bounded_softmax_from_unit
 from viperleed_jax.lib.math import (
     EPS,
     apply_fun_grouped,
+    divide_zero_safe,
 )
 from viperleed_jax.transformation_tree.derived_quantities import (
     DerivedQuantitySingleTree,
@@ -68,8 +69,10 @@ class NormalizedOccupations(DerivedQuantitySingleTree):
         """Calculate normalized occupations."""
         non_normalized_occupations = self.tree(params)
         # scale back to [0, 1] from [lows, highs]
-        scaled_occupations = (non_normalized_occupations - self.lows) / (
-            self.highs - self.lows
+        scaled_occupations = divide_zero_safe(
+            numerator=non_normalized_occupations - self.lows,
+            denominator=self.highs - self.lows,
+            limit_value=0.5,
         )
         scaled_occupations = jnp.where(self.fixed, 0.5, scaled_occupations)
 
