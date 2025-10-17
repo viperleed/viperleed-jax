@@ -113,14 +113,14 @@ class ParameterSpace:
         offsets_block
         """
         for line in offsets_block.lines:
-            if line.mode.mode == 'geo':
+            if line.mode_token.mode == 'geo':
                 self.geo_tree.apply_offsets(line)
-            elif line.mode.mode == 'vib':
+            elif line.mode_token.mode == 'vib':
                 self.vib_tree.apply_offsets(line)
-            elif line.mode.mode == 'occ':
+            elif line.mode_token.mode == 'occ':
                 self.occ_tree.apply_offsets(line)
             else:
-                msg = f'Unknown offset mode: {line.mode.mode}'
+                msg = f'Unknown offset mode: {line.mode_token.mode}'
                 raise ValueError(msg)
 
     def _parse_bounds(self, search_block):
@@ -141,13 +141,13 @@ class ParameterSpace:
     def _parse_constraints(self, search_block):
         """Parse constraints from the DISPLACEMENTS file."""
         for constraint_line in search_block.explicit_constraint_lines:
-            if constraint_line.mode.mode is PerturbationMode.GEO:
+            if constraint_line.mode_token.mode is PerturbationMode.GEO:
                 self.geo_tree.apply_explicit_constraint(constraint_line)
-            elif constraint_line.mode.mode is PerturbationMode.VIB:
+            elif constraint_line.mode_token.mode is PerturbationMode.VIB:
                 self.vib_tree.apply_explicit_constraint(constraint_line)
-            elif constraint_line.mode.mode is PerturbationMode.OCC:
+            elif constraint_line.mode_token.mode is PerturbationMode.OCC:
                 self.occ_tree.apply_explicit_constraint(constraint_line)
-            elif constraint_line.mode.mode is PerturbationMode.DOM:
+            elif constraint_line.mode_token.mode is PerturbationMode.DOM:
                 raise NotImplementedError(
                     'Domain constraints are not supported yet.'
                 )
