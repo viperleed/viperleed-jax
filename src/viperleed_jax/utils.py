@@ -3,6 +3,7 @@
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-02-27'
 
+import copy
 import csv
 import datetime
 import logging
@@ -12,6 +13,9 @@ from pathlib import Path
 import jax
 import numpy as np
 from jax import numpy as jnp
+from viperleed.calc.files import beams as iobeams
+from viperleed.calc.files.iorfactor import beamlist_to_array
+from viperleed.calc.lib import leedbase
 
 logger = logging.getLogger(__name__)
 
@@ -258,3 +262,30 @@ def estimate_function_cost(f, *args):
         f'Function Cost:\t{fun_cost} FLOPS\n'
         f'Jacfwd Cost:\t{jac_cost} FLOPS\n'
     )
+
+
+def load_experimental_data(rpars, slab, beam_path):
+    """Load experimental data from a CSV file for use with the calculator."""
+    # create copies to avoid modifying original objects
+    temp_slab = copy.deepcopy(slab)
+    temp_rpars = copy.deepcopy(rpars)
+    enrange = temp_rpars.THEO_ENERGIES.as_floats()[:2]
+
+    # read experimental beams
+    # readOUTBEAMS currently requires str path
+    beams = iobeams.readOUTBEAMS(str(beam_path), enrange=enrange)
+
+    # set beams to temporary rpars and get correspondence
+    temp_rpars.expbeams = beams
+    beam_correspondence = leedbase.getBeamCorrespondence(temp_slab, temp_rpars)
+
+    # transform beams to arrays
+    exp_energies, _, _, exp_intensities = beamlist_to_array(beams)
+    return exp_energies, exp_intensities, tuple(beam_correspondence)
+
+
+def apply_experimental_data_to_calculator(
+    calculator, exp_energies, exp_intensities, beam_corr
+):
+    calculator.beam_correspondence = beam_corr
+    calculator.set_experiment_intensity(exp_intensities, exp_energies)
