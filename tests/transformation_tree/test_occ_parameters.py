@@ -6,11 +6,9 @@ from viperleed.calc.files.new_displacements.lines import (
     OccDeltaLine,
     OffsetsLine,
 )
-from viperleed_jax.lib.derived_quantities.normalized_occupations import (
-    normalize_occ_vector,
-)
 
 from viperleed_jax.atom_basis import AtomBasis
+from viperleed_jax.lib.calculator import normalize_occ_vector
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
@@ -48,7 +46,8 @@ class TestPt25Rh75_O_3x1:
         line = ConstraintLine('occ Me* L(1-3) = linked')
         ptrh_tree.apply_explicit_constraint(line)
         bounds_line = OccDeltaLine('Me* L(1-3) = Rh 0.10 0.90, Pt 0.90 0.10')
-        ptrh_tree.apply_bounds(bounds_line)
+        ptrh_tree.apply_bounds_line(bounds_line)
+        ptrh_tree.apply_bounds()
         ptrh_tree.apply_implicit_constraints()
         ptrh_tree.finalize_tree()
 
