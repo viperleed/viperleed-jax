@@ -417,9 +417,11 @@ class CMAESOptimizer(NonGradOptimizer):
         n_generations: Maximum number of generations to be performed.
         step_size: The standard deviation in the initial step and a
             parameter for how much the algorithm should focus on exploring.
-            A step size of 0.5 is quite large, but showed the best results.
+            Default is 0.5.
         ftol: Convergence condition on the standard deviation of the minimum
-            function value of the last five generations.
+            function value of the last `convergence_gens` generations.
+        convergence_gens: Number of generations to consider for the ftol
+            convergence condition.
     """
 
     def __init__(
@@ -506,6 +508,7 @@ class CMAESOptimizer(NonGradOptimizer):
                 )
                 break
 
+        # Warn if parameters are close to bounds
         if (generation[fun_value.argmin()] < 0.1).any() or (
             generation[fun_value.argmin()] > 0.9
         ).any():
