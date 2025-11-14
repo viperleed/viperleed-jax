@@ -164,6 +164,9 @@ class OptimizerIterator:
             n_generations=self.rpars.vlj_algo_settings['CMAES']['max_gens'],
             pop_size=self.rpars.vlj_algo_settings['CMAES']['pop'],
             ftol=self.rpars.vlj_algo_settings['CMAES']['ftol'],
+            convergence_gens=self.rpars.vlj_algo_settings['CMAES'][
+                'convergence_gens'
+            ],
         )
 
     def _get_slsqp_optimizer(self):
