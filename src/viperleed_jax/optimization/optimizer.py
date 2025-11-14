@@ -325,8 +325,8 @@ class LBFGSBOptimizer(SciPyGradOptimizer):
         ftol: Convergence condition that sets a lower limit on the difference
             in function value between two iterations. A higher value has been
             shown to lead to a faster termination without significantly
-            changeing the R factor. It can even be set to 1e-6 for a faster
-            converence, but this slightly worsens the R factor.
+            changing the R factor. It can even be set to 1e-6 for a faster
+            convergence, but this slightly worsens the R factor.
         maxiter: Maximal number of iterations for the algorithm. Usually, the
             algorithm stops earlier due to convergence.
     """
@@ -403,7 +403,7 @@ class CMAESOptimizer(NonGradOptimizer):
     """Class for setting up the CMA-ES optimizer for global exploration.
 
     In each evolution, a number of individuals are drawn from a distribution,
-    and the distribution is updated based on the fanction values of the
+    and the distribution is updated based on the function values of the
     individuals. For the normalized vector, a step size of 0.5 showed very
     good results. A population size of 30 for 33 dimensions has proven
     successful. However, the population size should increase with the number
