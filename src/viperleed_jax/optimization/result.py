@@ -94,6 +94,10 @@ class CMAESResult(OptimizationResult):
             R_history=self.history.R_history,
             step_size_history=self.history.step_size_history,
             timestamp_history=self.history.timestamp_history,
+            v0r_offsets=self.history.v0r_offsets,
+            geo_displacements=self.history.geo_displacements,
+            vibration_amplitudes=self.history.vibration_amplitudes,
+            occupations=self.history.occupations,
         )
 
 
