@@ -517,12 +517,14 @@ class CMAESOptimizer(NonGradOptimizer):
                 # close and re-open tqdm.trange to not have it interfere with 
                 #  the logging
                 gen_range.close()
-                logger.info(
-                    f'Generation {g}: R_min = {fun_value.min()}, '
-                    f'R_std = {np.std(fun_value)}, '
-                    f'{self.convergence_gens}-gen R_min_std = '
-                    f'{np.std(loss_min)}'
+                info_msg = (
+                    f'Generation {g+1}: R_min = {fun_value.min():.4f}, '
+                    f'R_std = {np.std(fun_value):.4f}'
                     )
+                if g+1 >= self.convergence_gens:
+                    info_msg += (f', {self.convergence_gens}-gen R_min_std = '
+                                 f'{np.std(loss_min):.4f}')
+                logger.info(info_msg)
                 gen_range = tqdm.trange(self.n_generations, leave=is_converged,
                                         initial=g)
             gen_range.set_postfix({'R': f'{min_R_convergence_gens:.4f}'})
