@@ -444,6 +444,7 @@ class CMAESOptimizer(NonGradOptimizer):
         self.n_generations = n_generations
         self.ftol = ftol
         self.convergence_gens = convergence_gens
+        self.log_level = log_level
         super().__init__(fun=fun, name='CMA-ES')
 
     def __call__(self, start_point):
