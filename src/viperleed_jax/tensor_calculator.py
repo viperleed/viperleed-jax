@@ -96,6 +96,17 @@ class TensorLEEDCalculator:
         self.bc_type = bc_type
         self.use_symmetry = rparams.VLJ_CONFIG['use_symmetry']
 
+        # get beam correspondence
+        # note that beams with no experimental correspondence are assigned -1
+        # this is handled in average_beam_array()
+        # Note also that the first call of getBeamCorrespondence removes
+        # experimental beams that have no theoretical counterpart.
+        # It is therefore important that this is called before loading the
+        # experimental beams below.
+        beam_correspondence = leedbase.getBeamCorrespondence(slab, rparams)
+        self.beam_correspondence = tuple(beam_correspondence)
+        logger.debug(f'Beam correspondence: {self.beam_correspondence}')
+
         # get experimental intensities and hk
         if not rparams.expbeams:
             msg = (
@@ -174,13 +185,6 @@ class TensorLEEDCalculator:
 
         # calculate batching
         self.batching = Batching(self.energies, ref_calc_params.lmax)
-
-        # get beam correspondence
-        # note that beams with no experimental correspondence are assigned -1
-        # this is handled in average_beam_array()
-        beam_correspondence = leedbase.getBeamCorrespondence(slab, rparams)
-        self.beam_correspondence = tuple(beam_correspondence)
-        logger.debug(f'Beam correspondence: {self.beam_correspondence}')
 
         self.set_experiment_intensity(exp_intensities, exp_energies)
 
