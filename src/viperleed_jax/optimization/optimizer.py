@@ -522,7 +522,7 @@ class CMAESOptimizer(NonGradOptimizer):
                     f'{self.convergence_gens}-gen R_min_std = '
                     f'{np.std(loss_min)}'
                     )
-                gen_range = tqdm.trange(self.n_generations, leave=False,
+                gen_range = tqdm.trange(self.n_generations, leave=is_converged,
                                         initial=g)
             gen_range.set_postfix({'R': f'{min_R_convergence_gens:.4f}'})
             # break if converged
