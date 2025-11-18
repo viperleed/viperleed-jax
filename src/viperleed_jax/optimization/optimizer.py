@@ -502,7 +502,7 @@ class CMAESOptimizer(NonGradOptimizer):
                 step_size=state.step_size,
             )
             min_R_convergence_gens = np.min(opt_history.R_history[-1])
-            gen_range.set_postfix({'R': f'{min_R_convergence_gens:.4f}'})
+            
 
             # To update the AlgorithmState pass in the sorted generation
             state = update_state(state, generation[np.argsort(fun_value)])
@@ -524,6 +524,7 @@ class CMAESOptimizer(NonGradOptimizer):
                     )
                 gen_range = tqdm.trange(self.n_generations, leave=False,
                                         initial=g)
+            gen_range.set_postfix({'R': f'{min_R_convergence_gens:.4f}'})
             # break if converged
             if is_converged:
                 termination_message = (
