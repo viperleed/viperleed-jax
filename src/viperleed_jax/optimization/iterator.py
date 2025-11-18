@@ -167,6 +167,7 @@ class OptimizerIterator:
             convergence_gens=self.rpars.vlj_algo_settings['CMAES'][
                 'convergence_gens'
             ],
+            log_level=int(self.rpars.LOG_LEVEL),
         )
 
     def _get_slsqp_optimizer(self):

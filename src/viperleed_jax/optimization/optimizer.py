@@ -16,7 +16,9 @@ from clinamen2.cmaes.params_and_state import (
 )
 from clinamen2.utils.script_functions import cma_setup
 from scipy.optimize import minimize
+
 from viperleed.calc import LOGGER as logger
+from viperleed.calc.lib.time_utils import ExpiringTimer
 
 from .history import EvolutionOptimizationHistory, GradOptimizationHistory
 from .result import CMAESResult, GradOptimizerResult
@@ -422,6 +424,8 @@ class CMAESOptimizer(NonGradOptimizer):
             function value of the last `convergence_gens` generations.
         convergence_gens: Number of generations to consider for the ftol
             convergence condition.
+        log_level: Defines verbosity of the output. Passed through from
+            rp.LOG_LEVEL, but converted to int.
     """
 
     def __init__(
@@ -432,6 +436,7 @@ class CMAESOptimizer(NonGradOptimizer):
         step_size=0.5,
         ftol=5e-3,
         convergence_gens=5,
+        log_level=20,
     ):
         self.fun = fun
         self.step_size = step_size
@@ -484,7 +489,8 @@ class CMAESOptimizer(NonGradOptimizer):
         loss_min = np.full((self.convergence_gens,), fill_value=10.0)
         termination_message = 'Maximum number of generations reached'
         # Perform the optimization
-        gen_range = tqdm.trange(self.n_generations)
+        gen_range = tqdm.trange(self.n_generations, leave=False)
+        log_timer = ExpiringTimer(600)  # log at least once in 10 minutes
         for g in gen_range:
             # Perform one generation
             generation, state, fun_value = sample_and_evaluate(
@@ -500,9 +506,26 @@ class CMAESOptimizer(NonGradOptimizer):
 
             # To update the AlgorithmState pass in the sorted generation
             state = update_state(state, generation[np.argsort(fun_value)])
+            # check convergence
             i = g % self.convergence_gens
             loss_min[i] = fun_value.min()
-            if np.std(loss_min) < self.ftol:
+            is_converged = np.std(loss_min) < self.ftol
+            # log progress
+            if log_timer.has_expired() or self.log_level <= 10 or is_converged:
+                log_timer.restart()
+                # close and re-open tqdm.trange to not have it interfere with 
+                #  the logging
+                gen_range.close()
+                logger.info(
+                    f'Generation {g}: R_min = {fun_value.min()}, '
+                    f'R_std = {np.std(fun_value)}, '
+                    f'{self.convergence_gens}-gen R_min_std = '
+                    f'{np.std(loss_min)}'
+                    )
+                gen_range = tqdm.trange(self.n_generations, leave=False,
+                                        initial=g)
+            # break if converged
+            if is_converged:
                 termination_message = (
                     f'Evolution terminated early at generation {g}.'
                 )
