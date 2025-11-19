@@ -9,6 +9,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import numpy as np
+import interpax
 from interpax import CubicSpline
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.files.iorfactor import (
@@ -23,7 +24,7 @@ from viperleed_jax.constants import BOHR, HARTREE
 from viperleed_jax.dense_quantum_numbers import (
     vmapped_l_array_to_compressed_quantum_index,
 )
-from viperleed_jax.interpolation import interpolate_ragged_array
+from viperleed.calc.lib import spline_interpolation
 from viperleed_jax.lib import math
 from viperleed_jax.lib.calculator import map_indices
 from viperleed_jax.lib.derived_quantities.normalized_occupations import (
@@ -37,6 +38,16 @@ from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
 from viperleed_jax.lib.tensor_leed.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
 from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
+
+
+# swap out numpy for jax.numpy in interpolation and rfactor modules
+spline_interpolation.np = jnp
+rfactor.np = jnp
+
+# swap out scipy spline for interpax spline
+
+spline_interpolation.CubicSpline = partial(interpax.CubicSpline, check=False)
+spline_interpolation.PPoly = interpax.PPoly
 
 
 class TensorLEEDCalculator:
@@ -282,7 +293,7 @@ class TensorLEEDCalculator:
 
         self.comp_intensity = comp_intensity
         self.comp_energies = comp_energies
-        self.exp_spline = interpolate_ragged_array(
+        self.exp_spline = spline_interpolation.interpolate_ragged_array(
             self.comp_energies,
             self.comp_intensity,
             bc_type=self.bc_type,
