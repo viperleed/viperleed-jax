@@ -118,10 +118,8 @@ class TensorLEEDCalculator:
         exp_energies, _, _, exp_intensities = beamlist_to_array(
             rparams.expbeams
         )
-        exp_hk = [b.hk for b in rparams.expbeams]
 
         # beam indices
-        beam_indices = [beam.hk for beam in rparams.ivbeams]
         self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
         self.n_beams = self.beam_indices.shape[0]
 
