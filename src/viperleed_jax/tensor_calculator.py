@@ -17,14 +17,16 @@ from viperleed.calc.files.iorfactor import (
     prepare_rfactor_energy_ranges,
 )
 from viperleed.calc.lib import leedbase
+from viperleed.calc.lib import rfactor
+from viperleed.calc.lib import spline_interpolation
 
-from viperleed_jax import rfactor, utils
+
+from viperleed_jax import utils
 from viperleed_jax.batching import Batching
 from viperleed_jax.constants import BOHR, HARTREE
 from viperleed_jax.dense_quantum_numbers import (
     vmapped_l_array_to_compressed_quantum_index,
 )
-from viperleed.calc.lib import spline_interpolation
 from viperleed_jax.lib import math
 from viperleed_jax.lib.calculator import map_indices
 from viperleed_jax.lib.derived_quantities.normalized_occupations import (
@@ -37,7 +39,6 @@ from viperleed_jax.lib.derived_quantities.propagtor import Propagators
 from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
 from viperleed_jax.lib.tensor_leed.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
-from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
 
 
 # swap out numpy for jax.numpy in interpolation and rfactor modules
@@ -278,7 +279,7 @@ class TensorLEEDCalculator:
 
     def set_rfactor(self, rfactor_name):
         _rfactor_name = rfactor_name.lower().strip()
-        for func, synonyms in R_FACTOR_SYNONYMS.items():
+        for func, synonyms in rfactor.R_FACTOR_SYNONYMS.items():
             if _rfactor_name in synonyms:
                 self.rfactor_func = func
                 logger.info(f'R-factor set to {func.__name__}.')
