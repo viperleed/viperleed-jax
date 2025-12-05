@@ -9,15 +9,15 @@ from scipy.special import sph_harm, spherical_jn
 from viperleed_jax.dense_quantum_numbers import DENSE_L, DENSE_M
 from viperleed_jax.lib.math import (
     EPS,
-    divide_zero_safe,
     apply_fun_grouped,
     bessel,
     cart_to_polar,
+    divide_zero_safe,
+    mirror_across_plane_sum_1,
     project_onto_plane_sum_1,
     safe_norm,
     spherical_harmonics_components,
     spherical_to_cart,
-    mirror_across_plane_sum_1,
 )
 
 
