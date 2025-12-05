@@ -2,6 +2,9 @@
 
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-10-07'
+__copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
+__license__ = 'GPLv3+'
+
 
 import logging
 from abc import ABC, abstractmethod

@@ -2,6 +2,7 @@
 
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2025-06-10'
+__copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
 __license__ = 'GPLv3+'
 
 
