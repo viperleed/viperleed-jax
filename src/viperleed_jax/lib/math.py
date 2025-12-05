@@ -97,7 +97,7 @@ def spherical_harmonics_components(l_max, vector):
     l = DENSE_L[2 * l_max]
     m = DENSE_M[2 * l_max]
 
-    is_on_pole_axis = abs(theta) <= EPS
+    is_on_pole_axis = (abs(theta) <= EPS) | (abs(theta - jnp.pi) <= EPS)
     _theta = jnp.where(is_on_pole_axis, 0.1, theta)
 
     # values at the poles(theta = 0) depend on l and m only
