@@ -273,7 +273,7 @@ def mirror_across_plane_sum_1(vector):
 
 
 @partial(jax.jit, static_argnames=('index', 'func'))
-def apply_fun_grouped(in_vec, index, func, group_args):
+def apply_fun_grouped(in_vec, index, func, group_args=None):
     """Apply a function separately to groups determined by an index array.
 
     For each unique index value in `index`, this function collects all elements
@@ -292,11 +292,12 @@ def apply_fun_grouped(in_vec, index, func, group_args):
         additional group arguments, and returns a 1D array of the same length
         as the input group.
         Signature: `func(group_elements, group_arg1, group_arg2, ...)`
-    group_args : jax.Array or tuple[jax.Array]
-        Auxiliary arguments for `func`. Each array in `group_args` must be
-        1D with a length equal to the number of unique groups. The element at
-        position `i` in each array is passed as an argument to `func` when
-        processing the group identified by index `i`.
+    group_args : jax.Array or tuple[jax.Array], optional
+        Auxiliary arguments for `func`. Each array must be 1D with a length
+        equal to the number of unique groups. The element at position `i` in
+        each array is passed as an argument to `func` when processing the
+        group identified by index `i`. Defaults to **None**, in which case
+        `func` should only accept the group array.
 
     Returns
     -------
@@ -325,9 +326,12 @@ def apply_fun_grouped(in_vec, index, func, group_args):
     """
     unique_inds = np.unique(index)
 
-    if not isinstance(group_args, (tuple, list)):
+    # handle the default None case
+    if group_args is None:
+        group_args = ()
+    elif not isinstance(group_args, (tuple, list)):
         group_args = (group_args,)
-    group_args = tuple(group_args)
+    group_args = tuple(group_args)  # ensure it's a tuple for indexing
 
     # prepare output buffer
     out_vec = jnp.zeros(in_vec.shape[0])
