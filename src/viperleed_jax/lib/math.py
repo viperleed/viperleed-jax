@@ -283,12 +283,20 @@ def apply_fun_grouped(in_vec, index, func, group_args):
     Parameters
     ----------
     in_vec : jax.Array
-        Input vector of shape (n,).
-    index : tuple
-        Integer array of shape (n,) indicating group membership.
+        Input vector of shape (n,). The elements to be grouped and transformed.
+    index : jax.Array
+        Integer array of shape (n,) indicating group membership. Elements
+        with the same index value belong to the same group.
     func : callable
-        Function that takes a 1D array of arbitrary length and returns a 1D
-        array of the same length. Applied separately to each group.
+        Function that takes the group array as its first argument and any
+        additional group arguments, and returns a 1D array of the same length
+        as the input group.
+        Signature: `func(group_elements, group_arg1, group_arg2, ...)`
+    group_args : jax.Array or tuple[jax.Array]
+        Auxiliary arguments for `func`. Each array in `group_args` must be
+        1D with a length equal to the number of unique groups. The element at
+        position `i` in each array is passed as an argument to `func` when
+        processing the group identified by index `i`.
 
     Returns
     -------
@@ -306,10 +314,14 @@ def apply_fun_grouped(in_vec, index, func, group_args):
     >>> import jax.numpy as jnp
     >>> v = jnp.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
     >>> ind = jnp.array([0, 1, 0, 1, 2, 2])
-    >>> def double(x):
-    ...     return x * 2
-    >>> apply_fun_grouped(v, ind, double)
-    Array([ 2.,  4.,  6.,  8., 10., 12.], dtype=float32)
+    >>> # Define group-specific arguments: one for each unique group
+    >>> # index (0, 1, 2)
+    >>> factors = jnp.array([2.0, 3.0, 0.5])  # Factor for group 0, 1, and 2
+    >>> def scale(x, factor):
+    ...     return x * factor
+    >>> apply_fun_grouped(v, ind, scale, factors)
+    Array([ 2. ,  6. ,  6. , 12. ,  2.5,  3. ], dtype=float32)
+
     """
     unique_inds = np.unique(index)
 
@@ -323,6 +335,7 @@ def apply_fun_grouped(in_vec, index, func, group_args):
     for idx in unique_inds:
         mask = index == idx
         group = in_vec[mask]
+        # Pass the group-specific argument for the current index 'idx'
         transformed = func(group, *(arg[idx] for arg in group_args))
         # Store the mask and transformed group
         # put into the output vector
