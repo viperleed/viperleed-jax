@@ -92,6 +92,7 @@ def spherical_harmonics_components(l_max, vector):
     TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
     equivalent results.
     """
+    z, *_ = vector
     _, theta, phi = cart_to_polar(vector)
     l = DENSE_L[2 * l_max]
     m = DENSE_M[2 * l_max]
@@ -101,6 +102,7 @@ def spherical_harmonics_components(l_max, vector):
 
     # values at the poles(theta = 0) depend on l and m only
     pole_values = (m == 0) * jnp.sqrt((2 * l + 1) / (4 * jnp.pi))
+    pole_values = (z < 0) * ((-1) ** l) * pole_values + (z >= 0) * pole_values
     non_pole_values = sph_harm_y(
         l, m, jnp.asarray([_theta]), jnp.asarray([phi]), n_max=2 * l_max
     )
