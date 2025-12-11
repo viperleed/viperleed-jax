@@ -1,0 +1,9 @@
+== Search z
+    = GEO_DELTA
+        O_ads     xyz = -0.10 0.10 0.01
+        Ir_surf   xyz = -0.10 0.10 0.01
+        Ir L(2-5) xyz = -0.10 0.10 0.01
+
+    = VIB_DELTA
+        O_ads   = -0.10 0.10 0.01
+        Ir_surf = -0.03 0.03 0.01
