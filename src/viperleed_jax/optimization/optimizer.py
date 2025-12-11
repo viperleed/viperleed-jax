@@ -18,8 +18,7 @@ from clinamen2.utils.script_functions import cma_setup
 from scipy.optimize import minimize
 from viperleed.calc import LOGGER as logger
 
-from .history import EvolutionOptimizationHistory, GradOptimizationHistory
-from .result import CMAESResult, GradOptimizerResult
+from .history import OptimizationHistory
 
 
 class EarlyStopper:
@@ -255,24 +254,24 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
     def __call__(self, x0):
         self._set_cholesky_related(x0)
         logger.info(self._start_message())
-        opt_history = GradOptimizationHistory()
+        opt_history = OptimizationHistory(algorithm=self.method)
 
         def _fun(y):
             x = self.transform_x(y, x0)
             val = self.fun(x)
-            opt_history.append(x, R=val, grad_R=None)
+            opt_history.add_step(x, R=val, grad_R=None)
             return val
 
         def _grad(y):
             x = self.transform_x(y, x0)
             g = self.grad(x)
-            opt_history.append(x, R=None, grad_R=g / self.grad_damp_factor)
+            opt_history.add_step(x, R=None, grad_R=g / self.grad_damp_factor)
             return self.transform_grad(g)
 
         def _fun_and_grad(y):
             x = self.transform_x(y, x0)
             f, g = self.fun_and_grad(x)
-            opt_history.append(x, R=f, grad_R=g / self.grad_damp_factor)
+            opt_history.add_step(x, R=f, grad_R=g / self.grad_damp_factor)
             return f, self.transform_grad(g)
 
         # Transform initial guess
@@ -293,9 +292,13 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
             bounds=bounds if self.use_bounds else None,
             options=self.options,
         )
-        wrapped = GradOptimizerResult(result, opt_history)
-        logger.info(self._end_message(wrapped))
-        return wrapped
+        opt_history.mark_complete(
+            message=result.message,
+            nit=result.nit,
+            success=result.success,
+        )
+        logger.info(self._end_message(opt_history))
+        return opt_history
 
     def _start_message(self):
         """Return the start message for the optimizer."""
@@ -467,7 +470,7 @@ class CMAESOptimizer(NonGradOptimizer):
         logger.info(self._start_message())
 
         # Initialize history
-        opt_history = EvolutionOptimizationHistory()
+        opt_history = OptimizationHistory(algorithm='CMA-ES')
 
         # Set up functions for the algorithm
         parameters, initial_state = cma_setup(
@@ -490,10 +493,8 @@ class CMAESOptimizer(NonGradOptimizer):
             generation, state, fun_value = sample_and_evaluate(
                 state=state, n_samples=parameters.pop_size
             )
-            opt_history.append(
-                generation_x=generation,
-                generation_R=fun_value,
-                step_size=state.step_size,
+            opt_history.add_step(
+                x=generation, R=fun_value, step_size=state.step_size
             )
             min_R_convergence_gens = np.min(opt_history.R_history[-1])
             gen_range.set_postfix({'R': f'{min_R_convergence_gens:.4f}'})
@@ -515,15 +516,16 @@ class CMAESOptimizer(NonGradOptimizer):
             logger.warning('Parameter(s) close to the bounds!')
 
         # Create result object
-        result = CMAESResult(
-            evolution_history=opt_history,
+        opt_history.mark_complete(
             message=termination_message,
             cholesky=state.cholesky_factor,
             convergence_generations=self.convergence_gens,
+            generations_run=g + 1,
         )
+
         # print the minimum function value in the final generation
-        logger.info(self._end_message(result))
-        return result
+        logger.info(self._end_message(opt_history))
+        return opt_history
 
     def _start_message(self):
         """Return the start message for the optimizer."""
