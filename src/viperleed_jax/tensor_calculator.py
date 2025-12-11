@@ -44,8 +44,8 @@ from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
 
 
 # swap out numpy for jax.numpy in interpolation and rfactor modules
-spline_interpolation.np = jnp
-rfactor.np = jnp
+spline_interpolation.xp = jnp
+rfactor.xp = jnp
 
 # swap out scipy spline for interpax spline
 
