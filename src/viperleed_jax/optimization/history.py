@@ -74,8 +74,10 @@ class OptimizationHistory:
     @property
     def relative_times(self):
         return np.array(
-            timestamp - self._start_time
-            for timestamp in self._data['timestamps']
+            [
+                timestamp - self._start_time
+                for timestamp in self._data['timestamps']
+            ]
         )
 
     def __getattr__(self, name):
