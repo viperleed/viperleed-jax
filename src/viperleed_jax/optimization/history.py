@@ -84,6 +84,11 @@ class OptimizationHistory:
         return np.array(self._data['R'])
 
     @property
+    def R_running_min(self):
+        min_R_per_gen = np.nanmin(self.R_history, axis=1)
+        return np.fmin.accumulate(min_R_per_gen)
+
+    @property
     def relative_times(self):
         return np.array(
             [
