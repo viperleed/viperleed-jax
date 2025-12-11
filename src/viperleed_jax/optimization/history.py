@@ -27,18 +27,30 @@ class OptimizationHistory:
     def add_step(self, x, R, **kwargs):
         """
         Record a single step or generation of the optimization.
-        """
-        # SAFETY 1: Copy x to prevent reference issues if solver reuses memory
-        self._data['x'].append(np.array(x, copy=True))
 
-        # SAFETY 2: Ensure R is a float (NaN) if None is passed
-        # This guarantees R_history remains a float array, not object array
+        Note: Enforces generalized dimensions.
+        - x becomes (pop_size, params)
+        - R becomes (pop_size,)
+        For gradient descent (single point), pop_size is 1.
+        """
+        # 1. Normalize x to be 2D (pop_size, params)
+        x_arr = np.array(x, copy=True)
+        if x_arr.ndim == 1:
+            x_arr = x_arr[np.newaxis, :]  # Add pop dimension -> (1, params)
+        self._data['x'].append(x_arr)
+
+        # 2. Normalize R to be 1D (pop_size,)
+        # Handle None safely first
         val_R = np.nan if R is None else R
-        self._data['R'].append(val_R)
+        R_arr = np.array(val_R)
+
+        if R_arr.ndim == 0:
+            R_arr = R_arr[np.newaxis]  # Add pop dimension -> (1,)
+
+        self._data['R'].append(R_arr)
         self._data['timestamps'].append(time.time())
 
-        # SAFETY 3: Handle None in kwargs (like grad_R=None)
-        # If grad_R is None, we store a generic NaN placeholder matching x's shape
+        # Dynamically store extra series
         for key, value in kwargs.items():
             if key not in self._data:
                 self._data[key] = []
@@ -107,18 +119,19 @@ class OptimizationHistory:
         """Smart retrieval of best R based on stored metadata."""
         R = self.R_history
 
-        # If CMA-ES (indicated by convergence_generations in metadata)
+        # Determine subset to look at
         if 'convergence_generations' in self.metadata:
             n = self.metadata['convergence_generations']
-            # If n is None or 0, use full history
-            if not n:
-                return np.min(R)
-            return np.min(R[-n:])
+            subset_R = R if not n else R[-n:]
+        else:
+            subset_R = R
 
-        # Default / Gradient / Legacy
-        # Use last non-nan value
-        non_nan = R[~np.isnan(R)]
-        return non_nan[-1] if non_nan.size > 0 else np.nan
+        # Handle NaNs (common in Gradient steps where R=None)
+        # We assume if all are NaN, return NaN
+        if np.all(np.isnan(subset_R)):
+            return np.nan
+
+        return np.nanmin(subset_R)
 
     @property
     def best_x(self):
@@ -129,16 +142,19 @@ class OptimizationHistory:
         if 'convergence_generations' in self.metadata:
             n = self.metadata['convergence_generations']
             if not n:
-                trunc_R = R
-                trunc_x = x
+                trunc_R, trunc_x = R, x
             else:
-                trunc_R = R[-n:]
-                trunc_x = x[-n:]
+                trunc_R, trunc_x = R[-n:], x[-n:]
+        else:
+            trunc_R, trunc_x = R, x
 
-            min_idx = np.unravel_index(np.argmin(trunc_R), trunc_R.shape)
-            return trunc_x[min_idx]
+        # nanargmin is safer if there are NaNs (e.g. gradient steps)
+        # It flattens the array index
+        flat_idx = np.nanargmin(trunc_R)
+        # Unravel into (gen_idx, pop_idx)
+        idx = np.unravel_index(flat_idx, trunc_R.shape)
 
-        return x[-1]
+        return trunc_x[idx]
 
     def expand_parameters(self, calculator):
         """
@@ -155,8 +171,8 @@ class OptimizationHistory:
             self._data[key] = []
 
         x_arr = self.x_history
-        # Check if x_history is 3D (generations, population, params) or 2D (steps, params)
-        is_population = x_arr.ndim == 3
+        # x_arr is always (generations, pop_size, params) now
+        n_gens, pop_size, _ = x_arr.shape
 
         # Helper to process one vector and append to lists
         def _process_one(vec):
@@ -166,22 +182,18 @@ class OptimizationHistory:
             self._data['vibration_amplitudes'].append(vib)
             self._data['occupations'].append(occ)
 
-        if is_population:
-            n_gens, pop_size, _ = x_arr.shape
-            for g in range(n_gens):
-                for p in range(pop_size):
-                    _process_one(x_arr[g, p])
-        else:
-            for vec in x_arr:
-                _process_one(vec)
+        for g in range(n_gens):
+            for p in range(pop_size):
+                _process_one(x_arr[g, p])
 
     # --- I/O Phase ---
 
     def write_to_file(self, file_path):
         """Save everything to .npz."""
-        save_dict = {}
+        self.metadata['start_time'] = self._start_time
 
         # 1. Save data history arrays
+        save_dict = {}
         for k, v in self._data.items():
             key_name = k if k.endswith('_history') else f'{k}_history'
             save_dict[key_name] = np.array(v)
@@ -219,7 +231,6 @@ class OptimizationHistory:
         """Internal method for loading current format."""
         for key in loaded.files:
             if key.startswith('meta_'):
-                # Metadata
                 meta_key = key.replace('meta_', '')
                 val = loaded[key]
                 self.metadata[meta_key] = val.item() if val.ndim == 0 else val
@@ -228,8 +239,11 @@ class OptimizationHistory:
                 data_key = key.replace('_history', '')
                 self._data[data_key] = list(loaded[key])
 
+        if 'start_time' in self.metadata:
+            self._start_time = self.metadata['start_time']
+
     def _load_legacy(self, loaded):
-        """Internal method for loading old format (pre-unification)."""
+        """Internal method for loading old format."""
         self.metadata['message'] = 'Loaded from legacy file'
         self.metadata['algorithm'] = 'Legacy (Unknown)'
 
@@ -238,34 +252,49 @@ class OptimizationHistory:
 
         # 1. Map standard keys (present in both old Grad and CMAES)
         if 'x_history' in keys:
-            self._data['x'] = list(loaded['x_history'])
+            raw_x = loaded['x_history']
+            # If it was Gradient (2D), reshape. If CMAES (3D), keep.
+            # But wait, old CMAES was saved as 3D (gen, pop, param)?
+            # Let's check dimensions carefully.
+
+            # Old Grad: (steps, params) -> Need (steps, 1, params)
+            # Old CMA: (gens, pop, params) -> Keep
+
+            if raw_x.ndim == 2:
+                self._data['x'] = list(raw_x[:, np.newaxis, :])
+            else:
+                self._data['x'] = list(raw_x)
+
+        # Load R
         if 'R_history' in keys:
-            self._data['R'] = list(loaded['R_history'])
+            raw_R = loaded['R_history']
+            # Old Grad: (steps,) -> Need (steps, 1)
+            # Old CMA: (gens, pop) -> Keep
+
+            if raw_R.ndim == 1:
+                self._data['R'] = list(raw_R[:, np.newaxis])
+            else:
+                self._data['R'] = list(raw_R)
+
         if 'timestamp_history' in keys:
             self._data['timestamps'] = list(loaded['timestamp_history'])
 
-        # 2. Map Extended Physics Params (if present)
-        legacy_physics_keys = [
+        # Extended Physics Params (Assume these follow X structure roughly)
+        for k in [
             'v0r_offsets',
             'geo_displacements',
             'vibration_amplitudes',
             'occupations',
-        ]
-        for k in legacy_physics_keys:
+        ]:
             if k in keys:
                 self._data[k] = list(loaded[k])
 
-        # 3. Detect Algorithm Specifics
+        # Detect Algorithm
         if 'step_size_history' in keys:
-            # It was CMA-ES
             self.metadata['algorithm'] = 'Legacy CMA-ES'
             self._data['step_size'] = list(loaded['step_size_history'])
-            # Old CMAES didn't save convergence_generations,
-            # so we set it to None (implies full history) to avoid index errors.
             self.metadata['convergence_generations'] = None
-
         elif 'grad_R_history' in keys:
-            # It was Gradient Descent
             self.metadata['algorithm'] = 'Legacy Gradient'
             self._data['grad_R'] = list(loaded['grad_R_history'])
 
