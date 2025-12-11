@@ -620,7 +620,7 @@ def create_resample_and_evaluate(
     return resample_and_evaluate
 
 
-# Furhter gradient based optimizers
+# Further gradient based optimizers
 
 
 class CGOptimizer(SciPyGradOptimizer):
