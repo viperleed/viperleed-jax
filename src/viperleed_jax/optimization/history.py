@@ -161,7 +161,7 @@ class OptimizationHistory:
 
         return trunc_x[idx]
 
-def expand_parameters(self, calculator):
+    def expand_parameters(self, calculator):
         """
         Post-processing: Expand stored parameters into physics quantities.
         Stores results directly into self._data.
