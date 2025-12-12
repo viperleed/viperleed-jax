@@ -161,35 +161,36 @@ class OptimizationHistory:
 
         return trunc_x[idx]
 
-    def expand_parameters(self, calculator):
+def expand_parameters(self, calculator):
         """
         Post-processing: Expand stored parameters into physics quantities.
         Stores results directly into self._data.
         """
         # Prepare storage
-        for key in [
-            'v0r_offsets',
-            'geo_displacements',
-            'vibration_amplitudes',
-            'occupations',
-        ]:
+        for key in ['v0r_offsets', 'geo_displacements', 'vibration_amplitudes', 'occupations']:
+            # We will overwrite any existing list to ensure clean structure
             self._data[key] = []
 
         x_arr = self.x_history
-        # x_arr is always (generations, pop_size, params) now
         n_gens, pop_size, _ = x_arr.shape
 
-        # Helper to process one vector and append to lists
-        def _process_one(vec):
-            v0r, geo, vib, occ = calculator.expand_params(vec)
-            self._data['v0r_offsets'].append(v0r)
-            self._data['geo_displacements'].append(geo)
-            self._data['vibration_amplitudes'].append(vib)
-            self._data['occupations'].append(occ)
-
+        # We need to preserve the Generation -> Population hierarchy
         for g in range(n_gens):
+            gen_v0r, gen_geo, gen_vib, gen_occ = [], [], [], []
+
             for p in range(pop_size):
-                _process_one(x_arr[g, p])
+                v0r, geo, vib, occ = calculator.expand_params(x_arr[g, p])
+                gen_v0r.append(v0r)
+                gen_geo.append(geo)
+                gen_vib.append(vib)
+                gen_occ.append(occ)
+
+            # Append the whole population block as one item in the main list
+            # equivalent to how 'x' is stored
+            self._data['v0r_offsets'].append(np.array(gen_v0r))
+            self._data['geo_displacements'].append(np.array(gen_geo))
+            self._data['vibration_amplitudes'].append(np.array(gen_vib))
+            self._data['occupations'].append(np.array(gen_occ))
 
     # --- I/O Phase ---
 
