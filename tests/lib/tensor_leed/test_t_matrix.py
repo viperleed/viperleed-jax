@@ -6,7 +6,7 @@ from pytest_cases import case, fixture, parametrize_with_cases
 from tests.fixtures.base import LARGE_FILE_PATH
 from viperleed_jax.lib.tensor_leed import t_matrix
 
-_REF_DATA_PATH = LARGE_FILE_PATH / '..' / 't_matrices'
+_REF_DATA_PATH = LARGE_FILE_PATH / 't_matrices'
 
 _CU_111_REFERENCE_FILE_NAME = 'ref_t_matrices_cu_111.npz'
 _CU_111_REFERENCE_FILE = np.load(_REF_DATA_PATH / _CU_111_REFERENCE_FILE_NAME)
