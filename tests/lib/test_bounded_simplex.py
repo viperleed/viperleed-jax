@@ -14,10 +14,10 @@ from viperleed_jax.lib.bounded_simplex import (
     bounded_softmax_from_unit,
 )
 
-from ..bounded_simplex_helpers import (
+from .bounded_simplex_helpers import (
     uniform_vector,
     BOUNDS,
-    SAMPLING_INTERATIONS,
+    SAMPLING_ITERATIONS,
 )
 _TEST_EPS = 1e-6
 
