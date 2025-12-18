@@ -1,3 +1,10 @@
+"""Module plotting."""
+
+__authors__ = ('Alexander M. Imre (@amimre)',)
+__created__ = '2025-12-18'
+__license__ = 'GPLv3+'
+
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,6 +32,26 @@ DEFAULT_PLOT_OPTIONS = {
 def draw_trajectory_rfactor(
     trajectory, axis=None, options=DEFAULT_PLOT_OPTIONS, colors=DEFAULT_COLORS
 ):
+    """Draw R-factor progress over a calculation trajectory.
+
+    Parameters
+    ----------
+    trajectory : CalcTrajectory
+        The calculation trajectory containing segments of optimization and
+        reference calculations.
+    axis : matplotlib.axes.Axes, optional
+        The axis to plot on. If None, a new figure and axis are created.
+    options : dict, optional
+        Plotting options, including 'x_scale', 'y_scale', and
+        'running_min_overall'.
+    colors : dict, optional
+        Colors for different plot elements.
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        The axis with the plotted R-factor progress.
+    """
     if axis is not None:
         ax = axis
     else:
@@ -127,7 +154,7 @@ def draw_trajectory_rfactor(
     return ax
 
 
-# sqaure root scale and its inverse for axes
+# square root scale and its inverse for axes
 def _f_sqrt(e):
     return np.abs(np.sqrt(e + 0j)) * np.sign(e)
 
