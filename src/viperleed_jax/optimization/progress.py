@@ -19,7 +19,7 @@ from viperleed_jax.optimization.history import (
 time_format = DateTimeFormat.FILE_SUFFIX
 
 
-class RfactorProgress:
+class CalcTrajectory:
     _ALLOWED_SEGMENT_CLASSES = (OptimizationHistory, RefCalcHistory)
 
     def __init__(self, base_path, ref_calc_dirs, search_calc_dirs):
@@ -69,6 +69,7 @@ class RfactorProgress:
             if isinstance(segment, RefCalcHistory):
                 ref_Rs.append(segment.ref_R)
         return ref_Rs
+
 
 
 def _id_string_to_ids(id_string):
