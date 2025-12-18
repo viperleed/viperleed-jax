@@ -25,32 +25,13 @@ DEFAULT_PLOT_OPTIONS = {
     'x_scale': 'linear',
     'y_scale': 'sqrt',
     'running_min_overall': True,
+    'draw_vlines': True,
 }
 
 
 def draw_trajectory_rfactor(
     trajectory, axis=None, options=DEFAULT_PLOT_OPTIONS, colors=DEFAULT_COLORS
 ):
-    """Draw R-factor progress over a calculation trajectory.
-
-    Parameters
-    ----------
-    trajectory : CalcTrajectory
-        The calculation trajectory containing segments of optimization and
-        reference calculations.
-    axis : matplotlib.axes.Axes, optional
-        The axis to plot on. If None, a new figure and axis are created.
-    options : dict, optional
-        Plotting options, including 'x_scale', 'y_scale', and
-        'running_min_overall'.
-    colors : dict, optional
-        Colors for different plot elements.
-
-    Returns
-    -------
-    matplotlib.axes.Axes
-        The axis with the plotted R-factor progress.
-    """
     if axis is not None:
         ax = axis
     else:
@@ -63,15 +44,16 @@ def draw_trajectory_rfactor(
 
     for segment in trajectory.segments:
         if isinstance(segment, RefCalcHistory):
-            ax.vlines(
-                cum_time,
-                ymin=0.0,
-                ymax=5.0,
-                colors=colors['ref_calc'],
-                linestyles='dashed',
-                label='Ref Calc' if cum_time == 0.0 else '',
-                zorder=9,
-            )
+            if options['draw_vlines']:
+                ax.vlines(
+                    cum_time,
+                    ymin=0.0,
+                    ymax=5.0,
+                    colors=colors['ref_calc'],
+                    linestyles='dashed',
+                    label='Ref Calc' if cum_time == 0.0 else '',
+                    zorder=9,
+                )
             ax.scatter(
                 cum_time,
                 segment.ref_R,
