@@ -340,3 +340,6 @@ class RefCalcHistory:
         file = list(out_dir.glob('R_OUT_refcalc_*'))[0]
         match = re.search(r'R=([0-9.]+)', file.name)
         return float(match.group(1))
+
+    def __repr__(self):
+        return f'RefCalcHistory R: {self.ref_R}'
