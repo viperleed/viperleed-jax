@@ -1,7 +1,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib import ticker
 import numpy as np
+from matplotlib import ticker
 
 from viperleed_jax.optimization.history import (
     OptimizationHistory,
@@ -22,8 +22,13 @@ DEFAULT_PLOT_OPTIONS = {
 }
 
 
-def make_plot(trajectory, options=DEFAULT_PLOT_OPTIONS, colors=DEFAULT_COLORS):
-    fig, ax = plt.subplots()
+def draw_trajectory_rfactor(
+    trajectory, axis=None, options=DEFAULT_PLOT_OPTIONS, colors=DEFAULT_COLORS
+):
+    if axis is not None:
+        ax = axis
+    else:
+        _, ax = plt.subplots()
 
     cum_time = 0.0
     overall_running_min = np.inf
@@ -67,7 +72,7 @@ def make_plot(trajectory, options=DEFAULT_PLOT_OPTIONS, colors=DEFAULT_COLORS):
                 )
                 running_min = np.minimum.accumulate(combined)[1:]
                 overall_running_min = running_min[-1]
-            plt.plot(times, running_min, '-', color=colors['opt_running_min'])
+            ax.plot(times, running_min, '-', color=colors['opt_running_min'])
             # update min and max R for axis limits
             min_R = min(min_R, np.min(running_min))
             max_R = max(max_R, np.max(running_min))
@@ -119,7 +124,7 @@ def make_plot(trajectory, options=DEFAULT_PLOT_OPTIONS, colors=DEFAULT_COLORS):
     y_margin = 0.1 * (max_R - min_R)
     ax.set_ylim(max(0.0, min_R - y_margin), max_R + y_margin)
 
-    return fig, ax
+    return ax
 
 
 # sqaure root scale and its inverse for axes
