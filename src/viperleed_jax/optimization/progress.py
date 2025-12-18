@@ -71,7 +71,6 @@ class CalcTrajectory:
         return ref_Rs
 
 
-
 def _id_string_to_ids(id_string):
     """Convert an id string of the form 't{tensor_id}.r{run_id}' to integers."""
     match = re.match(r't(\d+)\.r(\d+)', id_string)
