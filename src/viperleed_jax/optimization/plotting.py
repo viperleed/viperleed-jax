@@ -8,7 +8,6 @@ __license__ = 'GPLv3+'
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import ticker
 
 from viperleed_jax.optimization.history import (
     OptimizationHistory,
