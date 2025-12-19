@@ -29,7 +29,7 @@ DEFAULT_PLOT_OPTIONS = {
 }
 
 
-def draw_trajectory_rfactor(
+def draw_rfactor_progress(
     trajectory, axis=None, options=DEFAULT_PLOT_OPTIONS, colors=DEFAULT_COLORS
 ):
     if axis is not None:
