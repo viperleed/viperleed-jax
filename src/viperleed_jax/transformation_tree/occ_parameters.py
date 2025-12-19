@@ -312,3 +312,9 @@ class OccTree(DisplacementTree):
     @property
     def ref_calc_values(self):
         return self._ref_occupations
+
+    def _parameter_name(self, leaf, test_array):
+        # perform sanity checks
+        super()._parameter_name(leaf, test_array)
+        # no need to distinguish further scalar occ parameters
+        return f'occ Atom {leaf.num} ({leaf.element})'

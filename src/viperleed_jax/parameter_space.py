@@ -419,3 +419,27 @@ class ParameterSpace:
         """Return a string representation of the parameter space."""
         dummy_parent = self._dummy_parent()
         return RenderTree(dummy_parent).by_attr()
+
+    def get_parameter_names(self):
+        """Return a list of parameter names in the parameter space.
+
+        This can be used to identify what each parameter corresponds to for
+        e.g. plotting purposes.
+        """
+        if not self._displacements_applied:
+            raise ValueError(
+                'Displacements must be applied before getting parameter names.'
+            )
+
+        parameter_names = []
+
+        # other parameters
+        for tree in (
+            self.meta_tree,
+            self.geo_tree,
+            self.vib_tree,
+            self.occ_tree,
+        ):
+            parameter_names.extend(tree.get_parameter_names())
+
+        return parameter_names

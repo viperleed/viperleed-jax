@@ -96,3 +96,7 @@ class MetaTree(LinearTree):
             child_zonotope=v0r_range_zonotope,
         )
         self.nodes.append(implicit_constraint_node)
+
+    def get_parameter_names(self):
+        """Return the names of the meta parameters."""
+        return ['V0r']
