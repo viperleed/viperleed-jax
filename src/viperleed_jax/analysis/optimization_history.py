@@ -70,6 +70,10 @@ class OptimizationHistory:
         self.metadata['message'] = message
         self.metadata.update(kwargs)
 
+    def add_metadata(self, **kwargs):
+        """Add arbitrary metadata entries."""
+        self.metadata.update(kwargs)
+
     # --- Analysis Phase (Properties) ---
 
     @property
