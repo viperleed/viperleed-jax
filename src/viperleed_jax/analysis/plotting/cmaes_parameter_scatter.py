@@ -10,11 +10,14 @@ import numpy as np
 
 from viperleed_jax.analysis.optimization_history import OptimizationHistory
 
-PARAMETER_PLOT_DEFAULT_OPTIONS = {'cmap': 'viridis', 'density': 'violin'}
+PARAMETER_PLOT_DEFAULT_OPTIONS = {'cmap': 'viridis', 'density': 'auto'}
 
 
 def draw_parameters(
-    opt_history, axis=None, options=PARAMETER_PLOT_DEFAULT_OPTIONS
+    opt_history,
+    axis=None,
+    options=PARAMETER_PLOT_DEFAULT_OPTIONS,
+    parameter_names=None,
 ):
     """Plot parameter distribution."""
     if axis is not None:
@@ -26,6 +29,15 @@ def draw_parameters(
         msg = f'Expected OptimizationHistory, got {type(opt_history)}'
         raise TypeError(msg)
 
+    if parameter_names is None:
+        # read from history metadata
+        try:
+            parameter_names = opt_history.metadata['parameter_names']
+        except KeyError:
+            parameter_names = [
+                f'p{i}' for i in range(opt_history.x_history.shape[2])
+            ]
+
     # --- 1. Data Preparation ---
     # Shape: (Generations, Pop_Size, Params)
     data = opt_history.x_history
@@ -33,10 +45,19 @@ def draw_parameters(
     Rs = opt_history.R_history
 
     n_params = data.shape[2]
+    n_individuals = data.shape[1]
 
     # Flatten
     data_flat = data.reshape(-1, n_params)
     rewards_flat = Rs.flatten()
+
+    # set auto density based on number of individuals
+    if options['density'] == 'auto':
+        if n_individuals < 2:
+            # draw without jitter for single individual per generation
+            options['density'] = 'none'
+        else:
+            options['density'] = 'violin'
 
     # --- 2. Normalization (0 to 1) ---
     # Avoid div by zero if a parameter is constant
@@ -89,6 +110,8 @@ def draw_parameters(
             x_vals = i + jitter_offsets
         elif options['density'] == 'random':
             x_vals = np.random.normal(i, 0.08, size=len(rewards_sorted))
+        elif options['density'] == 'none':
+            x_vals = np.full_like(y_vals, i, dtype=float)
         else:
             msg = f'Unknown density option: {options["density"]}'
             raise ValueError(msg)
@@ -99,27 +122,25 @@ def draw_parameters(
             y_vals,
             c=rewards_sorted,
             cmap=options['cmap'],
-            s=3,
+            s=6,
             alpha=0.3,
             rasterized=True,  # avoids long render times for PDFs
         )
 
     # --- 5. Formatting ---
-    ax.set_xticks(range(n_params))
-    ax.set_xticklabels([f'p{i}' for i in range(n_params)], fontsize=12)
-    ax.set_ylabel(r'Normalized Parameter Values $\tilde{\xi}_i$', fontsize=14)
+    ax.set_xticks(np.arange(n_params))
+    ax.set_xticklabels(parameter_names, fontsize=12, rotation=45, ha='right')
+    ax.set_ylabel(
+        r'Normalized Parameter Values $\tilde{\xi}_i \in [0, 1]$', fontsize=14
+    )
 
     # Grid separators
-    for i in range(n_params):
+    for i in range(n_params - 1):
         ax.axvline(i + 0.5, color='gray', linestyle=':', alpha=0.3)
 
     # Axis cleanup
     ax.set_xlim(-0.5, n_params - 0.5)
     ax.set_ylim(-0.05, 1.05)
-
-    # Remove top/right spines for cleaner look
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
 
     # Add Colorbar (attached to the axis provided)
     # Check if figure exists to add colorbar properly
