@@ -120,6 +120,44 @@ def draw_parameters(
             rasterized=True,  # avoids long render times for PDFs
         )
 
+    # Add indicator for the best configuration
+    indices = np.arange(n_params)
+    width = 0.4  # How wide the marker extends from the center
+
+    # Draw the connecting line
+    ax.hlines(
+        y=opt_history.best_x,
+        xmin=indices - width,
+        xmax=indices + width,
+        color="red",
+        linewidth=1.5,
+        zorder=20
+    )
+
+    # Draw the Left Arrow (>)
+    ax.scatter(
+        indices - width,
+        opt_history.best_x,
+        marker='>',   # Points right (inward)
+        s=60,         # Size
+        color='red',
+        zorder=21,
+        edgecolors='white', # Optional: adds a tiny white border to make it pop
+        linewidth=0.5
+    )
+
+    # Draw the Right Arrow (<)
+    ax.scatter(
+        indices + width,
+        opt_history.best_x,
+        marker='<',   # Points left (inward)
+        s=60,
+        color='red',
+        zorder=21,
+        edgecolors='white',
+        linewidth=0.5
+    )
+
     # --- 5. Formatting ---
     ax.set_xticks(np.arange(n_params))
     ax.set_xticklabels(parameter_names, fontsize=12, rotation=45, ha="right")
