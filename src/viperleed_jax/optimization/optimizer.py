@@ -5,6 +5,8 @@ __authors__ = (
     'Alexander M. Imre (@amimre)',
 )
 __created__ = '2024-11-20'
+__license__ = 'GPLv3+'
+
 
 from abc import ABC, abstractmethod
 

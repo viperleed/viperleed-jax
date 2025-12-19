@@ -2,6 +2,7 @@
 
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2025-03-11'
+__license__ = 'GPLv3+'
 
 
 import time
