@@ -257,7 +257,7 @@ class GeoTree(DisplacementTree):
         action = leaf_transformer.weights @ test_array
         action = action / scipy.linalg.norm(action)
         dir_label = _direction_label_from_vector(action.flatten())
-        return f'geo Atom {leaf.num} ({leaf.element}) {dir_label}'
+        return f'At #{leaf.num} ({leaf.element}) {dir_label}'
 
 
 def _direction_label_from_vector(vector):

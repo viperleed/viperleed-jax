@@ -140,4 +140,4 @@ class VibTree(DisplacementTree):
         # perform sanity checks
         super()._parameter_name(leaf, test_array)
         # no need to distinguish further scalar vib parameters
-        return f'vib Atom {leaf.num} ({leaf.element})'
+        return f'At #{leaf.num} ({leaf.element}) vib'
