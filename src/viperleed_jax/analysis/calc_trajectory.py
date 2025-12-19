@@ -11,7 +11,7 @@ from pathlib import Path
 
 from viperleed.calc.lib.time_utils import DateTimeFormat
 
-from viperleed_jax.optimization.history import (
+from viperleed_jax.analysis.optimization_history import (
     OptimizationHistory,
     RefCalcHistory,
 )

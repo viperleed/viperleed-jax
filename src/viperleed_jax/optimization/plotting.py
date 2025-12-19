@@ -9,7 +9,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-from viperleed_jax.optimization.history import (
+from viperleed_jax.analysis.optimization_history import (
     OptimizationHistory,
     RefCalcHistory,
 )

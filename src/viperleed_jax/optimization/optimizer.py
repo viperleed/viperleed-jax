@@ -18,7 +18,7 @@ from clinamen2.utils.script_functions import cma_setup
 from scipy.optimize import minimize
 from viperleed.calc import LOGGER as logger
 
-from .history import OptimizationHistory
+from ..analysis.optimization_history import OptimizationHistory
 
 
 class EarlyStopper:
