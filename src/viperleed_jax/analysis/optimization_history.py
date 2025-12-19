@@ -27,13 +27,14 @@ class OptimizationHistory:
 
     # --- Recording Phase ---
 
-    def add_step(self, x, R, **kwargs):
+    def add_step(self, x, R, grad_R=None, **kwargs):
         """
         Record a single step or generation of the optimization.
 
         Note: Enforces generalized dimensions.
         - x becomes (pop_size, params)
         - R becomes (pop_size,)
+        - grad_R becomes (pop_size, params) or NaN equivalent
         For gradient descent (single point), pop_size is 1.
         """
         # 1. Normalize x to be 2D (pop_size, params)
@@ -53,7 +54,23 @@ class OptimizationHistory:
         self._data['R'].append(R_arr)
         self._data['timestamps'].append(time.time())
 
-        # Dynamically store extra series
+        # 3. Handle Gradient (grad_R) explicitly
+        # This ensures we store an ARRAY of NaNs if the gradient is missing,
+        # rather than a scalar None, keeping the history homogeneous.
+        if 'grad_R' not in self._data:
+            self._data['grad_R'] = []
+
+        if grad_R is None:
+            # Create a NaN array with the exact same shape as x_arr
+            self._data['grad_R'].append(np.full_like(x_arr, np.nan))
+        else:
+            g_arr = np.array(grad_R)
+            # Normalize dimension if necessary (e.g. 1D gradient -> (1, params))
+            if g_arr.ndim == 1 and x_arr.shape[0] == 1:
+                g_arr = g_arr[np.newaxis, :]
+            self._data['grad_R'].append(g_arr)
+
+        # 4. Dynamically store extra series
         for key, value in kwargs.items():
             if key not in self._data:
                 self._data[key] = []
@@ -174,7 +191,12 @@ class OptimizationHistory:
         Stores results directly into self._data.
         """
         # Prepare storage
-        for key in ['v0r_offsets', 'geo_displacements', 'vibration_amplitudes', 'occupations']:
+        for key in [
+            'v0r_offsets',
+            'geo_displacements',
+            'vibration_amplitudes',
+            'occupations',
+        ]:
             # We will overwrite any existing list to ensure clean structure
             self._data[key] = []
 
