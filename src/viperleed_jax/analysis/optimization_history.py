@@ -307,14 +307,6 @@ class OptimizationHistory:
             self._data['grad_R'] = list(loaded['grad_R_history'])
 
     def __repr__(self):
+        """Return string representation."""
         algo = self.metadata.get('algorithm', 'Generic')
-        msg = self.metadata.get('message', 'In Progress...')
-        steps = len(self._data['R'])
-        return (
-            f'OptimizationHistory ({algo})\n'
-            f'--------------------------\n'
-            f'Status:   {msg}\n'
-            f'Steps:    {steps}\n'
-            f'Duration: {self.duration:.2f}s\n'
-            f'Best R:   {self.best_R:.4f}'
-        )
+        return f'OptimizationHistory ({algo}) R:   {self.best_R:.4f}\n'
