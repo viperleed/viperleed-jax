@@ -190,7 +190,44 @@ def draw_parameters(
 def draw_parameter_scatter(
     opt_history,
     axis=None,
-    options=PARAMETER_PLOT_DEFAULT_OPTIONS,
-    parameter_names=None,
 ):
-    
+    """Plot parameter standard deviation vs. generations."""
+    if axis is not None:
+        ax = axis
+    else:
+        _, ax = plt.subplots(figsize=(15, 8))
+
+    if not isinstance(opt_history, OptimizationHistory):
+        msg = f'Expected OptimizationHistory, got {type(opt_history)}'
+        raise TypeError(msg)
+
+    # can only be done if there are multiple individuals per generation
+    n_idividuals = opt_history.x_history.shape[1]
+    if n_idividuals < 2:
+        msg = 'Parameter scatter plot requires multiple individuals per generation.'
+        raise ValueError(msg)
+
+    generations = np.arange(opt_history.x_history.shape[0])
+
+    # standard deviation across the population
+    stds = np.std(opt_history.x_history, axis=1)
+    # mean standard deviation across all parameters
+    mean_std = np.mean(stds, axis=1)
+
+    # plot
+    ax.plot(
+        generations,
+        mean_std,
+        linewidth=2,
+        color='black',
+        label='Average Spread',
+    )
+
+    # format and labels
+    ax.set_xlabel('Generation', fontsize=12)
+    ax.set_ylabel(
+        r'Parameter Spread $\sigma({\tilde{\xi}}) / \sigma_0({\tilde{\xi}})$',
+        fontsize=12,
+    )
+
+    return ax
