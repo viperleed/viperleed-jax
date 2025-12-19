@@ -11,10 +11,8 @@ from pathlib import Path
 
 from viperleed.calc.lib.time_utils import DateTimeFormat
 
-from viperleed_jax.analysis.optimization_history import (
-    OptimizationHistory,
-    RefCalcHistory,
-)
+from viperleed_jax.analysis.optimization_history import OptimizationHistory
+from viperleed_jax.analysis.ref_calc_history import RefCalcHistory
 
 time_format = DateTimeFormat.FILE_SUFFIX
 

@@ -1,4 +1,4 @@
-"""Module plotting."""
+"""Module plotting.rfactor_progress."""
 
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2025-12-18'
@@ -9,10 +9,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-from viperleed_jax.analysis.optimization_history import (
-    OptimizationHistory,
-    RefCalcHistory,
-)
+from viperleed_jax.analysis.optimization_history import OptimizationHistory
+from viperleed_jax.analysis.ref_calc_history import RefCalcHistory
 
 DEFAULT_COLORS = {
     'ref_calc': 'tab:blue',
