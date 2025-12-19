@@ -22,7 +22,11 @@ time_format = DateTimeFormat.FILE_SUFFIX
 class CalcTrajectory:
     _ALLOWED_SEGMENT_CLASSES = (OptimizationHistory, RefCalcHistory)
 
-    def __init__(self, base_path, ref_calc_dirs, search_calc_dirs):
+    def __init__(self, base_path, ref_calc_dirs=None, search_calc_dirs=None):
+        if ref_calc_dirs is None:
+            ref_calc_dirs = []
+        if search_calc_dirs is None:
+            search_calc_dirs = []
         self.history_path = Path(base_path) / 'history'
         self.segments = []
         self._parse_trajectory(ref_calc_dirs, search_calc_dirs)
