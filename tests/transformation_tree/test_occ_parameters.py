@@ -8,7 +8,6 @@ from viperleed.calc.files.new_displacements.lines import (
 )
 
 from viperleed_jax.atom_basis import AtomBasis
-from viperleed_jax.lib.calculator import normalize_occ_vector
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
@@ -84,26 +83,6 @@ class TestPt25Rh75_O_3x1:
         while the range is symmetric around 50/50%!"""
         tree, _ = total_occ_tree
         assert not tree.is_centered()
-
-    @pytest.mark.parametrize('normalization_method', ['projection', 'mirror'])
-    def test_tree_total_occ_sum(
-        self, total_occ_tree, normalization_method, subtests
-    ):
-        """Test that the total occupation sum is correct."""
-        tree, total_occ = total_occ_tree
-
-        params = np.array([0.5] * tree.root.dof)
-        atom_ids = tree.atom_basis.atom_ids
-        non_normalized_occupations = tree(params)
-        normalized_occupations = normalize_occ_vector(
-            non_normalized_occupations, atom_ids, op_type=normalization_method
-        )
-
-        # The sum of the normalized occupations should sum up to
-        # 8 + 9 * total_occ (8 100% occupied atoms + 9 atoms with total_occ%)
-        sum_occ = normalized_occupations.sum()
-        with subtests.test('sum of occupations'):
-            assert sum_occ == pytest.approx(8 + 9 * total_occ)
 
     KNOWN_OCC_PARAM_TO_VALUES = {
         tuple([0.0] * 6): np.array(

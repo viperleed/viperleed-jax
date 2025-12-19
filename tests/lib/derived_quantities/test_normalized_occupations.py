@@ -9,7 +9,7 @@ from viperleed_jax.lib.derived_quantities.normalized_occupations import (
 from viperleed_jax.lib.derived_quantities.normalized_occupations import (
     NormalizedOccupations,
 )
-from bounded_simplex_helpers import (
+from ..bounded_simplex_helpers import (
     BOUNDS,
     SAMPLING_ITERATIONS,
     uniform_vector,

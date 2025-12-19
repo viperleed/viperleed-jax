@@ -6,6 +6,7 @@ __copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
 __license__ = 'GPLv3+'
 
 import numpy as np
+import scipy
 
 from viperleed_jax.lib.math import EPS
 from .displacement_tree_layers import DisplacementTreeLayers
@@ -247,3 +248,25 @@ class GeoTree(DisplacementTree):
     def ref_calc_values(self):
         """Return the reference calculation values for all leaves."""
         return np.array([[0.0, 0.0, 0.0] for leaf in self.leaves])
+
+    def _parameter_name(self, leaf, test_array):
+        # perform sanity checks
+        super()._parameter_name(leaf, test_array)
+        leaf_transformer = self.root.transformer_to_descendent(leaf)
+        # evaluate which directions are affected by the test_array
+        action = leaf_transformer.weights @ test_array
+        action = action / scipy.linalg.norm(action)
+        dir_label = _direction_label_from_vector(action.flatten())
+        return f'At #{leaf.num} ({leaf.element}) {dir_label}'
+
+
+def _direction_label_from_vector(vector):
+    if np.allclose(vector, [0.0, 1.0, 0.0]):
+        return 'x'
+    if np.allclose(vector, [0.0, 0.0, 1.0]):
+        return 'y'
+    if np.allclose(vector, [1.0, 0.0, 0.0]):
+        return 'z'
+
+    # if not aligned with primary axes, return full vector
+    return f'zxy({vector[0]:.2f},{vector[1]:.2f},{vector[2]:.2f})'
