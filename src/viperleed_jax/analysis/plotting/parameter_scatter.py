@@ -13,9 +13,6 @@ from viperleed_jax.analysis.optimization_history import OptimizationHistory
 PARAMETER_PLOT_DEFAULT_OPTIONS = {'cmap': 'viridis', 'density': 'auto'}
 
 
-PARAMETER_PLOT_DEFAULT_OPTIONS = {"cmap": "viridis", "density": "generations"}
-
-
 def draw_parameters(
     opt_history,
     axis=None,
@@ -156,5 +153,6 @@ def draw_parameter_scatter(
     opt_history,
     axis=None,
     options=PARAMETER_PLOT_DEFAULT_OPTIONS,
+    parameter_names=None,
 ):
     
