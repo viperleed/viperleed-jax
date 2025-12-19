@@ -13,6 +13,9 @@ from viperleed_jax.analysis.optimization_history import OptimizationHistory
 PARAMETER_PLOT_DEFAULT_OPTIONS = {'cmap': 'viridis', 'density': 'auto'}
 
 
+PARAMETER_PLOT_DEFAULT_OPTIONS = {"cmap": "viridis", "density": "generations"}
+
+
 def draw_parameters(
     opt_history,
     axis=None,
@@ -26,17 +29,15 @@ def draw_parameters(
         _, ax = plt.subplots(figsize=(15, 8))
 
     if not isinstance(opt_history, OptimizationHistory):
-        msg = f'Expected OptimizationHistory, got {type(opt_history)}'
+        msg = f"Expected OptimizationHistory, got {type(opt_history)}"
         raise TypeError(msg)
 
     if parameter_names is None:
         # read from history metadata
         try:
-            parameter_names = opt_history.metadata['parameter_names']
+            parameter_names = opt_history.metadata["parameter_names"]
         except KeyError:
-            parameter_names = [
-                f'p{i}' for i in range(opt_history.x_history.shape[2])
-            ]
+            parameter_names = [f"p{i}" for i in range(opt_history.x_history.shape[2])]
 
     # --- 1. Data Preparation ---
     # Shape: (Generations, Pop_Size, Params)
@@ -45,19 +46,10 @@ def draw_parameters(
     Rs = opt_history.R_history
 
     n_params = data.shape[2]
-    n_individuals = data.shape[1]
 
     # Flatten
     data_flat = data.reshape(-1, n_params)
     rewards_flat = Rs.flatten()
-
-    # set auto density based on number of individuals
-    if options['density'] == 'auto':
-        if n_individuals < 2:
-            # draw without jitter for single individual per generation
-            options['density'] = 'none'
-        else:
-            options['density'] = 'violin'
 
     # --- 2. Normalization (0 to 1) ---
     # Avoid div by zero if a parameter is constant
@@ -82,7 +74,7 @@ def draw_parameters(
     for i in range(n_params):
         y_vals = data_sorted[:, i]
 
-        if options['density'] == 'violin':
+        if options["density"] == "violin":
             # -- Density-Dependent Jitter Calculation --
             # We use a histogram to estimate local density fast (kde is slow for N > 10k)
             counts, edges = np.histogram(y_vals, bins=50, density=False)
@@ -108,12 +100,16 @@ def draw_parameters(
             )
 
             x_vals = i + jitter_offsets
-        elif options['density'] == 'random':
+        elif options["density"] == "random":
             x_vals = np.random.normal(i, 0.08, size=len(rewards_sorted))
-        elif options['density'] == 'none':
+        elif options["density"] == "none":
             x_vals = np.full_like(y_vals, i, dtype=float)
+        elif options["density"] == "generations":
+            # Generate x values based on generation index
+            gen_indices = np.repeat(np.arange(data.shape[0]), data.shape[1])
+            x_vals = np.full_like(y_vals, i, dtype=float) - 0.4 + (gen_indices / data.shape[0]) * 0.8
         else:
-            msg = f'Unknown density option: {options["density"]}'
+            msg = f"Unknown density option: {options['density']}"
             raise ValueError(msg)
 
         # -- Scatter --
@@ -121,7 +117,7 @@ def draw_parameters(
             x_vals,
             y_vals,
             c=rewards_sorted,
-            cmap=options['cmap'],
+            cmap=options["cmap"],
             s=6,
             alpha=0.3,
             rasterized=True,  # avoids long render times for PDFs
@@ -129,14 +125,14 @@ def draw_parameters(
 
     # --- 5. Formatting ---
     ax.set_xticks(np.arange(n_params))
-    ax.set_xticklabels(parameter_names, fontsize=12, rotation=45, ha='right')
+    ax.set_xticklabels(parameter_names, fontsize=12, rotation=45, ha="right")
     ax.set_ylabel(
-        r'Normalized Parameter Values $\tilde{\xi}_i \in [0, 1]$', fontsize=14
+        r"Normalized Parameter Values $\tilde{\xi}_i \in [0, 1]$", fontsize=14
     )
 
     # Grid separators
     for i in range(n_params - 1):
-        ax.axvline(i + 0.5, color='gray', linestyle=':', alpha=0.3)
+        ax.axvline(i + 0.5, color="gray", linestyle=":", alpha=0.3)
 
     # Axis cleanup
     ax.set_xlim(-0.5, n_params - 0.5)
@@ -146,10 +142,19 @@ def draw_parameters(
     # Check if figure exists to add colorbar properly
     if axis is None:
         cbar = plt.colorbar(sc, ax=ax, pad=0.01)
-        cbar.set_label('$R_P$', fontsize=14)
+        cbar.set_label("$R_P$", fontsize=14)
     else:
         # If part of a subplot, usually handled outside,
         # but we can try to attach it if requested.
         pass
 
     return ax
+
+
+
+def draw_parameter_scatter(
+    opt_history,
+    axis=None,
+    options=PARAMETER_PLOT_DEFAULT_OPTIONS,
+):
+    
