@@ -24,6 +24,7 @@ class OptimizerIterator:
         """
         self.rpars = rpars
         self.calculator = calculator
+        self.parameter_names = calculator.parameter_space.get_parameter_names()
         self._cholesky = None # default to None
         self._upcoming_optimizers = self.rpars.VLJ_ALGO
         self._done_optimizers = []
@@ -151,6 +152,11 @@ class OptimizerIterator:
         self._current_x = result.best_x
 
         last_optimizer = self._done_optimizers[-1]
+
+        # store the parameter names from the calculator
+        result.add_metadata(parameter_names=self.parameter_names)
+
+        # store the Cholesky factor if the last optimizer was CMA-ES
         if isinstance(last_optimizer, optimization.optimizer.CMAESOptimizer):
             self._cholesky = result.cholesky
             logger.debug(

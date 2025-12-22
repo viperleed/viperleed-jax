@@ -2,6 +2,8 @@
 
 __authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
 __created__ = '2024-01-03'
+__copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
+__license__ = 'GPLv3+'
 
 from functools import partial
 from pathlib import Path

@@ -2,6 +2,8 @@
 
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-09-08'
+__copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
+__license__ = 'GPLv3+'
 
 import numpy as np
 
@@ -310,3 +312,9 @@ class OccTree(DisplacementTree):
     @property
     def ref_calc_values(self):
         return self._ref_occupations
+
+    def _parameter_name(self, leaf, test_array):
+        # perform sanity checks
+        super()._parameter_name(leaf, test_array)
+        # no need to distinguish further scalar occ parameters
+        return f'At #{leaf.num} ({leaf.element}) occ'

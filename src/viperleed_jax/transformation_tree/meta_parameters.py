@@ -2,6 +2,8 @@
 
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-10-01'
+__copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
+__license__ = 'GPLv3+'
 
 import numpy as np
 
@@ -94,3 +96,7 @@ class MetaTree(LinearTree):
             child_zonotope=v0r_range_zonotope,
         )
         self.nodes.append(implicit_constraint_node)
+
+    def get_parameter_names(self):
+        """Return the names of the meta parameters."""
+        return ['V0r']

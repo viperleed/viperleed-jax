@@ -2,6 +2,9 @@
 
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-10-07'
+__copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
+__license__ = 'GPLv3+'
+
 
 import logging
 from abc import ABC, abstractmethod
@@ -626,6 +629,43 @@ class DisplacementTree(LinearTree):
             raise ValueError(
                 'Tree must be finalized before getting reference values.'
             )
+
+    def get_parameter_names(self):
+        if not self.finalized:
+            raise ValueError(
+                'Tree must be finalized before generating parameter names.'
+            )
+
+        leaf_transformers = [
+            self.root.transformer_to_descendent(leaf) for leaf in self.leaves
+        ]
+        # use weights only, since biases are irrelevant for the connection
+        leaf_transformers_weights = [
+            transformer.weights for transformer in leaf_transformers
+        ]
+        parameter_names = []
+        for root_id in range(self.root.dof):
+            test_array = np.zeros((self.root.dof,))
+            test_array[root_id] = 1.0
+            mask = [
+                np.any(transformer_weights @ test_array != 0.0)
+                for transformer_weights in leaf_transformers_weights
+            ]
+            root_param_leaves = list(compress(self.leaves, mask))
+            primary_leaf = _select_primary_leaf(self.root, root_param_leaves)
+            parameter_names.append(
+                self._parameter_name(primary_leaf, test_array)
+            )
+        return parameter_names
+
+    @abstractmethod
+    def _parameter_name(self, leaf, test_array):
+        if not self.finalized:
+            raise ValueError(
+                'Tree must be finalized before generating parameter names.'
+            )
+        if leaf not in self.leaves:
+            raise ValueError('Leaf not found in this tree')
 
     def reference_parameters(self):
         """Return the parameter values that recreate the reference state.

@@ -2,6 +2,8 @@
 
 __authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
 __created__ = '2024-01-02'
+__copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
+__license__ = 'GPLv3+'
 
 from functools import partial
 
@@ -92,15 +94,17 @@ def spherical_harmonics_components(l_max, vector):
     TensErLEED. It uses the jax.scipy.special.sph_harm function to produce
     equivalent results.
     """
+    z, *_ = vector
     _, theta, phi = cart_to_polar(vector)
     l = DENSE_L[2 * l_max]
     m = DENSE_M[2 * l_max]
 
-    is_on_pole_axis = abs(theta) <= EPS
+    is_on_pole_axis = (abs(theta) <= EPS) | (abs(theta - jnp.pi) <= EPS)
     _theta = jnp.where(is_on_pole_axis, 0.1, theta)
 
     # values at the poles(theta = 0) depend on l and m only
     pole_values = (m == 0) * jnp.sqrt((2 * l + 1) / (4 * jnp.pi))
+    pole_values = (z < 0) * ((-1) ** l) * pole_values + (z >= 0) * pole_values
     non_pole_values = sph_harm_y(
         l, m, jnp.asarray([_theta]), jnp.asarray([phi]), n_max=2 * l_max
     )
@@ -271,7 +275,7 @@ def mirror_across_plane_sum_1(vector):
 
 
 @partial(jax.jit, static_argnames=('index', 'func'))
-def apply_fun_grouped(in_vec, index, func, group_args):
+def apply_fun_grouped(in_vec, index, func, group_args=None):
     """Apply a function separately to groups determined by an index array.
 
     For each unique index value in `index`, this function collects all elements
@@ -281,12 +285,21 @@ def apply_fun_grouped(in_vec, index, func, group_args):
     Parameters
     ----------
     in_vec : jax.Array
-        Input vector of shape (n,).
-    index : tuple
-        Integer array of shape (n,) indicating group membership.
+        Input vector of shape (n,). The elements to be grouped and transformed.
+    index : jax.Array
+        Integer array of shape (n,) indicating group membership. Elements
+        with the same index value belong to the same group.
     func : callable
-        Function that takes a 1D array of arbitrary length and returns a 1D
-        array of the same length. Applied separately to each group.
+        Function that takes the group array as its first argument and any
+        additional group arguments, and returns a 1D array of the same length
+        as the input group.
+        Signature: `func(group_elements, group_arg1, group_arg2, ...)`
+    group_args : jax.Array or tuple[jax.Array], optional
+        Auxiliary arguments for `func`. Each array must be 1D with a length
+        equal to the number of unique groups. The element at position `i` in
+        each array is passed as an argument to `func` when processing the
+        group identified by index `i`. Defaults to **None**, in which case
+        `func` should only accept the group array.
 
     Returns
     -------
@@ -304,16 +317,23 @@ def apply_fun_grouped(in_vec, index, func, group_args):
     >>> import jax.numpy as jnp
     >>> v = jnp.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
     >>> ind = jnp.array([0, 1, 0, 1, 2, 2])
-    >>> def double(x):
-    ...     return x * 2
-    >>> apply_fun_grouped(v, ind, double)
-    Array([ 2.,  4.,  6.,  8., 10., 12.], dtype=float32)
+    >>> # Define group-specific arguments: one for each unique group
+    >>> # index (0, 1, 2)
+    >>> factors = jnp.array([2.0, 3.0, 0.5])  # Factor for group 0, 1, and 2
+    >>> def scale(x, factor):
+    ...     return x * factor
+    >>> apply_fun_grouped(v, ind, scale, factors)
+    Array([ 2. ,  6. ,  6. , 12. ,  2.5,  3. ], dtype=float32)
+
     """
     unique_inds = np.unique(index)
 
-    if not isinstance(group_args, (tuple, list)):
+    # handle the default None case
+    if group_args is None:
+        group_args = ()
+    elif not isinstance(group_args, (tuple, list)):
         group_args = (group_args,)
-    group_args = tuple(group_args)
+    group_args = tuple(group_args)  # ensure it's a tuple for indexing
 
     # prepare output buffer
     out_vec = jnp.zeros(in_vec.shape[0])
@@ -321,6 +341,7 @@ def apply_fun_grouped(in_vec, index, func, group_args):
     for idx in unique_inds:
         mask = index == idx
         group = in_vec[mask]
+        # Pass the group-specific argument for the current index 'idx'
         transformed = func(group, *(arg[idx] for arg in group_args))
         # Store the mask and transformed group
         # put into the output vector

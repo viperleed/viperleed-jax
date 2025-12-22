@@ -2,6 +2,8 @@
 
 __authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
 __created__ = '2024-05-03'
+__copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
+__license__ = 'GPLv3+'
 
 import copy
 from functools import partial
@@ -9,6 +11,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import numpy as np
+import interpax
 from interpax import CubicSpline
 from viperleed.calc import LOGGER as logger
 from viperleed.calc.files.iorfactor import (
@@ -16,14 +19,16 @@ from viperleed.calc.files.iorfactor import (
     prepare_rfactor_energy_ranges,
 )
 from viperleed.calc.lib import leedbase
+from viperleed.calc.lib import rfactor
+from viperleed.calc.lib import spline_interpolation
 
-from viperleed_jax import rfactor, utils
+
+from viperleed_jax import utils
 from viperleed_jax.batching import Batching
 from viperleed_jax.constants import BOHR, HARTREE
 from viperleed_jax.dense_quantum_numbers import (
     vmapped_l_array_to_compressed_quantum_index,
 )
-from viperleed_jax.interpolation import interpolate_ragged_array
 from viperleed_jax.lib import math
 from viperleed_jax.lib.calculator import map_indices
 from viperleed_jax.lib.derived_quantities.normalized_occupations import (
@@ -36,7 +41,17 @@ from viperleed_jax.lib.derived_quantities.propagtor import Propagators
 from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
 from viperleed_jax.lib.tensor_leed.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
-from viperleed_jax.rfactor import R_FACTOR_SYNONYMS
+
+
+# swap out numpy for jax.numpy in interpolation and rfactor modules
+spline_interpolation.xp = jnp
+rfactor.xp = jnp
+rfactor.stop_gradient = jax.lax.stop_gradient
+
+# swap out scipy spline for interpax spline
+
+spline_interpolation.CubicSpline = partial(interpax.CubicSpline, check=False)
+spline_interpolation.PPoly = interpax.PPoly
 
 
 class TensorLEEDCalculator:
@@ -118,10 +133,8 @@ class TensorLEEDCalculator:
         exp_energies, _, _, exp_intensities = beamlist_to_array(
             rparams.expbeams
         )
-        exp_hk = [b.hk for b in rparams.expbeams]
 
         # beam indices
-        beam_indices = [beam.hk for beam in rparams.ivbeams]
         self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
         self.n_beams = self.beam_indices.shape[0]
 
@@ -269,7 +282,7 @@ class TensorLEEDCalculator:
 
     def set_rfactor(self, rfactor_name):
         _rfactor_name = rfactor_name.lower().strip()
-        for func, synonyms in R_FACTOR_SYNONYMS.items():
+        for func, synonyms in rfactor.R_FACTOR_SYNONYMS.items():
             if _rfactor_name in synonyms:
                 self.rfactor_func = func
                 logger.info(f'R-factor set to {func.__name__}.')
@@ -284,7 +297,7 @@ class TensorLEEDCalculator:
 
         self.comp_intensity = comp_intensity
         self.comp_energies = comp_energies
-        self.exp_spline = interpolate_ragged_array(
+        self.exp_spline = spline_interpolation.interpolate_ragged_array(
             self.comp_energies,
             self.comp_intensity,
             bc_type=self.bc_type,

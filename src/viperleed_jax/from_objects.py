@@ -2,6 +2,8 @@
 
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2025-04-17'
+__copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
+__license__ = 'GPLv3+'
 
 import numpy as np
 from viperleed.calc import LOGGER as logger
@@ -157,7 +159,7 @@ def setup_tl_calculator(
 def _determine_l_max(rpars):
     if rpars.VLJ_CONFIG['t-leed-l_max'] == -1:
         # use the maximum l_max from the reference calculation
-        return rpars.LMAX.max
+        return rpars.LMAX.max - 1
 
     # use the l_max from the rparams
     return rpars.VLJ_CONFIG['t-leed-l_max']

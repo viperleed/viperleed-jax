@@ -2,7 +2,8 @@
 
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-11-25'
-
+__copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
+__license__ = 'GPLv3+'
 
 class TransformationTreeError(Exception):
     """Base class for errors in the transformation tree and nodes."""

@@ -2,6 +2,8 @@
 
 __authors__ = ('Alexander M. Imre (@amimre)',)
 __created__ = '2024-09-09'
+__copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
+__license__ = 'GPLv3+'
 
 import numpy as np
 
@@ -133,3 +135,9 @@ class VibTree(DisplacementTree):
     def ref_calc_values(self):
         """Return the reference calculation values for all leaves."""
         return np.array([leaf.ref_vib_amp for leaf in self.leaves])
+
+    def _parameter_name(self, leaf, test_array):
+        # perform sanity checks
+        super()._parameter_name(leaf, test_array)
+        # no need to distinguish further scalar vib parameters
+        return f'At #{leaf.num} ({leaf.element}) vib'
