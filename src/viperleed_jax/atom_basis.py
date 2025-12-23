@@ -157,7 +157,7 @@ class AtomBasis:
         # If nums are specified, apply the selection based on nums
         if target_token.nums is not None:
             # check range for nums
-            if any(num < 1 or num > len(self) for num in target_token.nums):
+            if any(num < 1 for num in target_token.nums):
                 msg = (
                     f'Invalid atom number for target: {target_token.target_str}'
                 )
