@@ -495,8 +495,6 @@ class DisplacementTree(LinearTree):
         # remove duplicates
         roots_to_link = list({root: None for root in roots_to_link}.keys())
 
-        print('roots to link:', roots_to_link)
-
         # if there are no roots to link, complain
         if len(roots_to_link) == 0:
             msg = (
