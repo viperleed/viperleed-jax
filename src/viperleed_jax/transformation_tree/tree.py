@@ -1,6 +1,8 @@
 """Module parameter_space."""
 
-__authors__ = ('Alexander M. Imre (@amimre)',)
+__authors__ = ('Alexander M. Imre (@amimre)',
+               'Florian Kraushofer (@fkraushofer)',
+               )
 __created__ = '2024-10-07'
 __copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
 __license__ = 'GPLv3+'
@@ -19,7 +21,7 @@ from viperleed.calc.classes.perturbation_mode import PerturbationMode
 from viperleed.calc.files.new_displacements.lines import ConstraintLine
 
 from viperleed_jax.lib.math import EPS
-from viperleed_jax.lib.matrix import closest_to_identity
+from viperleed_jax.lib.matrix import closest_to_identity, xyz_matrix_to_zxy
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
@@ -523,6 +525,10 @@ class DisplacementTree(LinearTree):
             user_trafo = float(user_arr.flatten()[0]) * np.eye(link_target.dof)
         elif user_arr.shape == (link_target.dof, link_target.dof):
             user_trafo = user_arr
+            # 3-dimenational linear operations from user input have coordinates
+            #  order xyz, transform them to zxy order:
+            if link_target.dof == 3:
+                user_trafo = xyz_matrix_to_zxy(user_trafo)
         else:
             msg = (
                 f'Constraint line "{constraint_line}" has a linear transformation '
