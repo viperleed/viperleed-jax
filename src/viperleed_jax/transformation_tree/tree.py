@@ -528,7 +528,7 @@ class DisplacementTree(LinearTree):
             # 3-dimensional linear operations from user input have coordinates
             # order xyz, transform them to zxy order:
             if link_target.dof == 3:
-                user_trafo = LinearMap(xyz_matrix_to_zxy(user_trafo))
+                user_trafo = xyz_matrix_to_zxy(user_trafo)
         else:
             msg = (
                 f'Constraint line "{constraint_line}" has a linear '
