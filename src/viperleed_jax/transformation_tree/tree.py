@@ -525,16 +525,16 @@ class DisplacementTree(LinearTree):
             user_trafo = float(user_arr.flatten()[0]) * np.eye(link_target.dof)
         elif user_arr.shape == (link_target.dof, link_target.dof):
             user_trafo = user_arr
-            # 3-dimenational linear operations from user input have coordinates
-            #  order xyz, transform them to zxy order:
+            # 3-dimensional linear operations from user input have coordinates
+            # order xyz, transform them to zxy order:
             if link_target.dof == 3:
                 user_trafo = xyz_matrix_to_zxy(user_trafo)
         else:
             msg = (
-                f'Constraint line "{constraint_line}" has a linear transformation '
-                f'of shape {user_arr.shape} but the target has {link_target.dof} '
-                f'DOFs. The transformation must be of shape ({link_target.dof}, '
-                f'{link_target.dof}).'
+                f'Constraint line "{constraint_line}" has a linear '
+                f'transformation of shape {user_arr.shape} but the target has '
+                f'{link_target.dof} DOFs. The transformation must be of shape '
+                f'({link_target.dof}, {link_target.dof}).'
             )
             raise ValueError(msg)
 
