@@ -1,6 +1,8 @@
 """Module matrix from viperleed_jax.lib."""
 
-__authors__ = ('Alexander M. Imre (@amimre)',)
+__authors__ = ('Alexander M. Imre (@amimre)',
+               'Florian Kraushofer (@fkraushofer)',
+               )
 __created__ = '2025-06-10'
 __copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
 __license__ = 'GPLv3+'
@@ -70,3 +72,26 @@ def off_diagonal_frobenius(matrix):
     # Compute the Frobenius norm of the difference
     difference = matrix - diagonal_projection
     return np.linalg.norm(difference, 'fro')
+
+
+def xyz_matrix_to_zxy(A_xyz: np.ndarray):
+    """
+    Takes a matrix (e.g. a linear operation) in a basis where coordinates
+    are ordered (x,y,z) and returns the corresponding matrix to be used in a
+    (z,x,y) coordinate system (i.e. in 'LEED coordinates').
+
+    Parameters
+    ----------
+    A_xyz : numpy.ndarray
+        The input matrix in xyz coordinates. Must be 3-dim int or float.
+
+    Returns
+    -------
+    numpy.ndarray
+        The transformed matrix, which will act on zxy vectors.
+
+    """
+    P = np.array([[0, 1, 0],
+                  [0, 0, 1],
+                  [1, 0, 0]], dtype=A_xyz.dtype)  # v_xyz = P @ v_zxy
+    return P.T @ A_xyz @ P
