@@ -196,12 +196,12 @@ class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
     def __call__(self, x0):
         self._set_cholesky_related(x0)
         logger.info(self._start_message())
-        opt_history = GradOptimizationHistory()
+        opt_history = OptimizationHistory()
 
         def _fun(y):
             x = self.transform_x(y, x0)
             val = self.fun(x)
-            opt_history.append(x, R=val, grad_R=None)
+            opt_history.add_step(x, R=val, grad_R=None)
             return val
 
         y0 = np.zeros_like(x0)
@@ -219,7 +219,11 @@ class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
             bounds=bounds if self.use_bounds else None,
             options=self.options,
         )
-        wrapped = GradOptimizerResult(result, opt_history)
+        opt_history.mark_complete(
+            message=result.message,
+            nit=result.nit,
+            success=result.success,
+        )
 
         if result.message == 'Inequality constraints incompatible':
             msg = (
@@ -232,8 +236,8 @@ class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
             )
             logger.error(msg)
 
-        logger.info(self._end_message(wrapped))
-        return wrapped
+        logger.info(self._end_message(opt_history))
+        return opt_history
 
 
 class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
