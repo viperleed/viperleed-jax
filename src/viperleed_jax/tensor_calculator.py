@@ -19,6 +19,7 @@ from viperleed.calc.files.iorfactor import (
     prepare_rfactor_energy_ranges,
 )
 from viperleed.calc.lib import leedbase
+from viperleed.calc.lib import dynamic_numerical_lib as dnl
 from viperleed.calc.lib import rfactor
 from viperleed.calc.lib import spline_interpolation
 
@@ -42,16 +43,14 @@ from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
 from viperleed_jax.lib.tensor_leed.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
 
+### SWAP NumPy and SciPy for JAX and Interpax ###
 
-# swap out numpy for jax.numpy in interpolation and rfactor modules
-spline_interpolation.xp = jnp
-rfactor.xp = jnp
-rfactor.stop_gradient = jax.lax.stop_gradient
-
+# swap out numpy for jax.numpy
+dnl.xp = jnp
+dnl.stop_gradient = jax.lax.stop_gradient
 # swap out scipy spline for interpax spline
-
-spline_interpolation.CubicSpline = partial(interpax.CubicSpline, check=False)
-spline_interpolation.PPoly = interpax.PPoly
+dnl.CubicSpline = partial(interpax.CubicSpline, check=False)
+dnl.PPoly = interpax.PPoly
 
 
 class TensorLEEDCalculator:
@@ -186,7 +185,7 @@ class TensorLEEDCalculator:
         self._requested_batch_atoms = rparams.VLJ_BATCH['atoms']
 
         # default R-factor is Pendry
-        self.rfactor_func = rfactor.pendry_R
+        self.rfactor_func = rfactor.R_pendry
 
         if self.interpolation_deg != 3:
             msg = (
@@ -628,7 +627,7 @@ class TensorLEEDCalculator:
             self.bc_type,
         )
 
-    def R(self, free_params, per_beam=False, **kwargs):
+    def R(self, free_params, groups=None, **kwargs):
         """Evaluate R-factor."""
         if self.comp_intensity is None:
             raise ValueError('Comparison intensity not set.')
@@ -654,7 +653,7 @@ class TensorLEEDCalculator:
             self.interpolation_step,
             self.target_grid,
             self.exp_spline,
-            per_beam=per_beam,
+            groups=groups,
             **kwargs,
         )
 
@@ -915,7 +914,7 @@ def batch_delta_amps(
     static_argnames=(
         'interpolation_step',
         'rfactor_func',
-        'per_beam',
+        'groups',
         #'ref_calc_params',
     ),
 )
@@ -928,7 +927,7 @@ def calc_r_factor(
     interpolation_step,
     target_grid,
     exp_spline,
-    per_beam=False,
+    groups=None,
     **kwargs,
 ):
     v0i_electron_volt = -ref_calc_params.v0i * HARTREE
@@ -948,7 +947,7 @@ def calc_r_factor(
         interpolation_step,
         target_grid,
         exp_spline,
-        per_beam=per_beam,
+        groups=groups,
         **kwargs,
     )
 
