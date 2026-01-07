@@ -48,6 +48,8 @@ from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
 # swap out numpy for jax.numpy
 dnl.xp = jnp
 dnl.stop_gradient = jax.lax.stop_gradient
+# swap bincount
+dnl.bincount = jnp.bincount
 # swap out scipy spline for interpax spline
 dnl.CubicSpline = partial(interpax.CubicSpline, check=False)
 dnl.PPoly = interpax.PPoly
@@ -915,6 +917,7 @@ def batch_delta_amps(
         'interpolation_step',
         'rfactor_func',
         'groups',
+        'num_groups',
         #'ref_calc_params',
     ),
 )
@@ -928,6 +931,7 @@ def calc_r_factor(
     target_grid,
     exp_spline,
     groups=None,
+    num_groups=None,
     **kwargs,
 ):
     v0i_electron_volt = -ref_calc_params.v0i * HARTREE
@@ -948,6 +952,7 @@ def calc_r_factor(
         target_grid,
         exp_spline,
         groups=groups,
+        num_groups=num_groups,
         **kwargs,
     )
 
