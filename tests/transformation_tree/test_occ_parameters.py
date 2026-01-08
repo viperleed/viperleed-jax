@@ -70,7 +70,8 @@ class TestPt25Rh75_O_3x1:
         line = ConstraintLine(f'occ Me* L(1-3) = total {total_occ}')
         ptrh_tree.apply_explicit_constraint(line)
         bounds_line = OccDeltaLine('Me* L(1-3) = Rh 0.10 0.90, Pt 0.90 0.10')
-        ptrh_tree.apply_bounds(bounds_line)
+        ptrh_tree.apply_bounds_line(bounds_line)
+        ptrh_tree.apply_bounds()
 
         ptrh_tree.apply_implicit_constraints()
         ptrh_tree.finalize_tree()
