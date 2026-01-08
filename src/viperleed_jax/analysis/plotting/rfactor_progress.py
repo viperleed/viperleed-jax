@@ -30,8 +30,16 @@ RFACTOR_PROGRESS_DEFAULT_OPTIONS = {
 def draw_rfactor_progress(
     trajectory, axis=None,
     options=RFACTOR_PROGRESS_DEFAULT_OPTIONS,
-    colors=RFACTOR_PROGRESS_DEFAULT_COLORS
+    colors=RFACTOR_PROGRESS_DEFAULT_COLORS,
+    **kwargs
 ):
+    options = options.copy()
+    options.update(kwargs)    # accept kwargs to modify options
+    unknown = set(options) - set(RFACTOR_PROGRESS_DEFAULT_OPTIONS)
+    if unknown:
+        raise TypeError('Unknown keyword argument(s) in '
+                        f'draw_rfactor_progress: {unknown}')
+
     if axis is not None:
         ax = axis
     else:
