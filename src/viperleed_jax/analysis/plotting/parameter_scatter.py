@@ -18,8 +18,17 @@ def draw_parameters(
     axis=None,
     options=PARAMETER_PLOT_DEFAULT_OPTIONS,
     parameter_names=None,
+    **kwargs
 ):
     """Plot parameter distribution."""
+
+    options = options.copy()
+    options.update(kwargs)    # accept kwargs to modify options
+    unknown = set(options) - set(PARAMETER_PLOT_DEFAULT_OPTIONS)
+    if unknown:
+        raise TypeError('Unknown keyword argument(s) in '
+                        f'draw_parameters: {unknown}')
+
     if axis is not None:
         ax = axis
     else:
