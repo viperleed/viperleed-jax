@@ -113,7 +113,8 @@ def draw_parameters(
         elif options["density"] == "generations":
             # Generate x values based on generation index
             gen_indices = np.repeat(np.arange(data.shape[0]), data.shape[1])
-            x_vals = np.full_like(y_vals, i, dtype=float) - 0.4 + (gen_indices / data.shape[0]) * 0.8
+            x_vals = (np.full_like(y_vals, i, dtype=float) - 0.4
+                      + (gen_indices / data.shape[0]) * 0.8)
         else:
             msg = f"Unknown density option: {options['density']}"
             raise ValueError(msg)
