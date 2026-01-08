@@ -12,14 +12,14 @@ import numpy as np
 from viperleed_jax.analysis.optimization_history import OptimizationHistory
 from viperleed_jax.analysis.ref_calc_history import RefCalcHistory
 
-DEFAULT_COLORS = {
+RFACTOR_PROGRESS_DEFAULT_COLORS = {
     'ref_calc': 'tab:blue',
     'opt_running_min': 'tab:blue',
     'opt_evals_single': 'tab:red',
     'opt_evals_multiple': 'tab:orange',
 }
 
-DEFAULT_PLOT_OPTIONS = {
+RFACTOR_PROGRESS_DEFAULT_OPTIONS = {
     'x_scale': 'linear',
     'y_scale': 'sqrt',
     'running_min_overall': True,
@@ -28,7 +28,9 @@ DEFAULT_PLOT_OPTIONS = {
 
 
 def draw_rfactor_progress(
-    trajectory, axis=None, options=DEFAULT_PLOT_OPTIONS, colors=DEFAULT_COLORS
+    trajectory, axis=None,
+    options=RFACTOR_PROGRESS_DEFAULT_OPTIONS,
+    colors=RFACTOR_PROGRESS_DEFAULT_COLORS
 ):
     if axis is not None:
         ax = axis
