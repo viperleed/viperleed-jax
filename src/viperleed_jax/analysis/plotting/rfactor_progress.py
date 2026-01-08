@@ -135,7 +135,8 @@ def draw_rfactor_progress(
 
 # square root scale and its inverse for axes
 def _f_sqrt(e):
-    return np.abs(np.sqrt(e + 0j)) * np.sign(e)
+    with np.errstate(invalid="ignore"):
+        return np.abs(np.sqrt(e + 0j)) * np.sign(e)
 
 
 def _f_inv_func(e):
