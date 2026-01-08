@@ -84,7 +84,7 @@ def draw_rfactor_progress(
             max_R = max(max_R, np.max(running_min))
 
             # scatter all evaluations
-            ax.set_autoscale_on(False)
+            # ax.set_autoscale_on(False)
             times_repeat = np.repeat(times, segment.R_history.shape[1])
             # if there are multiple evals per time, use alpha 0.05, else 0.2
             color = (
@@ -96,7 +96,7 @@ def draw_rfactor_progress(
             ax.scatter(
                 times_repeat, segment.R_history, alpha=alpha, color=color
             )
-            ax.set_autoscale_on(True)
+            # ax.set_autoscale_on(True)
 
             cum_time += segment.duration
 
