@@ -42,17 +42,26 @@ from viperleed_jax.lib.derived_quantities.propagtor import Propagators
 from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
 from viperleed_jax.lib.tensor_leed.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
+from viperleed.calc.lib.rfactor.utils import average_beam_array
+
 
 ### SWAP NumPy and SciPy for JAX and Interpax ###
 
 # swap out numpy for jax.numpy
 dnl.xp = jnp
 dnl.stop_gradient = jax.lax.stop_gradient
-# swap bincount
+# swap bincount, vmap and segement_sum
 dnl.bincount = jnp.bincount
+dnl.vmap = jax.vmap
+dnl.segment_sum = jax.ops.segment_sum
 # swap out scipy spline for interpax spline
 dnl.CubicSpline = partial(interpax.CubicSpline, check=False)
 dnl.PPoly = interpax.PPoly
+
+# JIT average_beam_array
+average_beam_array = jax.jit(
+    average_beam_array, static_argnames=['beam_correspondence']
+)
 
 
 class TensorLEEDCalculator:
@@ -181,8 +190,6 @@ class TensorLEEDCalculator:
 
         self.delta_amp_prefactors = self._calc_delta_amp_prefactors()
 
-        self.exp_spline = None
-
         self._requested_batch_energies = rparams.VLJ_BATCH['energies']
         self._requested_batch_atoms = rparams.VLJ_BATCH['atoms']
 
@@ -282,14 +289,7 @@ class TensorLEEDCalculator:
         return np.unique(np.array(self.atom_ids)).size
 
     def set_rfactor(self, rfactor_name):
-        _rfactor_name = rfactor_name.lower().strip()
-        for func, synonyms in rfactor.R_FACTOR_SYNONYMS.items():
-            if _rfactor_name in synonyms:
-                self.rfactor_func = func
-                logger.info(f'R-factor set to {func.__name__}.')
-                return
-        err_msg = f'Unknown R-factor name: {rfactor_name}'
-        raise ValueError(err_msg)
+        self.rfactor_func = rfactor.select_rfactor(rfactor_name)
 
     def set_experiment_intensity(self, comp_intensity, comp_energies):
         logger.debug(
@@ -985,57 +985,3 @@ def _interpolate_intensity(
     for _ in range(deriv_deg):
         spline = spline.derivative()
     return spline(target_grid)
-
-
-@partial(jax.jit, static_argnames=['beam_correspondence'])
-def average_beam_array(beam_array, beam_correspondence):
-    """Average the beam array over the beam correspondence.
-
-    Parameters
-    ----------
-    beam_array : array_like
-        The beam array to average, shape (n_energies, n_beams).
-    beam_correspondence : tuple
-        A tuple containing the beam correspondence, which maps the
-        experimental beams to the theoretical beams. It should be a 1D array
-        of integers with shape (n_beams,).
-
-    Returns
-    -------
-    array_like
-        The averaged beam array, shape (n_energies, n_averaged_beams).
-
-    Raises
-    ------
-    ValueError
-        If the number of beams in the beam array does not match the length of
-        the beam correspondence.
-    """
-    # convert beam correspondence to numpy array
-    beam_corr = np.array(beam_correspondence, dtype=np.int32)
-
-    # check if beam_array and beam_corr have the same number of beams
-    if beam_array.shape[1] != beam_corr.shape[0]:
-        raise ValueError(
-            'Beam array and beam correspondence must have the same number of beams.'
-        )
-
-    # beam_corr may contain -1 for beams that have no correspondence; these
-    # need to be filtered out
-    valid_beam_mask = beam_corr != -1
-    beam_corr = beam_corr[valid_beam_mask]
-    filtered_beam_array = beam_array[:, valid_beam_mask]
-    # determine the number of averaged beams after filtering
-    n_averaged_beams = np.unique(beam_corr).size
-
-    # get weights for averaging
-    ones = jnp.ones_like(beam_corr, dtype=float)
-    summed = jax.ops.segment_sum(ones, beam_corr, num_segments=n_averaged_beams)
-    averaged_beam_weights = jnp.reciprocal(summed)
-
-    # sum beams according to the beam correspondence
-    mix_beams_vmap = jax.vmap(jax.ops.segment_sum, in_axes=(0, None, None))
-    averaged = mix_beams_vmap(filtered_beam_array, beam_corr, n_averaged_beams)
-
-    # apply the averaged weights
-    return averaged * averaged_beam_weights[jnp.newaxis, :]
