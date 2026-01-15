@@ -190,6 +190,7 @@ def draw_parameters(
 def draw_parameter_scatter(
     opt_history,
     axis=None,
+    x_axis='generation',
 ):
     """Plot parameter standard deviation vs. generations."""
     if axis is not None:
@@ -208,15 +209,24 @@ def draw_parameter_scatter(
         raise ValueError(msg)
 
     generations = np.arange(opt_history.x_history.shape[0])
+    times = opt_history.relative_times
 
     # standard deviation across the population
     stds = np.std(opt_history.x_history, axis=1)
     # mean standard deviation across all parameters
     mean_std = np.mean(stds, axis=1)
 
+    if x_axis == 'time':
+        x_axis_vals = times
+    elif x_axis == 'generation':
+        x_axis_vals = generations
+    elif x_axis != 'generation':
+        msg = f'Unknown x_axis option: {x_axis}'
+        raise ValueError(msg)
+
     # plot
     ax.plot(
-        generations,
+        x_axis_vals,
         mean_std,
         linewidth=2,
         color='black',
