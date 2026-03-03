@@ -406,12 +406,15 @@ class ParameterSpace:
             ],
         )
 
-    def graphical_export(self, filename):
+    def graphical_export(self, filename, export_options=None):
         """Create and save a graphical representation of the tree to file."""
         dummy_parent = self._dummy_parent()
 
         # Export the tree structure to a PDF file
-        UniqueDotExporter(dummy_parent, options=['rankdir=LR']).to_picture(
+        options = {'rankdir': 'LR'}
+        if export_options is not None:
+            options.update(export_options)
+        UniqueDotExporter(dummy_parent, options=options).to_picture(
             filename=filename,
         )
 

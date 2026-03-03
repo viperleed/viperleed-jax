@@ -7,41 +7,75 @@ __license__ = 'GPLv3+'
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import LogNorm
 
 from viperleed_jax.analysis.optimization_history import OptimizationHistory
 
-PARAMETER_PLOT_DEFAULT_OPTIONS = {'cmap': 'viridis', 'density': 'auto'}
+PARAMETER_PLOT_DEFAULT_OPTIONS = {'cmap': 'viridis', 'density': 'auto', 's': 6}
 
+PARAMETER_PLOT_DEFAULT_FONTS = {
+    'labelsize': 14,
+    'ticksize': 12,
+}
 
 def draw_parameters(
     opt_history,
     axis=None,
     options=PARAMETER_PLOT_DEFAULT_OPTIONS,
+    font=PARAMETER_PLOT_DEFAULT_FONTS,
     parameter_names=None,
+    show_parm_ids=None,  # <--- New optional argument
 ):
-    """Plot parameter distribution."""
+    """
+    Plot parameter distribution.
+
+    Args:
+        show_parm_ids (iterable, optional): List of integer indices corresponding
+                                            to the parameters to be plotted.
+    """
     if axis is not None:
         ax = axis
     else:
         _, ax = plt.subplots(figsize=(15, 8))
 
     if not isinstance(opt_history, OptimizationHistory):
-        msg = f"Expected OptimizationHistory, got {type(opt_history)}"
+        msg = f'Expected OptimizationHistory, got {type(opt_history)}'
         raise TypeError(msg)
 
+    # Determine total parameters available in history
+    total_params = opt_history.x_history.shape[2]
+
+    # Resolve names for ALL parameters first
     if parameter_names is None:
-        # read from history metadata
         try:
-            parameter_names = opt_history.metadata["parameter_names"]
+            parameter_names = opt_history.metadata['parameter_names']
         except KeyError:
-            parameter_names = [f"p{i}" for i in range(opt_history.x_history.shape[2])]
+            parameter_names = [f'p{i}' for i in range(total_params)]
+
+    # specific parameter selection logic
+    if show_parm_ids is None:
+        # Default: Show all
+        show_parm_ids = np.arange(total_params)
+    else:
+        # Ensure it is an array of integers
+        show_parm_ids = np.array(show_parm_ids, dtype=int)
+
+    # Filter parameter names based on selection
+    # Using list comprehension in case parameter_names is a standard list
+    parameter_names = [parameter_names[i] for i in show_parm_ids]
 
     # --- 1. Data Preparation ---
-    # Shape: (Generations, Pop_Size, Params)
-    data = opt_history.x_history
+    # Filter the history tensor immediately
+    # Shape: (Generations, Pop_Size, Params_Subset)
+    data = opt_history.x_history[:, :, show_parm_ids]
+
+    # Also filter the best solution vector to match
+    best_x_subset = opt_history.best_x[show_parm_ids]
+
     # Shape: (Generations, Pop_Size)
     Rs = opt_history.R_history
 
+    # Update n_params to the size of the subset
     n_params = data.shape[2]
 
     # Flatten
@@ -57,9 +91,15 @@ def draw_parameters(
 
     data_norm = (data_flat - min_vals) / denom
 
+    # norm for color bar
+    log_norm = LogNorm(vmin=np.min(rewards_flat), vmax=np.max(rewards_flat))
+
+    # CRITICAL: Normalize the 'best_x' using the same scale so arrows appear correctly
+    # (Assuming best_x is in raw units like x_history)
+    best_x_norm = (best_x_subset - min_vals) / denom
+
     # --- 3. Sorting ---
-    # User logic: Highest R at the "bottom" (drawn first).
-    # argsort(-R) -> Descending order (Best to Worst).
+    # argsort(-R) -> Descending order (Best to Worst)
     sort_idx = np.argsort(-rewards_flat)
     data_sorted = data_norm[sort_idx]
     rewards_sorted = rewards_flat[sort_idx]
@@ -71,9 +111,7 @@ def draw_parameters(
     for i in range(n_params):
         y_vals = data_sorted[:, i]
 
-        if options["density"] == "violin":
-            # -- Density-Dependent Jitter Calculation --
-            # We use a histogram to estimate local density fast (kde is slow for N > 10k)
+        if options['density'] == 'violin':
             counts, edges = np.histogram(y_vals, bins=50, density=False)
 
             # Map each Y-value to its density bin
@@ -97,79 +135,88 @@ def draw_parameters(
             )
 
             x_vals = i + jitter_offsets
-        elif options["density"] == "random":
+
+        elif options['density'] == 'random':
             x_vals = np.random.normal(i, 0.08, size=len(rewards_sorted))
-        elif options["density"] == "none":
+        elif options['density'] == 'none':
             x_vals = np.full_like(y_vals, i, dtype=float)
-        elif options["density"] == "generations":
-            # Generate x values based on generation index
+        elif options['density'] == 'generations':
             gen_indices = np.repeat(np.arange(data.shape[0]), data.shape[1])
-            x_vals = np.full_like(y_vals, i, dtype=float) - 0.4 + (gen_indices / data.shape[0]) * 0.8
+            x_vals = (
+                np.full_like(y_vals, i, dtype=float)
+                - 0.4
+                + (gen_indices / data.shape[0]) * 0.8
+            )
         else:
-            msg = f"Unknown density option: {options['density']}"
+            msg = f'Unknown density option: {options["density"]}'
             raise ValueError(msg)
 
-        # -- Scatter --
         sc = ax.scatter(
             x_vals,
             y_vals,
             c=rewards_sorted,
-            cmap=options["cmap"],
-            s=6,
+            cmap=options['cmap'],
+            s=options['s'],
             alpha=0.3,
-            rasterized=True,  # avoids long render times for PDFs
+            rasterized=True,
+            norm=log_norm,
         )
 
-    # Add indicator for the best configuration
+    # --- 5. Indicators for Best Configuration ---
+    # We now use 'best_x_norm' instead of 'opt_history.best_x'
     indices = np.arange(n_params)
-    width = 0.4  # How wide the marker extends from the center
+    width = 0.4
 
     # Draw the connecting line
     ax.hlines(
-        y=opt_history.best_x,
+        y=best_x_norm,
         xmin=indices - width,
         xmax=indices + width,
-        color="red",
+        color='red',
         linewidth=1.5,
-        zorder=20
+        zorder=20,
     )
 
     # Draw the Left Arrow (>)
     ax.scatter(
         indices - width,
-        opt_history.best_x,
-        marker='>',   # Points right (inward)
-        s=60,         # Size
+        best_x_norm,
+        marker='>',
+        s=60,
         color='red',
         zorder=21,
-        edgecolors='white', # Optional: adds a tiny white border to make it pop
-        linewidth=0.5
+        edgecolors='white',
+        linewidth=0.5,
     )
 
     # Draw the Right Arrow (<)
     ax.scatter(
         indices + width,
-        opt_history.best_x,
-        marker='<',   # Points left (inward)
+        best_x_norm,
+        marker='<',
         s=60,
         color='red',
         zorder=21,
         edgecolors='white',
-        linewidth=0.5
+        linewidth=0.5,
     )
 
-    # --- 5. Formatting ---
+    # --- 6. Formatting ---
     ax.set_xticks(np.arange(n_params))
-    ax.set_xticklabels(parameter_names, fontsize=12, rotation=45, ha="right")
-    ax.set_ylabel(
-        r"Normalized Parameter Values $\tilde{\xi}_i \in [0, 1]$", fontsize=14
+    # Use the filtered parameter names
+    ax.set_xticklabels(
+        parameter_names, fontsize=font['ticksize'], rotation=45, ha='right'
     )
+    ax.set_ylabel(
+        r'Normalized Parameter Values $\tilde{\xi}_i \in [0, 1]$',
+        fontsize=font['labelsize'],
+    )
+    ax.set_yticks([0.0, 0.5, 1.0])
+    ax.set_yticklabels(['0.0', '0.5', '1.0'], fontsize=font['ticksize'])
 
-    # Grid separators
     for i in range(n_params - 1):
-        ax.axvline(i + 0.5, color="gray", linestyle=":", alpha=0.3)
+        ax.axvline(i + 0.5, color='gray', linestyle=':', alpha=0.3)
 
-    # Axis cleanup
     ax.set_xlim(-0.5, n_params - 0.5)
     ax.set_ylim(-0.05, 1.05)
 
@@ -177,13 +224,9 @@ def draw_parameters(
     # Check if figure exists to add colorbar properly
     if axis is None:
         cbar = plt.colorbar(sc, ax=ax, pad=0.01)
-        cbar.set_label("$R_P$", fontsize=14)
-    else:
-        # If part of a subplot, usually handled outside,
-        # but we can try to attach it if requested.
-        pass
+        cbar.set_label('$R_P$', fontsize=font['labelsize'])
 
-    return ax
+    return ax, sc
 
 
 

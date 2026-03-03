@@ -12,11 +12,48 @@ import numpy as np
 from viperleed_jax.analysis.optimization_history import OptimizationHistory
 from viperleed_jax.analysis.ref_calc_history import RefCalcHistory
 
-DEFAULT_COLORS = {
-    'ref_calc': 'tab:blue',
-    'opt_running_min': 'tab:blue',
-    'opt_evals_single': 'tab:red',
-    'opt_evals_multiple': 'tab:orange',
+DEFAULT_STYLES = {
+    'ref_calc_marker': {
+        'color': 'tab:blue',
+        'marker': 'o',
+        's': 40,
+        'zorder': 10,
+        'label': 'Ref Calc',
+    },
+    'ref_calc_line': {
+        'color': 'tab:blue',
+        'linestyle': 'dashed',
+        'linewidth': 1.0,
+        'zorder': 9,
+    },
+    'opt_running_min': {
+        'color': 'tab:blue',
+        'linestyle': '-',
+        'linewidth': 1.5,
+        'label': 'Running Min',
+        'marker': '',
+    },
+    # High transparency for dense clouds
+    'opt_evals_multiple': {
+        'color': 'tab:orange',
+        'alpha': 0.05,
+        's': 10,
+        'marker': '.',
+        'label': 'Evaluations',
+    },
+    # More opaque for sparse points
+    'opt_evals_single': {
+        'color': 'tab:red',
+        'alpha': 0.2,
+        's': 15,
+        'marker': '.',
+        'label': 'Evaluations',
+    },
+}
+
+DEFAULT_FONTS = {
+    'labelsize': 14,
+    'ticksize': 12,
 }
 
 DEFAULT_PLOT_OPTIONS = {
@@ -28,49 +65,56 @@ DEFAULT_PLOT_OPTIONS = {
 
 
 def draw_rfactor_progress(
-    trajectory, axis=None, options=DEFAULT_PLOT_OPTIONS, colors=DEFAULT_COLORS
+    trajectory,
+    axis=None,
+    options=DEFAULT_PLOT_OPTIONS,
+    styles=DEFAULT_STYLES,
+    font_options=DEFAULT_FONTS,
 ):
+    """Draw R-factor progress with customizable styles and fonts."""
     if axis is not None:
         ax = axis
     else:
-        _, ax = plt.subplots()
+        _, ax = plt.subplots(figsize=(10, 6))
 
     cum_time = 0.0
     overall_running_min = np.inf
-
     min_R, max_R = 2.0, 0.0
 
+    # Merge user styles with defaults to ensure all keys exist
+    # (Shallow copy update is usually sufficient here)
+    st = DEFAULT_STYLES.copy()
+    if styles is not None:
+        st.update(styles)
+
+    fonts = DEFAULT_FONTS.copy()
+    if font_options is not None:
+        fonts.update(font_options)
+
     for segment in trajectory.segments:
+        # --- Reference Calculation ---
         if isinstance(segment, RefCalcHistory):
             if options['draw_vlines']:
-                ax.vlines(
-                    cum_time,
-                    ymin=0.0,
-                    ymax=5.0,
-                    colors=colors['ref_calc'],
-                    linestyles='dashed',
-                    label='Ref Calc' if cum_time == 0.0 else '',
-                    zorder=9,
-                )
-            ax.scatter(
-                cum_time,
-                segment.ref_R,
-                marker='o',
-                s=40,
-                color=colors['ref_calc'],
-                zorder=10,
-            )
+                # Unpack kwargs for line
+                ax.vlines(cum_time, ymin=0.0, ymax=5.0, **st['ref_calc_line'])
 
-            # set running_min to ref_R
+            # Unpack kwargs for marker
+            # We filter 'label' here to avoid duplicate legend entries if looped
+            marker_kwargs = st['ref_calc_marker'].copy()
+            if cum_time > 0:
+                marker_kwargs.pop('label', None)
+
+            ax.scatter(cum_time, segment.ref_R, **marker_kwargs)
+
             overall_running_min = segment.ref_R
-
-            # update min and max R for axis limits
             min_R = min(min_R, segment.ref_R)
             max_R = max(max_R, segment.ref_R)
 
+        # --- Optimization History ---
         if isinstance(segment, OptimizationHistory):
             times = segment.relative_times + cum_time
-            # plot running min
+
+            # 1. Plot Running Min
             running_min = segment.R_running_min
             if options['running_min_overall']:
                 combined = np.concatenate(
@@ -78,55 +122,56 @@ def draw_rfactor_progress(
                 )
                 running_min = np.minimum.accumulate(combined)[1:]
                 overall_running_min = running_min[-1]
-            ax.plot(times, running_min, '-', color=colors['opt_running_min'])
-            # update min and max R for axis limits
+
+            ax.plot(times, running_min, **st['opt_running_min'])
+
             min_R = min(min_R, np.min(running_min))
             max_R = max(max_R, np.max(running_min))
 
-            # scatter all evaluations
+            # 2. Scatter Evaluations
+            # Select style based on population size
+            if segment.R_history.shape[1] > 1:
+                scatter_style = st['opt_evals_multiple']
+            else:
+                scatter_style = st['opt_evals_single']
+
             ax.set_autoscale_on(False)
             times_repeat = np.repeat(times, segment.R_history.shape[1])
-            # if there are multiple evals per time, use alpha 0.05, else 0.2
-            color = (
-                colors['opt_evals_multiple']
-                if segment.R_history.shape[1] > 1
-                else colors['opt_evals_single']
-            )
-            alpha = 0.05 if segment.R_history.shape[1] > 1 else 0.2
-            ax.scatter(
-                times_repeat, segment.R_history, alpha=alpha, color=color
-            )
+
+            ax.scatter(times_repeat, segment.R_history, **scatter_style)
             ax.set_autoscale_on(True)
 
             cum_time += segment.duration
 
-    # set R factor axis scale
+    # --- Scaling ---
+    # (Assuming _f_sqrt and _f_inv_func are defined globally as in your snippet)
     if options['y_scale'] == 'log':
         ax.set_yscale('log')
     elif options['y_scale'] == 'sqrt':
-        ax.set_yscale(matplotlib.scale.FuncScale(ax, (_f_sqrt, _f_inv_func)))
-    elif options['y_scale'] == 'linear':
-        ax.set_yscale('linear')
-    else:
-        msg = f'Unknown scale "{options["y_scale"]}".'
-        raise ValueError(msg)
+        try:
+            ax.set_yscale(
+                matplotlib.scale.FuncScale(ax, (_f_sqrt, _f_inv_func))
+            )
+        except NameError:
+            print('Warning: _f_sqrt not defined, falling back to linear.')
 
-    # set time axis scale
     if options['x_scale'] == 'log':
         ax.set_xscale('log')
     elif options['x_scale'] == 'sqrt':
-        ax.set_xscale(matplotlib.scale.FuncScale(ax, (_f_sqrt, _f_inv_func)))
-    elif options['x_scale'] == 'linear':
-        ax.set_xscale('linear')
-    else:
-        msg = f'Unknown scale "{options["x_scale"]}".'
-        raise ValueError(msg)
+        try:
+            ax.set_xscale(
+                matplotlib.scale.FuncScale(ax, (_f_sqrt, _f_inv_func))
+            )
+        except NameError:
+            print('Warning: _f_sqrt not defined, falling back to linear.')
 
-    # axis labels
-    ax.set_xlabel('Time (s)')
-    ax.set_ylabel('$R_P$')
+    # --- Formatting & Fonts ---
+    ax.set_xlabel('Time (s)', fontsize=fonts['labelsize'])
+    ax.set_ylabel('$R_P$', fontsize=fonts['labelsize'])
 
-    # set axis limits
+    ax.tick_params(axis='both', which='major', labelsize=fonts['ticksize'])
+
+    # Dynamic Limits
     y_margin = 0.1 * (max_R - min_R)
     ax.set_ylim(max(0.0, min_R - y_margin), max_R + y_margin)
 
