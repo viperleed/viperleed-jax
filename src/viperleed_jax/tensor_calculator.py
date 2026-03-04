@@ -963,7 +963,7 @@ def calc_r_factor(
         data_spline_2=theo_spline,
         groups=groups,
         num_groups=num_groups,
-        theo_shift=0.0,
+        shift_2nd_spline=0.0,
         **kwargs,
     )
 
