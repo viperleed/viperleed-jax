@@ -153,13 +153,10 @@ class GeoSymmetryConstraint(GeoConstraintNode):
 
             for child in children:
                 at_freedir = child.atom.atom.freedir
-                movement_vector = ab_cell.T @ at_freedir
-                movement_vector = child.symrefm @ movement_vector
-                movement_vector = movement_vector / np.linalg.norm(
-                    movement_vector
-                )
+                in_plane_vec = ab_cell @ at_freedir
+                in_plane_vec = in_plane_vec / np.linalg.norm(in_plane_vec)
                 weights = np.array([[1.0, 0.0], [0.0, np.nan], [0.0, np.nan]])
-                weights[1:3, 1] = movement_vector
+                weights[1:3, 1] = in_plane_vec
                 transformers.append(LinearMap(weights, (3,)))
         else:
             raise ValueError(
