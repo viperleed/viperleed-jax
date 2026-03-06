@@ -1,13 +1,19 @@
 """Module propagators."""
 
-__authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
+__authors__ = ('Alexander M. Imre (@amimre)',
+               'Paul Haidegger (@Paulhai7)',
+               'Florian Kraushofer (@fkraushofer)')
+__copyright__ = 'Copyright (c) 2019-2026 ViPErLEED developers'
 __created__ = '2024-09-03'
+__license__ = 'GPLv3+'
 
 from functools import partial
 
 import jax
 import jax.numpy as jnp
 import numpy as np
+
+from viperleed.calc import LOGGER as logger
 
 from viperleed_jax.dense_quantum_numbers import DENSE_QUANTUM_NUMBERS
 from viperleed_jax.gaunt_coefficients import CSUM_COEFFS
@@ -104,6 +110,12 @@ def symmetry_operations(l_max, plane_symmetry_operation):
         sym_op = plane_symmetry_operation
 
     plane_rotation_angle = get_plane_symmetry_operation_rotation_angle(sym_op)
+    if np.isnan(plane_rotation_angle):
+        # This can sometimes happen for non-geometric linking (?).
+        # Would lead to nan-valued R-factors.
+        # TODO: catch this in a more robust fashion.
+        plane_rotation_angle = 0.
+        logger.debug('Plane rotation angle evaluated as nan, replaced by 0.')
 
     symmetry_tensor = jnp.exp(plane_rotation_angle * 1j * (dense_mpp)).T
     if contains_mirror:

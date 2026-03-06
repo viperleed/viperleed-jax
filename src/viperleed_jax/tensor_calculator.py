@@ -148,7 +148,7 @@ class TensorLEEDCalculator:
         self.beam_indices = jnp.array([beam.hk for beam in rparams.ivbeams])
         self.n_beams = self.beam_indices.shape[0]
 
-        self.comp_intensity = None
+        self.comp_intensities = None
         self.comp_energies = None
         self.interpolation_step = interpolation_step
         self._parameter_space = None
@@ -291,17 +291,27 @@ class TensorLEEDCalculator:
     def set_rfactor(self, rfactor_name):
         self.rfactor_func = rfactor.select_rfactor(rfactor_name)
 
-    def set_experiment_intensity(self, comp_intensity, comp_energies):
+    def set_experiment_intensity(self, comp_intensities, comp_energies):
         logger.debug(
             'Setting experimental intensities and initializing interpolators.'
         )
 
-        self.comp_intensity = comp_intensity
-        self.comp_energies = comp_energies
+        self.comp_energies = jnp.asarray(comp_energies)
+        self.comp_intensities = jnp.asarray(comp_intensities)
+        # create spline for derivatives and inspection
         self.exp_spline = spline_interpolation.interpolate_ragged_array(
-            self.comp_energies,
-            self.comp_intensity,
+            comp_energies,
+            comp_intensities,
             bc_type=self.bc_type,
+        )
+        exp_d1 = self.exp_spline.derivative()
+        exp_d2 = exp_d1.derivative()
+        # pre-calculate on target_grid for R-factor evaluation
+        grid = np.asarray(self.target_grid)
+        self._exp_data_on_target_grid = (
+            jnp.asarray(self.exp_spline(grid)),
+            jnp.asarray(exp_d1(grid)),
+            jnp.asarray(exp_d2(grid)),
         )
 
     def set_parameter_space(self, parameter_space):
@@ -631,7 +641,7 @@ class TensorLEEDCalculator:
 
     def R(self, free_params, groups=None, **kwargs):
         """Evaluate R-factor."""
-        if self.comp_intensity is None:
+        if self.comp_intensities is None:
             raise ValueError('Comparison intensity not set.')
         _free_params = jnp.asarray(free_params)
 
@@ -646,15 +656,17 @@ class TensorLEEDCalculator:
             non_interpolated_intensity, self.beam_correspondence
         )
 
+        v0i_electron_volt = -self.ref_calc_params.v0i * HARTREE
+
         return calc_r_factor(
             non_interpolated_intensity,
             v0r_shift,
-            self.ref_calc_params,
+            v0i_electron_volt,
             self.rfactor_func,
             self.origin_grid,
             self.interpolation_step,
             self.target_grid,
-            self.exp_spline,
+            self._exp_data_on_target_grid,
             groups=groups,
             **kwargs,
         )
@@ -919,41 +931,40 @@ def batch_delta_amps(
         'rfactor_func',
         'groups',
         'num_groups',
-        #'ref_calc_params',
     ),
 )
 def calc_r_factor(
     non_interpolated_intensity,
     v0r_shift,
-    ref_calc_params,
+    v0i_electron_volt,
     rfactor_func,
     origin_grid,
     interpolation_step,
     target_grid,
-    exp_spline,
+    exp_data_on_target_grid,
     groups=None,
     num_groups=None,
     **kwargs,
 ):
-    v0i_electron_volt = -ref_calc_params.v0i * HARTREE
-
-    # apply v0r shift
+    # Build JAX-compatible splines inside jit;
+    # the_shift MUST be 0.0 here to guarantee matching energies, so construct
+    #  the theo splines on an already shifted grid
     theo_spline = CubicSpline(
-        # V0r (potential) offset gets applied here to the origin grid
-        origin_grid + v0r_shift,
+        origin_grid + v0r_shift,    # v0r_shift included here
         non_interpolated_intensity,
         check=False,
         extrapolate=False,
     )
 
     return rfactor_func(
-        theo_spline,
         v0i_electron_volt,
         interpolation_step,
         target_grid,
-        exp_spline,
+        data_and_derivatives_1=exp_data_on_target_grid,
+        data_spline_2=theo_spline,
         groups=groups,
         num_groups=num_groups,
+        shift_2nd_spline=0.0,
         **kwargs,
     )
 
