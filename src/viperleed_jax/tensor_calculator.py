@@ -891,7 +891,7 @@ def batch_delta_amps(
         )
 
         def compute_atom_contrib(a):
-            # get the propagator for the current atom
+            # get the propagator for the current atom, index a
             return jnp.einsum(
                 'bl,lk,k->b',
                 amps_out[e_id, a],
@@ -900,6 +900,7 @@ def batch_delta_amps(
                 optimize='optimal',
             )
 
+        # calculate and sum up the contributions from all atoms
         beam_contribs = jax.lax.map(
             compute_atom_contrib,
             jnp.arange(n_atoms),
