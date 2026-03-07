@@ -148,13 +148,30 @@ class GeoSymmetryConstraint(GeoConstraintNode):
             dof = 2
             name = 'Symmetry (1D in-plane)'
 
+            # To get the in-plane direction, we proceed as follows:
+            # 1) determine the reference atom of the symmetry link
+            # (first in linklist).
+            # 2) get the freedir vector of the and determine the in-plane vector
+            # as ab_cell @ freedir, where ab_cell is the in-plane unit cell.
+            # 3) For all linked atoms, the in-plane vector is obtained by
+            # applying the respective symrefm the the reference in-plane vector.
+            # Note: we cannot simply use the freedir alone for all atoms, as
+            # it's missing a sign for the in-plane movement, and thus may
+            # not be correctly oriented for all atoms in the link.
+
             # plane unit cell
             ab_cell = children[0].atom.atom.slab.ab_cell
 
+            # ref in plane atom
+            ref_atom = children[0].atom.atom.linklist[0]
+            ref_freedir = ref_atom.freedir
+            ref_in_plane_vec = ab_cell @ ref_freedir
+            ref_in_plane_vec = ref_in_plane_vec / np.linalg.norm(
+                ref_in_plane_vec
+            )
+
             for child in children:
-                at_freedir = child.atom.atom.freedir
-                in_plane_vec = ab_cell @ at_freedir
-                in_plane_vec = in_plane_vec / np.linalg.norm(in_plane_vec)
+                in_plane_vec = child.symrefm @ ref_in_plane_vec
                 weights = np.array([[1.0, 0.0], [0.0, np.nan], [0.0, np.nan]])
                 weights[1:3, 1] = in_plane_vec
                 transformers.append(LinearMap(weights, (3,)))
