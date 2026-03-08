@@ -161,12 +161,18 @@ class TransformationTree(ABC):
         """Create a root node that aggregates all root nodes in the subtree."""
         self._check_construction_order(ConstructionOrder.ROOT)
 
-    def graphical_export(self, filename):
+    def graphical_export(self, filename, export_options=None):
         """Create and save a graphical representation of the tree to file."""
         if not self.finalized:
             raise ValueError('Subtree root has not yet been created.')
         # Left-to-right orientation looks better for broad trees like we have
-        UniqueDotExporter(self.root, options=['rankdir=LR']).to_picture(
+        options = {'rankdir': 'LR'}
+        if export_options is not None:
+            options.update(export_options)
+        # needed syntax for updating dot language
+        options = [f'{key}={value}' for key, value in options.items()]
+        print(options)
+        UniqueDotExporter(self.root, options=options).to_picture(
             filename,
         )
 
