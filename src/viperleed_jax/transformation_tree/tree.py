@@ -504,7 +504,7 @@ class DisplacementTree(LinearTree):
                 f'"{constraint_line.raw_line}" are already linked. It is '
                 'likely redundant.'
             )
-            raise ValueError(msg)
+            logger.warning(msg)
 
         # check that the roots all have the same number of DOFs
         if not all(root.dof == link_target_root.dof for root in roots_to_link):
