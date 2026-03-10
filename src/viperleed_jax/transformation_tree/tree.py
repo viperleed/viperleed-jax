@@ -505,6 +505,7 @@ class DisplacementTree(LinearTree):
                 'likely redundant.'
             )
             logger.warning(msg)
+            return    # nothing further to do
 
         # check that the roots all have the same number of DOFs
         if not all(root.dof == link_target_root.dof for root in roots_to_link):
