@@ -136,7 +136,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
                 transformers.append(LinearMap(weights, (3,)))
 
         elif freedir.shape == (2,):
-            # check that all children have the same freedir
+            # check that all children have the same freedir shape
             if not all(
                 child.atom.atom.freedir.shape == (2,) for child in children
             ):
@@ -148,18 +148,35 @@ class GeoSymmetryConstraint(GeoConstraintNode):
             dof = 2
             name = 'Symmetry (1D in-plane)'
 
+            # To get the in-plane direction, we proceed as follows:
+            # 1) determine the reference atom of the symmetry link
+            # (first in linklist).
+            # 2) get the freedir vector of that atom and determine a reference
+            # in-plane vector as:
+            #   np.linalg.inv(ref_atom.symrefm) @  ab_cell @ freedir
+            # where ab_cell is the in-plane unit cell.
+            # 3) For all linked atoms, the in-plane vector is obtained by
+            # applying the respective symrefm the the reference in-plane vector.
+            # Note: we cannot simply use the freedir alone for all atoms, as
+            # it's missing a sign for the in-plane movement, and thus may
+            # not be correctly oriented for all atoms in the link.
+
             # plane unit cell
             ab_cell = children[0].atom.atom.slab.ab_cell
 
+            # ref in plane atom
+            ref_atom = children[0].atom.atom.linklist[0]
+            ref_freedir = ref_atom.freedir
+            ref_in_plane_vec = (np.linalg.inv(ref_atom.symrefm)
+                                @ ab_cell @ ref_freedir)
+            ref_in_plane_vec = ref_in_plane_vec / np.linalg.norm(
+                ref_in_plane_vec
+            )
+
             for child in children:
-                at_freedir = child.atom.atom.freedir
-                movement_vector = ab_cell.T @ at_freedir
-                movement_vector = child.symrefm @ movement_vector
-                movement_vector = movement_vector / np.linalg.norm(
-                    movement_vector
-                )
+                in_plane_vec = child.symrefm @ ref_in_plane_vec
                 weights = np.array([[1.0, 0.0], [0.0, np.nan], [0.0, np.nan]])
-                weights[1:3, 1] = movement_vector
+                weights[1:3, 1] = in_plane_vec
                 transformers.append(LinearMap(weights, (3,)))
         else:
             raise ValueError(
