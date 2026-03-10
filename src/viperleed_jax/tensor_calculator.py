@@ -694,6 +694,8 @@ class TensorLEEDCalculator:
 
     # TODO: needs tests
     def apply_to_slab(self, slab, rpars, free_params):
+        # make sure free_params do not exceed bounds
+        np.clip(free_params, 0.0, 1.0, out=free_params)
         # atom basis from parameter space
         atom_basis = self.parameter_space.atom_basis
         for atom in slab:
