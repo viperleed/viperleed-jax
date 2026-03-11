@@ -26,7 +26,7 @@ class OptimizerIterator:
         self.calculator = calculator
         self.parameter_names = calculator.parameter_space.get_parameter_names()
         self._cholesky = None # default to None
-        self._upcoming_optimizers = self.rpars.VLJ_ALGO
+        self._upcoming_optimizers = self.rpars.VLJ_ALGO.copy()
         self._done_optimizers = []
 
         self._DISPATCH = {
@@ -102,7 +102,7 @@ class OptimizerIterator:
         If the first optimizer does not use gradients, simply return the
         reference point.
         """
-        first_optimizer = self._DISPATCH[self.rpars.VLJ_ALGO[0]]()
+        first_optimizer = self._DISPATCH[self._upcoming_optimizers[0]]()
         center = self.calculator.parameter_space.reference_parameters()
         if self.rpars.VLJ_CONFIG['preoptimize_v0r']:
             best_v0r_param = get_best_v0r_on_grid(
