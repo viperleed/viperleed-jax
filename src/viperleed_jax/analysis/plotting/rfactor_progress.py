@@ -61,7 +61,11 @@ DEFAULT_PLOT_OPTIONS = {
     'y_scale': 'sqrt',
     'running_min_overall': True,
     'draw_vlines': True,
+    'time_unit': 's',  # options: 's', 'min', 'h'
 }
+
+# Time conversion factors relative to seconds
+TIME_CONVERSIONS = {'s': 1.0, 'min': 60.0, 'h': 3600.0}
 
 
 def draw_rfactor_progress(
@@ -76,6 +80,10 @@ def draw_rfactor_progress(
         ax = axis
     else:
         _, ax = plt.subplots(figsize=(10, 6))
+
+    # Handle time unit conversion
+    t_unit = options.get('time_unit', 's')
+    t_factor = TIME_CONVERSIONS.get(t_unit, 1.0)
 
     cum_time = 0.0
     overall_running_min = np.inf
@@ -92,6 +100,9 @@ def draw_rfactor_progress(
         fonts.update(font_options)
 
     for segment in trajectory.segments:
+        # Scale cumulative time for plotting
+        plot_time = cum_time / t_factor
+
         # --- Reference Calculation ---
         if isinstance(segment, RefCalcHistory):
             if options['draw_vlines']:
@@ -104,7 +115,7 @@ def draw_rfactor_progress(
             if cum_time > 0:
                 marker_kwargs.pop('label', None)
 
-            ax.scatter(cum_time, segment.ref_R, **marker_kwargs)
+            ax.scatter(plot_time, segment.ref_R, **marker_kwargs)
 
             overall_running_min = segment.ref_R
             min_R = min(min_R, segment.ref_R)
@@ -112,7 +123,8 @@ def draw_rfactor_progress(
 
         # --- Optimization History ---
         if isinstance(segment, OptimizationHistory):
-            times = segment.relative_times + cum_time
+            # Scale relative times and add to cumulative time
+            times = (segment.relative_times + cum_time) / t_factor
 
             # 1. Plot Running Min
             running_min = segment.R_running_min
@@ -166,7 +178,7 @@ def draw_rfactor_progress(
             print('Warning: _f_sqrt not defined, falling back to linear.')
 
     # --- Formatting & Fonts ---
-    ax.set_xlabel('Time (s)', fontsize=fonts['labelsize'])
+    ax.set_xlabel(f'Time ({t_unit})', fontsize=fonts['labelsize'])
     ax.set_ylabel('$R_P$', fontsize=fonts['labelsize'])
 
     ax.tick_params(axis='both', which='major', labelsize=fonts['ticksize'])
