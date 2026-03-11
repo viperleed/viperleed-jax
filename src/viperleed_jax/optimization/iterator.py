@@ -147,9 +147,16 @@ class OptimizerIterator:
 
 
     def _process_result(self, result):
-        """Carry over any necessary information from the previous optimizer."""
+        """
+        Carry over any necessary information from the previous optimizer. If
+        any values are outside the bounds, they will be projected to the
+        bounds.
+        """
         # update the parameter vector for the next optimizer
-        self._current_x = result.best_x
+        if np.any((result.best_x < 0.0) | (result.best_x > 1.0)):
+            logger.warning('Optimization returned out-of-bounds values. They '
+                           'will be projected to bounds before proceeding.')
+        self._current_x = np.clip(result.best_x, 0.0, 1.0)
 
         last_optimizer = self._done_optimizers[-1]
 
