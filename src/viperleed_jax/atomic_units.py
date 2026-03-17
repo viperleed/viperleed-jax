@@ -3,7 +3,7 @@
 We use Angstrom and eV as inputs, but use atomic units internally.
 """
 
-__authors__ = ('Alexander M. Imre (@amimre)',)
+__authors__ = ('Alexandra Mia Imre (@alexmiame)',)
 __created__ = '2024-09-05'
 __copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
 __license__ = 'GPLv3+'

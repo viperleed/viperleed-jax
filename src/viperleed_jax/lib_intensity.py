@@ -1,6 +1,6 @@
 """Module displacements/regex."""
 
-__authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@PaulHai7)')
+__authors__ = ('Alexandra Mia Imre (@alexmiame)', 'Paul Haidegger (@PaulHai7)')
 __created__ = '2024-02-22'
 __copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
 __license__ = 'GPLv3+'

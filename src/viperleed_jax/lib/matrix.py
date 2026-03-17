@@ -1,8 +1,9 @@
 """Module matrix from viperleed_jax.lib."""
 
-__authors__ = ('Alexander M. Imre (@amimre)',
-               'Florian Kraushofer (@fkraushofer)',
-               )
+__authors__ = (
+    'Alexandra Mia Imre (@alexmiame)',
+    'Florian Kraushofer (@fkraushofer)',
+)
 __created__ = '2025-06-10'
 __copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
 __license__ = 'GPLv3+'

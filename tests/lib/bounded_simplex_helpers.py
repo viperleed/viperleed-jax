@@ -1,6 +1,6 @@
 """Helper functions and constants for bounded simplex tests."""
 
-__authors__ = ('Alexander M. Imre (@amimre)',)
+__authors__ = ('Alexandra Mia Imre (@alexmiame)',)
 __created__ = '2025-09-17'
 
 import numpy as np

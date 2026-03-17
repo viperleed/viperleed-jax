@@ -1,8 +1,10 @@
 """Module propagators."""
 
-__authors__ = ('Alexander M. Imre (@amimre)',
-               'Paul Haidegger (@Paulhai7)',
-               'Florian Kraushofer (@fkraushofer)')
+__authors__ = (
+    'Alexandra Mia Imre (@alexmiame)',
+    'Paul Haidegger (@Paulhai7)',
+    'Florian Kraushofer (@fkraushofer)',
+)
 __copyright__ = 'Copyright (c) 2019-2026 ViPErLEED developers'
 __created__ = '2024-09-03'
 __license__ = 'GPLv3+'

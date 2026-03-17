@@ -2,7 +2,7 @@
 
 __authors__ = (
     'Tobias Hable (@ElHablos)',
-    'Alexander M. Imre (@amimre)',
+    'Alexandra Mia Imre (@alexmiame)',
     'Paul Haidegger (@Paulhai7)',
 )
 __created__ = '2024-10-01'
