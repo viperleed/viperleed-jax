@@ -303,6 +303,8 @@ def process_tensor_file(file_name, tensor_path, lmax, n_beams, n_energies):
         file_path = tensor_path / file_name
         content = file_path.read_text(encoding='utf-8')
 
+    content = content.replace('\r\n', '\n')  # Windows-generated
+
     return file_name, interpret_tensor_file(content, lmax, n_beams, n_energies)
 
 
