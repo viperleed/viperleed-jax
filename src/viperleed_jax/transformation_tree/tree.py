@@ -40,6 +40,10 @@ anytree.config.ASSERTIONS = True
 
 logger = logging.getLogger(__name__)
 
+# default graphical export options
+# (left-to-right usually is most readable for broad trees)
+DEFAULT_GRAPHICAL_EXPORT_OPTIONS = {'rankdir': 'LR'}
+
 
 class ConstructionOrder(IntEnum):
     """Enum for the construction order of transformation trees."""
@@ -165,13 +169,13 @@ class TransformationTree(ABC):
         """Create and save a graphical representation of the tree to file."""
         if not self.finalized:
             raise ValueError('Subtree root has not yet been created.')
-        # Left-to-right orientation looks better for broad trees like we have
-        options = {'rankdir': 'LR'}
+
+        # update export options with user selections
+        options = DEFAULT_GRAPHICAL_EXPORT_OPTIONS
         if export_options is not None:
             options.update(export_options)
         # needed syntax for updating dot language
         options = [f'{key}={value}' for key, value in options.items()]
-        print(options)
         UniqueDotExporter(self.root, options=options).to_picture(
             filename,
         )

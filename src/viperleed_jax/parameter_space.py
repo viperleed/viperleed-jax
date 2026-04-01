@@ -17,6 +17,9 @@ from viperleed_jax.transformation_tree import (
     occ_parameters,
     vib_parameters,
 )
+from viperleed_jax.transformation_tree.tree import (
+    DEFAULT_GRAPHICAL_EXPORT_OPTIONS,
+)
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
 )
@@ -406,11 +409,18 @@ class ParameterSpace:
             ],
         )
 
-    def graphical_export(self, filename):
+    def graphical_export(self, filename, export_options):
         """Create and save a graphical representation of the tree to file."""
         dummy_parent = self._dummy_parent()
 
-        # Export the tree structure to a PDF file
+        # update export options with user selections
+        options = DEFAULT_GRAPHICAL_EXPORT_OPTIONS
+        if export_options is not None:
+            options.update(export_options)
+        # syntax for updating dot language
+        options = [f'{key}={value}' for key, value in options.items()]
+
+        # export the tree structure to PDF file
         UniqueDotExporter(dummy_parent, options=['rankdir=LR']).to_picture(
             filename=filename,
         )
