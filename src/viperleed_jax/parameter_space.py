@@ -16,9 +16,7 @@ from viperleed_jax.transformation_tree import (
     meta_parameters,
     occ_parameters,
     vib_parameters,
-)
-from viperleed_jax.transformation_tree.tree import (
-    DEFAULT_GRAPHICAL_EXPORT_OPTIONS,
+    tree,
 )
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
     DisplacementTreeLayers,
@@ -411,19 +409,10 @@ class ParameterSpace:
 
     def graphical_export(self, filename, export_options):
         """Create and save a graphical representation of the tree to file."""
+        # use the dummy parent of the parameter space
         dummy_parent = self._dummy_parent()
-
-        # update export options with user selections
-        options = DEFAULT_GRAPHICAL_EXPORT_OPTIONS
-        if export_options is not None:
-            options.update(export_options)
-        # syntax for updating dot language
-        options = [f'{key}={value}' for key, value in options.items()]
-
-        # export the tree structure to PDF file
-        UniqueDotExporter(dummy_parent, options=['rankdir=LR']).to_picture(
-            filename=filename,
-        )
+        # save to PDF
+        tree.save_tree_diagram_pdf(dummy_parent, filename, export_options)
 
     def __repr__(self):
         """Return a string representation of the parameter space."""

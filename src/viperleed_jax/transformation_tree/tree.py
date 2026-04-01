@@ -170,16 +170,8 @@ class TransformationTree(ABC):
         if not self.finalized:
             raise ValueError('Subtree root has not yet been created.')
 
-        # update export options with user selections
-        options = DEFAULT_GRAPHICAL_EXPORT_OPTIONS
-        if export_options is not None:
-            options.update(export_options)
-        # needed syntax for updating dot language
-        options = [f'{key}={value}' for key, value in options.items()]
-        UniqueDotExporter(self.root, options=options).to_picture(
-            filename,
-        )
-
+        # save to PDF
+        save_tree_diagram_pdf(self.root, filename, export_options)
 
 class InvertibleTransformationTree(TransformationTree):
     """Abstract base class for an invertible transformation tree."""
@@ -772,3 +764,16 @@ def _check_constraint_line_type(constraint_line, expected_perturbation_mode):
             f'parameter: {constraint_line.mode_token}.'
         )
         raise ValueError(msg)
+
+
+def save_tree_diagram_pdf(root_node, filename, export_options=None):
+    """Create and store a tree diagram to a PDF file."""
+    # update export options with user selections
+    options = DEFAULT_GRAPHICAL_EXPORT_OPTIONS
+    if export_options is not None:
+        options.update(export_options)
+    # syntax for updating dot language
+    options = [f'{key}={value}' for key, value in options.items()]
+    UniqueDotExporter(root_node, options=options).to_picture(
+        filename,
+    )
