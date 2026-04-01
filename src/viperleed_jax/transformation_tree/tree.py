@@ -41,6 +41,10 @@ anytree.config.ASSERTIONS = True
 
 logger = logging.getLogger(__name__)
 
+# default graphical export options
+# (left-to-right usually is most readable for broad trees)
+DEFAULT_GRAPHICAL_EXPORT_OPTIONS = {'rankdir': 'LR'}
+
 
 class ConstructionOrder(IntEnum):
     """Enum for the construction order of transformation trees."""
@@ -162,15 +166,13 @@ class TransformationTree(ABC):
         """Create a root node that aggregates all root nodes in the subtree."""
         self._check_construction_order(ConstructionOrder.ROOT)
 
-    def graphical_export(self, filename):
+    def graphical_export(self, filename, export_options=None):
         """Create and save a graphical representation of the tree to file."""
         if not self.finalized:
             raise ValueError('Subtree root has not yet been created.')
-        # Left-to-right orientation looks better for broad trees like we have
-        UniqueDotExporter(self.root, options=['rankdir=LR']).to_picture(
-            filename,
-        )
 
+        # save to PDF
+        save_tree_diagram_pdf(self.root, filename, export_options)
 
 class InvertibleTransformationTree(TransformationTree):
     """Abstract base class for an invertible transformation tree."""
@@ -764,3 +766,16 @@ def _check_constraint_line_type(constraint_line, expected_perturbation_mode):
             f'parameter: {constraint_line.mode_token}.'
         )
         raise ValueError(msg)
+
+
+def save_tree_diagram_pdf(root_node, filename, export_options=None):
+    """Create and store a tree diagram to a PDF file."""
+    # update export options with user selections
+    options = DEFAULT_GRAPHICAL_EXPORT_OPTIONS
+    if export_options is not None:
+        options.update(export_options)
+    # syntax for updating dot language
+    options = [f'{key}={value}' for key, value in options.items()]
+    UniqueDotExporter(root_node, options=options).to_picture(
+        filename,
+    )

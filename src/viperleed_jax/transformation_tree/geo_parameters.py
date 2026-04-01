@@ -29,7 +29,7 @@ class GeoLeafNode(AtomicLinearNode):
         dof = 3
         super().__init__(dof=dof, atom=atom)
         self.symrefm = atom.atom.symrefm
-        self._name = f'geo (At_{self.num},{self.site},{self.element})'
+        self._name = f'#{self.num} ({self.element})'
 
 
 class GeoConstraintNode(LinearConstraintNode):
@@ -91,7 +91,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
         linklist = children[0].atom.atom.linklist
         if not all(child.atom.atom in linklist for child in children):
             raise ValueError(
-                'Symmetry linked atoms must be in the same ' 'linklist'
+                'Symmetry linked atoms must be in the same "linklist"'
             )
 
         # irrespective of the symmetry the transformer bias so we use a map
@@ -112,7 +112,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
                 )
             # z-only movement
             dof = 1
-            name = 'Symmetry (z-only)'
+            name = 'Sym. (z-only)'
             for child in children:
                 # set the symmetry linking matrix and direct transfer of z
                 weights = np.array([1.0, 0.0, 0.0]).reshape((3, 1))
@@ -127,7 +127,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
                 )
             # free in-plane movement in addition to z
             dof = 3
-            name = 'Symmetry (free)'
+            name = 'Sym. (free)'
 
             for child in children:
                 # set the symmetry linking matrix and direct transfer of z
@@ -146,7 +146,7 @@ class GeoSymmetryConstraint(GeoConstraintNode):
                 )
             # 1D in-plane movement in addition to z
             dof = 2
-            name = 'Symmetry (1D in-plane)'
+            name = 'Sym. (1D in-plane)'
 
             # To get the in-plane direction, we proceed as follows:
             # 1) determine the reference atom of the symmetry link

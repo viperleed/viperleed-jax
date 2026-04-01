@@ -66,7 +66,7 @@ class OccSymmetryConstraint(OccConstraintNode):
             transformers.append(AffineTransformer(weights, bias, (dof,)))
         super().__init__(
             dof=dof,
-            name='Symmetry',
+            name='Sym.',
             children=children,
             transformers=transformers,
             layer=DisplacementTreeLayers.Symmetry,
