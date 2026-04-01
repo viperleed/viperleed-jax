@@ -2,7 +2,7 @@
 
 __authors__ = (
     'Paul Haidegger (@PaulHai7)',
-    'Alexander M. Imre (@amimre)',
+    'Alexandra Mia Imre (@alexmiame)',
 )
 __created__ = '2024-11-20'
 __license__ = 'GPLv3+'

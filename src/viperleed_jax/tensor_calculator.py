@@ -1,6 +1,6 @@
 """Module tensor_calculator."""
 
-__authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
+__authors__ = ('Alexandra Mia Imre (@alexmiame)', 'Paul Haidegger (@Paulhai7)')
 __created__ = '2024-05-03'
 __copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
 __license__ = 'GPLv3+'

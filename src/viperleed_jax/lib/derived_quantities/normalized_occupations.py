@@ -1,6 +1,6 @@
 """Module normalized_occupations."""
 
-__authors__ = ('Alexander M. Imre (@amimre)',)
+__authors__ = ('Alexandra Mia Imre (@alexmiame)',)
 __created__ = '2025-06-25'
 
 

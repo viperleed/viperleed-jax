@@ -1,6 +1,6 @@
 """Module t_matrix."""
 
-__authors__ = ('Alexander M. Imre (@amimre)', 'Paul Haidegger (@Paulhai7)')
+__authors__ = ('Alexandra Mia Imre (@alexmiame)', 'Paul Haidegger (@Paulhai7)')
 __created__ = '2024-08-14'
 
 from functools import partial

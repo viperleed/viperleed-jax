@@ -4,7 +4,7 @@ Uses parallel processing using Joblib with spawn (loky) backend.
 """
 
 __authors__ = (
-    'Alexander M. Imre (@amimre)',
+    'Alexandra Mia Imre (@alexmiame)',
     'Paul Haidegger (@Paulhai7)',
     'Tobias Hable (@ElHablos)',
 )

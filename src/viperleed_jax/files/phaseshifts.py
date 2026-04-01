@@ -5,7 +5,7 @@ viperleed.calc.
 """
 
 __authors__ = (
-    'Alexander M. Imre (@amimre)',
+    'Alexandra Mia Imre (@alexmiame)',
     'Florian Kraushofer (@fkraushofer)',
 )
 __created__ = '2024-08-29'

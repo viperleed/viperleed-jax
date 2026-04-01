@@ -1,6 +1,6 @@
 """Module structures of tests."""
 
-__authors__ = ('Alexander M. Imre (@amimre)',)
+__authors__ = ('Alexandra Mia Imre (@alexmiame)',)
 __created__ = '2024-11-26'
 
 from collections import namedtuple

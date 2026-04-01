@@ -1,6 +1,6 @@
 """Module plotting.cmaes_parameter_scatter"""
 
-__authors__ = ('Alexander M. Imre (@amimre)',)
+__authors__ = ('Alexandra Mia Imre (@alexmiame)',)
 __created__ = '2025-12-19'
 __license__ = 'GPLv3+'
 

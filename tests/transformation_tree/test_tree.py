@@ -1,6 +1,6 @@
 """Tests for the abstract transformation tree."""
 
-__authors__ = ('Alexander M. Imre (@amimre)',)
+__authors__ = ('Alexandra Mia Imre (@alexmiame)',)
 __created__ = '2024-11-25'
 
 import pytest
