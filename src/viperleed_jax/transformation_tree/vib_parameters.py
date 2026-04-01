@@ -75,7 +75,7 @@ class VibSymmetryConstraint(VibConstraintNode):
                 )
                 for _ in children
             ],
-            name='Symmetry',
+            name='Sym.',
             layer=DisplacementTreeLayers.Symmetry,
         )
 
