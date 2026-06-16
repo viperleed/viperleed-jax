@@ -12,14 +12,14 @@ import numpy as np
 from viperleed_jax.analysis.optimization_history import OptimizationHistory
 from viperleed_jax.analysis.ref_calc_history import RefCalcHistory
 
-DEFAULT_COLORS = {
+RFACTOR_PROGRESS_DEFAULT_COLORS = {
     'ref_calc': 'tab:blue',
     'opt_running_min': 'tab:blue',
     'opt_evals_single': 'tab:red',
     'opt_evals_multiple': 'tab:orange',
 }
 
-DEFAULT_PLOT_OPTIONS = {
+RFACTOR_PROGRESS_DEFAULT_OPTIONS = {
     'x_scale': 'linear',
     'y_scale': 'sqrt',
     'running_min_overall': True,
@@ -28,8 +28,18 @@ DEFAULT_PLOT_OPTIONS = {
 
 
 def draw_rfactor_progress(
-    trajectory, axis=None, options=DEFAULT_PLOT_OPTIONS, colors=DEFAULT_COLORS
+    trajectory, axis=None,
+    options=RFACTOR_PROGRESS_DEFAULT_OPTIONS,
+    colors=RFACTOR_PROGRESS_DEFAULT_COLORS,
+    **kwargs
 ):
+    options = options.copy()
+    options.update(kwargs)    # accept kwargs to modify options
+    unknown = set(options) - set(RFACTOR_PROGRESS_DEFAULT_OPTIONS)
+    if unknown:
+        raise TypeError('Unknown keyword argument(s) in '
+                        f'draw_rfactor_progress: {unknown}')
+
     if axis is not None:
         ax = axis
     else:
@@ -84,7 +94,7 @@ def draw_rfactor_progress(
             max_R = max(max_R, np.max(running_min))
 
             # scatter all evaluations
-            ax.set_autoscale_on(False)
+            # ax.set_autoscale_on(False)
             times_repeat = np.repeat(times, segment.R_history.shape[1])
             # if there are multiple evals per time, use alpha 0.05, else 0.2
             color = (
@@ -96,7 +106,7 @@ def draw_rfactor_progress(
             ax.scatter(
                 times_repeat, segment.R_history, alpha=alpha, color=color
             )
-            ax.set_autoscale_on(True)
+            # ax.set_autoscale_on(True)
 
             cum_time += segment.duration
 
@@ -135,7 +145,8 @@ def draw_rfactor_progress(
 
 # square root scale and its inverse for axes
 def _f_sqrt(e):
-    return np.abs(np.sqrt(e + 0j)) * np.sign(e)
+    with np.errstate(invalid="ignore"):
+        return np.abs(np.sqrt(e + 0j)) * np.sign(e)
 
 
 def _f_inv_func(e):

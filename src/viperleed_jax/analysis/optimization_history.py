@@ -109,7 +109,10 @@ class OptimizationHistory:
 
     @property
     def R_running_min(self):
-        min_R_per_gen = np.nanmin(self.R_history, axis=1)
+        R = self.R_history
+        ok = ~np.all(np.isnan(R), axis=1)     # ignore all-nan rows
+        min_R_per_gen = np.full(R.shape[0], np.nan)
+        min_R_per_gen[ok] = np.nanmin(R[ok], axis=1)
         return np.fmin.accumulate(min_R_per_gen)
 
     @property

@@ -10,7 +10,7 @@ import numpy as np
 
 from viperleed_jax.analysis.optimization_history import OptimizationHistory
 
-PARAMETER_PLOT_DEFAULT_OPTIONS = {'cmap': 'viridis', 'density': 'auto'}
+PARAMETER_PLOT_DEFAULT_OPTIONS = {'cmap': 'viridis', 'density': 'generations'}
 
 
 def draw_parameters(
@@ -18,8 +18,17 @@ def draw_parameters(
     axis=None,
     options=PARAMETER_PLOT_DEFAULT_OPTIONS,
     parameter_names=None,
+    **kwargs
 ):
     """Plot parameter distribution."""
+
+    options = options.copy()
+    options.update(kwargs)    # accept kwargs to modify options
+    unknown = set(options) - set(PARAMETER_PLOT_DEFAULT_OPTIONS)
+    if unknown:
+        raise TypeError('Unknown keyword argument(s) in '
+                        f'draw_parameters: {unknown}')
+
     if axis is not None:
         ax = axis
     else:
@@ -104,7 +113,8 @@ def draw_parameters(
         elif options["density"] == "generations":
             # Generate x values based on generation index
             gen_indices = np.repeat(np.arange(data.shape[0]), data.shape[1])
-            x_vals = np.full_like(y_vals, i, dtype=float) - 0.4 + (gen_indices / data.shape[0]) * 0.8
+            x_vals = (np.full_like(y_vals, i, dtype=float) - 0.4
+                      + (gen_indices / data.shape[0]) * 0.8)
         else:
             msg = f"Unknown density option: {options['density']}"
             raise ValueError(msg)
