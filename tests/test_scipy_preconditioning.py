@@ -61,3 +61,41 @@ def test_bounds_contain_start():
     np.testing.assert_allclose(optimizer.transform_x(lower, _X0), 0.0,
                                atol=1e-15)
     np.testing.assert_allclose(optimizer.transform_x(upper, _X0), 1.0)
+
+
+# Non-diagonal factor with strongly non-uniform row norms (standard
+# deviations 0.02, ~0.30 and ~0.22) whose column norms differ from them.
+_CHOLESKY_NONUNIFORM = np.array([[0.02, 0.0, 0.0],
+                                 [0.05, 0.3, 0.0],
+                                 [0.02, 0.1, 0.2]])
+
+
+def test_scale_is_std():
+    """Check that a unit step in y moves x by 1/std of each parameter."""
+    optimizer = SLSQPOptimizer(fun=np.sum, grad=np.ones_like,
+                               cholesky=_CHOLESKY_NONUNIFORM)
+    x0 = np.array([0.3, 0.6, 0.5])
+    optimizer._set_cholesky_related(x0)
+    std = np.sqrt(np.diag(_CHOLESKY_NONUNIFORM @ _CHOLESKY_NONUNIFORM.T))
+    np.testing.assert_allclose(optimizer.transform_x(np.ones(3), x0) - x0,
+                               1 / std)
+
+
+def test_grad_chain_rule():
+    """Check that transform_grad gives the gradient with respect to y."""
+    optimizer = SLSQPOptimizer(fun=np.sum, grad=np.ones_like,
+                               cholesky=_CHOLESKY_NONUNIFORM)
+    x0 = np.array([0.3, 0.6, 0.5])
+    optimizer._set_cholesky_related(x0)
+
+    def fun_of_y(y):
+        return np.sum((optimizer.transform_x(y, x0) - _TARGET)**2)
+
+    y = np.array([1e-4, 0.02, -0.03])
+    step = 1e-7
+    numerical = [(fun_of_y(y + step*e) - fun_of_y(y - step*e)) / (2*step)
+                 for e in np.eye(3)]
+    analytical = optimizer.transform_grad(
+        2 * (optimizer.transform_x(y, x0) - _TARGET)
+        )
+    np.testing.assert_allclose(analytical, numerical, rtol=1e-5)
