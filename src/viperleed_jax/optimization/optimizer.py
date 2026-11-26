@@ -9,6 +9,7 @@ __license__ = 'GPLv3+'
 
 
 from abc import ABC, abstractmethod
+import warnings
 
 import numpy as np
 import tqdm
@@ -127,6 +128,12 @@ class NonGradOptimizer(Optimizer):
         super().__init__(fun=fun, name=name)
 
 
+# Smallest per-parameter scale of the SciPy optimizers (see
+# SciPyOptimizerBase._set_cholesky_related), in units of the
+# normalized parameters
+_MIN_SCALE = 1e-2
+
+
 class SciPyOptimizerBase:
     """Shared logic for SciPy-based optimizers (grad and non-grad)."""
 
@@ -150,29 +157,50 @@ class SciPyOptimizerBase:
         self.cholesky = cholesky  # transformation matrix
 
     def _set_cholesky_related(self, x0):
+        """Set up the diagonal preconditioning for starting point x0.
+
+        The optimizer works in coordinates y with x = x0 + y / s. With
+        a Cholesky factor L of the CMA-ES covariance (C = L L^T), s is
+        the per-parameter standard deviation sqrt(diag(C)), otherwise 1.
+        A diagonal scaling maps the bounding box of x to a box in y
+        that contains y = 0, so the bounds stay plain bounds and the
+        optimizer starts at x0. A standard deviation below _MIN_SCALE
+        is raised to it, so a collapsed CMA-ES direction cannot make
+        the optimizer stall. (A full transformation with L would
+        turn the box into a parallelepiped, which bounds cannot
+        describe.)
+        """
         if self.cholesky is None:
-            self._L = np.eye(len(x0))
-            self._L_inv = np.eye(len(x0))
-        else:
-            self._L = self.cholesky
-            self._L_inv = np.linalg.inv(self.cholesky)
+            self._scale = np.ones(len(x0))
+            return
+        cholesky = np.asarray(self.cholesky)
+        std = np.sqrt(np.sum(cholesky**2, axis=1))
+        # SLSQP stops at its start, reporting success, when a scale
+        # is 1e-4 or smaller. Hence the floor.
+        self._scale = np.where(std > 0, np.maximum(std, _MIN_SCALE), 1.0)
 
     def transform_bounds(self, x0):
         bounds = [(0, 1)] * len(x0) if self.bounds is None else self.bounds
         x_min, x_max = np.array(bounds).T
-        # Transform the bounds
-        x_min_transformed = self._L.T @ (x_min - x0)
-        x_max_transformed = self._L.T @ (x_max - x0)
-        # Ensure lower bounds are always smaller than upper bounds
-        x_min_corrected = np.minimum(x_min_transformed, x_max_transformed)
-        x_max_corrected = np.maximum(x_min_transformed, x_max_transformed)
-        return list(zip(x_min_corrected, x_max_corrected))
+        # The scale is positive: the transformed bounds keep their order
+        return list(zip(self._scale * (x_min - x0), self._scale * (x_max - x0)))
 
     def transform_x(self, y, x0):
-        return x0 + self._L_inv.T @ y
+        return x0 + y / self._scale
 
     def transform_grad(self, grad_x):
-        return self._L_inv @ grad_x
+        return grad_x / self._scale
+
+    def _warn_if_stalled(self, result):
+        """Log a warning if the optimizer did at most one iteration."""
+        if result.nit > 1:
+            return
+        logger.warning(
+            f'{self.method} stopped after {result.nit} iteration(s) '
+            f'({result.message}). Its result is at or next to its start '
+            'point. Check that the objective function is not flat or '
+            'NaN there.'
+        )
 
     def _start_message(self):
         return (
@@ -224,6 +252,7 @@ class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
             nit=result.nit,
             success=result.success,
         )
+        self._warn_if_stalled(result)
 
         if result.message == 'Inequality constraints incompatible':
             msg = (
@@ -247,7 +276,7 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
         grad=None,
         fun_and_grad=None,
         bounds=None,
-        grad_damp_factor=1.0,
+        grad_damp_factor=None,
         cholesky=None,
         **kwargs,
     ):
@@ -256,8 +285,13 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
         SciPyOptimizerBase.__init__(
             self, bounds=bounds, cholesky=cholesky, **kwargs
         )
-        self.grad_damp_factor = grad_damp_factor
-        self.options['ftol'] /= grad_damp_factor
+        if grad_damp_factor is not None:
+            warnings.warn(
+                'grad_damp_factor is deprecated and has no effect: the '
+                'gradient is never damped, and the stop amount is ftol.',
+                DeprecationWarning,
+                stacklevel=3,
+            )
 
     def __call__(self, x0):
         self._set_cholesky_related(x0)
@@ -273,13 +307,13 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
         def _grad(y):
             x = self.transform_x(y, x0)
             g = self.grad(x)
-            opt_history.add_step(x, R=None, grad_R=g / self.grad_damp_factor)
+            opt_history.add_step(x, R=None, grad_R=g)
             return self.transform_grad(g)
 
         def _fun_and_grad(y):
             x = self.transform_x(y, x0)
             f, g = self.fun_and_grad(x)
-            opt_history.add_step(x, R=f, grad_R=g / self.grad_damp_factor)
+            opt_history.add_step(x, R=f, grad_R=g)
             return f, self.transform_grad(g)
 
         # Transform initial guess
@@ -305,14 +339,9 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
             nit=result.nit,
             success=result.success,
         )
+        self._warn_if_stalled(result)
         logger.info(self._end_message(opt_history))
         return opt_history
-
-    def _start_message(self):
-        """Return the start message for the optimizer."""
-        msg = super()._start_message()
-        msg += f'\tGrad. damp. f.:\t{self.grad_damp_factor}\n'
-        return msg
 
 
 class LBFGSBOptimizer(SciPyGradOptimizer):
@@ -351,7 +380,8 @@ class LBFGSBOptimizer(SciPyGradOptimizer):
         grad=None,
         fun_and_grad=None,
         bounds=None,
-        grad_damp_factor=0.1,  # default values
+        grad_damp_factor=None,  # deprecated, no effect
+        ftol=1e-5,
         **kwargs,
     ):
         super().__init__(
@@ -360,6 +390,7 @@ class LBFGSBOptimizer(SciPyGradOptimizer):
             fun_and_grad=fun_and_grad,
             bounds=bounds,
             grad_damp_factor=grad_damp_factor,
+            ftol=ftol,
             **kwargs,
         )
         self.bounds = bounds
@@ -373,11 +404,7 @@ class SLSQPOptimizer(SciPyGradOptimizer):
     include equality constraints. Inequality constraints are incorporated by
     defining active and passive sets, as well as an upper limit of the step
     size. For the Hessian, the BFGS approximation is used, and the line search
-    cannot satisfy the Wolfe conditions. Due to a poor Hessian approximation in
-    the initial iterations, the algorithm tends to overshoot during these
-    iterations. To address this issue, a damping factor (damp_fact) is used to
-    reduce the gradient at the beginning. A damping factor of 0.1 has shown good
-    results.
+    cannot satisfy the Wolfe conditions.
 
     Parameters
     ----------
@@ -385,6 +412,12 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         grad: Gradient of the objective function.
         bounds: Since the parameters are normalized, all bounds are by default
             set to [0,1].
+        grad_damp_factor: Deprecated, has no effect. It no longer damps the
+            gradient that SLSQP uses.
+        ftol: SLSQP stops when the R factor changes by less than ftol
+            (absolute) in one iteration. On an ill-conditioned R factor,
+            the first iteration can change R by less than 1e-5, so a
+            larger value can stop SLSQP far from the minimum.
     """
 
     method = 'SLSQP'
@@ -396,7 +429,8 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         grad=None,
         fun_and_grad=None,
         bounds=None,
-        grad_damp_factor=0.1,  # default values
+        grad_damp_factor=None,  # deprecated, no effect
+        ftol=1e-8,
         **kwargs,
     ):
         super().__init__(
@@ -405,6 +439,7 @@ class SLSQPOptimizer(SciPyGradOptimizer):
             fun_and_grad=fun_and_grad,
             bounds=bounds,
             grad_damp_factor=grad_damp_factor,
+            ftol=ftol,
             **kwargs,
         )
         self.bounds = bounds
@@ -678,9 +713,27 @@ class BFGSOptimizer(SciPyGradOptimizer):
 
 
 class GradFreeSLSQPOptimizer(SciPyNonGradOptimizer):
+    """SLSQP with finite-difference gradients.
+
+    Parameters
+    ----------
+        fun: Objective function.
+        bounds: Since the parameters are normalized, all bounds are by default
+            set to [0,1].
+        ftol: SLSQP stops when the R factor changes by less than ftol
+            (absolute) in one iteration. As for SLSQPOptimizer, a larger
+            value can stop SLSQP far from the minimum of an ill-conditioned
+            R factor.
+    """
+
     method = 'SLSQP'
     use_bounds = True
     jac_strategy = '2-point'
+
+    def __init__(self, fun, bounds=None, cholesky=None, ftol=1e-8, **kwargs):
+        super().__init__(
+            fun, bounds=bounds, cholesky=cholesky, ftol=ftol, **kwargs
+        )
 
 
 class GradFreeBFGSOptimizer(SciPyNonGradOptimizer):

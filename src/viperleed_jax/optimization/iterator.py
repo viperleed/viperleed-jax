@@ -188,9 +188,6 @@ class OptimizerIterator:
                 fun=self.calculator.R,
                 grad=self.calculator.grad_R,
                 cholesky=self.cholesky,
-                grad_damp_factor=self.rpars.vlj_algo_settings['SLSQP'][
-                    'grad_damping'
-                ],
             )
 
         # otherwise, use the gradient-free SLSQP optimizer
@@ -202,7 +199,7 @@ class OptimizerIterator:
     def _get_bfgs_optimizer(self):
         logger.debug('Preparing BFGS optimizer.')
         if self.rpars.vlj_algo_settings['BFGS']['grad']:
-            return optimization.BFGSOptimizer(
+            return optimization.optimizer.BFGSOptimizer(
                 fun=self.calculator.R,
                 grad=self.calculator.grad_R,
                 cholesky=self.cholesky,
