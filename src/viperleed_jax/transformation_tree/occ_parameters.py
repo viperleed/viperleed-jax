@@ -6,6 +6,9 @@ __copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
 __license__ = 'GPLv3+'
 
 import numpy as np
+from viperleed.calc.files.new_displacements.tokens.total_occupation import (
+    TotalOccupationToken,
+)
 
 from .displacement_tree_layers import DisplacementTreeLayers
 from .linear_transformer import AffineTransformer
@@ -224,7 +227,9 @@ class OccTree(DisplacementTree):
         superclass method. If the constraint is a total occupation constraint,
         handle it separately.
         """
-        if not constraint_line.is_total_occupation:
+        if not isinstance(
+            constraint_line.linear_operation, TotalOccupationToken
+        ):
             super().apply_explicit_constraint(constraint_line)
             return
 

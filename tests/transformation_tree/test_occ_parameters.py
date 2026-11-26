@@ -6,6 +6,9 @@ from viperleed.calc.files.new_displacements.lines import (
     OccDeltaLine,
     OffsetsLine,
 )
+from viperleed.calc.files.new_displacements.tokens.total_occupation import (
+    TotalOccupationToken,
+)
 
 from viperleed_jax.atom_basis import AtomBasis
 from viperleed_jax.transformation_tree.displacement_tree_layers import (
@@ -217,3 +220,38 @@ class TestPt25Rh75_O_3x1:
         assert non_normalized_occupations == pytest.approx(
             self.KNOWN_OCC_PARAM_TO_VALUES[input_params]
         )
+
+    def test_total_occ_constraint_sums_to_total(self, ptrh_tree):
+        """Check that occupations at each selected atom add up to the total."""
+        line = ConstraintLine('occ Me* L(1-3) = total 1.0')
+        assert isinstance(line.linear_operation, TotalOccupationToken)
+        assert line.linear_operation.total_occupation == 1.0
+        ptrh_tree.apply_explicit_constraint(line)
+        bounds_line = OccDeltaLine('Me* L(1-3) = Rh 0.10 0.90, Pt 0.90 0.10')
+        ptrh_tree.apply_bounds_line(bounds_line)
+        ptrh_tree.apply_bounds()
+        ptrh_tree.apply_implicit_constraints()
+        ptrh_tree.finalize_tree()
+
+        values = ptrh_tree(np.array([0.3] * ptrh_tree.root.dof))
+        mask = ptrh_tree.atom_basis.target_selection_mask(line.targets)
+        per_atom = {}
+        for leaf, selected, value in zip(ptrh_tree.leaves, mask, values):
+            if selected:
+                per_atom[leaf.atom.num] = (
+                    per_atom.get(leaf.atom.num, 0.0) + value
+                )
+        assert per_atom
+        assert list(per_atom.values()) == pytest.approx([1.0] * len(per_atom))
+
+    def test_single_value_occ_delta_is_fixed(self, ptrh_tree):
+        """A single OCC value gives a zero-width range: a fixed parameter."""
+        bounds_line = OccDeltaLine('Me* L(1-3) = Rh 0.5, Pt 0.5')
+        ptrh_tree.apply_bounds_line(bounds_line)
+        ptrh_tree.apply_bounds()
+        ptrh_tree.apply_implicit_constraints()
+        ptrh_tree.finalize_tree()
+
+        assert ptrh_tree.root.dof == 0
+        values = ptrh_tree(np.array([]))
+        assert np.all(np.isfinite(values))
