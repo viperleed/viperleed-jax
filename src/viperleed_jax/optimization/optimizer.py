@@ -301,13 +301,13 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
         def _grad(y):
             x = self.transform_x(y, x0)
             g = self.grad(x)
-            opt_history.add_step(x, R=None, grad_R=g / self.grad_damp_factor)
+            opt_history.add_step(x, R=None, grad_R=g)
             return self.transform_grad(g)
 
         def _fun_and_grad(y):
             x = self.transform_x(y, x0)
             f, g = self.fun_and_grad(x)
-            opt_history.add_step(x, R=f, grad_R=g / self.grad_damp_factor)
+            opt_history.add_step(x, R=f, grad_R=g)
             return f, self.transform_grad(g)
 
         # Transform initial guess

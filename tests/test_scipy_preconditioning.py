@@ -168,3 +168,17 @@ def test_warn_if_stalled(cls, target, warns, caplog):
     with caplog.at_level(logging.WARNING):
         optimizer(_X0.copy())
     assert ('stopped after' in caplog.text) == warns
+
+
+def test_history_gradient_is_true_gradient():
+    """Check that the history records the gradient of the objective."""
+    target = _TARGET
+    optimizer = SLSQPOptimizer(fun=lambda x: float(np.sum((x - target)**2)),
+                               grad=lambda x: 2 * (x - target),
+                               cholesky=_CHOLESKY, grad_damp_factor=0.5)
+    result = optimizer(_X0.copy())
+    x = np.reshape(result.x_history, (-1, 3))
+    grad = np.reshape(result.grad_R_history, (-1, 3))
+    has_grad = ~np.isnan(grad).any(axis=1)
+    assert has_grad.any()
+    np.testing.assert_allclose(grad[has_grad], 2 * (x[has_grad] - target))
