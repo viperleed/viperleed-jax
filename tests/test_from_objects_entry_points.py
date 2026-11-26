@@ -49,7 +49,7 @@ def test_optimizer_chain(monkeypatch):
         phaseshifts_path=_DATA_PATH / 'PHASESHIFTS',
     )
     calculator.set_parameter_space(parameter_space)
-    calculator.set_rfactor(str(rpars.R_FACTOR_TYPE))
+    calculator.set_rfactor(rpars.R_FACTOR_TYPE.name)
 
     start_points, choleskys = [], []
 
