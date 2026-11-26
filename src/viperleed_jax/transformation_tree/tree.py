@@ -478,6 +478,17 @@ class DisplacementTree(LinearTree):
         # check if the constraint line is of the correct type
         _check_constraint_line_type(constraint_line, self.perturbation_mode)
 
+        if (
+            constraint_line.fixed_value is not None
+            or constraint_line.fixed_index is not None
+        ):
+            msg = (
+                f'CONSTRAIN block line "{constraint_line.raw_line}" fixes '
+                'a value or index. Fixed-value constraints are not supported '
+                'yet by viperleed-jax.'
+            )
+            raise NotImplementedError(msg)
+
         # resolve the reference (rhs of constraint) into a mask
         link_target_mask = self.atom_basis.target_selection_mask(
             (constraint_line.link_target,)
