@@ -20,6 +20,9 @@ from anytree import RenderTree
 from anytree.exporter import UniqueDotExporter
 from viperleed.calc.classes.perturbation_mode import PerturbationMode
 from viperleed.calc.files.new_displacements.lines import ConstraintLine
+from viperleed.calc.files.new_displacements.tokens.direction import (
+    FractionalDirectionToken,
+)
 
 from viperleed_jax.lib.math import EPS
 from viperleed_jax.lib.matrix import closest_to_identity, xyz_matrix_to_zxy
@@ -412,17 +415,14 @@ class DisplacementTree(LinearTree):
 
     def apply_offsets(self, offset_line):
         """Apply offsets to the children of the node."""
-        offset = np.array(offset_line.offset.offset)
+        base_offset = np.array(offset_line.offset.offset)
 
         # TODO: allow off axis offsets; multi dim offsets?
 
-        # if there is a direction do processing
-        if offset_line.direction is not None:
-            if len(offset_line.direction.vectors_zxy) != 1:
-                msg = f'Cannot interpret offset for line "{offset_line}".'
-                raise ValueError(msg)
-            vector = offset_line.direction.vectors_zxy[0]
-            offset = np.array(vector) * offset
+        direction = offset_line.direction
+        if direction is not None and direction.dof != 1:
+            msg = f'Cannot interpret offset for line "{offset_line}".'
+            raise ValueError(msg)
 
         # check construction order
         super().apply_offsets()
@@ -433,6 +433,10 @@ class DisplacementTree(LinearTree):
 
         # iterate over the roots and apply the offset
         for root, primary_leaf in target_roots_primary_leaves.items():
+            offset = base_offset
+            if direction is not None:
+                vector = cartesian_direction(direction, primary_leaf)
+                offset = vector.vectors_zxy[0] * base_offset
             if root.dof != offset.size:
                 msg = (
                     f'Offset line "{offset_line}" has a size of {offset.size} '
@@ -751,6 +755,18 @@ def _map_transformation_from_leaf_to_root(
     T = primary_root.transformer_to_descendent(primary_leaf)
     T_dash = secondary_root.transformer_to_descendent(secondary_leaf)
     return T @ LinearMap(transformation) @ T_dash.pseudo_inverse()
+
+
+def cartesian_direction(direction, leaf):
+    """Return `direction` as a Cartesian token.
+
+    Fractional directions are converted with the in-plane unit cell of
+    the slab that `leaf`'s atom belongs to; Cartesian ones are returned
+    unchanged.
+    """
+    if isinstance(direction, FractionalDirectionToken):
+        return direction.to_cartesian(leaf.atom.atom.slab.ab_cell)
+    return direction
 
 
 def _select_primary_leaf(root, leaves):

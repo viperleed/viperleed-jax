@@ -19,6 +19,7 @@ from .nodes import (
 from .reduced_space import Zonotope
 from .tree import (
     DisplacementTree,
+    cartesian_direction,
 )
 
 
@@ -237,7 +238,8 @@ class GeoTree(DisplacementTree):
 
     def _zonotope_from_bounds_line(self, geo_delta_line, primary_leaf):
         # get vector and range information from the GEO_DELTA line
-        n_vectors = len(geo_delta_line.direction.vectors_zxy)
+        direction = cartesian_direction(geo_delta_line.direction, primary_leaf)
+        n_vectors = len(direction.vectors_zxy)
 
         ranges = np.vstack(
             [
@@ -246,7 +248,7 @@ class GeoTree(DisplacementTree):
             ]
         )
         return Zonotope(
-            basis=geo_delta_line.direction.vectors_zxy,
+            basis=direction.vectors_zxy,
             ranges=ranges,
             offset=None,
         )
