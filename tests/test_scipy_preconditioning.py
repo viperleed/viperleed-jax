@@ -3,6 +3,8 @@
 __authors__ = ('Florian Kraushofer (@fkraushofer)',)
 __created__ = '2026-11-26'
 
+import logging
+
 import numpy as np
 import pytest
 
@@ -141,3 +143,26 @@ def test_box_minimum_small_std(cls, cholesky):
     assert np.all(evaluated <= 1.0)
     np.testing.assert_allclose(result.best_x, np.clip(target, 0, 1),
                                atol=1e-4)
+
+
+@pytest.mark.parametrize('cls', (SLSQPOptimizer, GradFreeSLSQPOptimizer))
+@pytest.mark.parametrize('target,warns', (
+    (_X0, True),          # starts at the minimum: no step to take
+    (_TARGET, False),
+    ), ids=('start at minimum', 'start away'))
+def test_warn_if_stalled(cls, target, warns, caplog):
+    """Check the warning when a SciPy optimizer ends after <= 1 iteration."""
+    def fun(x):
+        return float(np.sum((x - target)**2))
+
+    def grad(x):
+        return 2 * (x - target)
+
+    if cls is SLSQPOptimizer:
+        optimizer = cls(fun=fun, grad=grad, cholesky=_CHOLESKY,
+                        grad_damp_factor=1.0)
+    else:
+        optimizer = cls(fun=fun, cholesky=_CHOLESKY)
+    with caplog.at_level(logging.WARNING):
+        optimizer(_X0.copy())
+    assert ('stopped after' in caplog.text) == warns

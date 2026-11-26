@@ -190,6 +190,17 @@ class SciPyOptimizerBase:
     def transform_grad(self, grad_x):
         return grad_x / self._scale
 
+    def _warn_if_stalled(self, result):
+        """Log a warning if the optimizer did at most one iteration."""
+        if result.nit > 1:
+            return
+        logger.warning(
+            f'{self.method} stopped after {result.nit} iteration(s) '
+            f'({result.message}). Its result is at or next to its start '
+            'point. Check that the objective function is not flat or '
+            'NaN there.'
+        )
+
     def _start_message(self):
         return (
             f'Starting SciPy optimization using {self.method}...\n'
@@ -240,6 +251,7 @@ class SciPyNonGradOptimizer(SciPyOptimizerBase, NonGradOptimizer):
             nit=result.nit,
             success=result.success,
         )
+        self._warn_if_stalled(result)
 
         if result.message == 'Inequality constraints incompatible':
             msg = (
@@ -321,6 +333,7 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
             nit=result.nit,
             success=result.success,
         )
+        self._warn_if_stalled(result)
         logger.info(self._end_message(opt_history))
         return opt_history
 
