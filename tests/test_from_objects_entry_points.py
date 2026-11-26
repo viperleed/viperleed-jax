@@ -23,9 +23,9 @@ _CMAES = optimization.optimizer.CMAESOptimizer
 _SLSQP = optimization.optimizer.GradFreeSLSQPOptimizer
 
 
-@pytest.fixture(scope='module')
-def hook_objects():
-    """Return rpars and a calculator, set up as calc/vlj/search.py does."""
+def test_optimizer_chain(monkeypatch):
+    """Check that a CMAES -> SLSQP chain hands the clipped result on."""
+    # Set up rpars and the calculator as calc/vlj/search.py does
     state = run_viperleed_initialization(_DATA_PATH)
     slab, rpars = state.slab, state.rpars
     rpars.VLJ_ALGO = ['CMAES', 'SLSQP']
@@ -50,19 +50,15 @@ def hook_objects():
     )
     calculator.set_parameter_space(parameter_space)
     calculator.set_rfactor(str(rpars.R_FACTOR_TYPE))
-    return rpars, calculator
 
-
-def test_optimizer_chain(hook_objects, monkeypatch):
-    """Check that a CMAES -> SLSQP chain hands the clipped result on."""
-    rpars, calculator = hook_objects
-    start_points = []
+    start_points, choleskys = [], []
 
     def _spy(cls):
         original = cls.__call__
 
         def _call(self, x0, *args, **kwargs):
             start_points.append((cls, np.array(x0, dtype=float)))
+            choleskys.append(getattr(self, 'cholesky', None))
             return original(self, x0, *args, **kwargs)
 
         monkeypatch.setattr(cls, '__call__', _call)
@@ -91,7 +87,10 @@ def test_optimizer_chain(hook_objects, monkeypatch):
         start_points[1][1], np.clip(cmaes_result.best_x, 0.0, 1.0)
     )
     assert np.all((start_points[1][1] >= 0) & (start_points[1][1] <= 1))
-    assert iterator.cholesky is not None
+    # SLSQP is preconditioned with the CMA-ES Cholesky factor
+    assert cmaes_result.cholesky is not None
+    np.testing.assert_array_equal(iterator.cholesky, cmaes_result.cholesky)
+    np.testing.assert_array_equal(choleskys[1], cmaes_result.cholesky)
     assert iterator.current_x.shape == (n_params,)
     with pytest.raises(StopIteration):
         next(iterator)
