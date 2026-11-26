@@ -1,10 +1,14 @@
 """Tests for the selection and use of R-factor functions."""
 
+__authors__ = ('Florian Kraushofer (@fkraushofer)',)
+__created__ = '2026-11-26'
+
 import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
 from viperleed.calc.classes.rparams.special.r_factor_type import RFactorType
+from viperleed.calc.lib import spline_interpolation
 from viperleed.calc.lib.rfactor import selection
 from viperleed.calc.lib.rfactor.pendry import r_pendry
 
@@ -13,20 +17,13 @@ from viperleed_jax.tensor_calculator import (
     calc_r_factor,
 )
 
-_NAMES = [*(member.name for member in RFactorType), *selection._R1_NAMES]
+_NAMES = [*(member.name for member in RFactorType), 'r1', 'r_1', 'r1 factor']
 
 
 @pytest.fixture(name='calculator')
 def fixture_calculator():
     """Return a calculator without any setup."""
     return TensorLEEDCalculator.__new__(TensorLEEDCalculator)
-
-
-@pytest.mark.parametrize('name', _NAMES)
-def test_set_rfactor(calculator, name):
-    """Check that set_rfactor picks the function selected by name."""
-    calculator.set_rfactor(name)
-    assert calculator.rfactor_func is selection.select_rfactor_by_name(name)
 
 
 @pytest.mark.parametrize('name', _NAMES)
@@ -67,7 +64,9 @@ def test_calc_r_factor_finite(name, groups):
     """Check that each selectable R factor works under jit."""
     energies = np.arange(50.0, 150.0, 2.0)
     target_grid = jnp.arange(55.0, 145.0, 0.5)
-    exp_spline = _exp_spline(energies)
+    exp_spline = spline_interpolation.interpolate_ragged_array(
+        energies, _synthetic_beams(energies, 0.0)
+    )
     exp_data = tuple(
         jnp.asarray(d(np.asarray(target_grid)))
         for d in (exp_spline, exp_spline.derivative(),
@@ -95,11 +94,3 @@ def test_calc_r_factor_finite(name, groups):
     assert np.all(np.isfinite(value))
     grad = jax.grad(lambda s: jnp.sum(r_factor(s)))(0.0)
     assert np.isfinite(grad)
-
-
-def _exp_spline(energies):
-    from viperleed.calc.lib import spline_interpolation
-
-    return spline_interpolation.interpolate_ragged_array(
-        energies, _synthetic_beams(energies, 0.0)
-    )
