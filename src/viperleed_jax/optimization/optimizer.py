@@ -285,7 +285,6 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
             self, bounds=bounds, cholesky=cholesky, **kwargs
         )
         self.grad_damp_factor = grad_damp_factor
-        self.options['ftol'] /= grad_damp_factor
 
     def __call__(self, x0):
         self._set_cholesky_related(x0)
@@ -381,6 +380,7 @@ class LBFGSBOptimizer(SciPyGradOptimizer):
         fun_and_grad=None,
         bounds=None,
         grad_damp_factor=0.1,  # default values
+        ftol=1e-5,
         **kwargs,
     ):
         super().__init__(
@@ -389,6 +389,7 @@ class LBFGSBOptimizer(SciPyGradOptimizer):
             fun_and_grad=fun_and_grad,
             bounds=bounds,
             grad_damp_factor=grad_damp_factor,
+            ftol=ftol,
             **kwargs,
         )
         self.bounds = bounds
@@ -414,6 +415,10 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         grad: Gradient of the objective function.
         bounds: Since the parameters are normalized, all bounds are by default
             set to [0,1].
+        ftol: SLSQP stops when the R factor changes by less than ftol
+            (absolute) in one iteration. On an ill-conditioned R factor,
+            the first iteration can change R by less than 1e-5, so a
+            larger value can stop SLSQP far from the minimum.
     """
 
     method = 'SLSQP'
@@ -426,6 +431,7 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         fun_and_grad=None,
         bounds=None,
         grad_damp_factor=0.1,  # default values
+        ftol=1e-8,
         **kwargs,
     ):
         super().__init__(
@@ -434,6 +440,7 @@ class SLSQPOptimizer(SciPyGradOptimizer):
             fun_and_grad=fun_and_grad,
             bounds=bounds,
             grad_damp_factor=grad_damp_factor,
+            ftol=ftol,
             **kwargs,
         )
         self.bounds = bounds
