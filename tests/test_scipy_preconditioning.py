@@ -253,23 +253,30 @@ def test_ill_conditioned_reaches_minimum(start, cls):
 
 @pytest.mark.parametrize('cls', (SLSQPOptimizer, LBFGSBOptimizer))
 def test_grad_damp_factor_deprecated(cls, recwarn):
-    """Check that grad_damp_factor warns once and changes nothing."""
+    """Check that grad_damp_factor warns once and changes nothing.
+
+    From start 5 of the ill-conditioned quadratic, the evaluated points
+    depend on the stop amount (both classes stop earlier with ten times
+    their ftol): they would change if grad_damp_factor still scaled ftol.
+    """
+    ill_fun, ill_grad, cholesky, _, _, starts = _ILL_CONDITIONED
+
     def run(**kwargs):
         evaluated = []
 
         def fun(x):
             evaluated.append(np.array(x))
-            return float(np.sum((x - _TARGET)**2))
+            return ill_fun(x)
 
         def grad(x):
             evaluated.append(np.array(x))
-            return 2 * (x - _TARGET)
+            return ill_grad(x)
 
         def fun_and_grad(x):
             return fun(x), grad(x)
 
         cls(fun=fun, grad=grad, fun_and_grad=fun_and_grad,
-            cholesky=_CHOLESKY, **kwargs)(_X0.copy())
+            cholesky=cholesky, **kwargs)(starts[5].copy())
         return np.array(evaluated)
 
     default = run()
