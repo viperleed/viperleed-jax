@@ -15,16 +15,6 @@ from viperleed_jax.optimization.iterator import OptimizerIterator
 _TARGET = np.array([0.3, 0.6])
 
 
-def _fake_calculator():
-    """Return a calculator stand-in with a quadratic R."""
-    calculator = MagicMock()
-    calculator.n_free_parameters = len(_TARGET)
-    calculator.parameter_space.get_parameter_names.return_value = ['a', 'b']
-    calculator.R = lambda x: float(np.sum((x - _TARGET)**2))
-    calculator.grad_R = lambda x: 2 * (x - _TARGET)
-    return calculator
-
-
 @pytest.mark.parametrize('grad', (True, False), ids=('grad', 'grad-free'))
 def test_bfgs(grad):
     """Check that the BFGS optimizers run, with and without gradients."""
@@ -33,8 +23,12 @@ def test_bfgs(grad):
         VLJ_CONFIG={'precondition': False},
         vlj_algo_settings={'BFGS': {'grad': grad}},
         )
-    iterator = OptimizerIterator(rpars, _fake_calculator(),
-                                 starting_x=[0.5, 0.5])
+    calculator = MagicMock()          # with a quadratic R
+    calculator.n_free_parameters = len(_TARGET)
+    calculator.parameter_space.get_parameter_names.return_value = ['a', 'b']
+    calculator.R = lambda x: float(np.sum((x - _TARGET)**2))
+    calculator.grad_R = lambda x: 2 * (x - _TARGET)
+    iterator = OptimizerIterator(rpars, calculator, starting_x=[0.5, 0.5])
     (optimizer, result), = iterator
     expected = opt.BFGSOptimizer if grad else opt.GradFreeBFGSOptimizer
     assert type(optimizer) is expected
