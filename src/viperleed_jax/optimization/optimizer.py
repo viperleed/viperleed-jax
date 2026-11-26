@@ -150,29 +150,35 @@ class SciPyOptimizerBase:
         self.cholesky = cholesky  # transformation matrix
 
     def _set_cholesky_related(self, x0):
+        """Set up the diagonal preconditioning for starting point x0.
+
+        The optimizer works in coordinates y with x = x0 + y / s. With
+        a Cholesky factor L of the CMA-ES covariance (C = L L^T), s is
+        the per-parameter standard deviation sqrt(diag(C)), otherwise 1.
+        A diagonal scaling maps the bounding box of x to a box in y
+        that contains y = 0, so the bounds stay plain bounds and the
+        optimizer starts at x0. (A full transformation with L would
+        turn the box into a parallelepiped, which bounds cannot
+        describe.)
+        """
         if self.cholesky is None:
-            self._L = np.eye(len(x0))
-            self._L_inv = np.eye(len(x0))
-        else:
-            self._L = self.cholesky
-            self._L_inv = np.linalg.inv(self.cholesky)
+            self._scale = np.ones(len(x0))
+            return
+        cholesky = np.asarray(self.cholesky)
+        std = np.sqrt(np.sum(cholesky**2, axis=1))
+        self._scale = np.where(std > 0, std, 1.0)
 
     def transform_bounds(self, x0):
         bounds = [(0, 1)] * len(x0) if self.bounds is None else self.bounds
         x_min, x_max = np.array(bounds).T
-        # Transform the bounds
-        x_min_transformed = self._L.T @ (x_min - x0)
-        x_max_transformed = self._L.T @ (x_max - x0)
-        # Ensure lower bounds are always smaller than upper bounds
-        x_min_corrected = np.minimum(x_min_transformed, x_max_transformed)
-        x_max_corrected = np.maximum(x_min_transformed, x_max_transformed)
-        return list(zip(x_min_corrected, x_max_corrected))
+        # The scale is positive: the transformed bounds keep their order
+        return list(zip(self._scale * (x_min - x0), self._scale * (x_max - x0)))
 
     def transform_x(self, y, x0):
-        return x0 + self._L_inv.T @ y
+        return x0 + y / self._scale
 
     def transform_grad(self, grad_x):
-        return self._L_inv @ grad_x
+        return grad_x / self._scale
 
     def _start_message(self):
         return (
