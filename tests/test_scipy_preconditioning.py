@@ -14,14 +14,14 @@ from viperleed_jax.optimization.optimizer import (
 )
 
 # Lower-triangular CMA-ES Cholesky factor with large off-diagonal
-# terms, as after the Ag(100) smoke run. With x0[0] at its upper
-# bound, transforming the [0, 1] box with the full factor gives
-# y-bounds for component 0 that exclude y = 0.
+# terms, as CMA-ES produces for correlated parameters. With x0[0] at
+# its upper bound, transforming the [0, 1] box with the full factor
+# gives y-bounds for component 0 that exclude y = 0.
 _CHOLESKY = np.array([[0.15, 0.0, 0.0],
                       [-0.07, 0.19, 0.0],
                       [-0.06, 0.13, 0.09]])
 _X0 = np.array([1.0, 0.5, 0.5])
-_TARGET = np.array([0.9, 0.6, 0.4])
+_TARGET = np.array([0.9, 1.2, -0.1])   # outside the box in two components
 
 
 def _make_optimizer(cls, evaluated):
@@ -31,6 +31,7 @@ def _make_optimizer(cls, evaluated):
         return float(np.sum((x - _TARGET)**2))
 
     def grad(x):
+        evaluated.append(np.array(x))
         return 2 * (x - _TARGET)
 
     if cls is SLSQPOptimizer:
@@ -41,7 +42,7 @@ def _make_optimizer(cls, evaluated):
 
 @pytest.mark.parametrize('cls', (SLSQPOptimizer, GradFreeSLSQPOptimizer))
 def test_start_at_bound(cls):
-    """Check that SLSQP starts at x0 and stays inside [0, 1]."""
+    """Check that SLSQP starts at x0 and reaches the box minimum in [0, 1]."""
     evaluated = []
     optimizer = _make_optimizer(cls, evaluated)
     result = optimizer(_X0.copy())
@@ -49,7 +50,8 @@ def test_start_at_bound(cls):
     evaluated = np.array(evaluated)
     assert np.all(evaluated >= 0.0)
     assert np.all(evaluated <= 1.0)
-    assert result.best_R <= np.sum((_X0 - _TARGET)**2)
+    np.testing.assert_allclose(result.best_x, np.clip(_TARGET, 0, 1),
+                               atol=1e-4)
 
 
 def test_bounds_contain_start():
