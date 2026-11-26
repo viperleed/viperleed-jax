@@ -213,7 +213,7 @@ def _ill_conditioned_case():
         direction = rng.normal(size=n_params)
         direction /= np.linalg.norm(direction)
         starts.append(np.clip(x_min + cholesky @ direction, 0, 1))
-    return fun, grad, cholesky, r_min, starts
+    return fun, grad, cholesky, r_min, amplitude, starts
 
 
 _ILL_CONDITIONED = _ill_conditioned_case()
@@ -224,12 +224,14 @@ def test_ill_conditioned_reaches_minimum(start):
     """Check that gradient SLSQP with default settings does not stop early.
 
     The first step changes R by less than 1e-5 here: a stop amount of
-    1e-5 or 1e-6 ends SLSQP before it reaches the minimum.
+    1e-5 or 1e-6 ends SLSQP before it reaches the minimum. With 1e-7,
+    SLSQP stops more than 1e-5 of the amplitude above the minimum on
+    starts 1, 5, 6 and 7; with the default 1e-8, at most 3.1e-6.
     """
-    fun, grad, cholesky, r_min, starts = _ILL_CONDITIONED
+    fun, grad, cholesky, r_min, amplitude, starts = _ILL_CONDITIONED
     optimizer = SLSQPOptimizer(fun=fun, grad=grad, cholesky=cholesky)
     result = optimizer(starts[start].copy())
-    assert result.best_R - r_min < 1e-5
+    assert result.best_R - r_min < 1e-5 * amplitude
 
 
 @pytest.mark.parametrize('cls', (SLSQPOptimizer, LBFGSBOptimizer))
