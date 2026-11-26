@@ -771,7 +771,7 @@ def _check_constraint_line_type(constraint_line, expected_perturbation_mode):
 def save_tree_diagram_pdf(root_node, filename, export_options=None):
     """Create and store a tree diagram to a PDF file."""
     # update export options with user selections
-    options = DEFAULT_GRAPHICAL_EXPORT_OPTIONS
+    options = dict(DEFAULT_GRAPHICAL_EXPORT_OPTIONS)
     if export_options is not None:
         options.update(export_options)
     # syntax for updating dot language
