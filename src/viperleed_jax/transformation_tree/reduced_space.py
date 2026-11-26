@@ -31,7 +31,8 @@ def apply_affine_to_subspace(
     Bm : (M, n) array
         Transformed basis vectors.
     new_ranges : (2, n) array
-        Exact min/max of each original coefficient in new basis.
+        [lows; highs] of the coefficients of Bm, unchanged from
+        coordinate_ranges.
     bias : (M,) array
         The transform.biases.
     """
@@ -41,29 +42,15 @@ def apply_affine_to_subspace(
             f'coordinate_ranges must be (2,{n}), got {coordinate_ranges.shape}'
         )
         raise ValueError(msg)
-    lows, highs = coordinate_ranges
 
     W, b = transform.weights, transform.biases
     # project basis correctly:
     Bm = W @ basis_vectors  # -> (M, n)
 
-    # compute new ranges for each coeff
-    # (using brute-force corners if n small, but closed form here)
-    # we only need per-axis extrema of linear functionals v·x + b
-    # Here v_j = j-th column of pseudoinv(Bm) but easier: use SVD root basis
-    # For simplicity reuse closed-form per-direction on Bm directly:
-    new_mins = np.empty(n)
-    new_maxs = np.empty(n)
-    # invert: for each basis col i, coordinate xi ranges in [lows[i], highs[i]]
-    # z = Bm @ e_i * xi  => extremum at xi boundaries
-    for i in range(n):
-        vec = Bm[:, i]  # M-vector
-        low_pt = vec * lows[i] + b
-        high_pt = vec * highs[i] + b
-        all_edges = np.vstack([low_pt, high_pt])
-        new_mins[i] = all_edges.min()
-        new_maxs[i] = all_edges.max()  # since lows[i] ≤ highs[i]
-    new_ranges = np.vstack([new_mins, new_maxs])
+    # The coefficients keep their ranges: only the vectors they scale
+    # are mapped. Bounds of the image along the axes of R^M would mix
+    # coefficients and lose the sign of each mapped vector.
+    new_ranges = np.array(coordinate_ranges, dtype=float)
 
     return Bm, new_ranges, b
 

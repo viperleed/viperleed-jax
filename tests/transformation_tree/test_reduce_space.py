@@ -23,14 +23,26 @@ from viperleed_jax.transformation_tree.reduced_space import (
             np.array([[0, 0], [1, 1]]),
             np.zeros(2),
         ),
-        # collapse x-y mapping
+        # collapse x-y mapping: coefficient ranges are kept
         (
             np.eye(2),
             np.array([[0, 0], [1, 1]]),
             AffineTransformer(np.array([[1, -1], [0, 0]]), np.zeros(2)),
             np.array([[1, -1], [0, 0]]),
-            np.array([[0, 0], [1, 0]]),
+            np.array([[0, 0], [1, 1]]),
             np.zeros(2),
+        ),
+        # rotation by 45 degrees with bias and asymmetric ranges: the
+        # ranges are not the extent of the image along the axes
+        (
+            np.eye(2),
+            np.array([[-0.05, -0.1], [0.15, 0.2]]),
+            AffineTransformer(
+                np.array([[1, -1], [1, 1]]) / np.sqrt(2), np.array([1., 2.])
+            ),
+            np.array([[1, -1], [1, 1]]) / np.sqrt(2),
+            np.array([[-0.05, -0.1], [0.15, 0.2]]),
+            np.array([1., 2.]),
         ),
     ],
 )

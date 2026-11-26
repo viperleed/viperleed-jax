@@ -33,14 +33,7 @@ ATOL = 1e-6
 FREE_ATOMS = (1, 2, 8)  # free in-plane movement
 ONE_D_ATOMS = {'[2 1]': 7, '[1 -1]': 10, '[1 2]': 24}  # 1D in-plane
 
-# Ranges are mapped between the frames of symmetry-linked atoms with
-# a wrong scale and sign when the direction is not along a Cartesian
-# axis of the reference atom, and offsets of atoms with 1D in-plane
-# freedir are not supported.
-_WRONG_RANGE_MAPPING = pytest.mark.xfail(
-    reason='geo ranges are mapped incorrectly between linked atoms',
-    strict=True,
-)
+# Offsets of atoms with 1D in-plane freedir are not supported (Phase 2).
 _NO_1D_OFFSETS = pytest.mark.xfail(
     reason='offsets are not supported for atoms with 1D in-plane freedir',
     raises=ValueError,
@@ -119,17 +112,6 @@ def _cases(slab):
 # Case names are fixed by FREE_ATOMS and ONE_D_ATOMS: they must be known
 # at collection, without initializing a slab.
 _CASE_NAMES = ['a', 'ab[1 2]', '[2 1]'] + [f'1D {f}' for f in ONE_D_ATOMS]
-_GEO_DELTA_CASE_NAMES = [
-    pytest.param(
-        name,
-        marks=(
-            ()
-            if name in {'1D [1 -1]', '1D [1 2]'}  # not hit by the mapping
-            else _WRONG_RANGE_MAPPING
-        ),
-    )
-    for name in _CASE_NAMES
-]
 _OFFSET_CASE_NAMES = [
     pytest.param(name, marks=_NO_1D_OFFSETS if name.startswith('1D') else ())
     for name in _CASE_NAMES
@@ -141,7 +123,7 @@ def _case(slab, case_name):
     return next(c[1:] for c in _cases(slab) if c[0] == case_name)
 
 
-@pytest.mark.parametrize('case_name', _GEO_DELTA_CASE_NAMES)
+@pytest.mark.parametrize('case_name', _CASE_NAMES)
 def test_geo_delta_matches_old_reader(state, case_name):
     """Fractional GEO_DELTA directions give the old reader's vectors."""
     targets, direction, old_direction = _case(state.slab, case_name)
@@ -171,7 +153,6 @@ def test_offset_matches_old_reader(state, case_name):
     _assert_same_points(tree_points, old_points)
 
 
-@_WRONG_RANGE_MAPPING
 def test_geo_delta_ab_plane_matches_old_reader(state):
     """The ab plane is spanned by the old reader's a and perpendicular."""
     targets = _targets(state.slab, FREE_ATOMS)
@@ -195,3 +176,18 @@ def test_geo_delta_ab_plane_matches_old_reader(state):
     }
     _assert_same_points(tree_points, old_points)
 
+
+
+# Cartesian in-plane directions that are not along an axis. Mapped to
+# the frames of the symmetry-linked atoms, their components get
+# opposite signs, and the ranges must follow the vectors, not the
+# extent of the image along the Cartesian axes.
+@pytest.mark.parametrize('direction', ('xy[1 1]', 'xy[1 -1]', 'xy[2 -1]'))
+def test_cartesian_geo_delta_matches_old_reader(state, direction):
+    """Non-axis Cartesian GEO_DELTA directions give the old reader's."""
+    targets = _targets(state.slab, FREE_ATOMS)
+    line = f'{targets} {direction} = {RANGE}'
+    tree_points = _tree_corners(state, delta_lines=[line])
+    old_points = _old_reader_points(state, f'{line} 0.05', 'disp_geo')
+    old_points = {k: v[[0, -1]] for k, v in old_points.items()}
+    _assert_same_points(tree_points, old_points)
