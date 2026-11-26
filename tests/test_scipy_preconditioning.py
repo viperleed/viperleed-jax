@@ -219,17 +219,22 @@ def _ill_conditioned_case():
 _ILL_CONDITIONED = _ill_conditioned_case()
 
 
+@pytest.mark.parametrize('cls', (SLSQPOptimizer, GradFreeSLSQPOptimizer))
 @pytest.mark.parametrize('start', range(10))
-def test_ill_conditioned_reaches_minimum(start):
-    """Check that gradient SLSQP with default settings does not stop early.
+def test_ill_conditioned_reaches_minimum(start, cls):
+    """Check that SLSQP with default settings does not stop early.
 
     The first step changes R by less than 1e-5 here: a stop amount of
-    1e-5 or 1e-6 ends SLSQP before it reaches the minimum. With 1e-7,
-    SLSQP stops more than 1e-5 of the amplitude above the minimum on
-    starts 1, 5, 6 and 7; with the default 1e-8, at most 3.1e-6.
+    1e-5 or 1e-6 ends SLSQP before it reaches the minimum (start 4 makes
+    no progress at all). With 1e-7, SLSQP stops more than 1e-5 of the
+    amplitude above the minimum on starts 1, 5, 6 and 7; with the
+    default 1e-8, at most 3.6e-6. Same for both classes.
     """
     fun, grad, cholesky, r_min, amplitude, starts = _ILL_CONDITIONED
-    optimizer = SLSQPOptimizer(fun=fun, grad=grad, cholesky=cholesky)
+    if cls is SLSQPOptimizer:
+        optimizer = cls(fun=fun, grad=grad, cholesky=cholesky)
+    else:
+        optimizer = cls(fun=fun, cholesky=cholesky)
     result = optimizer(starts[start].copy())
     assert result.best_R - r_min < 1e-5 * amplitude
 

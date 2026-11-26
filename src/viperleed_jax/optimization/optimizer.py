@@ -713,9 +713,27 @@ class BFGSOptimizer(SciPyGradOptimizer):
 
 
 class GradFreeSLSQPOptimizer(SciPyNonGradOptimizer):
+    """SLSQP with finite-difference gradients.
+
+    Parameters
+    ----------
+        fun: Objective function.
+        bounds: Since the parameters are normalized, all bounds are by default
+            set to [0,1].
+        ftol: SLSQP stops when the R factor changes by less than ftol
+            (absolute) in one iteration. As for SLSQPOptimizer, a larger
+            value can stop SLSQP far from the minimum of an ill-conditioned
+            R factor.
+    """
+
     method = 'SLSQP'
     use_bounds = True
     jac_strategy = '2-point'
+
+    def __init__(self, fun, bounds=None, cholesky=None, ftol=1e-8, **kwargs):
+        super().__init__(
+            fun, bounds=bounds, cholesky=cholesky, ftol=ftol, **kwargs
+        )
 
 
 class GradFreeBFGSOptimizer(SciPyNonGradOptimizer):
