@@ -5,6 +5,7 @@ __created__ = '2024-11-25'
 
 import pytest
 from pytest_cases import filters, parametrize_with_cases
+from viperleed.calc.files import displacements
 from viperleed.calc.files.new_displacements.tokens.target import TargetToken
 
 from tests.calc import poscar_slabs
@@ -114,3 +115,31 @@ class TestSelectionMask:
     def test_target_selection_errors(self, atom_basis, targets):
         with pytest.raises(TargetSelectionError):
             atom_basis.target_selection_mask(targets)
+
+
+class TestNumbersAndLayersTarget:
+    """Numbers and layers in the same target select their union."""
+
+    @staticmethod
+    def _atoms_selected_by_old_reader(slab, rpars, target, tmp_path):
+        """Return atom numbers displaced by `target` in the old reader."""
+        file = tmp_path / 'DISPLACEMENTS'
+        file.write_text(
+            f'== SEARCH test\n\n= GEO_DELTA\n{target} z = -0.1 0.1 0.1\n'
+        )
+        displacements.readDISPLACEMENTS(rpars, str(file))
+        displacements.readDISPLACEMENTS_block(
+            rpars, slab, rpars.disp_blocks[0]
+        )
+        return {at.num for at in slab if len(at.disp_geo['all']) > 1}
+
+    @pytest.mark.parametrize('target', ('Ag 1 L(2)', 'Ag 3 L(1-2)', 'Ag 1'))
+    def test_matches_old_reader(self, target, tmp_path):
+        """The selection is the same as in the old DISPLACEMENTS reader."""
+        slab, rpars, _ = poscar_slabs.CasePOSCARSlabs().case_poscar_ag100()
+        expected = self._atoms_selected_by_old_reader(
+            slab, rpars, target, tmp_path
+        )
+        basis = AtomBasis(slab)
+        mask = basis.target_selection_mask([TargetToken(target)])
+        assert {bs.num for bs, sel in zip(basis, mask) if sel} == expected

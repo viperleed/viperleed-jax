@@ -154,7 +154,10 @@ class AtomBasis:
         # mask based on the labels
         label_mask = mask.copy()
 
-        # If nums are specified, apply the selection based on nums
+        # Atom numbers and layers, if both given, select their union
+        # (restricted by the label). If only one is given, that one applies.
+        selected_by_num_or_layer = None
+
         if target_token.nums is not None:
             # check range for nums
             if any(num < 1 for num in target_token.nums):
@@ -171,14 +174,22 @@ class AtomBasis:
                     f'{target_token.target_str}'
                 )
                 raise TargetSelectionError(msg)
-            mask = mask & num_mask
+            selected_by_num_or_layer = num_mask
 
-        # If layers are specified, apply the selection based on layers
         if target_token.layers is not None:
-            mask = mask & np.array(
+            layer_mask = np.array(
                 # TODO: layer counting from 1; can we unify this somewhere?
                 [bs.layer + 1 in target_token.layers for bs in self]
             )
+            if selected_by_num_or_layer is None:
+                selected_by_num_or_layer = layer_mask
+            else:
+                selected_by_num_or_layer = (
+                    selected_by_num_or_layer | layer_mask
+                )
+
+        if selected_by_num_or_layer is not None:
+            mask = mask & selected_by_num_or_layer
 
         if mask.sum() == 0:
             msg = f'No atoms selected for TargetToken: {target_token}'
