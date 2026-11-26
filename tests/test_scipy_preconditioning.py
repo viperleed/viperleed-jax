@@ -168,13 +168,25 @@ def test_warn_if_stalled(cls, target, warns, caplog):
     assert ('stopped after' in caplog.text) == warns
 
 
-def test_history_gradient_is_true_gradient():
-    """Check that the history records the gradient of the objective."""
+@pytest.mark.parametrize('cls', (SLSQPOptimizer, LBFGSBOptimizer))
+def test_history_gradient_is_true_gradient(cls):
+    """Check that the history records the gradient of the objective.
+
+    SLSQP records it from grad, L-BFGS-B from fun_and_grad.
+    """
     target = _TARGET
+
+    def fun(x):
+        return float(np.sum((x - target)**2))
+
+    def grad(x):
+        return 2 * (x - target)
+
     with pytest.warns(DeprecationWarning):
-        optimizer = SLSQPOptimizer(
-            fun=lambda x: float(np.sum((x - target)**2)),
-            grad=lambda x: 2 * (x - target),
+        optimizer = cls(
+            fun=fun,
+            grad=grad,
+            fun_and_grad=lambda x: (fun(x), grad(x)),
             cholesky=_CHOLESKY,
             grad_damp_factor=0.5,
             )
