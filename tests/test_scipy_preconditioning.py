@@ -10,6 +10,7 @@ import pytest
 
 from viperleed_jax.optimization.optimizer import (
     GradFreeSLSQPOptimizer,
+    LBFGSBOptimizer,
     SLSQPOptimizer,
 )
 
@@ -35,8 +36,7 @@ def _make_optimizer(cls, evaluated):
         return 2 * (x - _TARGET)
 
     if cls is SLSQPOptimizer:
-        return cls(fun=fun, grad=grad, cholesky=_CHOLESKY,
-                   grad_damp_factor=1.0)
+        return cls(fun=fun, grad=grad, cholesky=_CHOLESKY)
     return cls(fun=fun, cholesky=_CHOLESKY)
 
 
@@ -134,8 +134,7 @@ def test_box_minimum_small_std(cls, cholesky):
         return 2 * (x - target)
 
     if cls is SLSQPOptimizer:
-        optimizer = cls(fun=fun, grad=grad, cholesky=cholesky,
-                        grad_damp_factor=1.0)
+        optimizer = cls(fun=fun, grad=grad, cholesky=cholesky)
     else:
         optimizer = cls(fun=fun, cholesky=cholesky)
     result = optimizer(x0.copy())
@@ -161,8 +160,7 @@ def test_warn_if_stalled(cls, target, warns, caplog):
         return 2 * (x - target)
 
     if cls is SLSQPOptimizer:
-        optimizer = cls(fun=fun, grad=grad, cholesky=_CHOLESKY,
-                        grad_damp_factor=1.0)
+        optimizer = cls(fun=fun, grad=grad, cholesky=_CHOLESKY)
     else:
         optimizer = cls(fun=fun, cholesky=_CHOLESKY)
     with caplog.at_level(logging.WARNING):
@@ -173,9 +171,13 @@ def test_warn_if_stalled(cls, target, warns, caplog):
 def test_history_gradient_is_true_gradient():
     """Check that the history records the gradient of the objective."""
     target = _TARGET
-    optimizer = SLSQPOptimizer(fun=lambda x: float(np.sum((x - target)**2)),
-                               grad=lambda x: 2 * (x - target),
-                               cholesky=_CHOLESKY, grad_damp_factor=0.5)
+    with pytest.warns(DeprecationWarning):
+        optimizer = SLSQPOptimizer(
+            fun=lambda x: float(np.sum((x - target)**2)),
+            grad=lambda x: 2 * (x - target),
+            cholesky=_CHOLESKY,
+            grad_damp_factor=0.5,
+            )
     result = optimizer(_X0.copy())
     x = np.reshape(result.x_history, (-1, 3))
     grad = np.reshape(result.grad_R_history, (-1, 3))
@@ -228,3 +230,31 @@ def test_ill_conditioned_reaches_minimum(start):
     optimizer = SLSQPOptimizer(fun=fun, grad=grad, cholesky=cholesky)
     result = optimizer(starts[start].copy())
     assert result.best_R - r_min < 1e-5
+
+
+@pytest.mark.parametrize('cls', (SLSQPOptimizer, LBFGSBOptimizer))
+def test_grad_damp_factor_deprecated(cls, recwarn):
+    """Check that grad_damp_factor warns once and changes nothing."""
+    def run(**kwargs):
+        evaluated = []
+
+        def fun(x):
+            evaluated.append(np.array(x))
+            return float(np.sum((x - _TARGET)**2))
+
+        def grad(x):
+            evaluated.append(np.array(x))
+            return 2 * (x - _TARGET)
+
+        def fun_and_grad(x):
+            return fun(x), grad(x)
+
+        cls(fun=fun, grad=grad, fun_and_grad=fun_and_grad,
+            cholesky=_CHOLESKY, **kwargs)(_X0.copy())
+        return np.array(evaluated)
+
+    default = run()
+    assert not recwarn
+    damped = run(grad_damp_factor=0.1)
+    assert [w.category for w in recwarn] == [DeprecationWarning]
+    np.testing.assert_array_equal(damped, default)

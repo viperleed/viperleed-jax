@@ -9,6 +9,7 @@ __license__ = 'GPLv3+'
 
 
 from abc import ABC, abstractmethod
+import warnings
 
 import numpy as np
 import tqdm
@@ -275,7 +276,7 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
         grad=None,
         fun_and_grad=None,
         bounds=None,
-        grad_damp_factor=1.0,
+        grad_damp_factor=None,
         cholesky=None,
         **kwargs,
     ):
@@ -284,7 +285,13 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
         SciPyOptimizerBase.__init__(
             self, bounds=bounds, cholesky=cholesky, **kwargs
         )
-        self.grad_damp_factor = grad_damp_factor
+        if grad_damp_factor is not None:
+            warnings.warn(
+                'grad_damp_factor is deprecated and has no effect: the '
+                'gradient is never damped, and the stop amount is ftol.',
+                DeprecationWarning,
+                stacklevel=3,
+            )
 
     def __call__(self, x0):
         self._set_cholesky_related(x0)
@@ -336,12 +343,6 @@ class SciPyGradOptimizer(SciPyOptimizerBase, GradOptimizer):
         logger.info(self._end_message(opt_history))
         return opt_history
 
-    def _start_message(self):
-        """Return the start message for the optimizer."""
-        msg = super()._start_message()
-        msg += f'\tGrad. damp. f.:\t{self.grad_damp_factor}\n'
-        return msg
-
 
 class LBFGSBOptimizer(SciPyGradOptimizer):
     """Class for setting up the L-BFGS-B algorithm for local minimization.
@@ -379,7 +380,7 @@ class LBFGSBOptimizer(SciPyGradOptimizer):
         grad=None,
         fun_and_grad=None,
         bounds=None,
-        grad_damp_factor=0.1,  # default values
+        grad_damp_factor=None,  # deprecated, no effect
         ftol=1e-5,
         **kwargs,
     ):
@@ -403,11 +404,7 @@ class SLSQPOptimizer(SciPyGradOptimizer):
     include equality constraints. Inequality constraints are incorporated by
     defining active and passive sets, as well as an upper limit of the step
     size. For the Hessian, the BFGS approximation is used, and the line search
-    cannot satisfy the Wolfe conditions. Due to a poor Hessian approximation in
-    the initial iterations, the algorithm tends to overshoot during these
-    iterations. To address this issue, a damping factor (damp_fact) is used to
-    reduce the gradient at the beginning. A damping factor of 0.1 has shown good
-    results.
+    cannot satisfy the Wolfe conditions.
 
     Parameters
     ----------
@@ -415,6 +412,8 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         grad: Gradient of the objective function.
         bounds: Since the parameters are normalized, all bounds are by default
             set to [0,1].
+        grad_damp_factor: Deprecated, has no effect. It no longer damps the
+            gradient that SLSQP uses.
         ftol: SLSQP stops when the R factor changes by less than ftol
             (absolute) in one iteration. On an ill-conditioned R factor,
             the first iteration can change R by less than 1e-5, so a
@@ -430,7 +429,7 @@ class SLSQPOptimizer(SciPyGradOptimizer):
         grad=None,
         fun_and_grad=None,
         bounds=None,
-        grad_damp_factor=0.1,  # default values
+        grad_damp_factor=None,  # deprecated, no effect
         ftol=1e-8,
         **kwargs,
     ):
