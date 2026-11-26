@@ -99,3 +99,45 @@ def test_grad_chain_rule():
         2 * (optimizer.transform_x(y, x0) - _TARGET)
         )
     np.testing.assert_allclose(analytical, numerical, rtol=1e-5)
+
+
+def _cholesky_one_small(std_0):
+    """Return a Cholesky factor whose first row has norm std_0."""
+    return np.array([[std_0, 0.0, 0.0],
+                     [0.05, 0.3, 0.0],
+                     [0.02, 0.1, 0.2]])
+
+
+@pytest.mark.parametrize('cholesky', (
+    _cholesky_one_small(1e-3),
+    _cholesky_one_small(1e-4),
+    _cholesky_one_small(1e-6),
+    1e-4 * _cholesky_one_small(1.0),
+    ), ids=('one 1e-3', 'one 1e-4', 'one 1e-6', 'all 1e-4'))
+@pytest.mark.parametrize('cls', (SLSQPOptimizer, GradFreeSLSQPOptimizer))
+def test_box_minimum_small_std(cls, cholesky):
+    """Check that a small CMA-ES standard deviation does not stall SLSQP."""
+    x0 = np.array([1.0, 0.0, 0.5])            # on an upper and a lower bound
+    target = np.array([1.3, -0.2, 0.45])      # outside the box in two
+    evaluated = []
+
+    def fun(x):
+        evaluated.append(np.array(x))
+        return float(np.sum((x - target)**2))
+
+    def grad(x):
+        evaluated.append(np.array(x))
+        return 2 * (x - target)
+
+    if cls is SLSQPOptimizer:
+        optimizer = cls(fun=fun, grad=grad, cholesky=cholesky,
+                        grad_damp_factor=1.0)
+    else:
+        optimizer = cls(fun=fun, cholesky=cholesky)
+    result = optimizer(x0.copy())
+    np.testing.assert_array_equal(evaluated[0], x0)
+    evaluated = np.array(evaluated)
+    assert np.all(evaluated >= 0.0)
+    assert np.all(evaluated <= 1.0)
+    np.testing.assert_allclose(result.best_x, np.clip(target, 0, 1),
+                               atol=1e-4)

@@ -127,6 +127,12 @@ class NonGradOptimizer(Optimizer):
         super().__init__(fun=fun, name=name)
 
 
+# Smallest per-parameter scale of the SciPy optimizers (see
+# SciPyOptimizerBase._set_cholesky_related), in units of the
+# normalized parameters
+_MIN_SCALE = 1e-2
+
+
 class SciPyOptimizerBase:
     """Shared logic for SciPy-based optimizers (grad and non-grad)."""
 
@@ -157,7 +163,9 @@ class SciPyOptimizerBase:
         the per-parameter standard deviation sqrt(diag(C)), otherwise 1.
         A diagonal scaling maps the bounding box of x to a box in y
         that contains y = 0, so the bounds stay plain bounds and the
-        optimizer starts at x0. (A full transformation with L would
+        optimizer starts at x0. A standard deviation below _MIN_SCALE
+        is raised to it, so a collapsed CMA-ES direction cannot make
+        the optimizer stall. (A full transformation with L would
         turn the box into a parallelepiped, which bounds cannot
         describe.)
         """
@@ -166,7 +174,9 @@ class SciPyOptimizerBase:
             return
         cholesky = np.asarray(self.cholesky)
         std = np.sqrt(np.sum(cholesky**2, axis=1))
-        self._scale = np.where(std > 0, std, 1.0)
+        # SLSQP stops at its start, reporting success, when a scale
+        # is 1e-4 or smaller. Hence the floor.
+        self._scale = np.where(std > 0, np.maximum(std, _MIN_SCALE), 1.0)
 
     def transform_bounds(self, x0):
         bounds = [(0, 1)] * len(x0) if self.bounds is None else self.bounds
