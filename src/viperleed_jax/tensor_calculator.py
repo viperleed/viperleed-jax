@@ -20,7 +20,6 @@ from viperleed.calc.files.iorfactor import (
 )
 from viperleed.calc.lib import leedbase
 from viperleed.calc.lib import dynamic_numerical_lib as dnl
-from viperleed.calc.lib import rfactor
 from viperleed.calc.lib import spline_interpolation
 
 
@@ -42,6 +41,8 @@ from viperleed_jax.lib.derived_quantities.propagtor import Propagators
 from viperleed_jax.lib.derived_quantities.t_matrix import TMatrix
 from viperleed_jax.lib.tensor_leed.t_matrix import vib_dependent_tmatrix
 from viperleed_jax.lib_intensity import intensity_prefactors, sum_intensity
+from viperleed.calc.lib.rfactor.pendry import r_pendry
+from viperleed.calc.lib.rfactor.selection import select_rfactor_by_name
 from viperleed.calc.lib.rfactor.utils import average_beam_array
 
 
@@ -194,7 +195,7 @@ class TensorLEEDCalculator:
         self._requested_batch_atoms = rparams.VLJ_BATCH['atoms']
 
         # default R-factor is Pendry
-        self.rfactor_func = rfactor.R_pendry
+        self.rfactor_func = r_pendry
 
         if self.interpolation_deg != 3:
             msg = (
@@ -289,7 +290,7 @@ class TensorLEEDCalculator:
         return np.unique(np.array(self.atom_ids)).size
 
     def set_rfactor(self, rfactor_name):
-        self.rfactor_func = rfactor.select_rfactor(rfactor_name)
+        self.rfactor_func = select_rfactor_by_name(rfactor_name)
 
     def set_experiment_intensity(self, comp_intensities, comp_energies):
         logger.debug(

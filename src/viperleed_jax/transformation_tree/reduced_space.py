@@ -9,65 +9,6 @@ class ZonotopeNotOrthogonalError(ValueError):
     """Raised when two Zonotopes are not orthogonal and cannot be added."""
 
 
-def apply_affine_to_subspace(
-    basis_vectors: np.ndarray,
-    coordinate_ranges: np.ndarray,
-    transform: AffineTransformer,
-):
-    """
-    Apply an affine map to a subspace box.
-
-    Parameters
-    ----------
-    basis_vectors : (n, D) array
-        Columns are basis vectors spanning subspace in R^D.
-    coordinate_ranges : (2, n) array
-        [lows; highs] of coefficients.
-    transform : AffineTransformer
-        Map R^D→R^M.
-
-    Returns
-    -------
-    Bm : (M, n) array
-        Transformed basis vectors.
-    new_ranges : (2, n) array
-        Exact min/max of each original coefficient in new basis.
-    bias : (M,) array
-        The transform.biases.
-    """
-    D, n = basis_vectors.shape
-    if coordinate_ranges.shape != (2, n):
-        msg = (
-            f'coordinate_ranges must be (2,{n}), got {coordinate_ranges.shape}'
-        )
-        raise ValueError(msg)
-    lows, highs = coordinate_ranges
-
-    W, b = transform.weights, transform.biases
-    # project basis correctly:
-    Bm = W @ basis_vectors  # -> (M, n)
-
-    # compute new ranges for each coeff
-    # (using brute-force corners if n small, but closed form here)
-    # we only need per-axis extrema of linear functionals v·x + b
-    # Here v_j = j-th column of pseudoinv(Bm) but easier: use SVD root basis
-    # For simplicity reuse closed-form per-direction on Bm directly:
-    new_mins = np.empty(n)
-    new_maxs = np.empty(n)
-    # invert: for each basis col i, coordinate xi ranges in [lows[i], highs[i]]
-    # z = Bm @ e_i * xi  => extremum at xi boundaries
-    for i in range(n):
-        vec = Bm[:, i]  # M-vector
-        low_pt = vec * lows[i] + b
-        high_pt = vec * highs[i] + b
-        all_edges = np.vstack([low_pt, high_pt])
-        new_mins[i] = all_edges.min()
-        new_maxs[i] = all_edges.max()  # since lows[i] ≤ highs[i]
-    new_ranges = np.vstack([new_mins, new_maxs])
-
-    return Bm, new_ranges, b
-
-
 def orthonormalize_subspace(
     Bm: np.ndarray,
     mapped_ranges: np.ndarray,
@@ -207,12 +148,13 @@ class Zonotope:
         return Zonotope(B, ranges, offset=self.offset.copy())
 
     def apply_affine(self, A: 'AffineTransformer') -> 'Zonotope':
-        """Return a new Zonotope = A(Z), applying Z → { A(z) | z in Z }."""
-        Bm, new_ranges, b_new = apply_affine_to_subspace(
-            self.basis, self.ranges, A
-        )
-        # the sub‐function already returns the new offset b_new
-        return Zonotope(Bm, new_ranges, offset=b_new)
+        """Return a new Zonotope = A(Z), applying Z → { A(z) | z in Z }.
+
+        The coefficients keep their ranges: only the vectors they scale
+        are mapped. The new offset is the bias of A; the offset of this
+        zonotope is not mapped (leaf zonotopes have none).
+        """
+        return Zonotope(A.weights @ self.basis, self.ranges, offset=A.biases)
 
     def normalize(self, output_ranges: np.ndarray = None) -> AffineTransformer:
         """

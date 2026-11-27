@@ -6,6 +6,9 @@ __copyright__ = 'Copyright (c) 2023-2025 ViPErLEED developers'
 __license__ = 'GPLv3+'
 
 import numpy as np
+from viperleed.calc.files.new_displacements.tokens.total_occupation import (
+    TotalOccupationToken,
+)
 
 from .displacement_tree_layers import DisplacementTreeLayers
 from .linear_transformer import AffineTransformer
@@ -18,6 +21,7 @@ from .reduced_space import Zonotope
 from .tree import (
     ConstructionOrder,
     DisplacementTree,
+    reject_fixed_range,
 )
 
 
@@ -195,6 +199,8 @@ class OccTree(DisplacementTree):
         )
 
     def _zonotope_from_bounds_line(self, occ_delta_line, primary_leaf):
+        for _, range_token in occ_delta_line.element_ranges:
+            reject_fixed_range(range_token, occ_delta_line)
         # extract element ranges from the delta line
         element_ranges = {
             elem_token.symbol: range_token
@@ -224,7 +230,9 @@ class OccTree(DisplacementTree):
         superclass method. If the constraint is a total occupation constraint,
         handle it separately.
         """
-        if not constraint_line.is_total_occupation:
+        if not isinstance(
+            constraint_line.linear_operation, TotalOccupationToken
+        ):
             super().apply_explicit_constraint(constraint_line)
             return
 

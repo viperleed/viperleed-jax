@@ -155,7 +155,7 @@ class ParameterSpace:
                     'Domain constraints are not supported yet.'
                 )
             else:
-                msg = f'Unknown constraint mode: {constraint_line.mode}'
+                msg = f'Unknown constraint mode: {constraint_line.mode_token}'
                 raise ValueError(msg)
 
     def _free_params_up_to_layer(self, layer):

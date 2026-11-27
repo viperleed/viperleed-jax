@@ -13,7 +13,7 @@ from pathlib import Path
 
 from viperleed.calc import LOGGER
 from viperleed.calc.classes.search_backends import SearchBackend
-from viperleed.calc.files.new_displacements import DisplacementsFile
+from viperleed.calc.files.new_displacements.file import DisplacementsFile
 from viperleed.calc.run import run_calc
 
 from viperleed_jax.from_objects import (

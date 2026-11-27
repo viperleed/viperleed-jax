@@ -6,7 +6,6 @@ from viperleed_jax.transformation_tree.linear_transformer import (
 )
 from viperleed_jax.transformation_tree.reduced_space import (
     Zonotope,
-    apply_affine_to_subspace,
     orthonormalize_subspace,
 )
 
@@ -23,24 +22,36 @@ from viperleed_jax.transformation_tree.reduced_space import (
             np.array([[0, 0], [1, 1]]),
             np.zeros(2),
         ),
-        # collapse x-y mapping
+        # collapse x-y mapping: coefficient ranges are kept
         (
             np.eye(2),
             np.array([[0, 0], [1, 1]]),
             AffineTransformer(np.array([[1, -1], [0, 0]]), np.zeros(2)),
             np.array([[1, -1], [0, 0]]),
-            np.array([[0, 0], [1, 0]]),
+            np.array([[0, 0], [1, 1]]),
             np.zeros(2),
+        ),
+        # rotation by 45 degrees with bias and asymmetric ranges: the
+        # ranges are not the extent of the image along the axes
+        (
+            np.eye(2),
+            np.array([[-0.05, -0.1], [0.15, 0.2]]),
+            AffineTransformer(
+                np.array([[1, -1], [1, 1]]) / np.sqrt(2), np.array([1., 2.])
+            ),
+            np.array([[1, -1], [1, 1]]) / np.sqrt(2),
+            np.array([[-0.05, -0.1], [0.15, 0.2]]),
+            np.array([1., 2.]),
         ),
     ],
 )
-def test_apply_affine_to_subspace(
+def test_apply_affine(
     B, ranges, transform, expected_Bm, expected_ranges, expected_bias
 ):
-    Bm, mr, b = apply_affine_to_subspace(B, ranges, transform)
-    assert np.allclose(Bm, expected_Bm)
-    assert np.allclose(mr, expected_ranges)
-    assert np.allclose(b, expected_bias)
+    mapped = Zonotope(B, ranges).apply_affine(transform)
+    assert np.allclose(mapped.basis, expected_Bm)
+    assert np.allclose(mapped.ranges, expected_ranges)
+    assert np.allclose(mapped.offset, expected_bias)
 
 
 # ---- Tests for orthonormalize_subspace ----

@@ -20,6 +20,9 @@ from anytree import RenderTree
 from anytree.exporter import UniqueDotExporter
 from viperleed.calc.classes.perturbation_mode import PerturbationMode
 from viperleed.calc.files.new_displacements.lines import ConstraintLine
+from viperleed.calc.files.new_displacements.tokens.direction import (
+    FractionalDirectionToken,
+)
 
 from viperleed_jax.lib.math import EPS
 from viperleed_jax.lib.matrix import closest_to_identity, xyz_matrix_to_zxy
@@ -412,17 +415,14 @@ class DisplacementTree(LinearTree):
 
     def apply_offsets(self, offset_line):
         """Apply offsets to the children of the node."""
-        offset = np.array(offset_line.offset.offset)
+        base_offset = np.array(offset_line.offset.offset)
 
         # TODO: allow off axis offsets; multi dim offsets?
 
-        # if there is a direction do processing
-        if offset_line.direction is not None:
-            if len(offset_line.direction.vectors_zxy) != 1:
-                msg = f'Cannot interpret offset for line "{offset_line}".'
-                raise ValueError(msg)
-            vector = offset_line.direction.vectors_zxy[0]
-            offset = np.array(vector) * offset
+        direction = offset_line.direction
+        if direction is not None and direction.dof != 1:
+            msg = f'Cannot interpret offset for line "{offset_line}".'
+            raise ValueError(msg)
 
         # check construction order
         super().apply_offsets()
@@ -433,6 +433,10 @@ class DisplacementTree(LinearTree):
 
         # iterate over the roots and apply the offset
         for root, primary_leaf in target_roots_primary_leaves.items():
+            offset = base_offset
+            if direction is not None:
+                vector = cartesian_direction(direction, primary_leaf)
+                offset = vector.vectors_zxy[0] * base_offset
             if root.dof != offset.size:
                 msg = (
                     f'Offset line "{offset_line}" has a size of {offset.size} '
@@ -477,6 +481,17 @@ class DisplacementTree(LinearTree):
 
         # check if the constraint line is of the correct type
         _check_constraint_line_type(constraint_line, self.perturbation_mode)
+
+        if (
+            constraint_line.fixed_value is not None
+            or constraint_line.fixed_index is not None
+        ):
+            msg = (
+                f'CONSTRAIN block line "{constraint_line.raw_line}" fixes '
+                'a value or index. Fixed-value constraints are not supported '
+                'yet by viperleed-jax.'
+            )
+            raise NotImplementedError(msg)
 
         # resolve the reference (rhs of constraint) into a mask
         link_target_mask = self.atom_basis.target_selection_mask(
@@ -742,6 +757,18 @@ def _map_transformation_from_leaf_to_root(
     return T @ LinearMap(transformation) @ T_dash.pseudo_inverse()
 
 
+def cartesian_direction(direction, leaf):
+    """Return `direction` as a Cartesian token.
+
+    Fractional directions are converted with the in-plane unit cell of
+    the slab that `leaf`'s atom belongs to; Cartesian ones are returned
+    unchanged.
+    """
+    if isinstance(direction, FractionalDirectionToken):
+        return direction.to_cartesian(leaf.atom.atom.slab.ab_cell)
+    return direction
+
+
 def _select_primary_leaf(root, leaves):
     root_leaves = [leaf for leaf in root.leaves if leaf in leaves]
     if not root_leaves:
@@ -753,6 +780,23 @@ def _select_primary_leaf(root, leaves):
         [leaf.transformer.weights for leaf in root_leaves]
     )
     return root_leaves[primary_leaf_id]
+
+
+def reject_fixed_range(range_token, bounds_line):
+    """Raise if `range_token` gives one value instead of a range.
+
+    A single value (or a range whose start equals its stop) would fix
+    the parameter at that value. Fixed values are not supported yet:
+    the zero-width range would be dropped and the value lost.
+    """
+    if abs(range_token.stop - range_token.start) > EPS:
+        return
+    msg = (
+        f'{bounds_line.block_name} line "{bounds_line.raw_line}" gives '
+        'a single value instead of a range. Fixed values are not '
+        'supported yet by viperleed-jax.'
+    )
+    raise NotImplementedError(msg)
 
 
 def _check_constraint_line_type(constraint_line, expected_perturbation_mode):

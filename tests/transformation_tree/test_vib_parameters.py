@@ -14,9 +14,6 @@ from viperleed_jax.transformation_tree.displacement_tree_layers import (
 from viperleed_jax.transformation_tree.linear_transformer import (
     AffineTransformer,
 )
-from viperleed_jax.transformation_tree.reduced_space import (
-    apply_affine_to_subspace,
-)
 from viperleed_jax.transformation_tree.vib_parameters import (
     VibConstraintNode,
     VibLeafNode,
