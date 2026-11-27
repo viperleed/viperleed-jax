@@ -33,7 +33,7 @@ ATOL = 1e-6
 FREE_ATOMS = (1, 2, 8)  # free in-plane movement
 ONE_D_ATOMS = {'[2 1]': 7, '[1 -1]': 10, '[1 2]': 24}  # 1D in-plane
 
-# Offsets of atoms with 1D in-plane freedir are not supported (Phase 2).
+# Offsets of atoms with 1D in-plane freedir are not supported yet.
 _NO_1D_OFFSETS = pytest.mark.xfail(
     reason='offsets are not supported for atoms with 1D in-plane freedir',
     raises=ValueError,

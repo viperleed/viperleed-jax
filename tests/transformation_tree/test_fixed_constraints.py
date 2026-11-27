@@ -1,6 +1,9 @@
 """Tests for fixed values in DISPLACEMENTS, which are not supported yet."""
 
-__authors__ = ('Florian Kraushofer (@fkraushofer)',)
+__authors__ = (
+    'Alexandra Mia Imre (@alexmiame)',
+    'Florian Kraushofer (@fkraushofer)',
+)
 __created__ = '2026-11-26'
 
 import pytest
