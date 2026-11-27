@@ -21,6 +21,7 @@ from .reduced_space import Zonotope
 from .tree import (
     ConstructionOrder,
     DisplacementTree,
+    reject_fixed_range,
 )
 
 
@@ -198,6 +199,8 @@ class OccTree(DisplacementTree):
         )
 
     def _zonotope_from_bounds_line(self, occ_delta_line, primary_leaf):
+        for _, range_token in occ_delta_line.element_ranges:
+            reject_fixed_range(range_token, occ_delta_line)
         # extract element ranges from the delta line
         element_ranges = {
             elem_token.symbol: range_token

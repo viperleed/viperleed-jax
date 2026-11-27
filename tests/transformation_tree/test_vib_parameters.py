@@ -181,14 +181,3 @@ class TestFe2O3:
         with subtests.test('check dof'):
             # finalize the tree to apply the bounds
             assert sum(root.dof for root in fe2o3_tree.roots) == implicit_dof
-
-    def test_single_value_vib_delta_is_fixed(self, fe2o3_tree):
-        """A single VIB value gives a zero-width range: a fixed parameter."""
-        fe2o3_tree.apply_bounds_line(VibDeltaLine('Fe_surf = 0.05'))
-        fe2o3_tree.apply_bounds()
-        fe2o3_tree.apply_implicit_constraints()
-        fe2o3_tree.finalize_tree()
-
-        assert fe2o3_tree.root.dof == 0
-        values = fe2o3_tree(np.array([]))
-        assert np.all(np.isfinite(values))

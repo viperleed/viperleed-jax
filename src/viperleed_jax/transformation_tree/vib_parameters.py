@@ -18,6 +18,7 @@ from .nodes import (
 from .reduced_space import Zonotope
 from .tree import (
     DisplacementTree,
+    reject_fixed_range,
 )
 from viperleed.calc import LOGGER as logger
 
@@ -98,6 +99,7 @@ class VibTree(DisplacementTree):
         return np.array([leaf.ref_vib_amp for leaf in self.leaves])
 
     def _zonotope_from_bounds_line(self, vib_delta_line, primary_leaf):
+        reject_fixed_range(vib_delta_line.range, vib_delta_line)
         vib_range = np.array(
             [[vib_delta_line.range.start, vib_delta_line.range.stop]]
         ).T

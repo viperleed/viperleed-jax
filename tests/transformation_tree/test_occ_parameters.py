@@ -243,15 +243,3 @@ class TestPt25Rh75_O_3x1:
                 )
         assert per_atom
         assert list(per_atom.values()) == pytest.approx([1.0] * len(per_atom))
-
-    def test_single_value_occ_delta_is_fixed(self, ptrh_tree):
-        """A single OCC value gives a zero-width range: a fixed parameter."""
-        bounds_line = OccDeltaLine('Me* L(1-3) = Rh 0.5, Pt 0.5')
-        ptrh_tree.apply_bounds_line(bounds_line)
-        ptrh_tree.apply_bounds()
-        ptrh_tree.apply_implicit_constraints()
-        ptrh_tree.finalize_tree()
-
-        assert ptrh_tree.root.dof == 0
-        values = ptrh_tree(np.array([]))
-        assert np.all(np.isfinite(values))

@@ -782,6 +782,23 @@ def _select_primary_leaf(root, leaves):
     return root_leaves[primary_leaf_id]
 
 
+def reject_fixed_range(range_token, bounds_line):
+    """Raise if `range_token` gives one value instead of a range.
+
+    A single value (or a range whose start equals its stop) would fix
+    the parameter at that value. Fixed values are not supported yet:
+    the zero-width range would be dropped and the value lost.
+    """
+    if abs(range_token.stop - range_token.start) > EPS:
+        return
+    msg = (
+        f'{bounds_line.block_name} line "{bounds_line.raw_line}" gives '
+        'a single value instead of a range. Fixed values are not '
+        'supported yet by viperleed-jax.'
+    )
+    raise NotImplementedError(msg)
+
+
 def _check_constraint_line_type(constraint_line, expected_perturbation_mode):
     """Check if the constraint line is of the expected type."""
     if not isinstance(constraint_line, ConstraintLine):
