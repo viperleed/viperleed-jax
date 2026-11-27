@@ -205,7 +205,6 @@ def test_geo_delta_ab_plane_matches_old_reader(state):
     _assert_same_points(tree_points, old_points)
 
 
-
 # Cartesian in-plane directions that are not along an axis. Mapped to
 # the frames of the symmetry-linked atoms, their components get
 # opposite signs, and the ranges must follow the vectors, not the
