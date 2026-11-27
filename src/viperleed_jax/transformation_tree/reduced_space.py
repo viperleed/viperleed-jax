@@ -9,52 +9,6 @@ class ZonotopeNotOrthogonalError(ValueError):
     """Raised when two Zonotopes are not orthogonal and cannot be added."""
 
 
-def apply_affine_to_subspace(
-    basis_vectors: np.ndarray,
-    coordinate_ranges: np.ndarray,
-    transform: AffineTransformer,
-):
-    """
-    Apply an affine map to a subspace box.
-
-    Parameters
-    ----------
-    basis_vectors : (n, D) array
-        Columns are basis vectors spanning subspace in R^D.
-    coordinate_ranges : (2, n) array
-        [lows; highs] of coefficients.
-    transform : AffineTransformer
-        Map R^D→R^M.
-
-    Returns
-    -------
-    Bm : (M, n) array
-        Transformed basis vectors.
-    new_ranges : (2, n) array
-        [lows; highs] of the coefficients of Bm, unchanged from
-        coordinate_ranges.
-    bias : (M,) array
-        The transform.biases.
-    """
-    D, n = basis_vectors.shape
-    if coordinate_ranges.shape != (2, n):
-        msg = (
-            f'coordinate_ranges must be (2,{n}), got {coordinate_ranges.shape}'
-        )
-        raise ValueError(msg)
-
-    W, b = transform.weights, transform.biases
-    # project basis correctly:
-    Bm = W @ basis_vectors  # -> (M, n)
-
-    # The coefficients keep their ranges: only the vectors they scale
-    # are mapped. Bounds of the image along the axes of R^M would mix
-    # coefficients and lose the sign of each mapped vector.
-    new_ranges = np.array(coordinate_ranges, dtype=float)
-
-    return Bm, new_ranges, b
-
-
 def orthonormalize_subspace(
     Bm: np.ndarray,
     mapped_ranges: np.ndarray,
@@ -194,12 +148,13 @@ class Zonotope:
         return Zonotope(B, ranges, offset=self.offset.copy())
 
     def apply_affine(self, A: 'AffineTransformer') -> 'Zonotope':
-        """Return a new Zonotope = A(Z), applying Z → { A(z) | z in Z }."""
-        Bm, new_ranges, b_new = apply_affine_to_subspace(
-            self.basis, self.ranges, A
-        )
-        # the sub‐function already returns the new offset b_new
-        return Zonotope(Bm, new_ranges, offset=b_new)
+        """Return a new Zonotope = A(Z), applying Z → { A(z) | z in Z }.
+
+        The coefficients keep their ranges: only the vectors they scale
+        are mapped. The new offset is the bias of A; the offset of this
+        zonotope is not mapped (leaf zonotopes have none).
+        """
+        return Zonotope(A.weights @ self.basis, self.ranges, offset=A.biases)
 
     def normalize(self, output_ranges: np.ndarray = None) -> AffineTransformer:
         """

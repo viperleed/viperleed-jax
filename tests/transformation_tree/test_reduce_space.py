@@ -6,7 +6,6 @@ from viperleed_jax.transformation_tree.linear_transformer import (
 )
 from viperleed_jax.transformation_tree.reduced_space import (
     Zonotope,
-    apply_affine_to_subspace,
     orthonormalize_subspace,
 )
 
@@ -46,13 +45,13 @@ from viperleed_jax.transformation_tree.reduced_space import (
         ),
     ],
 )
-def test_apply_affine_to_subspace(
+def test_apply_affine(
     B, ranges, transform, expected_Bm, expected_ranges, expected_bias
 ):
-    Bm, mr, b = apply_affine_to_subspace(B, ranges, transform)
-    assert np.allclose(Bm, expected_Bm)
-    assert np.allclose(mr, expected_ranges)
-    assert np.allclose(b, expected_bias)
+    mapped = Zonotope(B, ranges).apply_affine(transform)
+    assert np.allclose(mapped.basis, expected_Bm)
+    assert np.allclose(mapped.ranges, expected_ranges)
+    assert np.allclose(mapped.offset, expected_bias)
 
 
 # ---- Tests for orthonormalize_subspace ----

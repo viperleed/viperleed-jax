@@ -18,9 +18,6 @@ from viperleed_jax.transformation_tree.linear_transformer import (
     AffineTransformer,
 )
 from viperleed_jax.transformation_tree.occ_parameters import OccTree
-from viperleed_jax.transformation_tree.reduced_space import (
-    apply_affine_to_subspace,
-)
 
 from ..structures import CaseStatesAfterInit
 

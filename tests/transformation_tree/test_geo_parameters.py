@@ -15,9 +15,7 @@ from viperleed_jax.transformation_tree.geo_parameters import GeoTree
 from viperleed_jax.transformation_tree.linear_transformer import (
     AffineTransformer,
 )
-from viperleed_jax.transformation_tree.reduced_space import (
-    apply_affine_to_subspace,
-)
+from viperleed_jax.transformation_tree.reduced_space import Zonotope
 
 from ..structures import CaseStatesAfterInit
 
@@ -250,14 +248,14 @@ def test_reflection_preserves_ranges():
     b = np.zeros(3)
     T = AffineTransformer(W, b)
 
-    Bm, new_ranges, b_out = apply_affine_to_subspace(basis, ranges, T)
+    mapped = Zonotope(basis, ranges).apply_affine(T)
 
     # Expect Bm = W @ I = W
-    assert np.allclose(Bm, W)
+    assert np.allclose(mapped.basis, W)
     # And ranges should be exactly the same as what we passed in
-    assert np.allclose(abs(new_ranges), abs(ranges)), f'got {new_ranges}'
+    assert np.allclose(abs(mapped.ranges), abs(ranges)), f'got {mapped.ranges}'
     # No bias in or out
-    assert np.allclose(b_out, 0)
+    assert np.allclose(mapped.offset, 0)
 
 
 class TestBaseTree:
