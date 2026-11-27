@@ -13,17 +13,27 @@ import itertools
 
 import numpy as np
 import pytest
-from viperleed.calc.files.displacements import readDISPLACEMENTS_block
+from viperleed.calc.files.displacements import (
+    readDISPLACEMENTS,
+    readDISPLACEMENTS_block,
+)
 from viperleed.calc.files.new_displacements.lines import (
     GeoDeltaLine,
     OffsetsLine,
 )
+from viperleed.calc.files.new_displacements.file import DisplacementsFile
 
 from viperleed_jax.atom_basis import AtomBasis
 from viperleed_jax.from_state import run_viperleed_initialization
 from viperleed_jax.transformation_tree.geo_parameters import GeoTree
 
-from ..viper_init_states import INPUTS_PT_111_10x10_TE
+from ..viper_init_states import DATA_PATH, INPUTS_PT_111_10x10_TE
+
+# A file of #428's test data: fractional GEO_DELTA directions, one per
+# line, for free (ab[1 0]) and for 1D in-plane ([2 1]) atoms.
+LATERAL_FILE = (
+    DATA_PATH / 'displacements' / 'Pt_111_10x10_Te' / 'DISPLACEMENTS_lateral_1'
+)
 
 RANGE = '-0.05 0.15'  # asymmetric: fixes the sign of each vector
 OFFSET = 0.1
@@ -56,8 +66,16 @@ def _targets(slab, nums):
 
 def _old_reader_points(state, line, attribute):
     """Return {atom number: (n, 3) array in zxy} read by the old reader."""
-    slab, rpars = copy.deepcopy((state.slab, state.rpars))
-    readDISPLACEMENTS_block(rpars, slab, (['= GEO_DELTA', line], 'test'))
+    return _old_reader_block_points(
+        state, (['= GEO_DELTA', line], 'test'), attribute
+    )
+
+
+def _old_reader_block_points(state, block, attribute, rpars=None):
+    """Return {atom number: (n, 3) array in zxy} for an old-reader block."""
+    rpars = state.rpars if rpars is None else rpars
+    slab, rpars = copy.deepcopy((state.slab, rpars))
+    readDISPLACEMENTS_block(rpars, slab, block)
     points = {}
     for atom in slab.atlist:
         if atom.is_bulk:
@@ -73,17 +91,23 @@ def _tree_corners(state, offset_line=None, delta_lines=()):
     if offset_line:
         tree.apply_offsets(OffsetsLine(offset_line))
     for line in delta_lines:
-        tree.apply_bounds_line(GeoDeltaLine(line))
+        tree.apply_bounds_line(
+            line if isinstance(line, GeoDeltaLine) else GeoDeltaLine(line)
+        )
     tree.apply_bounds()
     tree.apply_implicit_constraints()
     tree.finalize_tree()
-    corners = list(itertools.product((0, 1), repeat=tree.root.dof))
     points = {}
     for leaf in tree.leaves:
         transformer = tree.root.transformer_to_descendent(leaf)
-        points[leaf.num] = np.array(
-            [np.asarray(transformer(np.array(c))) for c in corners]
+        weights = np.asarray(transformer.weights)
+        # Only the parameters that move this atom span its corners
+        weights = weights[:, np.abs(weights).max(axis=0) > ATOL]
+        corners = np.array(
+            list(itertools.product((0, 1), repeat=weights.shape[1])),
+            dtype=float,
         )
+        points[leaf.num] = np.asarray(transformer.biases) + corners @ weights.T
     return points
 
 
@@ -189,5 +213,22 @@ def test_cartesian_geo_delta_matches_old_reader(state, direction):
     line = f'{targets} {direction} = {RANGE}'
     tree_points = _tree_corners(state, delta_lines=[line])
     old_points = _old_reader_points(state, f'{line} 0.05', 'disp_geo')
+    old_points = {k: v[[0, -1]] for k, v in old_points.items()}
+    _assert_same_points(tree_points, old_points)
+
+
+def test_geo_delta_file_matches_old_reader(state):
+    """A #428 DISPLACEMENTS file gives the old reader's vectors."""
+    disp_file = DisplacementsFile()
+    disp_file.read(LATERAL_FILE)
+    search_block = disp_file.next(2.0)
+    tree_points = _tree_corners(
+        state, delta_lines=search_block.geo_delta_lines
+    )
+    rpars = copy.deepcopy(state.rpars)
+    readDISPLACEMENTS(rpars, str(LATERAL_FILE))
+    old_points = _old_reader_block_points(
+        state, rpars.disp_blocks[0], 'disp_geo', rpars=rpars
+    )
     old_points = {k: v[[0, -1]] for k, v in old_points.items()}
     _assert_same_points(tree_points, old_points)
