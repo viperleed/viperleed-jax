@@ -51,6 +51,9 @@ _NO_1D_OFFSETS = pytest.mark.xfail(
 )
 
 
+# A module-scoped copy of state_pt_111_10x10_te: initialization is the
+# slow part, and the tests only read the state (the old reader works on
+# deep copies).
 @pytest.fixture(scope='module')
 def state():
     """Return the initialized Pt(111) slab, with hexagonal ab cell."""
@@ -122,35 +125,34 @@ def _assert_same_points(tree_points, old_points):
         assert dist.min(axis=0).max() < ATOL, f'atom {num}'
 
 
-def _cases(slab):
-    """Yield (id, targets, direction in new syntax, old-reader direction)."""
-    free = _targets(slab, FREE_ATOMS)
-    yield 'a', free, 'a', 'ab[1 0]'
-    yield 'ab[1 2]', free, 'ab[1 2]', 'ab[1 2]'
-    yield '[2 1]', free, '[2 1]', 'ab[2 1]'
-    for freedir, num in ONE_D_ATOMS.items():
-        direction = f'ab{freedir}'
-        yield f'1D {freedir}', _targets(slab, [num]), direction, direction
-
-
-# Case names are fixed by FREE_ATOMS and ONE_D_ATOMS: they must be known
-# at collection, without initializing a slab.
-_CASE_NAMES = ['a', 'ab[1 2]', '[2 1]'] + [f'1D {f}' for f in ONE_D_ATOMS]
-_OFFSET_CASE_NAMES = [
-    pytest.param(name, marks=_NO_1D_OFFSETS if name.startswith('1D') else ())
-    for name in _CASE_NAMES
+# (id, atom numbers, direction in new syntax, old-reader direction)
+_CASES = (
+    ('a', FREE_ATOMS, 'a', 'ab[1 0]'),
+    ('ab[1 2]', FREE_ATOMS, 'ab[1 2]', 'ab[1 2]'),
+    ('[2 1]', FREE_ATOMS, '[2 1]', 'ab[2 1]'),
+    *(
+        (f'1D {freedir}', (num,), f'ab{freedir}', f'ab{freedir}')
+        for freedir, num in ONE_D_ATOMS.items()
+    ),
+)
+_GEO_DELTA_CASES = [pytest.param(*case[1:], id=case[0]) for case in _CASES]
+_OFFSET_CASES = [
+    pytest.param(
+        *case[1:],
+        id=case[0],
+        marks=_NO_1D_OFFSETS if case[0].startswith('1D') else (),
+    )
+    for case in _CASES
 ]
+_CASE_ARGS = 'nums, direction, old_direction'
 
 
-def _case(slab, case_name):
-    """Return targets, direction and old-reader direction of a case."""
-    return next(c[1:] for c in _cases(slab) if c[0] == case_name)
-
-
-@pytest.mark.parametrize('case_name', _CASE_NAMES)
-def test_geo_delta_matches_old_reader(state, case_name):
+@pytest.mark.parametrize(_CASE_ARGS, _GEO_DELTA_CASES)
+def test_geo_delta_matches_old_reader(
+    state, nums, direction, old_direction
+):
     """Fractional GEO_DELTA directions give the old reader's vectors."""
-    targets, direction, old_direction = _case(state.slab, case_name)
+    targets = _targets(state.slab, nums)
     tree_points = _tree_corners(
         state, delta_lines=[f'{targets} {direction} = {RANGE}']
     )
@@ -162,10 +164,12 @@ def test_geo_delta_matches_old_reader(state, case_name):
     _assert_same_points(tree_points, old_points)
 
 
-@pytest.mark.parametrize('case_name', _OFFSET_CASE_NAMES)
-def test_offset_matches_old_reader(state, case_name):
+@pytest.mark.parametrize(_CASE_ARGS, _OFFSET_CASES)
+def test_offset_matches_old_reader(
+    state, nums, direction, old_direction
+):
     """Fractional OFFSETS directions give the old reader's vectors."""
-    targets, direction, old_direction = _case(state.slab, case_name)
+    targets = _targets(state.slab, nums)
     tree_points = _tree_corners(
         state, offset_line=f'geo {targets} {direction} = {OFFSET}'
     )
